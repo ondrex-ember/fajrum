@@ -17,27 +17,6 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 #app{background:linear-gradient(145deg,var(--card),var(--card2),var(--light),#e2c990);
   border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,.5);max-width:560px;width:100%;
   overflow:hidden;display:flex;flex-direction:column;max-height:100vh;}
-/* Desktop override — JS přidá třídu .desktop na #app */
-#app.desktop{max-width:1140px;max-height:calc(100vh - 16px);}
-#app.desktop .tabs{
-  flex-direction:column;width:140px;flex-shrink:0;
-  border-bottom:none;border-right:1px solid rgba(42,26,10,.18);
-  padding:6px 0;gap:2px;overflow-x:visible;overflow-y:auto;
-  background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.02));
-}
-#app.desktop .tab{
-  border-radius:4px 0 0 4px;text-align:left;
-  padding:10px 14px;font-size:12px;white-space:normal;
-  border-right:3px solid transparent;
-}
-#app.desktop .tab.active{
-  background:rgba(201,149,43,.15);color:var(--warm);font-weight:700;
-  border-right:3px solid var(--gold);
-}
-#app.desktop #desktop-shell{display:flex;flex:1;overflow:hidden;min-height:0;}
-#app.desktop #content-shell{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
-#app.desktop .content{flex:1;overflow-y:auto;}
-#app.desktop .toast-container{left:auto;right:20px;transform:none;max-width:380px;}
 .hdr{background:linear-gradient(135deg,#5a3a1a,#3a2510);color:var(--light);
   padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
 .hdr h1{font-size:14px;font-weight:700;margin:0;}
@@ -139,27 +118,6 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .toast-container{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
   width:calc(100% - 32px);max-width:520px;z-index:200;pointer-events:none;}
 .toast{background:linear-gradient(145deg,#3a2510,#2a1a08);color:var(--light);
-
-/* ── DESKTOP 2-COLUMN LAYOUTS ───────────────────────────────── */
-/* 1. Overview: season info + pec vedle sebe */
-#app.desktop .overview-top-cols{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid rgba(42,26,10,.13);}
-#app.desktop .overview-top-cols .sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
-#app.desktop .overview-top-cols .sec:last-child{border-right:none;}
-/* 2. Dělníci: 2 sloupce */
-#app.desktop .workers-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-#app.desktop .workers-grid .worker-card{margin-bottom:0;}
-/* 3. Výroba: 2 sloupce pro auto-výrobu i foukání */
-#app.desktop .production-cols{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-#app.desktop .production-cols .sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
-#app.desktop .production-cols .sec:last-child{border-right:none;}
-#app.desktop .blown-grid-desktop{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-#app.desktop .blown-grid-desktop .sec{border-right:1px solid rgba(42,26,10,.1);}
-#app.desktop .blown-grid-desktop .sec:last-child{border-right:none;}
-/* 4. Pec: 3/1 split (dash+šamot / účinnost) */
-#app.desktop .furnace-cols{display:grid;grid-template-columns:3fr 1fr;gap:0;border-bottom:1px solid rgba(42,26,10,.13);}
-#app.desktop .furnace-cols .sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
-#app.desktop .furnace-cols .sec:last-child{border-right:none;}
-
   border-radius:6px;padding:10px 14px;font-size:12px;line-height:1.5;
   border-left:3px solid var(--gold);margin-top:6px;
   animation:toastIn .25s ease;font-family:'Palatino Linotype','Book Antiqua',Georgia,serif;}
@@ -188,8 +146,8 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 //   • Balancing fix: více startovního dřeva, surovin, grošů
 // ════════════════════════════════════════════════════════════
 
-const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=4, FUEL_BASE=4, WOOD_PER_POTASH=10;
-const INIT_FOREST=40, FOREST_REGEN_BASE=2;
+const ROUNDS=12, PREP=5, PANEV_AGE=3, PANEV_DUR=4, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
+const INIT_FOREST=30, FOREST_REGEN_BASE=2;
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
 
@@ -317,15 +275,14 @@ const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🪨"},clay:{b:2,e:"🧱"}
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
   const cur=G.forest;
-  const max=120;
-  if((G.maxForest||INIT_FOREST)>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (120 parcel)":"Forest at maximum (120 parcels)"}`);render();return;}
-  const buy=Math.min(n,max-(G.maxForest||INIT_FOREST));
-  const price=buy*8;
+  const max=60;
+  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (60 parcel)":"Forest at maximum (60 parcels)"}`);render();return;}
+  const buy=Math.min(n,max-cur);
+  const price=buy*8; // 8g/parcela
   if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek grošů":"Not enough groats"}`);render();return;}
   G.grose-=price;
-  G.forest+=buy;        // aktuálně dostupné parcely
-  G.maxForest=(G.maxForest||INIT_FOREST)+buy; // celková kapacita hvozdu
-  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${price}g) · ${L==="cs"?"Hvozd":"Forest"}: ${G.forest}/${G.maxForest}`);
+  G.forest+=buy;
+  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${price}g)`);
   render();
 }
 
@@ -908,7 +865,6 @@ function initState(){
     season:1, round:0,
     grose:22, debt:50, morale:60, beer:1,
     forest:INIT_FOREST,
-    maxForest:INIT_FOREST, // roste nákupem parcel
     res:{wood:18,sand:6,limestone:3,potash:4,water:4,clay:2,shamot:2,food:5,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
@@ -921,8 +877,7 @@ function initState(){
     wa:{fuel:50,potash:30,build:20},
     // Pánve s kvalitou
     pReady:2, pAging:[], pUses:PANEV_DUR, panevQuality:2,
-    formyFresh:[], // formy — čerstvost pro foukače
-    trhuNPC:[],    // specialisté na trhu (Sv. Jiří)
+    formyAging:[], // formy zrají 1 kolo
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
     waldglas:[], crystal:[],
@@ -952,7 +907,9 @@ function initState(){
     trhuNPC:[],
     tab:"overview", help:false, showUpgrade:false,
     huteName:"", // Jméno hutmistra — zadá uživatel
-    audio:{enabled:true,volume:0.7}
+    audio:{enabled:true,volume:0.7},
+    firstVisit:true, // welcome modal po prvním vstupu
+    difficulty:"normal" // "normal" nebo "easy"
   };
 }
 
@@ -989,7 +946,7 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*3;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🪵${winterNote} (${forest}/${p.maxForest||INIT_FOREST})`);
+      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🪵${winterNote} (${forest}/${INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
       log.push(`🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
@@ -1018,8 +975,7 @@ function processRound(){
         log.push(`🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
       }else log.push(`🏺 ${w.name}: ${L==="cs"?"chybí jíl nebo jídlo":"need clay or food"}`);
     }else if(w.task==="formar"){
-      // Forma NEzraje — čerstvá=lepší, udržuje se ponořená ve vodě (táta)
-      // Aktivní od března (kolo 4)
+      // Formař vyrábí dřevěné formy — zrají 1 kolo, aktivní od března (kolo 4)
       if(round<4){
         log.push(`🪚 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
       }else{
@@ -1029,9 +985,8 @@ function processRound(){
           const formarLv=w.prof==="formar"?w.lv:1;
           const kovakBonus=w.traits?.includes("kovak")?1:0;
           const formQ=clamp(formarLv+kovakBonus+Math.floor(Math.random()*2),1,5);
-          // Okamžitě hotová — ponořena do vody
-          r.formy=(r.formy||0)+1;
-          log.push(`🪚 ${w.name}: ${L==="cs"?"forma hotová — ponořena do vody":"mould ready — submerged in water"} ${stars(formQ)}`);
+          p.formyAging=[...(p.formyAging||[]),{cr:round,rdy:round+FORMA_AGE,q:formQ}];
+          log.push(`🪚 ${w.name}: ${L==="cs"?"forma dána sušit, hotová za":"mould drying, ready in"} ${FORMA_AGE} ${L==="cs"?"kolo":"round"} (${stars(formQ)})`);
         }else{
           const missing=[];
           if(r.wood<2)missing.push("2🪵");
@@ -1049,7 +1004,14 @@ function processRound(){
     }else log.push(`😴 ${w.name}: ${L==="cs"?"odpočívá":"resting"}`);
   }
 
-  // 2. Dozrávání pánví
+  // 2b. Dozrávání forem
+  const formyAging=[...(p.formyAging||[])];
+  const rdyFormy=formyAging.filter(x=>round>=x.rdy);
+  if(rdyFormy.length){
+    r.formy=(r.formy||0)+rdyFormy.length;
+    log.push(`🪚 ${rdyFormy.length}× ${L==="cs"?"forma hotová":"mould ready"}!`);
+  }
+  const formyAgingNew=formyAging.filter(x=>round<x.rdy);
   const rdyPanve=pA.filter(x=>round>=x.rdy);
   if(rdyPanve.length){
     pR+=rdyPanve.length;
@@ -1078,7 +1040,7 @@ function processRound(){
       fT=Math.round(fT*.25+tgt*.75); fA=true;
       // Zaběhávání pece — každá kampaňová várka trochu pomáhá
       furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+2);
-      log.push(`🔥 ${L==="cs"?"Palivo":"Fuel"}: -${fuelUsed}🪵 (${r.wood}🪵 ${L==="cs"?"zbývá":"left"}) → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
+      log.push(`🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
     }else{
       r.wood=Math.max(0,r.wood-fuelUsed);
       fT=Math.max(0,fT-25);
@@ -1359,30 +1321,18 @@ function processRound(){
     tW, tC, tQS, tQN, done, contracts:con, workers:wk, shop:genShop(),
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
+    formyAging:formyAgingNew,
     summary:{wages,bCost,dPay,mDelta:mor-p.morale,fCut:p.forest-forest,fEff:Math.round(calcFurnaceEff(furnace,pQ)*100)},
     events:evts.slice(1), curEvt:evts[0]||null,
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
-  // Toast — klíčové info z kola, přehledně
+  // Toast — zobraz klíčové info z tohoto kola
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
-  const newWg=wg.length-p.waldglas.length, newCr=cr.length-p.crystal.length;
-  const woodUsed=p.res.wood-r.wood;
   const toastLines=[
-    // Produkce — souhrn
-    newWg>0?`🔥 ${newWg}× ${L==="cs"?"lesní sklo":"waldglas"} uvařeno`:null,
-    newCr>0?`✨ ${newCr}× ${L==="cs"?"křišťál":"crystal"} uvařen`:null,
-    // Foukané — jen pokud přibyly
-    ...BLOWN_TYPES.filter(k=>(G[k]||[]).length>(p[k]||[]).length).map(k=>`${BLOWN_ITEMS[k].icon} ${(G[k]||[]).length-(p[k]||[]).length}× ${L==="cs"?BLOWN_ITEMS[k].cs:BLOWN_ITEMS[k].en}`),
-    // Pec
-    isC&&fA?`🔥 ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}% · 🪵-${woodUsed} (${r.wood} zbývá)`:null,
-    // Varování
-    forest<10?`⚠️ 🌲 ${forest}/${p.maxForest||INIT_FOREST} — ${L==="cs"?"les téměř vyčerpán":"forest nearly gone"}`:null,
-    r.food<3?`🍞 ${L==="cs"?"Jídlo dochází":"Food low"}: ${r.food}`:null,
-    // Události
-    ...log.filter(l=>l.includes("💔")||l.includes("💀")||l.includes("⭐")||l.includes("👋")).map(l=>l.replace(/__\w+__/,"")),
-    // Ekonomika
-    `💰 ${grose}g${debt>0?" · 📜"+debt+"g":""} · 😊${mor}`
+    ...log.filter(l=>l.includes("→")&&(l.includes("waldglas")||l.includes("křišťál")||l.includes("crystal"))),
+    ...log.filter(l=>l.includes("💔")||l.includes("📜")||l.includes("❄️")||l.includes("⚠️")),
+    `${L==="cs"?"Groše":"Groats"}: ${grose}g · ${L==="cs"?"morálka":"morale"}: ${mor}`
   ].filter(Boolean);
   showToast(toastTitle, toastLines);
   autoSave();
@@ -1402,7 +1352,7 @@ function startInterseason(){
   const reforestBonus=Math.min(p.reforestWorkers||0, 4)*2; // max +8 za sezónu výsadby
   const naturalRegen=p.forest>0?FOREST_REGEN_BASE:1; // vyčerpaný les roste pomaleji
   const totalRegen=naturalRegen+reforestBonus;
-  const newForest=Math.min(p.maxForest||INIT_FOREST, p.forest+totalRegen);
+  const newForest=Math.min(INIT_FOREST, p.forest+totalRegen);
   // Pec chladne, drží 65% zaběhnutosti
   const newRunIn=Math.round(p.furnace.runIn*0.65);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
@@ -1992,7 +1942,6 @@ function buildCandidateCard(c,body,p,L){
 
 function render(){
   const p=G, L=p.lang;
-  const isDesktop=window.innerWidth>=768; // musí být první — používá se v celém render()
   const ms=L==="cs"?MONTHS_CS:MONTHS_EN, hs=L==="cs"?HINTS_CS:HINTS_EN;
   const tsk=L==="cs"?TASK_CS:TASK_EN;
   const isP=p.round<PREP, isC=p.round>=PREP, z=zone(p.fTemp);
@@ -2003,15 +1952,58 @@ function render(){
   const _scrollTop=_prevContent?_prevContent.scrollTop:0;
   app.innerHTML="";
 
+  // Intro = scrollovatelný, hra = fixed height
+  if(p.phase==="intro"){
+    app.style.maxHeight="none";
+    app.style.overflowY="auto";
+  } else {
+    app.style.maxHeight="100vh";
+    app.style.overflowY="hidden";
+  }
+
   // ── INTRO ──
   if(p.phase==="intro"){
     FurnaceAudio.stop();
+
+    // Arrow function — bezpečná uvnitř if bloku
+    const startGame=(diff)=>{
+      const name=G.huteName;
+      G=initState();
+      G.huteName=name;
+      G.difficulty=diff;
+      G.firstVisit=true;
+      if(diff==="easy"){
+        G.furnace.runIn=30;
+        G.panevQuality=3;
+        G.pReady=3;
+        G.grose=35;
+        G.res.wood=28;
+        G.res.sand=10;
+        G.res.potash=6;
+        G.res.limestone=5;
+      }
+      G.phase="playing";
+      render();
+    };
+
+    // SVG logo (původní)
     const intro=L==="cs"
       ?"Rok 1680. Otec ti zanechal recept, dluh a starou pec v Arnsdorfu. Kolem šumí hvozd — tvůj poklad i prokletí. Každý strom, co pokácíš, ti dá dřevo. Ale les pomalu dorůstá zpět."
       :"Year 1680. Your father left you a recipe, a debt, and an old furnace in Arnsdorf. The forest is your treasure and your curse. Every tree gives wood — and it slowly grows back.";
     const introLogoDiv=document.createElement("div");
     introLogoDiv.style.cssText="margin:8px auto 16px;display:block;width:280px;";
-    introLogoDiv.innerHTML=`<svg viewBox="0 0 320 108" xmlns="http://www.w3.org/2000/svg" style="width:100%"><rect width="320" height="108" rx="8" fill="#f4e4c1"/><defs><clipPath id="crcI2"><circle cx="62" cy="54" r="48"/></clipPath></defs><circle cx="62" cy="54" r="48" fill="#2a1608"/><g clip-path="url(#crcI2)"><g stroke="#c9952b" stroke-width="1.2" fill="none"><line x1="28" y1="22" x2="44" y2="35"/><line x1="44" y1="35" x2="62" y2="24"/><line x1="62" y1="24" x2="80" y2="35"/><line x1="44" y1="35" x2="36" y2="52"/><line x1="36" y1="52" x2="22" y2="60"/><line x1="36" y1="52" x2="52" y2="62"/><line x1="52" y1="62" x2="66" y2="52"/><line x1="66" y1="52" x2="80" y2="60"/><line x1="66" y1="52" x2="80" y2="35"/><line x1="52" y1="62" x2="46" y2="76"/><line x1="46" y1="76" x2="62" y2="82"/><line x1="62" y1="82" x2="76" y2="74"/><line x1="76" y1="74" x2="80" y2="60"/><line x1="22" y1="60" x2="24" y2="76"/><line x1="24" y1="76" x2="38" y2="84"/><line x1="38" y1="84" x2="46" y2="76"/></g><g fill="#f0deb8" stroke="#1a0e06" stroke-width="0.9"><circle cx="28" cy="22" r="6.5"/><circle cx="62" cy="24" r="6.5"/><circle cx="36" cy="52" r="6.5"/><circle cx="22" cy="60" r="6.5"/><circle cx="52" cy="62" r="6.5"/><circle cx="80" cy="60" r="6.5"/><circle cx="46" cy="76" r="6.5"/><circle cx="62" cy="82" r="6.5"/><circle cx="76" cy="74" r="6.5"/><circle cx="24" cy="76" r="6.5"/><circle cx="38" cy="84" r="6.5"/></g><g fill="#c9952b"><circle cx="44" cy="35" r="4.5"/><circle cx="80" cy="35" r="4.5"/><circle cx="66" cy="52" r="4.5"/><circle cx="62" cy="82" r="4.5"/></g></g><circle cx="62" cy="54" r="48" fill="none" stroke="#8b5e34" stroke-width="1.5"/><text x="124" y="38" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Sklářská</text><text x="124" y="66" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Huť</text><line x1="124" y1="73" x2="308" y2="73" stroke="#8b5e34" stroke-width="0.8"/><text x="124" y="84" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">HAIDA, ARNSDORF, BLOTTENDORF · NOVOBORSKO</text><text x="124" y="96" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">Anno Domini 1680</text></svg>`;
+    introLogoDiv.innerHTML=`<svg viewBox="0 0 320 108" xmlns="http://www.w3.org/2000/svg" style="width:100%"><rect width="320" height="108" rx="8" fill="#f4e4c1"/><defs><clipPath id="crcI2"><circle cx="62" cy="54" r="48"/></clipPath></defs><circle cx="62" cy="54" r="48" fill="#2a1608"/><g clip-path="url(#crcI2)"><g stroke="#c9952b" stroke-width="1.2" fill="none"><line x1="28" y1="22" x2="44" y2="35"/><line x1="44" y1="35" x2="62" y2="24"/><line x1="62" y1="24" x2="80" y2="35"/><line x1="44" y1="35" x2="36" y2="52"/><line x1="36" y1="52" x2="22" y2="60"/><line x1="36" y1="52" x2="52" y2="62"/><line x1="52" y1="62" x2="66" y2="52"/><line x1="66" y1="52" x2="80" y2="60"/><line x1="66" y1="52" x2="80" y2="35"/><line x1="52" y1="62" x2="46" y2="76"/><line x1="46" y1="76" x2="62" y2="82"/><line x1="62" y1="82" x2="76" y2="74"/><line x1="76" y1="74" x2="80" y2="60"/><line x1="22" y1="60" x2="24" y2="76"/><line x1="24" y1="76" x2="38" y2="84"/><line x1="38" y1="84" x2="46" y2="76"/></g><g fill="#f0deb8" stroke="#1a0e06" stroke-width="0.9"><circle cx="28" cy="22" r="6.5"/><circle cx="62" cy="24" r="6.5"/><circle cx="36" cy="52" r="6.5"/><circle cx="22" cy="60" r="6.5"/><circle cx="52" cy="62" r="6.5"/><circle cx="80" cy="60" r="6.5"/><circle cx="46" cy="76" r="6.5"/><circle cx="62" cy="82" r="6.5"/><circle cx="76" cy="74" r="6.5"/><circle cx="24" cy="76" r="6.5"/><circle cx="38" cy="84" r="6.5"/></g><g fill="#c9952b"><circle cx="44" cy="35" r="4.5"/><circle cx="80" cy="35" r="4.5"/><circle cx="66" cy="52" r="4.5"/><circle cx="62" cy="82" r="4.5"/></g></g><circle cx="62" cy="54" r="48" fill="none" stroke="#8b5e34" stroke-width="1.5"/><text x="124" y="38" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Skl\u00e1\u0159sk\u00e1</text><text x="124" y="66" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Hu\u0165</text><line x1="124" y1="73" x2="308" y2="73" stroke="#8b5e34" stroke-width="0.8"/><text x="124" y="84" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">HAIDA, ARNSDORF, BLOTTENDORF \u00b7 NOVOBORSKO</text><text x="124" y="96" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">Anno Domini 1680</text></svg>`;
+
+    // Obrázek pod tlačítky — 702×1175, schová se pokud chybí
+    const introImgDiv=document.createElement("div");
+    introImgDiv.style.cssText="width:100%;margin-top:16px;border-radius:4px;overflow:hidden;";
+    const introImgEl=document.createElement("img");
+    introImgEl.src="intro.jpg";
+    introImgEl.alt="";
+    introImgEl.style.cssText="width:100%;display:block;";
+    introImgEl.onerror=()=>{introImgDiv.style.display="none";};
+    introImgDiv.appendChild(introImgEl);
+
     app.append(
       h("div",{style:{textAlign:"center",padding:"28px 20px 16px"}},
         introLogoDiv,
@@ -2030,8 +2022,27 @@ function render(){
           })),
         h("div",{style:{textAlign:"left",padding:"14px",background:"rgba(0,0,0,.04)",borderRadius:"4px",
           fontSize:"13px",lineHeight:"1.6",marginBottom:"16px",borderLeft:"3px solid #8b5e34"}},intro),
+        // Difficulty tlačítka
+        h("div",{style:{marginBottom:"12px"}},
+          h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"6px",textTransform:"uppercase",letterSpacing:"1px"}},
+            L==="cs"?"Obtížnost:":"Difficulty:"),
+          h("div",{style:{display:"flex",gap:"8px",justifyContent:"center"}},
+            h("button",{
+              class:"btn"+(G.difficulty==="normal"?" btn-active":""),
+              style:{flex:1},
+              onClick:()=>{G.difficulty="normal";render();}},
+              L==="cs"?"⚔️ Normální":"⚔️ Normal"),
+            h("button",{
+              class:"btn"+(G.difficulty==="easy"?" btn-active":""),
+              style:{flex:1},
+              onClick:()=>{G.difficulty="easy";render();}},
+              L==="cs"?"🕯️ Lehký start":"🕯️ Easy start")),
+          h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
+            G.difficulty==="easy"
+              ?(L==="cs"?"Otcova pec zaběhnutá (runIn 30), lepší pánev, více zásob":"Father's furnace run-in (30), better crucible, more stock")
+              :(L==="cs"?"Studená pec, prázdný sklad — začínáš od nuly":"Cold furnace, empty store — start from scratch"))),
         h("div",{style:{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}},
-          h("button",{class:"btn btn-p",onClick:()=>{const name=G.huteName;G=initState();G.huteName=name;G.phase="playing";render();}},
+          h("button",{class:"btn btn-p",onClick:()=>{startGame(G.difficulty||"normal");}},
             L==="cs"?"Vstoupit do hutě →":"Enter the Foundry →"),
           (()=>{
             try{
@@ -2048,9 +2059,15 @@ function render(){
             }catch(e){}
             return null;
           })(),
-          h("button",{class:"btn",onClick:()=>{G.lang=L==="cs"?"en":"cs";render();}},L==="cs"?"EN":"CZ"))),
+          h("button",{class:"btn",onClick:()=>{G.lang=L==="cs"?"en":"cs";render();}},L==="cs"?"EN":"CZ")),
+        // Citát nad obrázkem
+        h("div",{style:{textAlign:"center",padding:"12px 0 8px",fontSize:"11px",
+          fontStyle:"italic",color:"#8b5e34",letterSpacing:"0.3px"}},
+          "Ludite et, super omnia, nolite pugnare."),
+        // Obrázek POD citátem
+        introImgDiv),
       h("div",{style:{textAlign:"center",padding:"8px",fontSize:"10px",color:"#8b5e34",opacity:.5}},
-        "v4 · Multi-sezóna · Živá pec 🔥"));
+        "v4 \u00b7 Multi-sez\u00f3na \u00b7 \u017div\u00e1 pec \uD83D\uDD25"));
     // Leaderboard
     try{
       const lb=JSON.parse(localStorage.getItem("sh4")||"[]");
@@ -2188,9 +2205,9 @@ function render(){
     // Les + sklad skla přenesený
     body.append(h("div",{class:"sec-title",style:{marginTop:"10px"}},L==="cs"?"Hvozd & Sklad":"Forest & Storage"));
     const regenLine=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",fontSize:"12px"}});
-    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${p.maxForest||INIT_FOREST}`));
+    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${INIT_FOREST}`));
     if(is.reforestBonus>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`(🌱 výsadba +${is.reforestBonus})`));
-    if(p.forest<INIT_FOREST)regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${(p.maxForest||INIT_FOREST)-p.forest} parcel`:`${(p.maxForest||INIT_FOREST)-p.forest} missing`));
+    if(p.forest<INIT_FOREST)regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${INIT_FOREST-p.forest} parcel`:`${INIT_FOREST-p.forest} missing`));
     body.append(regenLine);
     if(p.forest===0){
       body.append(h("div",{style:{fontSize:"11px",color:"#a03020",padding:"6px",
@@ -2327,7 +2344,7 @@ function render(){
         p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+p.debt+"g"):null));
     body.append(grid,
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · zaběhnutost ${p.furnace.runIn}%`),
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.maxForest||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"10px"}},`💸 ${sd.wages}g mzdy + ${sd.bCost}g pivo${sd.dPay?" + "+sd.dPay+"g dluh":""}`));
     const btn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"14px"},
@@ -2420,7 +2437,7 @@ function render(){
   const wMult=WINTER_LOG_MULT[p.round]||1;
   const resBar=h("div",{class:"res-bar"});
   resBar.append(
-    pillTip("🌲",p.forest+"/"+(p.maxForest||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",
+    pillTip("🌲",p.forest+"/"+INIT_FOREST,p.forest<=FOREST_WARN?"warn":"",
       L==="cs"?`Hvozd: ${p.forest} parcel${wMult>1?" · ❄️ sáně +"+Math.round((wMult-1)*100)+"%":""}`:
                `Forest: ${p.forest} parcels${wMult>1?" · ❄️ sleds +"+Math.round((wMult-1)*100)+"%":""}`),
     pillTip("🪵",p.res.wood,p.res.wood<5?"warn":"",
@@ -2455,7 +2472,8 @@ function render(){
     h("div",{class:"season-tip"},L==="cs"?md.tip_cs:md.tip_en),
     h("div",{class:"season-trh",style:{color:MARKET_CLOSED[p.round]?"#a03020":"#4a7a3a"}},
       L==="cs"?md.trh_cs:md.trh_en));
-  // Desktop: season vlevo, furnHud+bars vpravo; mobil: pod sebou
+  app.append(sp);
+
   // Varování: les kriticky nízko
   if(p.forest<=FOREST_WARN){
     app.append(h("div",{style:{padding:"4px 14px",background:p.forest===0?"rgba(160,48,32,.15)":"rgba(201,149,43,.1)",
@@ -2486,6 +2504,8 @@ function render(){
       h("div",{style:{fontSize:"10px",color:"#8b5e34"}},L==="cs"?ft.name:ft.nameEn),
       h("div",{style:{fontSize:"10px",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"}},
         `šamot ${p.furnace.shamotWear}%`)));
+  app.append(furnHud);
+
   // Bars: morálka + les + účinnost pece
   const bars=h("div",{style:{padding:"4px 14px",borderBottom:"1px solid rgba(42,26,10,.13)",display:"flex",gap:"6px",alignItems:"center"}});
   bars.append(
@@ -2496,22 +2516,10 @@ function render(){
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🔥 eff ${fEff}%`),
       bar(fEff,100,fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020")),
     h("div",{style:{flex:1}},
-      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${p.maxForest||INIT_FOREST}`),
-      bar(p.forest,p.maxForest||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${INIT_FOREST}`),
+      bar(p.forest,INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
   if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
-  // Desktop: season vlevo, furnHud+bars vpravo
-  if(isDesktop){
-    const topRow=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",flexShrink:0,borderBottom:"1px solid rgba(42,26,10,.13)"}});
-    sp.style.borderBottom="none";
-    furnHud.style.borderBottom="none";
-    bars.style.borderBottom="none";
-    const rightCol=h("div",{style:{display:"flex",flexDirection:"column",borderLeft:"1px solid rgba(42,26,10,.13)"}});
-    rightCol.append(furnHud, bars);
-    topRow.append(sp, rightCol);
-    app.append(topRow);
-  }else{
-    app.append(sp, furnHud, bars);
-  }
+  app.append(bars);
 
   // Tabs
   const tabBar=h("div",{class:"tabs"});
@@ -2524,7 +2532,7 @@ function render(){
       e+" "+tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:""));
     tabBar.append(btn);
   });
-  if(window.innerWidth<768) app.append(tabBar);
+  app.append(tabBar);
 
   // Synchronizuj audio s herním stavem
   FurnaceAudio.setEnabled(p.audio.enabled);
@@ -2536,9 +2544,7 @@ function render(){
 
   // ── TAB: PŘEHLED ──
   if(p.tab==="overview"){
-    // Desktop: season hint + dřevo/pec vedle sebe; mobil: pod sebou
-    const topCols=h("div",{class:isDesktop?"overview-top-cols":""});
-    topCols.append(h("div",{class:"sec"},
+    content.append(h("div",{class:"sec"},
       h("div",{class:"hint-box",style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34")}},hs[p.round]||"")));
 
     // ── RYCHLÝ PŘEHLED: Dřevo + Pec nahoře (collapsible, dvě poloviny) ──
@@ -2585,8 +2591,6 @@ function render(){
       quickRow.append(twoCol);
     }
     content.append(quickRow);
-    topCols.append(quickRow);
-    content.append(topCols);
 
     // Dělníci — collapsible
     const wSec=h("div",{class:"sec"});
@@ -2598,9 +2602,7 @@ function render(){
       h("div",{class:"sec-title",style:{margin:0}},(L==="cs"?"Dělníci":"Workers")+" ("+p.workers.length+")"),
       h("span",{style:{fontSize:"11px",color:"#8b5e34"}},wState?"▲":"▼"));
     wSec.append(wHdr);
-    const wGrid=h("div",{style:isDesktop?"display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:start;":""});
-    if(wState){
-      p.workers.forEach(w=>{
+    if(wState) p.workers.forEach(w=>{
       const card=h("div",{class:"worker-card"});
       const fatPct=Math.round(w.fat*100);
       const fatColor=w.fat>.7?"#a03020":w.fat>.4?"#c9952b":"#4a7a3a";
@@ -2648,7 +2650,7 @@ function render(){
       // Bary + tasky vedle sebe
       const barsAndTasks=h("div",{style:{display:"flex",gap:"8px",alignItems:"flex-start"}});
       // Bary — pevná šířka ~130px (cca polovina dostupného prostoru)
-      const barsCol=h("div",{style:{width:isDesktop?"100px":"130px",flexShrink:0}});
+      const barsCol=h("div",{style:{width:"130px",flexShrink:0}});
       [{label:L==="cs"?"Únava":"Fat.",v:fatPct,c:fatColor},
        {label:"XP",v:xpPct,c:"#c9952b"},
        {label:L==="cs"?"Loaj.":"Loy.",v:loyalty,c:loyalty>60?"#4a7a3a":loyalty>35?"#c9952b":"#a03020"},
@@ -2656,16 +2658,16 @@ function render(){
       ].forEach(m=>{
         barsCol.append(h("div",{style:{display:"flex",alignItems:"center",gap:"3px",marginBottom:"2px"}},
           h("span",{style:{fontSize:"8px",color:"#8b5e34",width:"28px",flexShrink:0}},m.label),
-          h("div",{style:{width:isDesktop?"44px":"60px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
+          h("div",{style:{width:"60px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
             h("div",{style:{width:m.v+"%",height:"100%",background:m.c,borderRadius:"2px"}})),
           h("span",{style:{fontSize:"8px",color:m.c,width:"20px",textAlign:"right",flexShrink:0}},m.v+"%")));
       });
-      // Tasky — flex wrap, na desktopu menší
+      // Tasky — flex wrap
       const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
       tasks.forEach(t=>{
         tasksCol.append(h("button",{
           class:"btn btn-s"+(w.task===t?" btn-active":""),
-          style:{fontSize:isDesktop?"8px":"9px",padding:isDesktop?"2px 4px":"2px 5px"},
+          style:{fontSize:"9px",padding:"2px 5px"},
           onClick:()=>{G.workers.find(x=>x.id===w.id).task=t;render();}},tsk[t]));
       });
       if(isC){
@@ -2677,10 +2679,8 @@ function render(){
       colRight.append(barsAndTasks);
       row.append(colRight);
       card.append(row);
-      wGrid.append(card);
-    });
-    }
-    wSec.append(wGrid);
+      wSec.append(card);
+    }); // end if(wState)
     content.append(wSec);
 
     // Pivo
@@ -2776,7 +2776,8 @@ function render(){
       p.waldglas.forEach(q=>{inv.append(h("span",{class:"stars",style:{marginRight:"2px",fontSize:"13px"}},stars(q)));});
       w1.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.waldglas.length}×`),inv);
     }
-    // Desktop: produkce ve 2 sloupcích (viz níže)
+    content.append(w1);
+
     // Pánve
     const w2=h("div",{class:"sec"});
     w2.append(
@@ -2796,6 +2797,7 @@ function render(){
       });
       w2.append(agDiv);
     }
+    content.append(w2);
 
     // Křišťál
     const w3=h("div",{class:"sec"});
@@ -2810,6 +2812,7 @@ function render(){
       p.crystal.forEach(q=>{inv.append(h("span",{class:"stars",style:{marginRight:"2px",fontSize:"13px",color:"#3a6a9a"}},stars(q)));});
       w3.append(h("div",{style:{fontSize:"10px",color:"#3a6a9a",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.crystal.length}×`),inv);
     }
+    content.append(w3);
 
     // ── FORMY ──
     const wFormy=h("div",{class:"sec"});
@@ -2829,6 +2832,7 @@ function render(){
       });
       wFormy.append(fagDiv);
     }
+    content.append(wFormy);
 
     // ── FOUKANÉ VÝROBKY ──
     const wFouk=h("div",{class:"sec"});
@@ -2915,21 +2919,7 @@ function render(){
         wFouk.append(sGrid);
       });
     }
-    // Desktop: 2 sloupce (waldglas+pánve+křišťál | formy+foukání)
-    if(isDesktop){
-      // Levý sloupec: waldglas + křišťál
-      const prodLeft=h("div",{style:{display:"flex",flexDirection:"column",borderRight:"1px solid rgba(42,26,10,.1)"}});
-      prodLeft.append(w1,w3);
-      // Pravý sloupec: pánve + formy
-      const prodRight=h("div",{style:{display:"flex",flexDirection:"column"}});
-      prodRight.append(w2,wFormy);
-      const prodTop=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",borderBottom:"1px solid rgba(42,26,10,.13)"}});
-      prodTop.append(prodLeft,prodRight);
-      // Foukané výrobky — plná šířka pod oběma sloupci
-      content.append(prodTop,wFouk);
-    }else{
-      content.append(w1,w3,w2,wFormy,wFouk);
-    }
+    content.append(wFouk);
 
     // ── BROUŠENÍ ──
     const wBrus=h("div",{class:"sec"});
@@ -3118,7 +3108,8 @@ function render(){
     dash.append(h("div",{style:{marginTop:"8px",padding:"6px 8px",background:"rgba(255,255,255,.04)",
       borderRadius:"4px",fontSize:"11px",color:isC&&p.fActive&&p.fTemp>=65&&p.fTemp<=85?"#9fca6a":"#c9952b",
       lineHeight:"1.5"}},L==="cs"?phaseMsg.cs:phaseMsg.en));
-    // Desktop: pec 3/1 split
+    content.append(h("div",{class:"sec"},dash));
+
     // Vysvětlivky účinnosti
     const effSec=h("div",{class:"sec"});
     effSec.append(h("div",{class:"sec-title"},L==="cs"?"Jak roste účinnost":"How efficiency grows"));
@@ -3140,18 +3131,13 @@ function render(){
       fontWeight:"700",fontSize:"12px",borderTop:"1px solid rgba(42,26,10,.15)",marginTop:"4px"}},
       h("span",null,L==="cs"?"Celková účinnost":"Total efficiency"),
       h("span",{style:{color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"}},fEff+"%")));
-    // Desktop layout pece
-    if(isDesktop){
-      const furnWrap=h("div",{style:{display:"grid",gridTemplateColumns:"3fr 1fr",borderBottom:"1px solid rgba(42,26,10,.13)"}});
-      const furnLeft=h("div",{class:"sec",style:{borderRight:"1px solid rgba(42,26,10,.1)"}});
-      furnLeft.append(dash);
-      effSec.style.borderBottom="none";
-      furnWrap.append(furnLeft,effSec);
-      content.append(furnWrap);
-    }else{
-      content.append(h("div",{class:"sec"},dash));
-      content.append(effSec);
-    }
+    // Max cap per furnace type
+    effSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",
+      marginTop:"6px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",lineHeight:"1.6"}},
+      L==="cs"
+        ?"Max. účinnost dle pece: Primitivní ~58% · Zděná ~75% · Mistrovská ~90%.\nVyšší účinnost = více skla z várky."
+        :"Max. efficiency by furnace: Primitive ~58% · Stone ~75% · Master ~90%.\nHigher efficiency = more glass per batch."));
+    content.append(effSec);
 
     // Přísady — placeholder pro budoucí chemii
     const chemSec=h("div",{class:"sec"});
@@ -3159,22 +3145,41 @@ function render(){
       h("div",{class:"sec-title"},L==="cs"?"⚗️ Přísady a sklovina":"⚗️ Additives & Batch"),
       h("div",{style:{padding:"10px",background:"rgba(42,26,10,.04)",borderRadius:"4px",
         border:"1px dashed rgba(139,94,52,.3)"}},
-        h("div",{style:{fontSize:"12px",color:"#8b5e34",marginBottom:"6px",fontWeight:"700"}},
+        h("div",{style:{fontSize:"12px",color:"#8b5e34",marginBottom:"2px",fontWeight:"700"}},
           L==="cs"?"Kmen (Gemenge) — složení várky:":"Batch composition (Gemenge):"),
-        // Základní složky
+        h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"8px"}},
+          L==="cs"?"Poměry = díly váhy (dle Kunckela, Arnsdorf 1680)":"Ratios = parts by weight (after Kunckel, Arnsdorf 1680)"),
+        // Hlavní složky s historickými poměry
         [
-          {cs:"Křemenný písek (SiO₂)",en:"Quartz sand (SiO₂)",     note:"základ skloviny",    avail:p.res.sand,     warn:p.res.sand<3},
-          {cs:"Potaš (K₂CO₃)",       en:"Potash (K₂CO₃)",          note:"tavidlo / flus",     avail:p.res.potash,   warn:p.res.potash<2},
-          {cs:"Vápenec (CaCO₃)",     en:"Limestone (CaCO₃)",        note:"stabilizátor",       avail:p.res.limestone,warn:p.res.limestone<1},
-          {cs:"Voda (H₂O)",          en:"Water (H₂O)",              note:"ředění kmene",       avail:p.res.water,    warn:p.res.water<1},
-        ].map(ing=>h("div",{style:{display:"flex",justifyContent:"space-between",
-          fontSize:"10px",padding:"3px 0",borderBottom:"1px solid rgba(42,26,10,.05)"}},
-          h("span",{style:{color:ing.warn?"#a03020":"#3a2a14",fontWeight:ing.warn?"700":"400"}},
+          {cs:"Křemenný písek (SiO₂)", en:"Quartz sand (SiO₂)",  note_cs:"základ skloviny",  note_en:"glass former",    parts:100, avail:p.res.sand,      warn:p.res.sand<3,      color:"#3a6a9a"},
+          {cs:"Soda (Na₂CO₃)",        en:"Soda (Na₂CO₃)",       note_cs:"tavidlo — snižuje bod tání", note_en:"flux — lowers melt point", parts:20, avail:null, warn:false, color:"#8b5e34"},
+          {cs:"Potaš (K₂CO₃)",        en:"Potash (K₂CO₃)",      note_cs:"tavidlo / flus",   note_en:"flux / potash",    parts:10, avail:p.res.potash,    warn:p.res.potash<2,    color:"#a03020"},
+          {cs:"Vápenec (CaCO₃)",      en:"Limestone (CaCO₃)",   note_cs:"stabilizátor",     note_en:"stabiliser",       parts:15, avail:p.res.limestone, warn:p.res.limestone<1, color:"#3a2a14"},
+          {cs:"Čeřivo (ledek Na₂SO₄)",en:"Fining agent (Na₂SO₄)",note_cs:"odbublávání skloviny",note_en:"removes bubbles from melt",parts:1, avail:null, warn:false, color:"#4a7a3a"},
+        ].map(ing=>h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+          fontSize:"10px",padding:"4px 0",borderBottom:"1px solid rgba(42,26,10,.06)"}},
+          h("span",{style:{color:ing.warn?"#a03020":ing.color,fontWeight:ing.warn?"700":"500",flex:"2"}},
             L==="cs"?ing.cs:ing.en),
-          h("span",{style:{color:"#8b5e34"}},ing.note),
-          h("span",{style:{color:ing.warn?"#a03020":"#4a7a3a",fontWeight:"700"}},ing.avail))),
+          h("span",{style:{color:"#8b5e34",flex:"2",fontSize:"9px",fontStyle:"italic",textAlign:"center"}},
+            L==="cs"?ing.note_cs:ing.note_en),
+          h("span",{style:{fontWeight:"700",color:"#c9952b",width:"28px",textAlign:"right",flexShrink:0}},ing.parts),
+          h("span",{style:{color:ing.avail!=null?(ing.warn?"#a03020":"#4a7a3a"):"#bbb",
+            width:"24px",textAlign:"right",flexShrink:0,fontSize:"10px"}},
+            ing.avail!=null?ing.avail:"—"))),
+        // Záhlaví sloupců
+        h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"9px",
+          color:"#8b5e34",marginTop:"6px",paddingTop:"4px",borderTop:"1px solid rgba(42,26,10,.1)",
+          letterSpacing:"0.5px",textTransform:"uppercase"}},
+          h("span",{style:{flex:"2"}},L==="cs"?"Složka":"Component"),
+          h("span",{style:{flex:"2",textAlign:"center"}},L==="cs"?"Funkce":"Function"),
+          h("span",{style:{width:"28px",textAlign:"right"}},L==="cs"?"Díly":"Parts"),
+          h("span",{style:{width:"24px",textAlign:"right"}},L==="cs"?"Sklad":"Stock")),
         h("div",{style:{marginTop:"8px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic",
           borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"6px"}},
+          L==="cs"
+            ?"⚠️ Voda se nepřidává — kmen se míchá za sucha, voda se při tavení okamžitě odpaří a může pánev poškodit."
+            :"⚠️ No water added — batch is mixed dry. Water evaporates instantly at melt temperature and can crack the crucible."),
+        h("div",{style:{marginTop:"6px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
           L==="cs"
             ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — připravujeme."
             :"🔬 Colorants, decolorants and special additives (MnO₂, CoO, Au...) — coming soon.")));
@@ -3371,10 +3376,10 @@ function render(){
         L==="cs"?"Koupit":"Buy")));
     // Parcely
     const parcelPrice=8;
-    const canParcel=p.grose>=parcelPrice&&p.forest<120;
+    const canParcel=p.grose>=parcelPrice&&p.forest<60;
     extraSec.append(
       h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/120 ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"} · ${L==="cs"?"max 120":"max 120"}`),
+        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/60 ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"}`),
       h("div",{style:{display:"flex",gap:"4px"}},
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(1)},"+ 1"),
@@ -3382,9 +3387,7 @@ function render(){
           onClick:()=>buyParcely(5)},"+ 5"),
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(10)},"+ 10"),
-        h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-          onClick:()=>buyParcely(20)},"+ 20"),
-        p.forest>=120?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
+        p.forest>=60?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
     content.append(extraSec);
 
     const bSec=h("div",{class:"sec"});
@@ -3501,9 +3504,9 @@ function render(){
           const text=entry.replace("__EVT__","");
           box.append(h("div",{style:{fontSize:"11px",color:"#a03020",paddingLeft:"4px",lineHeight:"1.5",fontWeight:"600"}},text));
         }else if(entry.trim()){
-          // Legacy záznamy — serif font pro správné emoji
+          // Legacy záznamy z v4.0
           box.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",paddingLeft:"4px",
-            lineHeight:"1.5"}},entry));
+            fontFamily:"'Courier New',monospace",lineHeight:"1.5"}},entry));
         }
       });
     }
@@ -3696,39 +3699,49 @@ function render(){
     content.append(iSec);
   }
 
-  if(isDesktop) app.classList.add("desktop");
-  else app.classList.remove("desktop");
+  app.append(content);
+  // Obnovit scroll pozici po překreslení
+  if(_scrollTop>0){
+    const _newContent=app.querySelector(".content");
+    if(_newContent)_newContent.scrollTop=_scrollTop;
+  }
+  const actionLabel=p.round>=ROUNDS-1
+    ?(L==="cs"?"Uzavřít sezónu →":"End Season →")
+    :(L==="cs"?`${ms[(p.round+1)%ROUNDS]} — Další měsíc →`:`${ms[(p.round+1)%ROUNDS]} — Next Month →`);
+  app.append(h("div",{class:"action-bar"},
+    h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
+      onClick:processRound},actionLabel)));
 
-  if(isDesktop){
-    const shell=document.createElement("div");
-    shell.id="desktop-shell";
-    const contentShell=document.createElement("div");
-    contentShell.id="content-shell";
-    contentShell.append(content);
-    if(_scrollTop>0){
-      const _nc=contentShell.querySelector(".content");
-      if(_nc)_nc.scrollTop=_scrollTop;
-    }
-    const actionLabel=p.round>=ROUNDS-1
-      ?(L==="cs"?"Uzavřít sezónu →":"End Season →")
-      :(L==="cs"?`${ms[(p.round+1)%ROUNDS]} — Další měsíc →`:`${ms[(p.round+1)%ROUNDS]} — Next Month →`);
-    contentShell.append(h("div",{class:"action-bar"},
-      h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
-        onClick:processRound},actionLabel)));
-    shell.append(tabBar,contentShell);
-    app.append(shell);
-  }else{
-    app.append(content);
-    if(_scrollTop>0){
-      const _newContent=app.querySelector(".content");
-      if(_newContent)_newContent.scrollTop=_scrollTop;
-    }
-    const actionLabel=p.round>=ROUNDS-1
-      ?(L==="cs"?"Uzavřít sezónu →":"End Season →")
-      :(L==="cs"?`${ms[(p.round+1)%ROUNDS]} — Další měsíc →`:`${ms[(p.round+1)%ROUNDS]} — Next Month →`);
-    app.append(h("div",{class:"action-bar"},
-      h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
-        onClick:processRound},actionLabel)));
+  // Welcome modal — jednorázový po prvním vstupu
+  if(p.phase==="playing" && p.firstVisit){
+    const wModal=h("div",{class:"modal-bg"},
+      h("div",{class:"modal",onClick:e=>e.stopPropagation(),style:{maxWidth:"340px"}},
+        h("div",{style:{textAlign:"center",marginBottom:"10px",fontSize:"20px"}},"🔥"),
+        h("h3",{style:{margin:"0 0 4px",fontSize:"15px",textAlign:"center"}},
+          L==="cs"?"Vítej v hutě":"Welcome to the Foundry"),
+        h("div",{style:{fontSize:"11px",fontStyle:"italic",color:"#8b5e34",textAlign:"center",
+          marginBottom:"12px",letterSpacing:"0.3px"}},
+          "\u201eIgnis mutat res.\u201c"),
+        h("div",{style:{fontSize:"12px",lineHeight:"1.7",marginBottom:"10px",color:"#3a2a14"}},
+          L==="cs"
+            ?"Máš pec, dluhy a hvozd kolem dokola. Každá sezóna má dvě fáze:"
+            :"You have a furnace, debts, and forest all around. Each season has two phases:"),
+        h("div",{style:{fontSize:"11px",lineHeight:"1.6",background:"rgba(0,0,0,.04)",
+          borderRadius:"4px",padding:"8px 10px",marginBottom:"8px"}},
+          h("div",{style:{marginBottom:"4px"}},
+            L==="cs"?"🌿 Příprava (Listopad–Březen): kácej dřevo, vypal potaš, vyrob pánve."
+                    :"🌿 Prep (Nov–Mar): log wood, burn potash, make crucibles."),
+          h("div",null,
+            L==="cs"?"🔥 Kampaň (Duben–Říjen): pec hoří, taví, prodávej na trhu."
+                    :"🔥 Campaign (Apr–Oct): furnace burns, smelt, sell at market.")),
+        h("div",{style:{fontSize:"11px",lineHeight:"1.6",marginBottom:"12px",color:"#5a3a1a"}},
+          L==="cs"
+            ?"Přiděluj dřevo na záložce Přehled (palivo / potaš / stavba). V kampani nastav Palivo na 100 % — bez dřeva pec nevyhřeješ."
+            :"Allocate wood in Overview tab (fuel / potash / build). In campaign set Fuel to 100% — without wood the furnace won't heat."),
+        h("button",{class:"btn btn-p",style:{width:"100%"},
+          onClick:()=>{G.firstVisit=false;render();}},
+          "OK — Vstoupit do hutě")));
+    app.append(wModal);
   }
 
   // Help modal
