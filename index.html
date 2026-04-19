@@ -189,7 +189,7 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 // ════════════════════════════════════════════════════════════
 
 const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=4, FUEL_BASE=4, WOOD_PER_POTASH=10;
-const INIT_FOREST=30, FOREST_REGEN_BASE=2;
+const INIT_FOREST=40, FOREST_REGEN_BASE=2;
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
 
@@ -317,8 +317,8 @@ const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🪨"},clay:{b:2,e:"🧱"}
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
   const cur=G.forest;
-  const max=60;
-  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (60 parcel)":"Forest at maximum (60 parcels)"}`);render();return;}
+  const max=120; // max 120 parcel celkem
+  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (120 parcel)":"Forest at maximum (120 parcels)"}`);render();return;}
   const buy=Math.min(n,max-cur);
   const price=buy*8; // 8g/parcela
   if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek grošů":"Not enough groats"}`);render();return;}
@@ -1076,7 +1076,7 @@ function processRound(){
       fT=Math.round(fT*.25+tgt*.75); fA=true;
       // Zaběhávání pece — každá kampaňová várka trochu pomáhá
       furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+2);
-      log.push(`🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
+      log.push(`🔥 ${L==="cs"?"Palivo":"Fuel"}: -${fuelUsed}🪵 (${r.wood}🪵 ${L==="cs"?"zbývá":"left"}) → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
     }else{
       r.wood=Math.max(0,r.wood-fuelUsed);
       fT=Math.max(0,fT-25);
@@ -1362,12 +1362,25 @@ function processRound(){
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
-  // Toast — zobraz klíčové info z tohoto kola
+  // Toast — klíčové info z kola, přehledně
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
+  const newWg=wg.length-p.waldglas.length, newCr=cr.length-p.crystal.length;
+  const woodUsed=p.res.wood-r.wood;
   const toastLines=[
-    ...log.filter(l=>l.includes("→")&&(l.includes("waldglas")||l.includes("křišťál")||l.includes("crystal"))),
-    ...log.filter(l=>l.includes("💔")||l.includes("📜")||l.includes("❄️")||l.includes("⚠️")),
-    `${L==="cs"?"Groše":"Groats"}: ${grose}g · ${L==="cs"?"morálka":"morale"}: ${mor}`
+    // Produkce — souhrn
+    newWg>0?`🔥 ${newWg}× ${L==="cs"?"lesní sklo":"waldglas"} uvařeno`:null,
+    newCr>0?`✨ ${newCr}× ${L==="cs"?"křišťál":"crystal"} uvařen`:null,
+    // Foukané — jen pokud přibyly
+    ...BLOWN_TYPES.filter(k=>(G[k]||[]).length>(p[k]||[]).length).map(k=>`${BLOWN_ITEMS[k].icon} ${(G[k]||[]).length-(p[k]||[]).length}× ${L==="cs"?BLOWN_ITEMS[k].cs:BLOWN_ITEMS[k].en}`),
+    // Pec
+    isC&&fA?`🔥 ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}% · 🪵-${woodUsed} (${r.wood} zbývá)`:null,
+    // Varování
+    forest<10?`⚠️ 🌲 ${forest}/${INIT_FOREST} — ${L==="cs"?"les téměř vyčerpán":"forest nearly gone"}`:null,
+    r.food<3?`🍞 ${L==="cs"?"Jídlo dochází":"Food low"}: ${r.food}`:null,
+    // Události
+    ...log.filter(l=>l.includes("💔")||l.includes("💀")||l.includes("⭐")||l.includes("👋")).map(l=>l.replace(/__\w+__/,"")),
+    // Ekonomika
+    `💰 ${grose}g${debt>0?" · 📜"+debt+"g":""} · 😊${mor}`
   ].filter(Boolean);
   showToast(toastTitle, toastLines);
   autoSave();
@@ -3356,10 +3369,10 @@ function render(){
         L==="cs"?"Koupit":"Buy")));
     // Parcely
     const parcelPrice=8;
-    const canParcel=p.grose>=parcelPrice&&p.forest<60;
+    const canParcel=p.grose>=parcelPrice&&p.forest<120;
     extraSec.append(
       h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/60 ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"}`),
+        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/120 ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"} · ${L==="cs"?"max 120":"max 120"}`),
       h("div",{style:{display:"flex",gap:"4px"}},
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(1)},"+ 1"),
@@ -3367,7 +3380,9 @@ function render(){
           onClick:()=>buyParcely(5)},"+ 5"),
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(10)},"+ 10"),
-        p.forest>=60?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
+        h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
+          onClick:()=>buyParcely(20)},"+ 20"),
+        p.forest>=120?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
     content.append(extraSec);
 
     const bSec=h("div",{class:"sec"});
@@ -3484,9 +3499,9 @@ function render(){
           const text=entry.replace("__EVT__","");
           box.append(h("div",{style:{fontSize:"11px",color:"#a03020",paddingLeft:"4px",lineHeight:"1.5",fontWeight:"600"}},text));
         }else if(entry.trim()){
-          // Legacy záznamy z v4.0
+          // Legacy záznamy — serif font pro správné emoji
           box.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",paddingLeft:"4px",
-            fontFamily:"'Courier New',monospace",lineHeight:"1.5"}},entry));
+            lineHeight:"1.5"}},entry));
         }
       });
     }
