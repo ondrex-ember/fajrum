@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SEO -->
+<title>Sklářská Huť — Středověká sklářská strategie | fajrum.cz</title>
+<meta name="description" content="Sklářská Huť je prohlížečová historická hra zasazená do Novoborska roku 1680. Buduj sklárnu od těžby dřeva a písku až po prodej luxusního skla. Zdarma, bez instalace.">
+<meta name="keywords" content="sklářská huť, historická hra, sklářství, středověká strategie, Novoborsko, Arnsdorf, resource management, browser game, česká hra">
+<meta name="author" content="fajrum.cz">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fajrum.cz/about.html">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fajrum.cz/about.html">
+<meta property="og:title" content="Sklářská Huť — Středověká sklářská strategie">
+<meta property="og:description" content="Buduj sklárnu v Arnsdorfu roku 1680. Od těžby dřeva po luxusní benátské sklo. Historicky autentická browser hra zdarma.">
+<meta property="og:image" content="https://fajrum.cz/intro.jpg">
+<meta property="og:locale" content="cs_CZ">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:site_name" content="fajrum.cz">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sklářská Huť — Středověká sklářská strategie">
+<meta name="twitter:description" content="Buduj sklárnu v Arnsdorfu roku 1680. Browser hra zdarma.">
+<meta name="twitter:image" content="https://fajrum.cz/intro.jpg">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a2510">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Sklářská Huť",
+  "description": "Historická resource management hra zasazená do Novoborska roku 1680. Buduj sklárnu od těžby dřeva a výroby potaše až po foukání a prodej luxusního skla.",
+  "url": "https://fajrum.cz/",
+  "genre": ["Strategy", "Simulation", "Historical"],
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "CZK"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "fajrum.cz",
+    "url": "https://fajrum.cz"
+  },
+  "inLanguage": ["cs", "en"],
+  "image": "https://fajrum.cz/intro.jpg"
+}
+</script>
+
+<style>
+:root {
+  --bg: #f4e4c1;
+  --bg2: #e8d5a3;
+  --ink: #3a2a14;
+  --warm: #8b5e34;
+  --gold: #c9952b;
+  --dark: #2a1608;
+  --light: #f0deb8;
+  --ok: #4a7a3a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--dark);
+  color: var(--ink);
+  font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.site-header {
+  background: linear-gradient(135deg, #5a3a1a, #3a2510);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--light);
+}
+
+.header-logo svg { width: 42px; height: 42px; flex-shrink: 0; }
+
+.header-logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+}
+
+.header-logo-text small {
+  font-size: 9px;
+  opacity: 0.6;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn {
+  padding: 7px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--warm);
+  background: linear-gradient(180deg, var(--bg), #dcc690);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  transition: filter .15s;
+}
+
+.btn:hover { filter: brightness(1.08); }
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--warm), #6b4520);
+  color: var(--light);
+  border-color: #4a3015;
+}
+
+.lang-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.3);
+  color: var(--light);
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(180deg, var(--dark) 0%, #1a0e06 100%);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hero-image-wrap {
+  width: 100%;
+  max-width: 560px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-image-wrap img {
+  width: 100%;
+  display: block;
+  max-height: 480px;
+  object-fit: cover;
+  object-position: top;
+}
+
+.hero-image-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(transparent, #1a0e06);
+}
+
+.hero-text {
+  background: linear-gradient(180deg, #1a0e06, var(--dark));
+  width: 100%;
+  max-width: 560px;
+  padding: 24px 24px 32px;
+  text-align: center;
+}
+
+.hero-tagline {
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.hero-title {
+  font-size: 36px;
+  color: var(--light);
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  color: rgba(240,222,184,.65);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+.hero-quote {
+  font-size: 12px;
+  color: var(--gold);
+  font-style: italic;
+  letter-spacing: 0.3px;
+  margin-bottom: 28px;
+  opacity: .85;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  background: linear-gradient(180deg, var(--dark), #0a0604);
+  padding: 0 16px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section {
+  width: 100%;
+  max-width: 560px;
+  margin-top: 40px;
+}
+
+.section-label {
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(201,149,43,.25);
+}
+
+/* Karty vlastností */
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.feature-card {
+  background: linear-gradient(145deg, rgba(244,228,193,.08), rgba(232,213,163,.04));
+  border: 1px solid rgba(201,149,43,.2);
+  border-radius: 6px;
+  padding: 14px 12px;
+}
+
+.feature-icon { font-size: 22px; margin-bottom: 8px; }
+
+.feature-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--light);
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.feature-desc {
+  font-size: 10px;
+  color: rgba(240,222,184,.55);
+  line-height: 1.5;
+}
+
+/* Timeline výroby */
+.chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.chain-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(201,149,43,.1);
+}
+
+.chain-step:last-child { border-bottom: none; }
+
+.chain-icon {
+  font-size: 22px;
+  width: 36px;
+  flex-shrink: 0;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.chain-body {}
+
+.chain-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--light);
+  margin-bottom: 2px;
+}
+
+.chain-desc {
+  font-size: 11px;
+  color: rgba(240,222,184,.55);
+  line-height: 1.5;
+}
+
+/* Historický kontext */
+.history-block {
+  background: rgba(42,22,8,.5);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: rgba(240,222,184,.75);
+  font-style: italic;
+}
+
+/* Technické info */
+.tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tech-pill {
+  background: rgba(201,149,43,.1);
+  border: 1px solid rgba(201,149,43,.25);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--gold);
+}
+
+/* Footer */
+.site-footer {
+  background: #0a0604;
+  border-top: 1px solid rgba(201,149,43,.15);
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 10px;
+  color: rgba(240,222,184,.35);
+  letter-spacing: 0.5px;
+}
+
+.site-footer a {
+  color: var(--gold);
+  text-decoration: none;
+  opacity: .7;
+}
+
+@media (max-width: 400px) {
+  .features { grid-template-columns: 1fr; }
+  .hero-title { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <a href="index.html" class="header-logo" aria-label="Sklářská Huť — domů">
+    <svg viewBox="0 0 320 108" xmlns="http://www.w3.org/2000/svg">
+      <defs><clipPath id="crcA"><circle cx="54" cy="54" r="48"/></clipPath></defs>
+      <circle cx="54" cy="54" r="48" fill="#2a1608"/>
+      <g clip-path="url(#crcA)">
+        <g stroke="#c9952b" stroke-width="1.4" fill="none">
+          <line x1="20" y1="22" x2="36" y2="35"/><line x1="36" y1="35" x2="54" y2="24"/>
+          <line x1="54" y1="24" x2="72" y2="35"/><line x1="36" y1="35" x2="28" y2="52"/>
+          <line x1="28" y1="52" x2="14" y2="60"/><line x1="28" y1="52" x2="44" y2="62"/>
+          <line x1="44" y1="62" x2="58" y2="52"/><line x1="58" y1="52" x2="72" y2="60"/>
+          <line x1="58" y1="52" x2="72" y2="35"/><line x1="44" y1="62" x2="38" y2="76"/>
+          <line x1="38" y1="76" x2="54" y2="82"/><line x1="54" y1="82" x2="68" y2="74"/>
+          <line x1="68" y1="74" x2="72" y2="60"/><line x1="14" y1="60" x2="16" y2="76"/>
+          <line x1="16" y1="76" x2="30" y2="84"/><line x1="30" y1="84" x2="38" y2="76"/>
+        </g>
+        <g fill="#f0deb8" stroke="#1a0e06" stroke-width="0.9">
+          <circle cx="20" cy="22" r="6"/><circle cx="54" cy="24" r="6"/>
+          <circle cx="28" cy="52" r="6"/><circle cx="14" cy="60" r="6"/>
+          <circle cx="44" cy="62" r="6"/><circle cx="72" cy="60" r="6"/>
+          <circle cx="38" cy="76" r="6"/><circle cx="54" cy="82" r="6"/>
+          <circle cx="68" cy="74" r="6"/><circle cx="16" cy="76" r="6"/>
+          <circle cx="30" cy="84" r="6"/>
+        </g>
+        <g fill="#c9952b">
+          <circle cx="36" cy="35" r="4"/><circle cx="72" cy="35" r="4"/>
+          <circle cx="58" cy="52" r="4"/><circle cx="54" cy="82" r="4"/>
+        </g>
+      </g>
+      <circle cx="54" cy="54" r="48" fill="none" stroke="#8b5e34" stroke-width="1.5"/>
+    </svg>
+    <div class="header-logo-text">
+      <h1 id="hdr-title">Sklářská Huť</h1>
+      <small id="hdr-sub">Arnsdorf · Novoborsko · 1680</small>
+    </div>
+  </a>
+  <div class="header-actions">
+    <button class="btn lang-btn" onclick="toggleLang()" id="lang-toggle">EN</button>
+    <a href="index.html" class="btn btn-primary" id="play-btn">▶ Hrát</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-image-wrap">
+    <img src="intro.jpg" alt="Historická rytina středověké sklářské hutě" width="560" height="480"
+         onerror="this.parentElement.style.display='none'">
+  </div>
+  <div class="hero-text">
+    <div class="hero-tagline" id="hero-tagline">Historická browser hra · zdarma</div>
+    <h2 class="hero-title" id="hero-title">Sklářská Huť</h2>
+    <p class="hero-subtitle" id="hero-subtitle">
+      Arnsdorf, Novoborsko, Anno Domini 1680.<br>
+      Otec ti zanechal recept, dluh a starou pec v lese.
+    </p>
+    <p class="hero-quote">„Ludite et, super omnia, nolite pugnare."</p>
+    <div class="hero-cta">
+      <a href="index.html" class="btn btn-primary" style="font-size:14px;padding:10px 24px;" id="cta-play">▶ Spustit hru</a>
+      <a href="#about" class="btn" id="cta-about">O hře ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN -->
+<main class="main" id="about">
+
+  <!-- O hře -->
+  <div class="section">
+    <div class="section-label" id="sec-about-label">O hře</div>
+    <div class="history-block" id="about-text">
+      Sklářská Huť je historická resource management hra zasazená do severočeského Novoborska
+      roku 1680. Hráč přebírá vedení sklárny v Arnsdorfu a musí zvládnout celý výrobní řetězec —
+      od těžby dřeva a výroby potaše přes tavení skloviny až po foukání a prodej hotových výrobků.
+      Hra klade důraz na historickou autentičnost: suroviny, receptury i provoz pece vycházejí
+      ze skutečných historických pramenů, včetně Kunckelovy <em>Ars Vitraria Experimentalis</em> (1743).
+    </div>
+  </div>
+
+  <!-- Klíčové vlastnosti -->
+  <div class="section">
+    <div class="section-label" id="sec-features-label">Klíčové vlastnosti</div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">🔥</div>
+        <div class="feature-title" id="f1-title">Živá pec</div>
+        <div class="feature-desc" id="f1-desc">Teplota vizuálně mění barvu. Zaběhnutost, šamot a kvalita pánve ovlivňují účinnost.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌲</div>
+        <div class="feature-title" id="f2-title">Konečný les</div>
+        <div class="feature-desc" id="f2-desc">~20 parcel lesa jako odpočítávající zásobník. Dřevo je sdílený zdroj pro palivo, potaš i stavbu.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <div class="feature-title" id="f3-title">Sezónní cyklus</div>
+        <div class="feature-desc" id="f3-desc">9 kol ročně: příprava (potaš, pánve, opravy) + kampaň (tavení, prodej na trzích).</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👷</div>
+        <div class="feature-title" id="f4-title">Dělníci</div>
+        <div class="feature-desc" id="f4-desc">12 postav s vlastnostmi, XP systémem a únavou. Pivo jako součást mzdy.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚗️</div>
+        <div class="feature-title" id="f5-title">Historická chemie</div>
+        <div class="feature-desc" id="f5-desc">Receptury dle Kunckela: waldglas, křišťál, kobaltová modř, rubínové sklo.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title" id="f6-title">PWA · offline</div>
+        <div class="feature-desc" id="f6-desc">Instalovatelná jako app. Jeden HTML soubor, žádné závislosti, funguje offline.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Výrobní řetězec -->
+  <div class="section">
+    <div class="section-label" id="sec-chain-label">Výrobní řetězec</div>
+    <div class="chain">
+      <div class="chain-step">
+        <div class="chain-icon">🪓</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c1-title">Těžba dřeva</div>
+          <div class="chain-desc" id="c1-desc">Zimní sáně zrychlují svoz. Les je konečný — každá pokácená parcela se nepromítne zpět.</div>
+        </div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-icon">🌿</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c2-title">Výpal potaše</div>
+          <div class="chain-desc" id="c2-desc">10 t dřeva = 100 kg popele = 3 kg potaše (K₂CO₃). Klíčové tavivo pro waldglas.</div>
+        </div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-icon">🏺</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c3-title">Výroba pánví</div>
+          <div class="chain-desc" id="c3-desc">Pánev zraje 6 měsíců. Zimní výpal v mrazu zvyšuje kvalitu jílu. Prasklé pánve dávají grog.</div>
+        </div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-icon">🔥</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c4-title">Tavení skloviny</div>
+          <div class="chain-desc" id="c4-desc">Kmen: 100 SiO₂ · 20 Na₂CO₃ · 10 K₂CO₃ · 15 CaCO₃ · 1 čeřivo. Teplota 1200–1400 °C.</div>
+        </div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-icon">💨</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c5-title">Foukání</div>
+          <div class="chain-desc" id="c5-desc">Foukači, brusiči, rytci — každá role nastupuje v jiném měsíci sezóny.</div>
+        </div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-icon">💰</div>
+        <div class="chain-body">
+          <div class="chain-title" id="c6-title">Prodej</div>
+          <div class="chain-desc" id="c6-desc">Trhy se otevírají sezónně. Speciální kupci na Vánoce, Tři krále a Velikonoce.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historický kontext -->
+  <div class="section">
+    <div class="section-label" id="sec-hist-label">Historický kontext</div>
+    <div class="history-block" id="hist-text">
+      Novoborsko (Haida, Arnsdorf, Blottendorf) bylo od 16. století jedním z center evropské
+      sklářské výroby. Sklárny fungovaly na hutním privilegiu — šlechtou udělené právo vařit pivo
+      výhradně pro hutní dělníky. Mzdy byly vypláceny naturálně: chléb, pivo, dřevo.
+      Tavení začínalo tradičně na sv. Jiří (24. dubna) a končilo na sv. Havla (16. října).
+      Hlavním pramenem hry je Kunckelova <em>Ars Vitraria Experimentalis</em> a konzultace
+      s technologem skla.
+    </div>
+  </div>
+
+  <!-- Tech -->
+  <div class="section">
+    <div class="section-label" id="sec-tech-label">Technické info</div>
+    <div class="tech-list">
+      <span class="tech-pill">Vanilla JS</span>
+      <span class="tech-pill">Single HTML file</span>
+      <span class="tech-pill">Web Audio API</span>
+      <span class="tech-pill">PWA / offline</span>
+      <span class="tech-pill">localStorage</span>
+      <span class="tech-pill">Bez závislostí</span>
+      <span class="tech-pill">CZ / EN</span>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="section" style="text-align:center;margin-top:48px;">
+    <a href="index.html" class="btn btn-primary" style="font-size:15px;padding:12px 32px;" id="cta-bottom">▶ Spustit hru</a>
+    <p style="margin-top:12px;font-size:10px;color:rgba(240,222,184,.3);font-style:italic;">
+      <span id="cta-note">Zdarma · bez registrace · funguje offline</span>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div>© 2024 <a href="https://fajrum.cz">fajrum.cz</a> · Sklářská Huť · Arnsdorf 1680</div>
+  <div style="margin-top:6px;"><a href="index.html" id="footer-play">Hrát hru</a> · <a href="about.html">O hře</a></div>
+</footer>
+
+<script>
+const T = {
+  cs: {
+    'hdr-title': 'Sklářská Huť',
+    'hdr-sub': 'Arnsdorf · Novoborsko · 1680',
+    'play-btn': '▶ Hrát',
+    'hero-tagline': 'Historická browser hra · zdarma',
+    'hero-title': 'Sklářská Huť',
+    'hero-subtitle': 'Arnsdorf, Novoborsko, Anno Domini 1680.<br>Otec ti zanechal recept, dluh a starou pec v lese.',
+    'cta-play': '▶ Spustit hru',
+    'cta-about': 'O hře ↓',
+    'sec-about-label': 'O hře',
+    'about-text': 'Sklářská Huť je historická resource management hra zasazená do severočeského Novoborska roku 1680. Hráč přebírá vedení sklárny v Arnsdorfu a musí zvládnout celý výrobní řetězec — od těžby dřeva a výroby potaše přes tavení skloviny až po foukání a prodej hotových výrobků. Hra klade důraz na historickou autentičnost: suroviny, receptury i provoz pece vycházejí ze skutečných historických pramenů, včetně Kunckelovy <em>Ars Vitraria Experimentalis</em> (1743).',
+    'sec-features-label': 'Klíčové vlastnosti',
+    'f1-title': 'Živá pec', 'f1-desc': 'Teplota vizuálně mění barvu. Zaběhnutost, šamot a kvalita pánve ovlivňují účinnost.',
+    'f2-title': 'Konečný les', 'f2-desc': '~20 parcel lesa jako odpočítávající zásobník. Dřevo je sdílený zdroj pro palivo, potaš i stavbu.',
+    'f3-title': 'Sezónní cyklus', 'f3-desc': '9 kol ročně: příprava (potaš, pánve, opravy) + kampaň (tavení, prodej na trzích).',
+    'f4-title': 'Dělníci', 'f4-desc': '12 postav s vlastnostmi, XP systémem a únavou. Pivo jako součást mzdy.',
+    'f5-title': 'Historická chemie', 'f5-desc': 'Receptury dle Kunckela: waldglas, křišťál, kobaltová modř, rubínové sklo.',
+    'f6-title': 'PWA · offline', 'f6-desc': 'Instalovatelná jako app. Jeden HTML soubor, žádné závislosti, funguje offline.',
+    'sec-chain-label': 'Výrobní řetězec',
+    'c1-title': 'Těžba dřeva', 'c1-desc': 'Zimní sáně zrychlují svoz. Les je konečný — každá pokácená parcela se nepromítne zpět.',
+    'c2-title': 'Výpal potaše', 'c2-desc': '10 t dřeva = 100 kg popele = 3 kg potaše (K₂CO₃). Klíčové tavivo pro waldglas.',
+    'c3-title': 'Výroba pánví', 'c3-desc': 'Pánev zraje 6 měsíců. Zimní výpal v mrazu zvyšuje kvalitu jílu. Prasklé pánve dávají grog.',
+    'c4-title': 'Tavení skloviny', 'c4-desc': 'Kmen: 100 SiO₂ · 20 Na₂CO₃ · 10 K₂CO₃ · 15 CaCO₃ · 1 čeřivo. Teplota 1200–1400 °C.',
+    'c5-title': 'Foukání', 'c5-desc': 'Foukači, brusiči, rytci — každá role nastupuje v jiném měsíci sezóny.',
+    'c6-title': 'Prodej', 'c6-desc': 'Trhy se otevírají sezónně. Speciální kupci na Vánoce, Tři krále a Velikonoce.',
+    'sec-hist-label': 'Historický kontext',
+    'hist-text': 'Novoborsko (Haida, Arnsdorf, Blottendorf) bylo od 16. století jedním z center evropské sklářské výroby. Sklárny fungovaly na hutním privilegiu — šlechtou udělené právo vařit pivo výhradně pro hutní dělníky. Mzdy byly vypláceny naturálně: chléb, pivo, dřevo. Tavení začínalo tradičně na sv. Jiří (24. dubna) a končilo na sv. Havla (16. října). Hlavním pramenem hry je Kunckelova <em>Ars Vitraria Experimentalis</em> a konzultace s technologem skla.',
+    'sec-tech-label': 'Technické info',
+    'cta-bottom': '▶ Spustit hru',
+    'cta-note': 'Zdarma · bez registrace · funguje offline',
+    'footer-play': 'Hrát hru',
+    'lang-toggle': 'EN',
+    'play-btn-lbl': '▶ Hrát',
+  },
+  en: {
+    'hdr-title': 'Glass Foundry',
+    'hdr-sub': 'Arnsdorf · Novoborsko · 1680',
+    'play-btn': '▶ Play',
+    'hero-tagline': 'Historical browser game · free',
+    'hero-title': 'Glass Foundry',
+    'hero-subtitle': 'Arnsdorf, Novoborsko, Anno Domini 1680.<br>Your father left you a recipe, a debt, and an old furnace in the forest.',
+    'cta-play': '▶ Play now',
+    'cta-about': 'About ↓',
+    'sec-about-label': 'About',
+    'about-text': 'Glass Foundry is a historical resource management game set in the Novoborsko region of Bohemia in 1680. The player takes over a glassworks in Arnsdorf and must manage the entire production chain — from logging and potash burning through glass smelting to blowing and selling finished goods. The game emphasises historical authenticity: raw materials, recipes and furnace operation are based on real historical sources, including Kunckel\'s <em>Ars Vitraria Experimentalis</em> (1743).',
+    'sec-features-label': 'Key features',
+    'f1-title': 'Living furnace', 'f1-desc': 'Temperature changes colour visually. Run-in, shamot wear and crucible quality affect efficiency.',
+    'f2-title': 'Finite forest', 'f2-desc': '~20 forest parcels as a countdown pool. Wood is a shared resource for fuel, potash and construction.',
+    'f3-title': 'Seasonal cycle', 'f3-desc': '9 rounds per year: prep (potash, crucibles, repairs) + campaign (smelting, selling at markets).',
+    'f4-title': 'Workers', 'f4-desc': '12 characters with traits, XP system and fatigue. Beer as part of wages.',
+    'f5-title': 'Historical chemistry', 'f5-desc': 'Recipes after Kunckel: waldglas, crystal, cobalt blue, ruby glass.',
+    'f6-title': 'PWA · offline', 'f6-desc': 'Installable as an app. Single HTML file, no dependencies, works offline.',
+    'sec-chain-label': 'Production chain',
+    'c1-title': 'Logging', 'c1-desc': 'Winter sleds speed up hauling. Forest is finite — felled parcels do not regrow within a run.',
+    'c2-title': 'Potash burning', 'c2-desc': '10 t wood = 100 kg ash = 3 kg potash (K₂CO₃). Key flux for waldglas.',
+    'c3-title': 'Crucible making', 'c3-desc': 'Crucible matures 6 months. Winter frost improves clay quality. Cracked crucibles yield grog.',
+    'c4-title': 'Glass smelting', 'c4-desc': 'Batch: 100 SiO₂ · 20 Na₂CO₃ · 10 K₂CO₃ · 15 CaCO₃ · 1 fining agent. 1200–1400 °C.',
+    'c5-title': 'Glass blowing', 'c5-desc': 'Blowers, grinders, engravers — each role joins at a different month of the season.',
+    'c6-title': 'Selling', 'c6-desc': 'Markets open seasonally. Special merchants at Christmas, Epiphany and Easter.',
+    'sec-hist-label': 'Historical context',
+    'hist-text': 'Novoborsko (Haida, Arnsdorf, Blottendorf) was one of the centres of European glass production from the 16th century. Glassworks operated on a foundry privilege — a nobility-granted right to brew beer exclusively for foundry workers. Wages were paid in kind: bread, beer, firewood. Smelting traditionally began on St George\'s Day (24 April) and ended on St Gall\'s Day (16 October). The main source for the game is Kunckel\'s <em>Ars Vitraria Experimentalis</em> and consultation with a glass technologist.',
+    'sec-tech-label': 'Technical info',
+    'cta-bottom': '▶ Play now',
+    'cta-note': 'Free · no registration · works offline',
+    'footer-play': 'Play the game',
+    'lang-toggle': 'CZ',
+    'play-btn-lbl': '▶ Play',
+  }
+};
+
+let lang = navigator.language.startsWith('cs') ? 'cs' : 'en';
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  const d = T[lang];
+  for (const [id, val] of Object.entries(d)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (id === 'hero-subtitle' || id === 'about-text' || id === 'hist-text') {
+      el.innerHTML = val;
+    } else {
+      el.textContent = val;
+    }
+  }
+  // Update meta description for crawlers (soft)
+  document.querySelector('meta[name="description"]').content =
+    lang === 'cs'
+      ? 'Sklářská Huť je prohlížečová historická hra zasazená do Novoborska roku 1680. Buduj sklárnu od těžby dřeva a písku až po prodej luxusního skla. Zdarma, bez instalace.'
+      : 'Glass Foundry is a historical browser game set in Bohemia in 1680. Build a glassworks from logging and sand to selling luxury glass. Free, no install required.';
+}
+
+function toggleLang() {
+  lang = lang === 'cs' ? 'en' : 'cs';
+  localStorage.setItem('sh_lang', lang);
+  applyLang();
+}
+
+// Init
+const saved = localStorage.getItem('sh_lang');
+if (saved) lang = saved;
+applyLang();
+</script>
+</body>
+</html>

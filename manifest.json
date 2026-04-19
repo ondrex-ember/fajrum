@@ -1,0 +1,52 @@
+{
+  "name": "Sklářská Huť",
+  "short_name": "Sklářská Huť",
+  "description": "Historická resource management hra. Arnsdorf, Novoborsko, 1680.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#2a1608",
+  "theme_color": "#3a2510",
+  "lang": "cs",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "intro.jpg",
+      "sizes": "702x1175",
+      "type": "image/jpeg",
+      "label": "Historická rytina sklářské hutě"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hrát",
+      "short_name": "Hrát",
+      "description": "Spustit hru",
+      "url": "/",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "O hře",
+      "short_name": "O hře",
+      "description": "Informace o hře",
+      "url": "/about.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}
