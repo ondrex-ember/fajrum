@@ -317,14 +317,15 @@ const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🪨"},clay:{b:2,e:"🧱"}
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
   const cur=G.forest;
-  const max=120; // max 120 parcel celkem
-  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (120 parcel)":"Forest at maximum (120 parcels)"}`);render();return;}
-  const buy=Math.min(n,max-cur);
-  const price=buy*8; // 8g/parcela
+  const max=120;
+  if((G.maxForest||INIT_FOREST)>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (120 parcel)":"Forest at maximum (120 parcels)"}`);render();return;}
+  const buy=Math.min(n,max-(G.maxForest||INIT_FOREST));
+  const price=buy*8;
   if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek grošů":"Not enough groats"}`);render();return;}
   G.grose-=price;
-  G.forest+=buy;
-  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${price}g)`);
+  G.forest+=buy;        // aktuálně dostupné parcely
+  G.maxForest=(G.maxForest||INIT_FOREST)+buy; // celková kapacita hvozdu
+  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${price}g) · ${L==="cs"?"Hvozd":"Forest"}: ${G.forest}/${G.maxForest}`);
   render();
 }
 
@@ -907,6 +908,7 @@ function initState(){
     season:1, round:0,
     grose:22, debt:50, morale:60, beer:1,
     forest:INIT_FOREST,
+    maxForest:INIT_FOREST, // roste nákupem parcel
     res:{wood:18,sand:6,limestone:3,potash:4,water:4,clay:2,shamot:2,food:5,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
@@ -987,7 +989,7 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*3;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🪵${winterNote} (${forest}/${INIT_FOREST})`);
+      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🪵${winterNote} (${forest}/${p.maxForest||INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
       log.push(`🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
@@ -1375,7 +1377,7 @@ function processRound(){
     // Pec
     isC&&fA?`🔥 ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}% · 🪵-${woodUsed} (${r.wood} zbývá)`:null,
     // Varování
-    forest<10?`⚠️ 🌲 ${forest}/${INIT_FOREST} — ${L==="cs"?"les téměř vyčerpán":"forest nearly gone"}`:null,
+    forest<10?`⚠️ 🌲 ${forest}/${p.maxForest||INIT_FOREST} — ${L==="cs"?"les téměř vyčerpán":"forest nearly gone"}`:null,
     r.food<3?`🍞 ${L==="cs"?"Jídlo dochází":"Food low"}: ${r.food}`:null,
     // Události
     ...log.filter(l=>l.includes("💔")||l.includes("💀")||l.includes("⭐")||l.includes("👋")).map(l=>l.replace(/__\w+__/,"")),
@@ -1400,7 +1402,7 @@ function startInterseason(){
   const reforestBonus=Math.min(p.reforestWorkers||0, 4)*2; // max +8 za sezónu výsadby
   const naturalRegen=p.forest>0?FOREST_REGEN_BASE:1; // vyčerpaný les roste pomaleji
   const totalRegen=naturalRegen+reforestBonus;
-  const newForest=Math.min(INIT_FOREST, p.forest+totalRegen);
+  const newForest=Math.min(p.maxForest||INIT_FOREST, p.forest+totalRegen);
   // Pec chladne, drží 65% zaběhnutosti
   const newRunIn=Math.round(p.furnace.runIn*0.65);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
@@ -2186,9 +2188,9 @@ function render(){
     // Les + sklad skla přenesený
     body.append(h("div",{class:"sec-title",style:{marginTop:"10px"}},L==="cs"?"Hvozd & Sklad":"Forest & Storage"));
     const regenLine=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",fontSize:"12px"}});
-    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${INIT_FOREST}`));
+    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${p.maxForest||INIT_FOREST}`));
     if(is.reforestBonus>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`(🌱 výsadba +${is.reforestBonus})`));
-    if(p.forest<INIT_FOREST)regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${INIT_FOREST-p.forest} parcel`:`${INIT_FOREST-p.forest} missing`));
+    if(p.forest<INIT_FOREST)regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${(p.maxForest||INIT_FOREST)-p.forest} parcel`:`${(p.maxForest||INIT_FOREST)-p.forest} missing`));
     body.append(regenLine);
     if(p.forest===0){
       body.append(h("div",{style:{fontSize:"11px",color:"#a03020",padding:"6px",
@@ -2325,7 +2327,7 @@ function render(){
         p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+p.debt+"g"):null));
     body.append(grid,
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · zaběhnutost ${p.furnace.runIn}%`),
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.maxForest||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"10px"}},`💸 ${sd.wages}g mzdy + ${sd.bCost}g pivo${sd.dPay?" + "+sd.dPay+"g dluh":""}`));
     const btn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"14px"},
@@ -2418,7 +2420,7 @@ function render(){
   const wMult=WINTER_LOG_MULT[p.round]||1;
   const resBar=h("div",{class:"res-bar"});
   resBar.append(
-    pillTip("🌲",p.forest+"/"+INIT_FOREST,p.forest<=FOREST_WARN?"warn":"",
+    pillTip("🌲",p.forest+"/"+(p.maxForest||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",
       L==="cs"?`Hvozd: ${p.forest} parcel${wMult>1?" · ❄️ sáně +"+Math.round((wMult-1)*100)+"%":""}`:
                `Forest: ${p.forest} parcels${wMult>1?" · ❄️ sleds +"+Math.round((wMult-1)*100)+"%":""}`),
     pillTip("🪵",p.res.wood,p.res.wood<5?"warn":"",
@@ -2494,8 +2496,8 @@ function render(){
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🔥 eff ${fEff}%`),
       bar(fEff,100,fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020")),
     h("div",{style:{flex:1}},
-      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${INIT_FOREST}`),
-      bar(p.forest,INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${p.maxForest||INIT_FOREST}`),
+      bar(p.forest,p.maxForest||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
   if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
   // Desktop: season vlevo, furnHud+bars vpravo
   if(isDesktop){
