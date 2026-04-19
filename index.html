@@ -226,7 +226,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 // ════════════════════════════════════════════════════════════
 
 const ROUNDS=12, PREP=5, PANEV_AGE=3, PANEV_DUR=4, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
-const INIT_FOREST=30, FOREST_REGEN_BASE=2;
+const INIT_FOREST=50, FOREST_REGEN_BASE=2;
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
 
@@ -354,8 +354,8 @@ const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🪨"},clay:{b:2,e:"🧱"}
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
   const cur=G.forest;
-  const max=60;
-  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (60 parcel)":"Forest at maximum (60 parcels)"}`);render();return;}
+  const max=200;
+  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (200 parcel)":"Forest at maximum (200 parcels)"}`);render();return;}
   const buy=Math.min(n,max-cur);
   const price=buy*8; // 8g/parcela
   if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek grošů":"Not enough groats"}`);render();return;}
@@ -1056,7 +1056,7 @@ function processRound(){
     }else if(w.task==="formar"){
       // Formař vyrábí dřevěné formy — zrají 1 kolo, aktivní od března (kolo 4)
       if(round<4){
-        log.push(`🪚 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
+        log.push(`🌳 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
       }else{
         const FORMA_WOOD=2, FORMA_WATER=1, FORMA_FOOD=1;
         if(r.wood>=FORMA_WOOD&&r.water>=FORMA_WATER&&r.food>=FORMA_FOOD){
@@ -1065,13 +1065,13 @@ function processRound(){
           const kovakBonus=w.traits?.includes("kovak")?1:0;
           const formQ=clamp(formarLv+kovakBonus+Math.floor(Math.random()*2),1,5);
           p.formyAging=[...(p.formyAging||[]),{cr:round,rdy:round+FORMA_AGE,q:formQ}];
-          log.push(`🪚 ${w.name}: ${L==="cs"?"forma dána sušit, hotová za":"mould drying, ready in"} ${FORMA_AGE} ${L==="cs"?"kolo":"round"} (${stars(formQ)})`);
+          log.push(`🌳 ${w.name}: ${L==="cs"?"forma dána sušit, hotová za":"mould drying, ready in"} ${FORMA_AGE} ${L==="cs"?"kolo":"round"} (${stars(formQ)})`);
         }else{
           const missing=[];
           if(r.wood<2)missing.push("2🪵");
           if(r.water<1)missing.push("1💧");
           if(r.food<1)missing.push("1🍞");
-          log.push(`🪚 ${w.name}: ${L==="cs"?"chybí":"missing"} ${missing.join(", ")}`);
+          log.push(`🌳 ${w.name}: ${L==="cs"?"chybí":"missing"} ${missing.join(", ")}`);
         }
       }
     }else if(w.task==="water"){
@@ -1088,7 +1088,7 @@ function processRound(){
   const rdyFormy=formyAging.filter(x=>round>=x.rdy);
   if(rdyFormy.length){
     r.formy=(r.formy||0)+rdyFormy.length;
-    log.push(`🪚 ${rdyFormy.length}× ${L==="cs"?"forma hotová":"mould ready"}!`);
+    log.push(`🌳 ${rdyFormy.length}× ${L==="cs"?"forma hotová":"mould ready"}!`);
   }
   const formyAgingNew=formyAging.filter(x=>round<x.rdy);
   const rdyPanve=pA.filter(x=>round>=x.rdy);
@@ -2934,12 +2934,12 @@ function render(){
       `2🪵 + 1🧱 → 🪚 · ${L==="cs"?"Formař, zrají 1 kolo":"Mould-maker, ages 1 round"}`));
     wFormy.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},
       formyInHutte.length>0
-        ?`🪚 ${L==="cs"?"Formař":"Mould-maker"}: ${formyInHutte.map(w=>w.name).join(", ")} · ${L==="cs"?"Hotové formy":"Ready moulds"}: ${p.res.formy||0}×`
+        ?`🌳 ${L==="cs"?"Formař":"Mould-maker"}: ${formyInHutte.map(w=>w.name).join(", ")} · ${L==="cs"?"Hotové formy":"Ready moulds"}: ${p.res.formy||0}×`
         :`❌ ${L==="cs"?"Žádný Formař v huti":"No Mould-maker in foundry"}`));
     if((p.formyAging||[]).length>0){
       const fagDiv=h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px"}});
       (p.formyAging||[]).forEach(fa=>{
-        fagDiv.append(h("div",null,`🪚 ${L==="cs"?"zraje → hotovo v":"aging → ready in"} ${L==="cs"?MONTHS_CS[fa.rdy%12]:MONTHS_EN[fa.rdy%12]}`));
+        fagDiv.append(h("div",null,`🌳 ${L==="cs"?"zraje → hotovo v":"aging → ready in"} ${L==="cs"?MONTHS_CS[fa.rdy%12]:MONTHS_EN[fa.rdy%12]}`));
       });
       wFormy.append(fagDiv);
     }
