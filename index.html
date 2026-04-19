@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sklářská Huť · v4</title>
+<title>Sklářská Huť · v7.2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -189,10 +189,13 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 #app.desktop .production-cols{display:grid;grid-template-columns:1fr 1fr;gap:0;}
 #app.desktop .production-cols>.sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
 #app.desktop .production-cols>.sec:last-child{border-right:none;}
-/* Pec tab: pec 3/4 + účinnost 1/4 */
-#app.desktop .pec-cols{display:grid;grid-template-columns:3fr 1fr;gap:0;}
-#app.desktop .pec-cols>.sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
-#app.desktop .pec-cols>.sec:last-child{border-right:none;}
+/* Pec tab: 3/1 split (dash / účinnost) */
+#app.desktop .furnace-cols{display:grid;grid-template-columns:3fr 1fr;gap:0;border-bottom:1px solid rgba(42,26,10,.13);}
+#app.desktop .furnace-cols>.sec{border-bottom:none;border-right:1px solid rgba(42,26,10,.1);}
+#app.desktop .furnace-cols>.sec:last-child{border-right:none;}
+/* Production tab: CSS columns na desktopu */
+#app.desktop .content.prod-desktop{column-count:2;column-gap:0;column-rule:1px solid rgba(42,26,10,.1);}
+#app.desktop .content.prod-desktop>.sec{break-inside:avoid;}
 </style>
 </head>
 <body>
@@ -2016,6 +2019,10 @@ function render(){
   const _scrollTop=_prevContent?_prevContent.scrollTop:0;
   app.innerHTML="";
 
+  // Desktop detekce — musí být před render sekcemi
+  const isDesktop=window.innerWidth>=768;
+  if(isDesktop){app.classList.add("desktop");}else{app.classList.remove("desktop");}
+
   // Intro = scrollovatelný, hra = fixed height
   if(p.phase==="intro"){
     app.style.maxHeight="none";
@@ -2548,7 +2555,7 @@ function render(){
         :(L==="cs"?`⚠️ Les téměř vyčerpán — ${p.forest} parcel.`:`⚠️ Forest nearly gone — ${p.forest} parcels.`)));
   }
 
-  // Pec HUD — prominentní řádek s teplotou
+  // Pec HUD + bars: na mobilu appendujeme na app ihned, na desktopu je vložíme do overview pravého sloupce
   const furnHud=h("div",{class:"furnace-hud"});
   const tempColor=zone(p.fTemp).c;
   furnHud.append(
@@ -2568,7 +2575,6 @@ function render(){
       h("div",{style:{fontSize:"10px",color:"#8b5e34"}},L==="cs"?ft.name:ft.nameEn),
       h("div",{style:{fontSize:"10px",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"}},
         `šamot ${p.furnace.shamotWear}%`)));
-  app.append(furnHud);
 
   // Bars: morálka + les + účinnost pece
   const bars=h("div",{style:{padding:"4px 14px",borderBottom:"1px solid rgba(42,26,10,.13)",display:"flex",gap:"6px",alignItems:"center"}});
@@ -2583,7 +2589,12 @@ function render(){
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${INIT_FOREST}`),
       bar(p.forest,INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
   if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
-  app.append(bars);
+
+  if(!isDesktop){
+    app.append(furnHud);
+    app.append(bars);
+  }
+  // Desktop: furnHud + bars půjdou do pravého sloupce overview
 
   // Tabs
   const tabBar=h("div",{class:"tabs"});
@@ -2607,8 +2618,10 @@ function render(){
 
   // ── TAB: PŘEHLED ──
   if(p.tab==="overview"){
-    content.append(h("div",{class:"sec"},
-      h("div",{class:"hint-box",style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34")}},hs[p.round]||"")));
+    const topCols=h("div",{class:isDesktop?"overview-top-cols":""});
+    // Levý sloupec: hint sezóny + dřevo/pec quickRow
+    const leftOverview=h("div",{class:"sec"});
+    leftOverview.append(h("div",{class:"hint-box",style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34")}},hs[p.round]||""));
 
     // ── RYCHLÝ PŘEHLED: Dřevo + Pec nahoře (collapsible, dvě poloviny) ──
     const quickRow=h("div",{class:"sec",style:{paddingBottom:"6px"}});
@@ -2653,7 +2666,33 @@ function render(){
       twoCol.append(leftCol,rightCol);
       quickRow.append(twoCol);
     }
-    content.append(quickRow);
+    leftOverview.append(quickRow);
+    topCols.append(leftOverview);
+    if(isDesktop){
+      // Pravý sloupec: furnHud + bars + Pivovar
+      const rightCol2=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"0"}});
+      // Pec info
+      furnHud.style.borderBottom="1px solid rgba(42,26,10,.08)";
+      furnHud.style.padding="6px 0 8px";
+      bars.style.borderBottom="1px solid rgba(42,26,10,.08)";
+      bars.style.padding="6px 0 8px";
+      rightCol2.append(furnHud, bars);
+      // Pivovar
+      rightCol2.append(h("div",{class:"sec-title",style:{marginTop:"8px"}},"🍺 "+(L==="cs"?"Pivovar":"Brewery")));
+      const bRowRight=h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap"}});
+      [L==="cs"?"Žádné":"None",L==="cs"?"1 džbán":"1 mug",L==="cs"?"2 džbány":"2 mugs",L==="cs"?"3+ džb.":"3+ mugs"].forEach((lb,i)=>{
+        bRowRight.append(h("button",{class:"btn btn-s"+(p.beer===i?" btn-active":""),style:{flex:"1 1 auto"},
+          onClick:()=>{G.beer=i;render();}},lb+" ",h("span",{style:{fontSize:"9px",color:BEER[i].m>=0?"#4a7a3a":"#a03020"}},(BEER[i].m>=0?"+":"")+BEER[i].m)));
+      });
+      const beerCost=BEER[p.beer].cost*Math.ceil(p.workers.length/3);
+      if(beerCost>0){
+        rightCol2.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
+          `💰 ${L==="cs"?"Náklad":"Cost"}: ${beerCost}g/${L==="cs"?"kolo":"round"} · ${L==="cs"?"nálada":"morale"} ${BEER[p.beer].m>=0?"+":""}${BEER[p.beer].m}`));
+      }
+      rightCol2.append(bRowRight);
+      topCols.append(rightCol2);
+    }
+    content.append(topCols);
 
     // Dělníci — collapsible
     const wSec=h("div",{class:"sec"});
@@ -2665,8 +2704,10 @@ function render(){
       h("div",{class:"sec-title",style:{margin:0}},(L==="cs"?"Dělníci":"Workers")+" ("+p.workers.length+")"),
       h("span",{style:{fontSize:"11px",color:"#8b5e34"}},wState?"▲":"▼"));
     wSec.append(wHdr);
-    if(wState) p.workers.forEach(w=>{
-      const card=h("div",{class:"worker-card"});
+    if(wState){
+      const wGrid=h("div",{class:isDesktop?"workers-grid":""});
+      p.workers.forEach(w=>{
+        const card=h("div",{class:"worker-card"});
       const fatPct=Math.round(w.fat*100);
       const fatColor=w.fat>.7?"#a03020":w.fat>.4?"#c9952b":"#4a7a3a";
       const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
@@ -2742,8 +2783,10 @@ function render(){
       colRight.append(barsAndTasks);
       row.append(colRight);
       card.append(row);
-      wSec.append(card);
-    }); // end if(wState)
+      wGrid.append(card);
+      }); // end workers.forEach
+      wSec.append(wGrid);
+    } // end wState
     content.append(wSec);
 
     // Pivo
@@ -2755,7 +2798,7 @@ function render(){
         onClick:()=>{G.beer=i;render();}},lb+" ",h("span",{style:{fontSize:"9px",color:BEER[i].m>=0?"#4a7a3a":"#a03020"}},(BEER[i].m>=0?"+":"")+BEER[i].m)));
     });
     bSec.append(bRow);
-    content.append(bSec);
+    if(!isDesktop) content.append(bSec); // na desktopu je pivovar v pravém sloupci nahoře
 
     // Specializované profese
     const specProfs=["formar","foukac","brusic","rytec"];
@@ -2839,9 +2882,7 @@ function render(){
       p.waldglas.forEach(q=>{inv.append(h("span",{class:"stars",style:{marginRight:"2px",fontSize:"13px"}},stars(q)));});
       w1.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.waldglas.length}×`),inv);
     }
-    content.append(w1);
-
-    // Pánve
+    // w1 w2 w3 wFormy jsou sestaveny do gridu níže
     const w2=h("div",{class:"sec"});
     w2.append(
       h("div",{class:"sec-title"},L==="cs"?"🏺 Výroba pánví":"🏺 Crucible Making"),
@@ -2860,9 +2901,6 @@ function render(){
       });
       w2.append(agDiv);
     }
-    content.append(w2);
-
-    // Křišťál
     const w3=h("div",{class:"sec"});
     w3.append(
       h("div",{class:"sec-title"},L==="cs"?"✨ Křišťál (Čiré sklo)":"✨ Crystal (Clear Glass)"),
@@ -2875,8 +2913,6 @@ function render(){
       p.crystal.forEach(q=>{inv.append(h("span",{class:"stars",style:{marginRight:"2px",fontSize:"13px",color:"#3a6a9a"}},stars(q)));});
       w3.append(h("div",{style:{fontSize:"10px",color:"#3a6a9a",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.crystal.length}×`),inv);
     }
-    content.append(w3);
-
     // ── FORMY ──
     const wFormy=h("div",{class:"sec"});
     const formyInHutte=p.workers.filter(w=>w.prof==="formar");
@@ -2895,9 +2931,20 @@ function render(){
       });
       wFormy.append(fagDiv);
     }
-    content.append(wFormy);
+    // Desktop: w1+w2 vlevo, w3+wFormy vpravo; wFouk pod jako full-width
+    if(isDesktop){
+      const prodGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",borderBottom:"1px solid rgba(42,26,10,.1)"}});
+      const prodLeft=h("div");
+      prodLeft.append(w1,w2);
+      const prodRight=h("div",{style:{borderLeft:"1px solid rgba(42,26,10,.1)"}});
+      prodRight.append(w3,wFormy);
+      prodGrid.append(prodLeft,prodRight);
+      content.append(prodGrid);
+    }else{
+      content.append(w1,w2,w3,wFormy);
+    }
 
-    // ── FOUKANÉ VÝROBKY ──
+    // ── FOUKANÉ VÝROBKY — vždy full-width pod gridem ──
     const wFouk=h("div",{class:"sec"});
     wFouk.append(h("div",{class:"sec-title"},"💨 "+(L==="cs"?"Foukané výrobky":"Blown Glassware")));
     const foukaci=p.workers.filter(w=>["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy"].includes(w.prof));
@@ -3171,9 +3218,8 @@ function render(){
     dash.append(h("div",{style:{marginTop:"8px",padding:"6px 8px",background:"rgba(255,255,255,.04)",
       borderRadius:"4px",fontSize:"11px",color:isC&&p.fActive&&p.fTemp>=65&&p.fTemp<=85?"#9fca6a":"#c9952b",
       lineHeight:"1.5"}},L==="cs"?phaseMsg.cs:phaseMsg.en));
-    content.append(h("div",{class:"sec"},dash));
-
-    // Vysvětlivky účinnosti
+    const dashSec=h("div",{class:"sec"});
+    dashSec.append(dash);
     const effSec=h("div",{class:"sec"});
     effSec.append(h("div",{class:"sec-title"},L==="cs"?"Jak roste účinnost":"How efficiency grows"));
     const effRows=[
@@ -3200,7 +3246,14 @@ function render(){
       L==="cs"
         ?"Max. účinnost dle pece: Primitivní ~58% · Zděná ~75% · Mistrovská ~90%.\nVyšší účinnost = více skla z várky."
         :"Max. efficiency by furnace: Primitive ~58% · Stone ~75% · Master ~90%.\nHigher efficiency = more glass per batch."));
-    content.append(effSec);
+    // Desktop: pec (3/4) + účinnost (1/4) vedle sebe; mobil: pod sebou
+    if(isDesktop){
+      const furnCols=h("div",{class:"furnace-cols"});
+      furnCols.append(dashSec,effSec);
+      content.append(furnCols);
+    }else{
+      content.append(dashSec,effSec);
+    }
 
     // Přísady — placeholder pro budoucí chemii
     const chemSec=h("div",{class:"sec"});
@@ -3776,7 +3829,6 @@ function render(){
       onClick:processRound},actionLabel));
 
   // Sestav layout — desktop: tabs vlevo + content vpravo, mobil: stack
-  const isDesktop=window.innerWidth>=768;
   if(isDesktop){
     app.classList.add("desktop");
     const contentShell=h("div",{class:"content-shell"});
