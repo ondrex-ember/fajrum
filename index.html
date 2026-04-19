@@ -347,7 +347,7 @@ const ZONES=[
   {max:55,l:"🟠",c:"#dd6600"},{max:70,l:"🟡",c:"#ddaa00"},{max:82,l:"🟡",c:"#eebb22"},
   {max:92,l:"⚪",c:"#ffdd88"},{max:100,l:"⚪",c:"#ffffcc"}];
 const BEER=[{m:-10,cost:0,acc:0},{m:5,cost:1,acc:0},{m:10,cost:2,acc:.1},{m:-8,cost:4,acc:.25}];
-const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🪨"},clay:{b:2,e:"🧱"},pureSand:{b:5,e:"✨"},
+const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🟩"},clay:{b:2,e:"🧱"},pureSand:{b:5,e:"✨"},
   refinedPotash:{b:4,e:"🌿"},charcoal:{b:3,e:"⚫"},wood:{b:WOOD_EMERGENCY_PRICE,e:"🌲"},water:{b:1,e:"💧"},
   food:{b:2,e:"🍞"}};
 
@@ -588,7 +588,7 @@ function genCandidates(season, count){
     quote_cs:npc.quote_cs, quote_en:npc.quote_en,
     loyalty:npc.loyalty, health:npc.health, mood:npc.mood,
     gender:npc.gender||"m",
-    xp:0, fat:0, task:"idle"
+    xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle"
   }));
 }
 
@@ -612,8 +612,9 @@ function fireWorker(workerId){
 
 const TASKS_PREP=["logging","quarry","potash","panev","formar","water","clay","field","reforest","idle"];
 const TASKS_CAMP=["logging","quarry","potash","formar","water","clay","field","reforest","idle"];
-const TASK_CS={logging:"Kácení",quarry:"Lůmek",potash:"Loužírna",panev:"Pánvař",formar:"Formař",water:"Voda",clay:"Jíl",field:"Políčko",reforest:"Výsadba",idle:"Odpočinek"};
-const TASK_EN={logging:"Logging",quarry:"Quarry",potash:"Potash",panev:"Crucible-maker",formar:"Mould-maker",water:"Water",clay:"Clay",field:"Field",reforest:"Reforest",idle:"Rest"};
+const WERKSTAT_PROFS=["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","brusic","rytec"];
+const TASK_CS={logging:"Kácení",quarry:"Lůmek",potash:"Loužírna",panev:"Pánvař",formar:"Formař",water:"Voda",clay:"Jíl",field:"Políčko",reforest:"Výsadba",idle:"Odpočinek",werkstat:"⚒️ Verštat"};
+const TASK_EN={logging:"Logging",quarry:"Quarry",potash:"Potash",panev:"Crucible-maker",formar:"Mould-maker",water:"Water",clay:"Clay",field:"Field",reforest:"Reforest",idle:"Rest",werkstat:"⚒️ Workshop"};
 const PROF_CS={tavic:"Tavič",drvorubc:"Dřevorubec",popelar:"Popelář",panvar:"Pánvař",hornik:"Horník",obchodnik:"Obchodník",formar:"Formař",
   foukat_lesni:"Foukač (lesní)",foukat_kristal:"Foukač (křišťál)",foukat_dekor:"Foukač (dekor)",foukat_formy:"Foukač (formy)",
   brusic_hrana:"Hranař",brusic_kulic:"Kulič",rytec:"Rytec"};
@@ -1025,7 +1026,7 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*3;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🪵${winterNote} (${forest}/${INIT_FOREST})`);
+      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
       log.push(`🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
@@ -1263,7 +1264,7 @@ function processRound(){
       traits:npc.traits, hireCost:npc.hireCost, wageMod:npc.wageMod,
       portrait:npc.portrait, quote_cs:npc.quote_cs, quote_en:npc.quote_en,
       loyalty:npc.loyalty, health:npc.health, mood:npc.mood,
-      gender:npc.gender||"m", xp:0, fat:0, task:"idle"
+      gender:npc.gender||"m", xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle"
     }));
   }
   // Kampaňové kolo 3 (Červen=kolo 7) → burel a crocusMartis zdarma
@@ -1346,22 +1347,27 @@ function processRound(){
   // Aktualizuj dělníky: únava, XP, level-up
   const hasUcitel=p.workers.some(w=>w.traits?.includes("ucitel")&&w.task!=="idle");
   const wk=p.workers.map(w=>{
+    const isWerkstat=w.task==="werkstat";
     const isIdle=w.task==="idle";
-    const newFat=isIdle?Math.max(0,w.fat-0.5):Math.min(1,w.fat+(w.traits?.includes("vytrvalec")?0.07:0.1));
+    // Foukač/brusič na Verštatu se unaví na ≥75% → automaticky přepnout na Odpočinek
+    const autoIdle=isWerkstat&&(w.fat||0)>=0.75;
+    const effectiveIdle=isIdle||isWerkstat; // werkstat = nulová únava
+    const newFat=effectiveIdle?Math.max(0,w.fat-0.5):Math.min(1,w.fat+(w.traits?.includes("vytrvalec")?0.07:0.1));
+    const newTask=autoIdle?"idle":w.task;
     // Zdraví — klesá při dlouhé únavě, roste při odpočinku a jídle
     const hasFood=r.food>0;
     let newHealth=w.health||100;
-    if(newFat>0.8&&!isIdle) newHealth=Math.max(0,newHealth-3); // přepracování
-    if(isIdle) newHealth=Math.min(100,newHealth+5); // odpočinek regeneruje
+    if(newFat>0.8&&!effectiveIdle) newHealth=Math.max(0,newHealth-3); // přepracování
+    if(effectiveIdle) newHealth=Math.min(100,newHealth+5); // odpočinek regeneruje
     if(hasFood&&newHealth<100) newHealth=Math.min(100,newHealth+1); // jídlo pomáhá
     // Loajalita — sdílí směr s morálkou hutě
     let newLoyalty=w.loyalty||75;
     const moraleDir=mor>60?1:mor>40?0:-1;
     newLoyalty=Math.max(0,Math.min(100,newLoyalty+moraleDir));
-    if(isIdle) newLoyalty=Math.min(100,newLoyalty+1); // odpočinek zlepšuje loajalitu
+    if(effectiveIdle) newLoyalty=Math.min(100,newLoyalty+1); // odpočinek zlepšuje loajalitu
     // Odchod při nízké loajalitě (ne Houževnatý)
     const willLeave=newLoyalty<25&&!w.traits?.includes("houzevatny")&&Math.random()<0.15;
-    // XP: za každé aktivní kolo +1 (učitel bonus)
+    // XP: za každé aktivní kolo +1 (učitel bonus); werkstat počítá jako aktivní
     const xpGain=isIdle?0:(hasUcitel&&!w.traits?.includes("ucitel")?1.5:1);
     const newXp=(w.xp||0)+xpGain;
     // Level-up?
@@ -1377,7 +1383,7 @@ function processRound(){
     }
     // Zdraví ovlivňuje výkon
     const healthPenalty=newHealth<50?0.15:newHealth<30?0.3:0;
-    return{...w,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,health:Math.round(newHealth),loyalty:Math.round(newLoyalty)};
+    return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,health:Math.round(newHealth),loyalty:Math.round(newLoyalty)};
   }).filter(Boolean);
 
   const nr=round+1;
@@ -2273,7 +2279,7 @@ function render(){
           class:"btn"+(canUpgradeStone?" btn-p":""),
           style:{width:"100%",marginBottom:"4px",opacity:canUpgradeStone?1:.5},
           onClick:()=>{if(canUpgradeStone)upgradeFurnace("stone");}},
-          `🔥 ${L==="cs"?"Zděná pec":"Stone furnace"} (${uc.wood}🪵 + ${uc.limestone}🪨 + ${uc.clay}🧱 + ${uc.grose}g)`));
+          `🔥 ${L==="cs"?"Zděná pec":"Stone furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
       }
       if(p.furnace.type==="stone"){
         const uc=UPGRADE_COST.master;
@@ -2281,7 +2287,7 @@ function render(){
           class:"btn"+(canUpgradeMaster?" btn-p":""),
           style:{width:"100%",marginBottom:"4px",opacity:canUpgradeMaster?1:.5},
           onClick:()=>{if(canUpgradeMaster)upgradeFurnace("master");}},
-          `🔥 ${L==="cs"?"Mistrovská pec":"Master furnace"} (${uc.wood}🪵 + ${uc.limestone}🪨 + ${uc.clay}🧱 + ${uc.grose}g)`));
+          `🔥 ${L==="cs"?"Mistrovská pec":"Master furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
       }
     }
 
@@ -2523,10 +2529,10 @@ function render(){
     pillTip("🌲",p.forest+"/"+INIT_FOREST,p.forest<=FOREST_WARN?"warn":"",
       L==="cs"?`Hvozd: ${p.forest} parcel${wMult>1?" · ❄️ sáně +"+Math.round((wMult-1)*100)+"%":""}`:
                `Forest: ${p.forest} parcels${wMult>1?" · ❄️ sleds +"+Math.round((wMult-1)*100)+"%":""}`),
-    pillTip("🪵",p.res.wood,p.res.wood<5?"warn":"",
+    pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",
       L==="cs"?`Dřevo: ${p.res.wood} · palivo/potaš/stavba`:`Wood: ${p.res.wood} · fuel/potash/build`),
     pillTip("🏖️",p.res.sand,"",L==="cs"?`Křemenný písek: ${p.res.sand}`:`Quartz sand: ${p.res.sand}`),
-    pillTip("🪨",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
+    pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
     pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",
       L==="cs"?`Potaš: ${p.res.potash} · z bukového popela`:`Potash: ${p.res.potash} · from beech ash`),
     pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
@@ -2537,7 +2543,7 @@ function render(){
     pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",
       L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`
               :`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing · qual. ${stars(p.panevQuality)}`),
-    pillTip("🪚",p.res.formy||0,"",
+    pillTip("🌳",p.res.formy||0,"",
       L==="cs"?`Formy: ${p.res.formy||0} · dřevěné formy pro foukání`:`Moulds: ${p.res.formy||0} · wooden moulds for blowing`),
     pillTip("😊",p.morale+"%",p.morale<40?"warn":"",
       L==="cs"?`Nálada hutě: ${p.morale}% · pivo: ${["žádné","1 džbán","2 džbány","3+ džbánů"][Math.min(p.beer,3)]}`
@@ -2780,7 +2786,24 @@ function render(){
       });
       // Tasky — flex wrap
       const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
+      const isWerkstatProf=WERKSTAT_PROFS.includes(w.prof);
+      if(isWerkstatProf){
+        // Měnící se tlačítko: Verštat (fat<0.75) nebo Odpočinek (fat≥0.75)
+        const fatigue=w.fat||0;
+        const canWerkstat=fatigue<0.75;
+        const werkBtn=h("button",{
+          class:"btn btn-s"+(!canWerkstat||w.task==="idle"?" btn-active":"")+(w.task==="werkstat"?" btn-active":""),
+          style:{fontSize:"9px",padding:"2px 5px",...(!canWerkstat?{opacity:.5,cursor:"not-allowed"}:{})},
+          onClick:()=>{
+            if(!canWerkstat)return;
+            const ww=G.workers.find(x=>x.id===w.id);
+            ww.task=ww.task==="werkstat"?"idle":"werkstat";
+            render();
+          }},canWerkstat?(w.task==="werkstat"?"⚒️ Verštat":"⚒️ Verštat"):"😴 Odpočinek");
+        tasksCol.append(werkBtn);
+      }
       tasks.forEach(t=>{
+        if(t==="idle"&&isWerkstatProf)return; // idle je součástí werkstat tlačítka
         tasksCol.append(h("button",{
           class:"btn btn-s"+(w.task===t?" btn-active":""),
           style:{fontSize:"9px",padding:"2px 5px"},
@@ -2928,7 +2951,7 @@ function render(){
     // ── FORMY ──
     const wFormy=h("div",{class:"sec"});
     const formyInHutte=p.workers.filter(w=>w.prof==="formar");
-    wFormy.append(h("div",{class:"sec-title"},"🪚 "+(L==="cs"?"Dřevěné formy":"Wooden Moulds")));
+    wFormy.append(h("div",{class:"sec-title"},"🌳 "+(L==="cs"?"Dřevěné formy":"Wooden Moulds")));
     wFormy.append(h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",
       background:"rgba(0,0,0,.03)",borderRadius:"4px"}},
       `2🪵 + 1🧱 → 🪚 · ${L==="cs"?"Formař, zrají 1 kolo":"Mould-maker, ages 1 round"}`));
@@ -3498,9 +3521,9 @@ function render(){
     const woodPrice=WOOD_EMERGENCY_PRICE*5;
     const canWood=p.grose>=woodPrice;
     extraSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
-      h("span",{style:{fontSize:"11px",color:"#3a2a14"}},`🪵 ${L==="cs"?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${woodPrice}g`),
+      h("span",{style:{fontSize:"11px",color:"#3a2a14"}},`🌳 ${L==="cs"?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${woodPrice}g`),
       h("button",{class:"btn btn-s"+(canWood?" btn-p":""),style:{opacity:canWood?1:.4},
-        onClick:()=>{if(canWood){G.grose-=woodPrice;G.res.wood+=5;G.log.push(`__ECO__🪵 +5 ${L==="cs"?"nouzové dřevo":"emergency wood"} (-${woodPrice}g)`);render();}}},
+        onClick:()=>{if(canWood){G.grose-=woodPrice;G.res.wood+=5;G.log.push(`__ECO__🌳 +5 ${L==="cs"?"nouzové dřevo":"emergency wood"} (-${woodPrice}g)`);render();}}},
         L==="cs"?"Koupit":"Buy")));
     // Parcely
     const parcelPrice=8;
