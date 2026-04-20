@@ -143,6 +143,15 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .furn-stat-val{font-size:16px;font-weight:700;}
 .shamot-visual{display:flex;gap:2px;margin-top:4px;}
 .shamot-brick{flex:1;height:10px;border-radius:2px;transition:background .4s;}
+/* ── MELT / SKLOVINA ANIMATION ── */
+.fire-stage{display:none;} /* legacy — not used */
+@keyframes meltRot1{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes meltRot2{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+@keyframes meltPulse{0%,100%{opacity:.55;}50%{opacity:1;}}
+@keyframes bubbleRise{
+  0%{transform:translateY(0) scale(1);opacity:.4;}
+  70%{opacity:.3;}
+  100%{transform:translateY(-38px) scale(1.6);opacity:0;}}
 .furnace-hud{display:flex;align-items:center;gap:6px;padding:4px 14px;
   border-bottom:1px solid rgba(42,26,10,.13);flex-shrink:0;background:rgba(0,0,0,.02);}
 .furnace-temp-big{font-size:22px;line-height:1;flex-shrink:0;}
@@ -363,6 +372,7 @@ function buyParcely(n){
   if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek grošů":"Not enough groats"}`);render();return;}
   G.grose-=price;
   G.forest+=buy;
+  G.forestMax=(G.forestMax||INIT_FOREST)+buy; // koupené parcely navyšují strop
   G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${price}g)`);
   render();
 }
@@ -946,7 +956,7 @@ function initState(){
     phase:"intro", lang:"cs",
     season:1, round:0,
     grose:22, debt:50, morale:60, beer:1,
-    forest:INIT_FOREST,
+    forest:INIT_FOREST, forestMax:INIT_FOREST,
     res:{wood:45,sand:10,limestone:10,potash:10,water:10,clay:5,shamot:5,food:10,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
@@ -1010,9 +1020,6 @@ function processRound(){
 
   log.push(`\n── ${ms[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")} ──`);
 
-  // Snapshot surovin před kolem (pro delta v toastu)
-  const resSnap={wood:r.wood,sand:r.sand,limestone:r.limestone,potash:r.potash,water:r.water,food:r.food,clay:r.clay};
-
   // Výpočet aktuální účinnosti pece
   const fEff=calcFurnaceEff(furnace, pQ);
   const ft=FURNACE_TYPES[furnace.type];
@@ -1031,7 +1038,7 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*3;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${INIT_FOREST})`);
+      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
       log.push(`🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
@@ -1106,15 +1113,6 @@ function processRound(){
     log.push(`🏺 ${rdyPanve.length}× ${L==="cs"?"pánev dozrálo":"crucible ready"} (${stars(avgQ)})!`);
   }
   pA=pA.filter(x=>round<x.rdy);
-
-  // 2b. Temperování pece — Březen (kolo 4, poslední přípravné kolo)
-  // Historicky: od 1. března se pec pomalu nahřívala ~měsíc před Sv. Jiří (24.4.)
-  if(round===4){
-    const tempBonus=5;
-    furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+tempBonus);
-    fT=Math.min(30, fT+15);
-    log.push(`🔥 ${L==="cs"?"Temperování pece zahájeno — pec se pomalu probouzí k životu.":"Furnace tempering begun — the furnace slowly wakes."}`);
-  }
 
   // 3. Kampaň — pec
   if(isC){
@@ -1426,32 +1424,13 @@ function processRound(){
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
-  // Toast — kompaktní strukturovaný přehled kola
+  // Toast — zobraz klíčové info z tohoto kola
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
-  const toastLines=[];
-  // Řádek 1: ekonomika
-  toastLines.push(`💰 ${grose}g${debt>0?" · dluh "+debt+"g":""} · ${L==="cs"?"morálka":"morale"}: ${mor} · mzdy ${wages}g · pivo ${bCost}g`);
-  // Řádek 2: produkce (kampaň)
-  if(isC){
-    const wgNew=wg.length-p.waldglas.length, crNew=cr.length-p.crystal.length;
-    const prodParts=[];
-    if(wgNew>0)prodParts.push(`${wgNew}× waldglas`);
-    if(crNew>0)prodParts.push(`${crNew}× křišťál`);
-    if(fA)prodParts.push(`pec ${zone(fT).l} ${fT}%`);
-    if(prodParts.length)toastLines.push(`🔥 ${prodParts.join(" · ")}`);
-  }
-  // Řádek 3: spotřeba surovin (delta)
-  const resDelta=[];
-  const dWood=resSnap.wood-r.wood; if(dWood!==0)resDelta.push(`🪵${dWood>0?"-"+dWood:"+"+Math.abs(dWood)}`);
-  const dSand=resSnap.sand-r.sand; if(dSand!==0)resDelta.push(`🏖️${dSand>0?"-"+dSand:"+"+Math.abs(dSand)}`);
-  const dLime=resSnap.limestone-r.limestone; if(dLime!==0)resDelta.push(`🟩${dLime>0?"-"+dLime:"+"+Math.abs(dLime)}`);
-  const dPot=resSnap.potash-r.potash; if(dPot!==0)resDelta.push(`🌿${dPot>0?"-"+dPot:"+"+Math.abs(dPot)}`);
-  const dWat=resSnap.water-r.water; if(dWat!==0)resDelta.push(`💧${dWat>0?"-"+dWat:"+"+Math.abs(dWat)}`);
-  const dFood=resSnap.food-r.food; if(dFood!==0)resDelta.push(`🍞${dFood>0?"-"+dFood:"+"+Math.abs(dFood)}`);
-  if(resDelta.length)toastLines.push(resDelta.join(" "));
-  // Řádek 4: varování a události
-  const warnLines=log.filter(l=>l.includes("⚠️")||l.includes("💔")||l.includes("👋")||l.includes("🔥 Temper"));
-  warnLines.forEach(l=>toastLines.push(l.replace(/^__EVT__/,"")));
+  const toastLines=[
+    ...log.filter(l=>l.includes("→")&&(l.includes("waldglas")||l.includes("křišťál")||l.includes("crystal"))),
+    ...log.filter(l=>l.includes("💔")||l.includes("📜")||l.includes("❄️")||l.includes("⚠️")),
+    `${L==="cs"?"Groše":"Groats"}: ${grose}g · ${L==="cs"?"morálka":"morale"}: ${mor}`
+  ].filter(Boolean);
   showToast(toastTitle, toastLines);
   autoSave();
   render();
@@ -1470,7 +1449,8 @@ function startInterseason(){
   const reforestBonus=Math.min(p.reforestWorkers||0, 4)*2; // max +8 za sezónu výsadby
   const naturalRegen=p.forest>0?FOREST_REGEN_BASE:1; // vyčerpaný les roste pomaleji
   const totalRegen=naturalRegen+reforestBonus;
-  const newForest=Math.min(INIT_FOREST, p.forest+totalRegen);
+  const forestCap=p.forestMax||INIT_FOREST;
+  const newForest=Math.min(forestCap, p.forest+totalRegen);
   // Pec chladne, drží 65% zaběhnutosti
   const newRunIn=Math.round(p.furnace.runIn*0.65);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
@@ -2128,6 +2108,8 @@ function render(){
 
     app.append(
       h("div",{style:{textAlign:"center",padding:"28px 20px 16px"}},
+        h("div",{style:{textAlign:"right",marginBottom:"4px"}},
+          h("a",{href:"/about.html",target:"_blank",style:{fontSize:"10px",color:"#8b5e34",opacity:.6,textDecoration:"none",letterSpacing:"1px"}},". . . About")),
         introLogoDiv,
         h("div",{style:{marginBottom:"12px"}},
           h("label",{style:{fontSize:"11px",color:"#8b5e34",display:"block",marginBottom:"4px"}},
@@ -2189,7 +2171,8 @@ function render(){
         // Obrázek POD citátem
         introImgDiv),
       h("div",{style:{textAlign:"center",padding:"8px",fontSize:"10px",color:"#8b5e34",opacity:.5}},
-        "v4 \u00b7 Multi-sez\u00f3na \u00b7 \u017div\u00e1 pec \uD83D\uDD25"));
+        "v4 · Multi-sezóna · Živá pec 🔥 · ",
+        h("a",{href:"/about.html",target:"_blank",style:{color:"#c9952b",opacity:.8,textDecoration:"none"}},". . . About")));
     // Leaderboard
     try{
       const lb=JSON.parse(localStorage.getItem("sh4")||"[]");
@@ -2327,9 +2310,9 @@ function render(){
     // Les + sklad skla přenesený
     body.append(h("div",{class:"sec-title",style:{marginTop:"10px"}},L==="cs"?"Hvozd & Sklad":"Forest & Storage"));
     const regenLine=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",fontSize:"12px"}});
-    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${INIT_FOREST}`));
+    regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${p.forestMax||INIT_FOREST}`));
     if(is.reforestBonus>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`(🌱 výsadba +${is.reforestBonus})`));
-    if(p.forest<INIT_FOREST)regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${INIT_FOREST-p.forest} parcel`:`${INIT_FOREST-p.forest} missing`));
+    if(p.forest<(p.forestMax||INIT_FOREST))regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${(p.forestMax||INIT_FOREST)-p.forest} parcel`:`${(p.forestMax||INIT_FOREST)-p.forest} missing`));
     body.append(regenLine);
     if(p.forest===0){
       body.append(h("div",{style:{fontSize:"11px",color:"#a03020",padding:"6px",
@@ -2466,7 +2449,7 @@ function render(){
         p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+p.debt+"g"):null));
     body.append(grid,
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · zaběhnutost ${p.furnace.runIn}%`),
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.forestMax||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"10px"}},`💸 ${sd.wages}g mzdy + ${sd.bCost}g pivo${sd.dPay?" + "+sd.dPay+"g dluh":""}`));
     const btn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"14px"},
@@ -2559,7 +2542,7 @@ function render(){
   const wMult=WINTER_LOG_MULT[p.round]||1;
   const resBar=h("div",{class:"res-bar"});
   resBar.append(
-    pillTip("🌲",p.forest+"/"+INIT_FOREST,p.forest<=FOREST_WARN?"warn":"",
+    pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",
       L==="cs"?`Hvozd: ${p.forest} parcel${wMult>1?" · ❄️ sáně +"+Math.round((wMult-1)*100)+"%":""}`:
                `Forest: ${p.forest} parcels${wMult>1?" · ❄️ sleds +"+Math.round((wMult-1)*100)+"%":""}`),
     pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",
@@ -2637,8 +2620,8 @@ function render(){
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🔥 eff ${fEff}%`),
       bar(fEff,100,fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020")),
     h("div",{style:{flex:1}},
-      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${INIT_FOREST}`),
-      bar(p.forest,INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${p.forestMax||INIT_FOREST}`),
+      bar(p.forest,p.forestMax||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
   if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
 
   if(!isDesktop){
@@ -2687,8 +2670,8 @@ function render(){
     quickRow.append(qHdr);
     if(qState){
       const twoCol=h("div",{style:{display:"flex",gap:"10px"}});
-      // Levý sloupec — dřevo
-      const leftCol=h("div",{style:{flex:"1",minWidth:0}});
+      // Levý sloupec — dřevo (2/3)
+      const leftCol=h("div",{style:{flex:"2",minWidth:0}});
       const aLabels={fuel:L==="cs"?"Palivo":"Fuel",potash:L==="cs"?"Potaš":"Potash",build:L==="cs"?"Stavba":"Build"};
       ["fuel","potash","build"].forEach(k=>{
         const aRow=h("div",{style:{display:"flex",alignItems:"center",gap:"4px",marginBottom:"5px",fontSize:"11px"}});
@@ -2700,7 +2683,7 @@ function render(){
           h("strong",{style:{width:"30px",textAlign:"right",flexShrink:0}},p.wa[k]+"%"));
         leftCol.append(aRow);
       });
-      // Pravý sloupec — pec mini
+      // Pravý sloupec — pec mini (1/3)
       const rightCol=h("div",{style:{flex:"1",minWidth:0}});
       const fRows=[
         {label:L==="cs"?"Typ":"Type",val:L==="cs"?ft.name:ft.nameEn,color:"#c9952b"},
@@ -2821,19 +2804,29 @@ function render(){
       const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
       const isWerkstatProf=WERKSTAT_PROFS.includes(w.prof);
       if(isWerkstatProf){
-        // Měnící se tlačítko: Verštat (fat<0.75) nebo Odpočinek (fat≥0.75)
+        // Verštat — jen při nízké únavě (<25%); Odpočinek dostupný při únavě ≥25%
         const fatigue=w.fat||0;
-        const canWerkstat=fatigue<0.75;
+        const canWerkstat=fatigue<0.25;
+        const needsRest=fatigue>=0.25;
         const werkBtn=h("button",{
-          class:"btn btn-s"+(!canWerkstat||w.task==="idle"?" btn-active":"")+(w.task==="werkstat"?" btn-active":""),
-          style:{fontSize:"9px",padding:"2px 5px",...(!canWerkstat?{opacity:.5,cursor:"not-allowed"}:{})},
+          class:"btn btn-s"+(w.task==="werkstat"?" btn-active":""),
+          style:{fontSize:"9px",padding:"2px 5px",...(!canWerkstat?{opacity:.35,cursor:"not-allowed"}:{})},
           onClick:()=>{
             if(!canWerkstat)return;
             const ww=G.workers.find(x=>x.id===w.id);
-            ww.task=ww.task==="werkstat"?"idle":"werkstat";
+            ww.task="werkstat";
             render();
-          }},canWerkstat?(w.task==="werkstat"?"⚒️ Verštat":"⚒️ Verštat"):"😴 Odpočinek");
-        tasksCol.append(werkBtn);
+          }},"⚒️ Verštat");
+        const idleBtn=h("button",{
+          class:"btn btn-s"+(w.task==="idle"?" btn-active":""),
+          style:{fontSize:"9px",padding:"2px 5px",...(!needsRest?{opacity:.35,cursor:"not-allowed"}:{})},
+          onClick:()=>{
+            if(!needsRest)return;
+            const ww=G.workers.find(x=>x.id===w.id);
+            ww.task="idle";
+            render();
+          }},"😴 Odpočinek");
+        tasksCol.append(werkBtn,idleBtn);
       }
       tasks.forEach(t=>{
         if(t==="idle"&&isWerkstatProf)return; // idle je součástí werkstat tlačítka
@@ -3233,31 +3226,111 @@ function render(){
     });
     dash.append(gauge);
 
-    // Teplota readout
-    dash.append(h("div",{style:{textAlign:"center",marginBottom:"10px"}},
-      h("div",{style:{fontSize:"32px",color:isC&&p.fActive?tempColor:"#5a3a1a",
-        fontFamily:"Georgia,serif",letterSpacing:"2px",transition:"color .5s"}},
-        isC&&p.fActive?`${p.fTemp}%`:"—"),
-      h("div",{style:{fontSize:"11px",color:isC&&p.fActive?tempColor:"#5a3a1a",
-        marginTop:"2px",letterSpacing:".5px",fontStyle:"italic"}},
-        L==="cs"?tempLabel.cs:tempLabel.en)));
+    // Teplota readout + SVG kruh — 2 sloupce: kruh vlevo, info vpravo
+    (()=>{
+      const active=isC&&p.fActive;
+      const temp=p.fTemp;
+      const meltColors=(()=>{
+        if(!active||temp<5)  return {c1:"#1a1208",c2:"#2a1a0a",c3:"#0e0906",glow:"none",speed:0};
+        if(temp<20)  return {c1:"#3a1a08",c2:"#1e0e04",c3:"#2a1208",glow:"#4a1a08",speed:8};
+        if(temp<35)  return {c1:"#6a1a08",c2:"#3a0e04",c3:"#8a2010",glow:"#6a1a08",speed:6};
+        if(temp<50)  return {c1:"#a03010",c2:"#6a1808",c3:"#c04018",glow:"#a03010",speed:4.5};
+        if(temp<65)  return {c1:"#c06020",c2:"#a04010",c3:"#e08030",glow:"#c05020",speed:3.2};
+        if(temp<78)  return {c1:"#d49020",c2:"#b07010",c3:"#f0b030",glow:"#d08020",speed:2.2};
+        if(temp<88)  return {c1:"#e8c030",c2:"#c09820",c3:"#fff0a0",glow:"#e8c030",speed:1.5};
+        return           {c1:"#fff8c0",c2:"#ffe080",c3:"#ffffff",glow:"#fffde0",speed:0.9};
+      })();
+      const spd=meltColors.speed;
+      const svgNS="http://www.w3.org/2000/svg";
 
-    // Stats grid
-    const sg=h("div",{class:"furnace-readout"});
-    sg.append(
-      h("div",{class:"furn-stat"},
-        h("div",{class:"furn-stat-label"},L==="cs"?"Typ pece":"Furnace type"),
-        h("div",{class:"furn-stat-val",style:{fontSize:"12px",color:"#c9952b"}},L==="cs"?ft.name:ft.nameEn)),
-      h("div",{class:"furn-stat"},
-        h("div",{class:"furn-stat-label"},"Eff."),
-        h("div",{class:"furn-stat-val",style:{color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"}},fEff+"%")),
-      h("div",{class:"furn-stat"},
-        h("div",{class:"furn-stat-label"},L==="cs"?"Zaběhnutost":"Run-in"),
-        h("div",{class:"furn-stat-val",style:{color:"#c9952b"}},p.furnace.runIn+"%")),
-      h("div",{class:"furn-stat"},
-        h("div",{class:"furn-stat-label"},L==="cs"?"Pánev":"Crucible"),
-        h("div",{class:"furn-stat-val",style:{fontSize:"12px"}},stars(p.panevQuality))));
-    dash.append(sg);
+      // Wrapper — 2 sloupce 1/2 + 1/2
+      const twoCol=document.createElement("div");
+      twoCol.style.cssText="display:flex;gap:14px;align-items:center;margin-bottom:10px;";
+
+      // Levý sloupec — SVG kruh (1/2)
+      const leftWrap=document.createElement("div");
+      leftWrap.style.cssText="flex:1;min-width:0;display:flex;justify-content:center;";
+      const sid="fsvg_"+Date.now();
+      leftWrap.innerHTML=`<svg width="160" height="160" viewBox="0 0 140 140" xmlns="${svgNS}" style="display:block;width:100%;max-width:180px;height:auto;">
+        <defs>
+          <radialGradient id="${sid}_bg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="${meltColors.c1}" stop-opacity="1"/>
+            <stop offset="60%" stop-color="${meltColors.c2}" stop-opacity="1"/>
+            <stop offset="100%" stop-color="${meltColors.c3}" stop-opacity="1"/>
+          </radialGradient>
+          <radialGradient id="${sid}_g2" cx="40%" cy="38%" r="55%">
+            <stop offset="0%" stop-color="${meltColors.c3}" stop-opacity="${active&&temp>15?0.35:0}"/>
+            <stop offset="100%" stop-color="${meltColors.c1}" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="${sid}_blur"><feGaussianBlur stdDeviation="2.5"/></filter>
+          <clipPath id="${sid}_clip"><circle cx="70" cy="70" r="58"/></clipPath>
+        </defs>
+        <circle cx="70" cy="70" r="62" fill="#0e0806" stroke="#3a2010" stroke-width="1.5"/>
+        <circle cx="70" cy="70" r="58" fill="url(#${sid}_bg)" clip-path="url(#${sid}_clip)"/>
+        ${spd>0?`<g clip-path="url(#${sid}_clip)" style="transform-origin:70px 70px;animation:meltRot1 ${(spd*1.4).toFixed(1)}s linear infinite">
+          <ellipse cx="70" cy="55" rx="42" ry="22" fill="${meltColors.c3}" opacity="0.18" filter="url(#${sid}_blur)"/>
+          <ellipse cx="52" cy="82" rx="28" ry="14" fill="${meltColors.c1}" opacity="0.22" filter="url(#${sid}_blur)"/>
+        </g>`:""}
+        ${spd>0?`<g clip-path="url(#${sid}_clip)" style="transform-origin:70px 70px;animation:meltRot2 ${(spd*0.9).toFixed(1)}s linear infinite">
+          <ellipse cx="85" cy="65" rx="32" ry="18" fill="${meltColors.c2}" opacity="0.25" filter="url(#${sid}_blur)"/>
+          <ellipse cx="60" cy="88" rx="24" ry="12" fill="${meltColors.c3}" opacity="0.15" filter="url(#${sid}_blur)"/>
+        </g>`:""}
+        <circle cx="70" cy="70" r="58" fill="url(#${sid}_g2)" clip-path="url(#${sid}_clip)"
+          style="animation:${spd>0?`meltPulse ${(spd*1.1).toFixed(1)}s ease-in-out infinite`:"none"}"/>
+        ${active&&temp>50?`
+          <circle cx="58" cy="72" r="4" fill="none" stroke="${meltColors.c3}" stroke-width="1" opacity="0.4"
+            style="animation:bubbleRise ${(spd*0.7).toFixed(1)}s ${(spd*0.3).toFixed(1)}s ease-in infinite"/>
+          <circle cx="78" cy="82" r="3" fill="none" stroke="${meltColors.c3}" stroke-width="1" opacity="0.3"
+            style="animation:bubbleRise ${(spd*0.85).toFixed(1)}s 0s ease-in infinite"/>
+          <circle cx="68" cy="60" r="2.5" fill="none" stroke="${meltColors.c3}" stroke-width="0.8" opacity="0.35"
+            style="animation:bubbleRise ${(spd*0.6).toFixed(1)}s ${(spd*0.5).toFixed(1)}s ease-in infinite"/>
+        `:""}
+        <text x="70" y="67" text-anchor="middle" font-family="Georgia,serif" font-size="22"
+          fill="${active&&temp>10?meltColors.c3:"#3a2a14"}" font-weight="700"
+          style="filter:${meltColors.glow!=="none"?`drop-shadow(0 0 6px ${meltColors.glow})`:"none"}">
+          ${active?temp+"%":"—"}
+        </text>
+        <text x="70" y="82" text-anchor="middle" font-family="Georgia,serif" font-size="8"
+          fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.8">
+          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):"STUDENÁ"}
+        </text>
+        ${active&&temp>60?`<circle cx="70" cy="70" r="62" fill="none" stroke="${meltColors.glow}" stroke-width="2"
+          opacity="0.4" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}
+        <circle cx="70" cy="70" r="63" fill="none" stroke="#2a1608" stroke-width="2"/>
+      </svg>`;
+
+      // Pravý sloupec — teplota label + stats (1/2)
+      const rightWrap=document.createElement("div");
+      rightWrap.style.cssText="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;";
+
+      // Teplota label
+      const tempDiv=document.createElement("div");
+      tempDiv.style.cssText="margin-bottom:4px;";
+      tempDiv.innerHTML=`<div style="font-size:28px;font-family:Georgia,serif;letter-spacing:2px;color:${active?meltColors.c3:"#5a3a1a"};transition:color .5s;font-weight:700;${meltColors.glow!=="none"?`text-shadow:0 0 12px ${meltColors.glow};`:""}">
+        ${active?temp+"%":"—"}
+      </div>
+      <div style="font-size:10px;color:${active?meltColors.c3:"#5a3a1a"};font-style:italic;letter-spacing:.4px;line-height:1.4;">
+        ${active?(L==="cs"?tempLabel.cs:tempLabel.en):(L==="cs"?"Studená — kampaň spouštíš v dubnu":"Cold — campaign starts in April")}
+      </div>`;
+      rightWrap.append(tempDiv);
+
+      // Stats řádky
+      [
+        {label:L==="cs"?"Typ pece":"Type",    val:L==="cs"?ft.name:ft.nameEn, color:"#c9952b"},
+        {label:"Eff.",                          val:fEff+"%",                   color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"},
+        {label:L==="cs"?"Zaběhnutost":"Run-in",val:p.furnace.runIn+"%",        color:"#c9952b"},
+        {label:L==="cs"?"Pánev":"Crucible",    val:stars(p.panevQuality),      color:"#f0deb8"},
+      ].forEach(r=>{
+        const row=document.createElement("div");
+        row.style.cssText="display:flex;justify-content:space-between;align-items:center;font-size:11px;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:5px;margin-bottom:2px;";
+        row.innerHTML=`<span style="color:#8b5e34;font-size:9px;text-transform:uppercase;letter-spacing:.8px;">${r.label}</span>
+          <strong style="color:${r.color};font-size:13px;text-align:right;">${r.val}</strong>`;
+        rightWrap.append(row);
+      });
+
+      twoCol.append(leftWrap, rightWrap);
+      dash.append(twoCol);
+    })();
 
     // Šamot vizualizace — cihlová zeď
     const shamotPct=p.furnace.shamotWear;
@@ -3314,14 +3387,9 @@ function render(){
       L==="cs"
         ?"Max. účinnost dle pece: Primitivní ~58% · Zděná ~75% · Mistrovská ~90%.\nVyšší účinnost = více skla z várky."
         :"Max. efficiency by furnace: Primitive ~58% · Stone ~75% · Master ~90%.\nHigher efficiency = more glass per batch."));
-    // Desktop: pec (3/4) + účinnost (1/4) vedle sebe; mobil: pod sebou
-    if(isDesktop){
-      const furnCols=h("div",{class:"furnace-cols"});
-      furnCols.append(dashSec,effSec);
-      content.append(furnCols);
-    }else{
-      content.append(dashSec,effSec);
-    }
+    // Dashboard — vždy přes celou šířku (1 sloupec)
+    content.append(dashSec);
+    // effSec + chemSec připojíme níže společně po sestavení chemSec
 
     // Přísady — placeholder pro budoucí chemii
     const chemSec=h("div",{class:"sec"});
@@ -3361,11 +3429,11 @@ function render(){
         h("div",{style:{marginTop:"8px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic",
           borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"6px"}},
           L==="cs"
-            ?"⚠️ Pozor na vodu - může pánev poškodit."
-            :"⚠️ Beware of Water — it can crack the crucible."),
+            ?"⚠️ Voda se nepřidává — kmen se míchá za sucha, voda se při tavení okamžitě odpaří a může pánev poškodit."
+            :"⚠️ No water added — batch is mixed dry. Water evaporates instantly at melt temperature and can crack the crucible."),
         h("div",{style:{marginTop:"6px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
           L==="cs"
-            ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — všechno bude."
+            ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — připravujeme."
             :"🔬 Colorants, decolorants and special additives (MnO₂, CoO, Au...) — coming soon.")));
     content.append(chemSec);
 
@@ -3400,44 +3468,59 @@ function render(){
           ?"Žádné recepty. Naber Baranovského do hutě — přiveze přísady a odemkne receptury."
           :"No recipes yet. Hire Baranovský — he'll bring additives and unlock formulas."));
     } else {
+      const recipeGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}});
       unlockedColors.forEach(([key,rec])=>{
         const canCraft=isC&&p.fActive&&p.fTemp>=rec.furnaceMin&&
           Object.entries(rec.inputs).every(([item,qty])=>
             item==="crystal"?p.crystal.length>=qty:(p.additives?.[item]||0)>=qty);
-        const card=h("div",{style:{padding:"8px",marginBottom:"6px",borderRadius:"4px",
+        const card=h("div",{style:{padding:"8px",borderRadius:"4px",
           border:`1px solid ${canCraft?"rgba(74,122,58,.3)":"rgba(42,26,10,.1)"}`,
-          background:canCraft?"rgba(74,122,58,.05)":"rgba(0,0,0,.02)"}});
+          background:canCraft?"rgba(74,122,58,.05)":"rgba(0,0,0,.02)",
+          display:"flex",flexDirection:"column",gap:"4px"}});
         card.append(
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
             h("div",null,
               h("span",{style:{fontSize:"13px"}},rec.icon+" "),
               h("strong",{style:{fontSize:"11px",color:"#3a2a14"}},L==="cs"?rec.cs:rec.en)),
             h("span",{style:{fontSize:"10px",color:"#c9952b",fontStyle:"italic"}},`~${rec.sell_cs}g`)),
-          h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px",fontStyle:"italic"}},
+          h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",lineHeight:"1.3"}},
             L==="cs"?rec.desc_cs:rec.desc_en),
-          h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px",fontSize:"10px"}},
+          h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap",fontSize:"10px"}},
             ...Object.entries(rec.inputs).map(([item,qty])=>{
               const have=item==="crystal"?p.crystal.length:(p.additives?.[item]||0);
               const ok=have>=qty;
               const ad=ADDITIVES[item];
-              return h("span",{style:{padding:"1px 6px",borderRadius:"4px",
+              return h("span",{style:{padding:"1px 5px",borderRadius:"4px",
                 background:ok?"rgba(74,122,58,.1)":"rgba(160,48,32,.08)",
                 color:ok?"#4a7a3a":"#a03020",border:`1px solid ${ok?"rgba(74,122,58,.2)":"rgba(160,48,32,.2)"}`}},
                 `${ad?.icon||"✨"} ${have}/${qty}`);
             })),
           h("button",{
             class:"btn"+(canCraft?" btn-p":""),
-            style:{width:"100%",opacity:canCraft?1:.5,fontSize:"11px"},
+            style:{width:"100%",opacity:canCraft?1:.5,fontSize:"10px",padding:"4px 6px",marginTop:"auto"},
             onClick:()=>{if(canCraft)craftColorGlass(key);}},
             canCraft
               ?(L==="cs"?"Tavit →":"Smelt →")
               :p.fTemp<rec.furnaceMin
-                ?(L==="cs"?`Pec příliš studená (min ${rec.furnaceMin}%)`:`Furnace too cold (min ${rec.furnaceMin}%)`)
-                :(L==="cs"?"Chybí suroviny":"Missing materials")));
-        colorSec.append(card);
+                ?(L==="cs"?`Min ${rec.furnaceMin}%`:`Min ${rec.furnaceMin}%`)
+                :(L==="cs"?"Chybí sur.":"Missing")));
+        recipeGrid.append(card);
       });
+      colorSec.append(recipeGrid);
     }
-    content.append(colorSec);
+    // Desktop: levý sloupec = effSec + colorSec; pravý sloupec = chemSec
+    if(isDesktop){
+      const bottomCols=h("div",{style:{display:"flex",gap:"0",alignItems:"flex-start"}});
+      const leftPane=h("div",{style:{flex:"1",display:"flex",flexDirection:"column",borderRight:"1px solid rgba(42,26,10,.1)"}});
+      effSec.style.borderBottom="1px solid rgba(42,26,10,.08)";
+      colorSec.style.borderTop="none";
+      leftPane.append(effSec,colorSec);
+      chemSec.style.flex="1";
+      bottomCols.append(leftPane,chemSec);
+      content.append(bottomCols);
+    }else{
+      content.append(effSec,colorSec,chemSec);
+    }
 
   // ── TAB: TRH ──
   }else if(p.tab==="market"){
@@ -3560,10 +3643,11 @@ function render(){
         L==="cs"?"Koupit":"Buy")));
     // Parcely
     const parcelPrice=8;
-    const canParcel=p.grose>=parcelPrice&&p.forest<60;
+    const forestMax=p.forestMax||INIT_FOREST;
+    const canParcel=p.grose>=parcelPrice&&p.forest<200;
     extraSec.append(
       h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/60 ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"}`),
+        `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${forestMax} ${L==="cs"?"parcel":"parcels"} · ${parcelPrice}g/${L==="cs"?"parcela":"parcel"}`),
       h("div",{style:{display:"flex",gap:"4px"}},
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(1)},"+ 1"),
@@ -3571,7 +3655,7 @@ function render(){
           onClick:()=>buyParcely(5)},"+ 5"),
         h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
           onClick:()=>buyParcely(10)},"+ 10"),
-        p.forest>=60?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
+        p.forest>=200?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
     content.append(extraSec);
 
     const bSec=h("div",{class:"sec"});
@@ -3879,7 +3963,10 @@ function render(){
 		  h("span",null," · 🧩 "),h("a",{href:"https://fractout.com/",style:{color:"#c9952b"}},"Fractout"),
           h("span",null," · 🔮 "),h("a",{href:"https://oracoolio.com",style:{color:"#c9952b"}},"Oracoolio")),
         h("div",{style:{marginTop:"4px",fontSize:"10px",color:"#aaa"}},
-          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v4.2 · ${new Date().getFullYear()}`)));
+          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v4.2 · ${new Date().getFullYear()}`),
+        h("div",{style:{marginTop:"8px"}},
+          h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none",letterSpacing:"0.5px"}},
+            "📖 "+(L==="cs"?"O hře — about.html →":"About the game →")))));
     content.append(iSec);
   }
 
@@ -3954,6 +4041,9 @@ function render(){
         h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},"🏺 Pánev: 2🧱 + 1🍞 (zraje 3 kola, kvalita závisí na pánvaři)"),
         h("div",{style:{fontSize:"11px",color:"#3a6a9a",marginBottom:"4px"}},"✨ Křišťál: 3✨ + 2🌿r + 1🪨 + 1⚫ (min 65% teplota)"),
         h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"12px"}},"🔥 Účinnost pece = zaběhnutost + kvalita pánve + stav šamotu"),
+        h("div",{style:{textAlign:"right",marginTop:"8px"}},
+          h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none"}},
+            "📖 "+(L==="cs"?"Více o hře →":"More about the game →"))),
         h("button",{class:"btn btn-p",onClick:()=>{G.help=false;render();}},"OK")));
     app.append(modal);
   }
