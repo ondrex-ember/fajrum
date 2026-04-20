@@ -955,9 +955,9 @@ function initState(){
   return{
     phase:"intro", lang:"cs",
     season:1, round:0,
-    grose:22, debt:50, morale:60, beer:1,
+    grose:15, debt:50, morale:60, beer:1,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
-    res:{wood:45,sand:10,limestone:10,potash:10,water:10,clay:5,shamot:5,food:10,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
+    res:{wood:30,sand:10,limestone:10,potash:10,water:10,clay:5,shamot:5,food:10,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
     // Sklady barevného skla
@@ -2075,14 +2075,14 @@ function render(){
       G.difficulty=diff;
       G.firstVisit=true;
       if(diff==="easy"){
-        G.furnace.runIn=30;
+        G.furnace.runIn=35;
         G.panevQuality=3;
         G.pReady=3;
-        G.grose=35;
-        G.res.wood=28;
-        G.res.sand=10;
-        G.res.potash=6;
-        G.res.limestone=5;
+        G.grose=45;
+        G.res.wood=55;
+        G.res.sand=15;
+        G.res.potash=12;
+        G.res.limestone=12;
       }
       G.phase="playing";
       render();
@@ -2143,7 +2143,7 @@ function render(){
               L==="cs"?"🕯️ Lehký start":"🕯️ Easy start")),
           h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
             G.difficulty==="easy"
-              ?(L==="cs"?"Otcova pec zaběhnutá (runIn 30), lepší pánev, více zásob":"Father's furnace run-in (30), better crucible, more stock")
+              ?(L==="cs"?"Otcova pec zaběhnutá (runIn 35), lepší pánev, více zásob a grošů":"Father's furnace run-in (35), better crucible, more stock and coin")
               :(L==="cs"?"Studená pec, prázdný sklad — začínáš od nuly":"Cold furnace, empty store — start from scratch"))),
         h("div",{style:{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}},
           h("button",{class:"btn btn-p",onClick:()=>{startGame(G.difficulty||"normal");}},
