@@ -5,7 +5,7 @@
   <!-- Hlavní hra -->
   <url>
     <loc>https://fajrum.cz/</loc>
-    <lastmod>2024-04-19</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="cs" href="https://fajrum.cz/"/>
@@ -16,7 +16,7 @@
   <!-- O hře -->
   <url>
     <loc>https://fajrum.cz/about.html</loc>
-    <lastmod>2024-04-19</lastmod>
+    <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="cs" href="https://fajrum.cz/about.html"/>
