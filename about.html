@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-NMMMMNPZ');</script>
-<!-- End Google Tag Manager -->
-  
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -383,35 +375,33 @@ body {
 }
 
 .site-footer a:hover {
-  color: var(--gold);
-  text-shadow: 0 0 8px rgba(201,149,43,.6), 0 0 18px rgba(201,149,43,.25);
+  color: #f0deb8;
+  text-shadow: 0 0 8px rgba(201,149,43,.7), 0 0 20px rgba(201,149,43,.3);
 }
 
 .footer-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0;
   margin-top: 8px;
-  line-height: 2;
+  line-height: 2.2;
 }
 
 .footer-sep {
-  margin: 0 7px;
-  opacity: .3;
+  margin: 0 6px;
+  opacity: .25;
 }
 
 /* Credits */
 .credits-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
 .credit-row {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 16px;
   padding: 10px 0;
   border-bottom: 1px solid rgba(201,149,43,.08);
   font-size: 12px;
@@ -420,13 +410,13 @@ body {
 .credit-row:last-child { border-bottom: none; }
 
 .credit-role {
-  min-width: 160px;
-  font-size: 10px;
-  letter-spacing: 1px;
+  min-width: 150px;
+  flex-shrink: 0;
+  font-size: 9px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--gold);
-  opacity: .75;
-  flex-shrink: 0;
+  opacity: .7;
 }
 
 .credit-name {
@@ -442,7 +432,7 @@ body {
 
 .credit-name a:hover {
   color: #f0deb8;
-  text-shadow: 0 0 8px rgba(201,149,43,.5);
+  text-shadow: 0 0 8px rgba(201,149,43,.6);
 }
 
 @media (max-width: 400px) {
@@ -452,10 +442,6 @@ body {
 </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NMMMMNPZ"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
 
 <!-- HEADER -->
 <header class="site-header">
@@ -628,15 +614,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="credits-grid">
       <div class="credit-row">
         <span class="credit-role" id="cr1-role">Nápad &amp; design</span>
-        <span class="credit-name">Ondřej Panuška</span>
+        <span class="credit-name">Ondrex · fajrum.cz</span>
       </div>
       <div class="credit-row">
         <span class="credit-role" id="cr2-role">Kódování</span>
-        <span class="credit-name">Ondrex + LLMs</span>
+        <span class="credit-name">Ondrex + Claude (Anthropic)</span>
       </div>
       <div class="credit-row">
         <span class="credit-role" id="cr3-role">Technologie skla</span>
-        <span class="credit-name" id="cr3-name">Jaromír Panuška - tatínek — sklářský technolog, konzultant chemie a provozu hutě</span>
+        <span class="credit-name" id="cr3-name">Tatínek — sklářský technolog, konzultant chemie a provozu hutě</span>
       </div>
       <div class="credit-row">
         <span class="credit-role" id="cr4-role">Historické prameny</span>
@@ -647,8 +633,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <span class="credit-name" id="cr5-name">Web Audio API · procedurálně generovaný</span>
       </div>
       <div class="credit-row">
-        <span class="credit-role" id="cr6-role">Kontakt</span>
-        <span class="credit-name"><a href="Ember PA" target="_blank" rel="noopener">Ember PA</a></span>
+        <span class="credit-role" id="cr6-role">Médium &amp; komunita</span>
+        <span class="credit-name"><a href="https://newsandradio.cz" target="_blank" rel="noopener">Jouza News&amp;Radio</a></span>
       </div>
     </div>
   </div>
@@ -695,17 +681,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="footer-links">
     <a href="index.html" id="footer-play">Hrát hru</a>
     <span class="footer-sep">·</span>
-    <a href="https://oracoolio.com/" target="_blank" rel="noopener">Oracoolio</a>
+    <a href="about.html">O hře</a>
     <span class="footer-sep">·</span>
-    <a href="https://ember-pa.cz/" target="_blank" rel="noopener">Ember PA</a>
+    <a href="#credits">Credits</a>
     <span class="footer-sep">·</span>
-    <a href="https://myscriptorium.cz/" target="_blank" rel="noopener">Scriptorium</a>
+    <a href="https://fajrum.cz" target="_blank" rel="noopener">fajrum.cz</a>
     <span class="footer-sep">·</span>
     <a href="https://newsandradio.cz" target="_blank" rel="noopener">Jouza News&amp;Radio</a>
     <span class="footer-sep">·</span>
-    <a href="https://fractout.com/" target="_blank" rel="noopener">Fractout</a>
+    <a href="manifest.json">PWA</a>
     <span class="footer-sep">·</span>
-    <a href="https://occultix.app/" target="_blank" rel="noopener">Occultix</a>
+    <a href="mailto:info@fajrum.cz">Kontakt</a>
   </div>
 </footer>
 
@@ -748,7 +734,7 @@ const T = {
     'cr1-role': 'Nápad & design',
     'cr2-role': 'Kódování',
     'cr3-role': 'Technologie skla',
-    'cr3-name': 'Jaromír Panuška - tatínek — sklářský technolog, konzultant chemie a provozu hutě',
+    'cr3-name': 'Tatínek — sklářský technolog, konzultant chemie a provozu hutě',
     'cr4-role': 'Historické prameny',
     'cr5-role': 'Zvuk',
     'cr5-name': 'Web Audio API · procedurálně generovaný',
@@ -791,7 +777,7 @@ const T = {
     'cr1-role': 'Concept & design',
     'cr2-role': 'Coding',
     'cr3-role': 'Glass technology',
-    'cr3-name': 'Jaromír Panuška - Dad — glass technologist, consultant on chemistry and foundry operations',
+    'cr3-name': 'Dad — glass technologist, consultant on chemistry and foundry operations',
     'cr4-role': 'Historical sources',
     'cr5-role': 'Sound',
     'cr5-name': 'Web Audio API · procedurally generated',
