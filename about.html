@@ -182,9 +182,9 @@ body {
 .hero-image-wrap img {
   width: 100%;
   display: block;
-  max-height: 480px;
+  max-height: 340px;
   object-fit: cover;
-  object-position: top;
+  object-position: center 30%;
 }
 
 .hero-image-wrap::after {
@@ -377,9 +377,72 @@ body {
 }
 
 .site-footer a {
+  color: rgba(201,149,43,.6);
+  text-decoration: none;
+  transition: color .2s, text-shadow .2s;
+}
+
+.site-footer a:hover {
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(201,149,43,.6), 0 0 18px rgba(201,149,43,.25);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+  margin-top: 8px;
+  line-height: 2;
+}
+
+.footer-sep {
+  margin: 0 7px;
+  opacity: .3;
+}
+
+/* Credits */
+.credits-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.credit-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(201,149,43,.08);
+  font-size: 12px;
+}
+
+.credit-row:last-child { border-bottom: none; }
+
+.credit-role {
+  min-width: 160px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: .75;
+  flex-shrink: 0;
+}
+
+.credit-name {
+  color: rgba(240,222,184,.7);
+  line-height: 1.5;
+}
+
+.credit-name a {
   color: var(--gold);
   text-decoration: none;
-  opacity: .7;
+  transition: color .2s, text-shadow .2s;
+}
+
+.credit-name a:hover {
+  color: #f0deb8;
+  text-shadow: 0 0 8px rgba(201,149,43,.5);
 }
 
 @media (max-width: 400px) {
@@ -559,6 +622,37 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </div>
   </div>
 
+  <!-- Credits -->
+  <div class="section" id="credits">
+    <div class="section-label" id="sec-credits-label">Credits</div>
+    <div class="credits-grid">
+      <div class="credit-row">
+        <span class="credit-role" id="cr1-role">Nápad &amp; design</span>
+        <span class="credit-name">Ondřej Panuška</span>
+      </div>
+      <div class="credit-row">
+        <span class="credit-role" id="cr2-role">Kódování</span>
+        <span class="credit-name">Ondrex + LLMs</span>
+      </div>
+      <div class="credit-row">
+        <span class="credit-role" id="cr3-role">Technologie skla</span>
+        <span class="credit-name" id="cr3-name">Jaromír Panuška - tatínek — sklářský technolog, konzultant chemie a provozu hutě</span>
+      </div>
+      <div class="credit-row">
+        <span class="credit-role" id="cr4-role">Historické prameny</span>
+        <span class="credit-name">J. Kunckel — <em>Ars Vitraria Experimentalis</em> (1743) · Kozáková (diplomová práce)</span>
+      </div>
+      <div class="credit-row">
+        <span class="credit-role" id="cr5-role">Zvuk</span>
+        <span class="credit-name" id="cr5-name">Web Audio API · procedurálně generovaný</span>
+      </div>
+      <div class="credit-row">
+        <span class="credit-role" id="cr6-role">Kontakt</span>
+        <span class="credit-name"><a href="Ember PA" target="_blank" rel="noopener">Ember PA</a></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Historický kontext -->
   <div class="section">
     <div class="section-label" id="sec-hist-label">Historický kontext</div>
@@ -597,8 +691,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </main>
 
 <footer class="site-footer">
-  <div>© 2024 <a href="https://fajrum.cz">fajrum.cz</a> · Sklářská Huť · Arnsdorf 1680</div>
-  <div style="margin-top:6px;"><a href="index.html" id="footer-play">Hrát hru</a> · <a href="about.html">O hře</a></div>
+  <div>© 2026 <a href="https://fajrum.cz">fajrum.cz</a> · Sklářská Huť · Arnsdorf 1680</div>
+  <div class="footer-links">
+    <a href="index.html" id="footer-play">Hrát hru</a>
+    <span class="footer-sep">·</span>
+    <a href="https://oracoolio.com/" target="_blank" rel="noopener">Oracoolio</a>
+    <span class="footer-sep">·</span>
+    <a href="https://ember-pa.cz/" target="_blank" rel="noopener">Ember PA</a>
+    <span class="footer-sep">·</span>
+    <a href="https://myscriptorium.cz/" target="_blank" rel="noopener">Scriptorium</a>
+    <span class="footer-sep">·</span>
+    <a href="https://newsandradio.cz" target="_blank" rel="noopener">Jouza News&amp;Radio</a>
+    <span class="footer-sep">·</span>
+    <a href="https://fractout.com/" target="_blank" rel="noopener">Fractout</a>
+    <span class="footer-sep">·</span>
+    <a href="https://occultix.app/" target="_blank" rel="noopener">Occultix</a>
+  </div>
 </footer>
 
 <script>
@@ -636,6 +744,15 @@ const T = {
     'footer-play': 'Hrát hru',
     'lang-toggle': 'EN',
     'play-btn-lbl': '▶ Hrát',
+    'sec-credits-label': 'Credits',
+    'cr1-role': 'Nápad & design',
+    'cr2-role': 'Kódování',
+    'cr3-role': 'Technologie skla',
+    'cr3-name': 'Tatínek — sklářský technolog, konzultant chemie a provozu hutě',
+    'cr4-role': 'Historické prameny',
+    'cr5-role': 'Zvuk',
+    'cr5-name': 'Web Audio API · procedurálně generovaný',
+    'cr6-role': 'Médium & komunita',
   },
   en: {
     'hdr-title': 'Glass Foundry',
@@ -670,6 +787,15 @@ const T = {
     'footer-play': 'Play the game',
     'lang-toggle': 'CZ',
     'play-btn-lbl': '▶ Play',
+    'sec-credits-label': 'Credits',
+    'cr1-role': 'Concept & design',
+    'cr2-role': 'Coding',
+    'cr3-role': 'Glass technology',
+    'cr3-name': 'Dad — glass technologist, consultant on chemistry and foundry operations',
+    'cr4-role': 'Historical sources',
+    'cr5-role': 'Sound',
+    'cr5-name': 'Web Audio API · procedurally generated',
+    'cr6-role': 'Media & community',
   }
 };
 
