@@ -2209,11 +2209,13 @@ function render(){
         den:"St. George's campaign drew blowers and grinders from the region. Next seasons can be different. Hire them at the Market as soon as possible."}
     };
     const ev=evtData[p.curEvt]||{i:"📜",cs:p.curEvt,en:p.curEvt,dcs:"",den:""};
-    app.append(h("div",{style:{padding:"40px 24px",textAlign:"center"}},
-      h("div",{style:{fontSize:"44px",marginBottom:"10px"}},ev.i),
-      h("h2",{style:{fontSize:"18px",margin:"0 0 8px"}},L==="cs"?ev.cs:ev.en),
-      h("p",{style:{fontSize:"13px",color:"#8b5e34",marginBottom:"20px",lineHeight:"1.5"}},L==="cs"?ev.dcs:ev.den),
-      h("button",{class:"btn btn-p",onClick:dismissEvt},L==="cs"?"Rozumím":"OK")));
+    const evModal=h("div",{class:"modal-bg",onClick:dismissEvt},
+      h("div",{class:"modal",style:{maxWidth:"360px",textAlign:"center"},onClick:e=>e.stopPropagation()},
+        h("div",{style:{fontSize:"48px",marginBottom:"10px"}},ev.i),
+        h("h2",{style:{fontSize:"18px",margin:"0 0 8px"}},L==="cs"?ev.cs:ev.en),
+        h("p",{style:{fontSize:"13px",color:"#8b5e34",marginBottom:"20px",lineHeight:"1.5"}},L==="cs"?ev.dcs:ev.den),
+        h("button",{class:"btn btn-p",onClick:dismissEvt},L==="cs"?"Rozumím":"OK")));
+    app.append(evModal);
     return;
   }
 
@@ -3468,7 +3470,7 @@ function render(){
           ?"Žádné recepty. Naber Baranovského do hutě — přiveze přísady a odemkne receptury."
           :"No recipes yet. Hire Baranovský — he'll bring additives and unlock formulas."));
     } else {
-      const recipeGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}});
+      const recipeGrid=h("div",{style:{display:"grid",gridTemplateColumns:isDesktop?"1fr 1fr 1fr 1fr":"1fr 1fr",gap:"6px"}});
       unlockedColors.forEach(([key,rec])=>{
         const canCraft=isC&&p.fActive&&p.fTemp>=rec.furnaceMin&&
           Object.entries(rec.inputs).every(([item,qty])=>
@@ -3508,18 +3510,16 @@ function render(){
       });
       colorSec.append(recipeGrid);
     }
-    // Desktop: levý sloupec = effSec + colorSec; pravý sloupec = chemSec
+    // Desktop: levý = effSec, pravý = chemSec; colorSec přes celou šířku dole
     if(isDesktop){
-      const bottomCols=h("div",{style:{display:"flex",gap:"0",alignItems:"flex-start"}});
-      const leftPane=h("div",{style:{flex:"1",display:"flex",flexDirection:"column",borderRight:"1px solid rgba(42,26,10,.1)"}});
-      effSec.style.borderBottom="1px solid rgba(42,26,10,.08)";
-      colorSec.style.borderTop="none";
-      leftPane.append(effSec,colorSec);
+      const bottomCols=h("div",{style:{display:"flex",gap:"0",alignItems:"flex-start",borderBottom:"1px solid rgba(42,26,10,.1)"}});
+      effSec.style.flex="1";
+      effSec.style.borderRight="1px solid rgba(42,26,10,.1)";
       chemSec.style.flex="1";
-      bottomCols.append(leftPane,chemSec);
-      content.append(bottomCols);
+      bottomCols.append(effSec,chemSec);
+      content.append(bottomCols,colorSec);
     }else{
-      content.append(effSec,colorSec,chemSec);
+      content.append(effSec,chemSec,colorSec);
     }
 
   // ── TAB: TRH ──
