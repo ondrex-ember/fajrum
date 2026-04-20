@@ -1010,6 +1010,9 @@ function processRound(){
 
   log.push(`\n── ${ms[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")} ──`);
 
+  // Snapshot surovin před kolem (pro delta v toastu)
+  const resSnap={wood:r.wood,sand:r.sand,limestone:r.limestone,potash:r.potash,water:r.water,food:r.food,clay:r.clay};
+
   // Výpočet aktuální účinnosti pece
   const fEff=calcFurnaceEff(furnace, pQ);
   const ft=FURNACE_TYPES[furnace.type];
@@ -1103,6 +1106,15 @@ function processRound(){
     log.push(`🏺 ${rdyPanve.length}× ${L==="cs"?"pánev dozrálo":"crucible ready"} (${stars(avgQ)})!`);
   }
   pA=pA.filter(x=>round<x.rdy);
+
+  // 2b. Temperování pece — Březen (kolo 4, poslední přípravné kolo)
+  // Historicky: od 1. března se pec pomalu nahřívala ~měsíc před Sv. Jiří (24.4.)
+  if(round===4){
+    const tempBonus=5;
+    furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+tempBonus);
+    fT=Math.min(30, fT+15);
+    log.push(`🔥 ${L==="cs"?"Temperování pece zahájeno — pec se pomalu probouzí k životu.":"Furnace tempering begun — the furnace slowly wakes."}`);
+  }
 
   // 3. Kampaň — pec
   if(isC){
@@ -1414,13 +1426,32 @@ function processRound(){
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
-  // Toast — zobraz klíčové info z tohoto kola
+  // Toast — kompaktní strukturovaný přehled kola
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
-  const toastLines=[
-    ...log.filter(l=>l.includes("→")&&(l.includes("waldglas")||l.includes("křišťál")||l.includes("crystal"))),
-    ...log.filter(l=>l.includes("💔")||l.includes("📜")||l.includes("❄️")||l.includes("⚠️")),
-    `${L==="cs"?"Groše":"Groats"}: ${grose}g · ${L==="cs"?"morálka":"morale"}: ${mor}`
-  ].filter(Boolean);
+  const toastLines=[];
+  // Řádek 1: ekonomika
+  toastLines.push(`💰 ${grose}g${debt>0?" · dluh "+debt+"g":""} · ${L==="cs"?"morálka":"morale"}: ${mor} · mzdy ${wages}g · pivo ${bCost}g`);
+  // Řádek 2: produkce (kampaň)
+  if(isC){
+    const wgNew=wg.length-p.waldglas.length, crNew=cr.length-p.crystal.length;
+    const prodParts=[];
+    if(wgNew>0)prodParts.push(`${wgNew}× waldglas`);
+    if(crNew>0)prodParts.push(`${crNew}× krisyal`);
+    if(fA)prodParts.push(`pec ${zone(fT).l} ${fT}%`);
+    if(prodParts.length)toastLines.push(`🔥 ${prodParts.join(" · ")}`);
+  }
+  // Řádek 3: spotřeba surovin (delta)
+  const resDelta=[];
+  const dWood=resSnap.wood-r.wood; if(dWood!==0)resDelta.push(`🪵${dWood>0?"-"+dWood:"+"+Math.abs(dWood)}`);
+  const dSand=resSnap.sand-r.sand; if(dSand!==0)resDelta.push(`🏖️${dSand>0?"-"+dSand:"+"+Math.abs(dSand)}`);
+  const dLime=resSnap.limestone-r.limestone; if(dLime!==0)resDelta.push(`🟩${dLime>0?"-"+dLime:"+"+Math.abs(dLime)}`);
+  const dPot=resSnap.potash-r.potash; if(dPot!==0)resDelta.push(`🌿${dPot>0?"-"+dPot:"+"+Math.abs(dPot)}`);
+  const dWat=resSnap.water-r.water; if(dWat!==0)resDelta.push(`💧${dWat>0?"-"+dWat:"+"+Math.abs(dWat)}`);
+  const dFood=resSnap.food-r.food; if(dFood!==0)resDelta.push(`🍞${dFood>0?"-"+dFood:"+"+Math.abs(dFood)}`);
+  if(resDelta.length)toastLines.push(resDelta.join(" "));
+  // Řádek 4: varování a události
+  const warnLines=log.filter(l=>l.includes("⚠️")||l.includes("💔")||l.includes("👋")||l.includes("🔥 Temper"));
+  warnLines.forEach(l=>toastLines.push(l.replace(/^__EVT__/,"")));
   showToast(toastTitle, toastLines);
   autoSave();
   render();
