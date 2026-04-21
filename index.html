@@ -1178,10 +1178,14 @@ function processRound(){
   }else{
     // Příprava: pec chladne
     if(round===PREP-1){
-      // Duben — temperování
+      // Duben — temperování: spotřeba 50% paliva
+      const fuelNeedTemp=Math.ceil(FUEL_BASE*ft.fuelMult/2);
+      const fuelAllocTemp=Math.floor(r.wood*(p.wa.fuel/100));
+      const fuelUsedTemp=Math.min(fuelAllocTemp,fuelNeedTemp);
+      r.wood=Math.max(0,r.wood-fuelUsedTemp);
       fT=Math.max(fT, 35);
       fA=false;
-      log.push(`🌡️ ${L==="cs"?"Temperování pece — zahřívá se na provozní teplotu.":"Furnace tempering — warming to operating temperature."}`);
+      log.push(`🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → 35%`);
     }else if(round<=1){
       // Listopad (0) a Prosinec (1) — rychlé chladnutí, max 15%
       fT=Math.min(15, Math.max(0, fT-20));
@@ -1261,7 +1265,7 @@ function processRound(){
   const evts=[];
   if(isC&&beer.acc>0&&Math.random()<beer.acc){evts.push("crack");if(pR>0){pR--;mor-=8;}}
   if(isC&&mor>65&&Math.random()<.15)evts.push("good");
-  if(round>=8&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
+  if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
   if(forest<=0&&!evts.includes("forestDepleted"))evts.push("forestDepleted");
   // Kupec přijíždí na Vánoce, Tři králové, Velikonoce
@@ -2681,7 +2685,7 @@ function render(){
     h("div",{class:"furnace-details"},
       h("div",{class:"furnace-hud-row"},
         h("span",{style:{fontWeight:"700",fontSize:"11px",color:isC&&p.fActive?tempColor:"#8b5e34"}},
-          isC&&p.fActive?`${p.fTemp}% teplota`:(L==="cs"?"Pec chladí":"Furnace cold")),
+          isC&&p.fActive?`${p.fTemp}% teplota`:isP&&p.round===PREP-1?(L==="cs"?"🌡️ Temperování":"🌡️ Tempering"):(L==="cs"?"Pec chladí":"Furnace cold")),
         h("span",{style:{marginLeft:"6px"}},`eff ${fEff}%`),
         h("span",{style:{marginLeft:"6px"}},`zaběh. ${p.furnace.runIn}%`)),
       h("div",{style:{display:"flex",gap:"3px",marginTop:"2px"}},
@@ -3529,11 +3533,11 @@ function render(){
         h("div",{style:{marginTop:"8px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic",
           borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"6px"}},
           L==="cs"
-            ?"⚠️ Voda se nepřidává — kmen se míchá za sucha, voda se při tavení okamžitě odpaří a může pánev poškodit."
-            :"⚠️ No water added — batch is mixed dry. Water evaporates instantly at melt temperature and can crack the crucible."),
+            ?"⚠️ Pozor na vodu, může pánev poškodit."
+            :"⚠️ Beware of water - it can crack the crucible."),
         h("div",{style:{marginTop:"6px",fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
           L==="cs"
-            ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — připravujeme."
+            ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — všecko bude."
             :"🔬 Colorants, decolorants and special additives (MnO₂, CoO, Au...) — coming soon.")));
     content.append(chemSec);
 
