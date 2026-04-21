@@ -11,7 +11,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sklářská Huť · v7.2</title>
+<title>Sklářská Huť · v4.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4258,15 +4258,26 @@ function render(){
     const iSec=h("div",{class:"sec"});
     iSec.append(
       h("div",{class:"sec-title"},L==="cs"?"O hře":"About"),
-      // Verze a popis
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.8",marginBottom:"8px"}},
-        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v4.2"),h("br",null),
+        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v4.3"),h("br",null),
         h("em",null,"Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680"),h("br",null),
         L==="cs"
           ?"Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách."
           :"A historical resource management game set in the world of 17th century forest glassworks in northern Bohemia."),
-      // Systémy
+      // Novinky v4.3
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px",marginTop:"8px"}},
+        L==="cs"?"✨ Novinky v4.3:":"✨ What's new in v4.3:"),
+      h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9",marginBottom:"10px",
+        paddingBottom:"8px",borderBottom:"1px solid rgba(42,26,10,.1)"}},
+        "🗺️ "+(L==="cs"?"Season panel — 2 sloupce · SitRep · furnHud integrován":"Season panel — 2 columns · SitRep · furnHud integrated"),h("br",null),
+        "📦 "+(L==="cs"?"Nový tab Sklad — sklo, přísady, suroviny, ekonomika":"New Storage tab — glass, additives, resources, economy"),h("br",null),
+        "🌡️ "+(L==="cs"?"Reálná teplota pece — temperování, rozžíhání, °C":"Real furnace temps — tempering, firing up, °C"),h("br",null),
+        "🏺 "+(L==="cs"?"Pánev zraje 6 měsíců · forma okamžitá · voda":"Crucible cures 6 months · mould instant · water"),h("br",null),
+        "💊 "+(L==="cs"?"Pills redesign — kategorie, SitRep, 2 řady mobil":"Pills redesign — categories, SitRep, 2 rows mobile"),h("br",null),
+        "🔥 "+(L==="cs"?"SVG sklovina v kruhu — animovaná dle teploty":"SVG glass melt circle — animated by temperature"),h("br",null),
+        "📌 "+(L==="cs"?"Tlačítko Další měsíc — sticky dole":"Next Month button — sticky at bottom")),
+      // Systémy v4.2
+      h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px"}},
         L==="cs"?"Herní systémy v4.2:":"Game systems v4.2:"),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9"}},
         "🗓️ "+(L==="cs"?"12 kol · 5 příprava · 7 kampaň":"12 rounds · 5 prep · 7 campaign"),h("br",null),
@@ -4304,7 +4315,7 @@ function render(){
 		  h("span",null," · 🧩 "),h("a",{href:"https://fractout.com/",style:{color:"#c9952b"}},"Fractout"),
           h("span",null," · 🔮 "),h("a",{href:"https://oracoolio.com",style:{color:"#c9952b"}},"Oracoolio")),
         h("div",{style:{marginTop:"4px",fontSize:"10px",color:"#aaa"}},
-          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v4.2 · ${new Date().getFullYear()}`),
+          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v4.3 · ${new Date().getFullYear()}`),
         h("div",{style:{marginTop:"8px"}},
           h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none",letterSpacing:"0.5px"}},
             "📖 "+(L==="cs"?"O hře — about.html →":"About the game →")))));
