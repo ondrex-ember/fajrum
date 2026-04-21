@@ -1001,7 +1001,7 @@ function initState(){
     wa:{fuel:50,potash:30,build:20},
     // Pánve s kvalitou
     pReady:2, pAging:[], pUses:PANEV_DUR, panevQuality:2,
-    formyAging:[], // formy zrají 1 kolo
+    formyAging:[], // legacy — formy jsou nyní okamžité
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
     waldglas:[], crystal:[],
@@ -1129,14 +1129,7 @@ function processRound(){
     }else log.push(`😴 ${w.name}: ${L==="cs"?"odpočívá":"resting"}`);
   }
 
-  // 2b. Dozrávání forem
-  const formyAging=[...(p.formyAging||[])];
-  const rdyFormy=formyAging.filter(x=>round>=x.rdy);
-  if(rdyFormy.length){
-    r.formy=(r.formy||0)+rdyFormy.length;
-    log.push(`🌳 ${rdyFormy.length}× ${L==="cs"?"forma hotová":"mould ready"}!`);
-  }
-  const formyAgingNew=formyAging.filter(x=>round<x.rdy);
+  // 2b. Pánve dozrávají
   const rdyPanve=pA.filter(x=>round>=x.rdy);
   if(rdyPanve.length){
     pR+=rdyPanve.length;
@@ -1475,7 +1468,7 @@ function processRound(){
     tW, tC, tQS, tQN, done, contracts:con, workers:wk, shop:genShop(),
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
-    formyAging:formyAgingNew,
+    formyAging:[], // formy jsou okamžité — queue vždy prázdná
     summary:{wages,bCost,dPay,mDelta:mor-p.morale,fCut:p.forest-forest,fEff:Math.round(calcFurnaceEff(furnace,pQ)*100)},
     events:evts.slice(1), curEvt:evts[0]||null,
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
@@ -3146,13 +3139,6 @@ function render(){
       formyInHutte.length>0
         ?`🌳 ${L==="cs"?"Formař":"Mould-maker"}: ${formyInHutte.map(w=>w.name).join(", ")} · ${L==="cs"?"Hotové formy":"Ready moulds"}: ${p.res.formy||0}×`
         :`❌ ${L==="cs"?"Žádný Formař v huti":"No Mould-maker in foundry"}`));
-    if((p.formyAging||[]).length>0){
-      const fagDiv=h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px"}});
-      (p.formyAging||[]).forEach(fa=>{
-        fagDiv.append(h("div",null,`🌳 ${L==="cs"?"zraje → hotovo v":"aging → ready in"} ${L==="cs"?MONTHS_CS[fa.rdy%12]:MONTHS_EN[fa.rdy%12]}`));
-      });
-      wFormy.append(fagDiv);
-    }
     // Desktop: w1+w2 vlevo, w3+wFormy vpravo; wFouk pod jako full-width
     if(isDesktop){
       const prodGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",borderBottom:"1px solid rgba(42,26,10,.1)"}});
