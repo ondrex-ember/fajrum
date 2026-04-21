@@ -242,7 +242,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 //   • Balancing fix: více startovního dřeva, surovin, grošů
 // ════════════════════════════════════════════════════════════
 
-const ROUNDS=12, PREP=5, PANEV_AGE=3, PANEV_DUR=4, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
+const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=4, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
 const INIT_FOREST=50, FOREST_REGEN_BASE=2;
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
@@ -353,9 +353,9 @@ const MONTH_DATA=[
 const EFF_BASE=0.35, EFF_RUNIN=0.35, EFF_PANEV=0.20, EFF_SHAMOT=0.10;
 
 const FURNACE_TYPES={
-  primitive:{name:"Primitivní pec",nameEn:"Primitive furnace",maxRunIn:60,maxTemp:80,fuelMult:1.0},
+  primitive:{name:"Primitivní pec",nameEn:"Primitive furnace",maxRunIn:60,maxTemp:87,fuelMult:1.0},
   stone:    {name:"Zděná pec",    nameEn:"Stone furnace",    maxRunIn:85,maxTemp:92,fuelMult:0.85},
-  master:   {name:"Mistrovská pec",nameEn:"Master furnace",  maxRunIn:100,maxTemp:98,fuelMult:0.70}
+  master:   {name:"Mistrovská pec",nameEn:"Master furnace",  maxRunIn:100,maxTemp:99,fuelMult:0.70}
 };
 const UPGRADE_COST={stone:{wood:20,limestone:8,clay:6,grose:15},master:{wood:30,limestone:12,clay:10,grose:40}};
 
@@ -1099,22 +1099,23 @@ function processRound(){
         log.push(`🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
       }else log.push(`🏺 ${w.name}: ${L==="cs"?"chybí jíl nebo jídlo":"need clay or food"}`);
     }else if(w.task==="formar"){
-      // Formař vyrábí dřevěné formy — zrají 1 kolo, aktivní od března (kolo 4)
+      // Formař vyrábí dřevěné formy — okamžitě hotové, aktivní od března (kolo 4)
       if(round<4){
         log.push(`🌳 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
       }else{
-        const FORMA_WOOD=2, FORMA_WATER=1, FORMA_FOOD=1;
+        const FORMA_WOOD=2, FORMA_WATER=2, FORMA_FOOD=1; // 2 voda — 1 na výrobu + 1 na uložení ve vodě
         if(r.wood>=FORMA_WOOD&&r.water>=FORMA_WATER&&r.food>=FORMA_FOOD){
           r.wood-=FORMA_WOOD; r.water-=FORMA_WATER; r.food-=FORMA_FOOD;
           const formarLv=w.prof==="formar"?w.lv:1;
           const kovakBonus=w.traits?.includes("kovak")?1:0;
           const formQ=clamp(formarLv+kovakBonus+Math.floor(Math.random()*2),1,5);
-          p.formyAging=[...(p.formyAging||[]),{cr:round,rdy:round+FORMA_AGE,q:formQ}];
-          log.push(`🌳 ${w.name}: ${L==="cs"?"forma dána sušit, hotová za":"mould drying, ready in"} ${FORMA_AGE} ${L==="cs"?"kolo":"round"} (${stars(formQ)})`);
+          // Forma je hotová okamžitě — čerstvější = lepší, uchovávána ve vodě
+          r.formy=(r.formy||0)+1;
+          log.push(`🌳 ${w.name}: ${L==="cs"?"forma hotová (čerstvá, uložena ve vodě)":"mould ready (fresh, stored in water)"} ${stars(formQ)}`);
         }else{
           const missing=[];
-          if(r.wood<2)missing.push("2🪵");
-          if(r.water<1)missing.push("1💧");
+          if(r.wood<FORMA_WOOD)missing.push("2🪵");
+          if(r.water<FORMA_WATER)missing.push("2💧");
           if(r.food<1)missing.push("1🍞");
           log.push(`🌳 ${w.name}: ${L==="cs"?"chybí":"missing"} ${missing.join(", ")}`);
         }
@@ -1160,7 +1161,16 @@ function processRound(){
     if(fuelUsed>=fuelNeed){
       r.wood-=fuelUsed;
       // Teplota závisí na peci a palivu
-      const tgt=clamp(ft.maxTemp*(0.6+(fuelUsed-fuelNeed)*0.04)+Math.random()*8,40,ft.maxTemp);
+      let tgt;
+      if(round===PREP){
+        // Duben — rozžíhání: skok na 65%+ (1100°C+) s 50% palivem
+        const halfFuel=Math.ceil(fuelNeed/2);
+        const actualFuel=Math.min(fuelUsed,halfFuel);
+        r.wood+=(fuelUsed-actualFuel); // vrátíme nevyužité dřevo
+        tgt=clamp(65+Math.round(Math.random()*8), 65, ft.maxTemp);
+      }else{
+        tgt=clamp(ft.maxTemp*(0.78+(fuelUsed-fuelNeed)*0.05)+Math.random()*5,55,ft.maxTemp);
+      }
       fT=Math.round(fT*.25+tgt*.75); fA=true;
       // Zaběhávání pece — každá kampaňová várka trochu pomáhá
       furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+2);
@@ -1204,14 +1214,14 @@ function processRound(){
   }else{
     // Příprava: pec chladne
     if(round===PREP-1){
-      // Duben — temperování: spotřeba 50% paliva
+      // Březen — temperování: zahřívá na 300-500°C ekvivalent (30-40% fTemp), 50% paliva
       const fuelNeedTemp=Math.ceil(FUEL_BASE*ft.fuelMult/2);
       const fuelAllocTemp=Math.floor(r.wood*(p.wa.fuel/100));
       const fuelUsedTemp=Math.min(fuelAllocTemp,fuelNeedTemp);
       r.wood=Math.max(0,r.wood-fuelUsedTemp);
-      fT=Math.max(fT, 35);
+      fT=clamp(30+Math.round(Math.random()*10), 30, 40); // 30-40%
       fA=false;
-      log.push(`🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → 35%`);
+      log.push(`🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → ${fT}% (~${Math.round(fT*14)}°C)`);
     }else if(round<=1){
       // Listopad (0) a Prosinec (1) — rychlé chladnutí, max 15%
       fT=Math.min(15, Math.max(0, fT-20));
@@ -3357,12 +3367,12 @@ function render(){
     const tempLabel=[
       {max:10,cs:"Studená · topeniště mlčí",en:"Cold · hearth is silent"},
       {max:25,cs:"Tmavý žár · ~600°C",en:"Dark heat · ~600°C"},
-      {max:40,cs:"Třešňová červeň · ~800°C",en:"Cherry red · ~800°C"},
+      {max:40,cs:"Třešňová červeň · ~800°C · temperování",en:"Cherry red · ~800°C · tempering"},
       {max:55,cs:"Jasný oranž · ~1000°C",en:"Bright orange · ~1000°C"},
-      {max:70,cs:"Žlutý žár · ~1100°C · sklovina taje!",en:"Yellow heat · ~1100°C · glass melts!"},
-      {max:82,cs:"✅ SPRÁVNÝ TAVICÍ ŽÁR · ~1200°C",en:"✅ OPTIMAL MELT · ~1200°C"},
-      {max:92,cs:"Bíložlutá · ~1350°C · pozor!",en:"White-yellow · ~1350°C · caution!"},
-      {max:100,cs:"⚠️ PŘETOPENO! Pánev praskne!",en:"⚠️ OVERHEATED! Crucible will crack!"}
+      {max:68,cs:"Žlutý žár · ~1100°C · sklovina začíná tát",en:"Yellow heat · ~1100°C · glass begins to melt"},
+      {max:80,cs:"✅ TAVICÍ ŽÁR · ~1250°C · pracovní teplota",en:"✅ MELT HEAT · ~1250°C · working temperature"},
+      {max:90,cs:"Bílý žár · ~1350°C · dotavení",en:"White heat · ~1350°C · refining"},
+      {max:100,cs:"⚠️ PŘETOPENO! · ~1450°C+ · Pánev praskne!",en:"⚠️ OVERHEATED! · ~1450°C+ · Crucible will crack!"}
     ].find(t=>p.fTemp<=t.max)||{cs:"⚠️ PŘETOPENO!",en:"⚠️ OVERHEATED!"};
 
     // Pec dashboard — středověký styl
@@ -3382,13 +3392,23 @@ function render(){
           p.fTemp+"%"));
       gaugeWrap.append(tempRow);
     }
-    const gaugeInner=h("div",{class:"furnace-temp-gauge"});
+    const gaugeInner=h("div",{class:"furnace-temp-gauge",style:{position:"relative"}});
+    const activeZones=ZONES.filter(z2=>p.fTemp>=z2.max-(ZONES.indexOf(z2)===0?10:12));
     ZONES.forEach((z2,i)=>{
       const active=p.fTemp>=z2.max-(i===0?10:12);
+      const isLast=active&&(i===ZONES.length-1||!( p.fTemp>=(ZONES[i+1]?.max-12)));
       const heightPct=active?30+i*10:5;
-      gaugeInner.append(h("div",{class:"gauge-bar",style:{
+      const barEl=h("div",{class:"gauge-bar",style:{
         height:heightPct+"%",
-        background:active?z2.c:"rgba(255,255,255,.06)"}}));
+        background:active?z2.c:"rgba(255,255,255,.06)",
+        position:"relative"}});
+      if(isLast&&p.fTemp>0){
+        const lbl=document.createElement("div");
+        lbl.style.cssText="position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:"+z2.c+";white-space:nowrap;padding-bottom:1px;";
+        lbl.textContent=p.fTemp+"%";
+        barEl.appendChild(lbl);
+      }
+      gaugeInner.append(barEl);
     });
     gaugeWrap.append(gaugeInner);
     dash.append(gaugeWrap);
@@ -3469,10 +3489,10 @@ function render(){
       const tempDiv=document.createElement("div");
       tempDiv.style.cssText="margin-bottom:4px;";
       tempDiv.innerHTML=`<div style="font-size:28px;font-family:Georgia,serif;letter-spacing:2px;color:${active?meltColors.c3:"#5a3a1a"};transition:color .5s;font-weight:700;${meltColors.glow!=="none"?`text-shadow:0 0 12px ${meltColors.glow};`:""}">
-        ${active?temp+"%":"—"}
+        ${active?temp+"%":isTempering?(temp+"%"):(isC&&p.round===PREP?(temp+"%"):"—")}
       </div>
       <div style="font-size:10px;color:${active?meltColors.c3:"#5a3a1a"};font-style:italic;letter-spacing:.4px;line-height:1.4;">
-        ${active?(L==="cs"?tempLabel.cs:tempLabel.en):(L==="cs"?"Studená — kampaň spouštíš v dubnu":"Cold — campaign starts in April")}
+        ${active?(L==="cs"?tempLabel.cs:tempLabel.en):isTempering?(L==="cs"?"🌡️ Temperování — ~300–500°C":"🌡️ Tempering — ~300–500°C"):(isC&&p.round===PREP?(L==="cs"?"🔥 Sv. Jiří — rozžíháme na 1100°C+":"🔥 St. George — firing up to 1100°C+"):(L==="cs"?"Pec studená · kampaň v dubnu":"Furnace cold · campaign in April"))}
       </div>`;
       rightWrap.append(tempDiv);
 
@@ -3512,8 +3532,8 @@ function render(){
     // Fáze a doporučení
     const phaseMsg=isC
       ?(p.fActive
-        ?(p.fTemp>=65&&p.fTemp<=85?{cs:"🎯 Pec na správné teplotě. Taví se!",en:"🎯 Optimal temperature. Smelting!"}
-          :p.fTemp>85?{cs:"⚠️ Přetopeno — ubeř palivo!",en:"⚠️ Overheated — reduce fuel!"}
+        ?(p.fTemp>=68&&p.fTemp<=87?{cs:"🎯 Pec na správné teplotě. Taví se!",en:"🎯 Optimal temperature. Smelting!"}
+          :p.fTemp>87?{cs:"⚠️ Přetopeno — ubeř palivo!",en:"⚠️ Overheated — reduce fuel!"}
           :{cs:"🔼 Nízká teplota — přidej palivo.",en:"🔼 Low temp — add fuel."})
         :p.round===PREP
           ?{cs:`🌡️ Sv. Jiří — kampaň začíná! Přidej palivo, pec se rozžíhá. Teplota: ${p.fTemp}%.`,
