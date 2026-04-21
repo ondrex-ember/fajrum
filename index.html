@@ -1382,7 +1382,46 @@ function processRound(){
 
   // 8. Náhodné události
   const evts=[];
-  if(isC&&beer.acc>0&&Math.random()<beer.acc){evts.push("crack");if(pR>0){pR--;mor-=8;}}
+
+  // ── CRACK EVENT — prasklá pánev ──
+  // Triggers: přetopení (fT>=90), stará pánev (pU<=2), náhoda 4%
+  const crackByHeat=isC&&fA&&fT>=90&&Math.random()<0.60;
+  const crackByAge=isC&&fA&&pR>0&&pU<=2&&Math.random()<0.40;
+  const crackByChance=isC&&fA&&pR>0&&Math.random()<0.04;
+  if(!evts.includes("crack")&&(crackByHeat||crackByAge||crackByChance)){
+    // Důvod praskliny
+    const crackReason=crackByHeat?"heat":crackByAge?"age":"chance";
+    // Varianta C: ztráta várky + 1–2 kusy ze skladu
+    const lostWg=[];
+    const lostCr=[];
+    // Ztráta ze skladu — 1–2 nejkvalitnější kusy (horko je zničilo)
+    if(wg.length>0){
+      const sorted=[...wg].sort((a,b)=>b-a);
+      const nLost=Math.min(wg.length, 1+Math.floor(Math.random()*2));
+      for(let i=0;i<nLost;i++)lostWg.push(sorted[i]);
+      // Odeber z wg
+      lostWg.forEach(q=>{const idx=wg.indexOf(q);if(idx>=0)wg.splice(idx,1);});
+    }
+    if(cr.length>0&&Math.random()<0.5){
+      const sorted=[...cr].sort((a,b)=>b-a);
+      const nLost=Math.min(cr.length,1);
+      for(let i=0;i<nLost;i++)lostCr.push(sorted[i]);
+      lostCr.forEach(q=>{const idx=cr.indexOf(q);if(idx>=0)cr.splice(idx,1);});
+    }
+    // Várka kola = 0 (wg/cr přírůstek se nepřidá — tW/tC nepočítáme)
+    // Pec zchladne, zastaví se
+    fT=Math.max(0,fT-25); fA=false;
+    // Pánev se spotřebuje
+    if(pR>0){pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;pQ=Math.max(1,pQ-1);}
+    mor-=15;
+    // Uložit ztráty pro modal
+    G._crackLoss={reason:crackReason,wg:lostWg,cr:lostCr};
+    evts.push("crack");
+    // Kronika
+    const lossStr=[lostWg.length?`${lostWg.length}× waldglas`:"",lostCr.length?`${lostCr.length}× křišťál`:""].filter(Boolean).join(", ");
+    log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} · ${lossStr||L==="cs"?"várka zničena":"batch lost"} · ${L==="cs"?"pec zhasíná":"furnace down"}`);
+  }
+
   if(isC&&fA&&mor>65&&(wg.length>p.waldglas.length||cr.length>p.crystal.length)&&Math.random()<.15)evts.push("good");
   if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
@@ -2374,6 +2413,90 @@ function render(){
 
   // ── EVENT ──
   if(p.phase==="event"&&p.curEvt){
+
+    // ── CRACK — speciální dramatický modal ──
+    if(p.curEvt==="crack"){
+      const cl=G._crackLoss||{reason:"chance",wg:[],cr:[]};
+      const reasonText={
+        heat:{cs:"Pec byla přetopena. Žár přemohl hlínu.",en:"Furnace overheated. The heat overcame the clay."},
+        age: {cs:"Pánev dosloužila. Příliš mnoho várek.",en:"The crucible gave out. Too many batches."},
+        chance:{cs:"Nikdo neví proč. Tak to prostě je.",en:"No one knows why. That's how it goes."}
+      }[cl.reason]||{cs:"",en:""};
+      const lostLines=[];
+      if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× lesní sklo ${cl.wg.map(q=>"★".repeat(q)).join(", ")}`);
+      if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× křišťál ${cl.cr.map(q=>"★".repeat(q)).join(", ")}`);
+      lostLines.push(L==="cs"?"💔 Várka kola — zničena":"💔 This round's batch — destroyed");
+
+      // CSS shake animace
+      const styleId="crack-shake-style";
+      if(!document.getElementById(styleId)){
+        const st=document.createElement("style");
+        st.id=styleId;
+        st.textContent="@keyframes crackShake{0%,100%{transform:translate(0,0) rotate(0deg)}10%{transform:translate(-6px,2px) rotate(-1.5deg)}20%{transform:translate(6px,-2px) rotate(1deg)}30%{transform:translate(-4px,4px) rotate(-0.8deg)}40%{transform:translate(4px,-1px) rotate(0.5deg)}50%{transform:translate(-3px,2px) rotate(-0.3deg)}60%{transform:translate(3px,-2px) rotate(0.2deg)}80%{transform:translate(-1px,1px) rotate(-0.1deg)}}";
+        document.head.appendChild(st);
+      }
+
+      // Zvuk — zavolat crack audio pokud dostupný
+      try{if(FurnaceAudio&&FurnaceAudio._crack){
+        FurnaceAudio._crack('sharp',FurnaceAudio.ctx?.currentTime||0,1.0);
+        setTimeout(()=>FurnaceAudio._crack('deep',(FurnaceAudio.ctx?.currentTime||0)+0.08,0.8),80);
+      }}catch(e){}
+
+      const crackModal=document.createElement("div");
+      crackModal.style.cssText="position:fixed;inset:0;background:rgba(40,4,4,.92);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;";
+      const crackBox=document.createElement("div");
+      crackBox.style.cssText="background:linear-gradient(145deg,#2a0808,#1a0404);border:2px solid #8b1a1a;border-radius:8px;padding:24px 20px;max-width:340px;width:100%;text-align:center;animation:crackShake 0.6s ease-out;box-shadow:0 0 40px rgba(160,0,0,.5);";
+
+      const icon=document.createElement("div");
+      icon.style.cssText="font-size:56px;margin-bottom:8px;filter:drop-shadow(0 0 12px #ff4444);";
+      icon.textContent="💔";
+
+      const title=document.createElement("div");
+      title.style.cssText="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#ff6666;margin-bottom:6px;letter-spacing:0.5px;";
+      title.textContent=L==="cs"?"Pánev praskla!":"Crucible cracked!";
+
+      const subtitle=document.createElement("div");
+      subtitle.style.cssText="font-size:11px;color:#cc4444;font-style:italic;margin-bottom:14px;line-height:1.4;";
+      subtitle.textContent=L==="cs"?reasonText.cs:reasonText.en;
+
+      const lossBox=document.createElement("div");
+      lossBox.style.cssText="background:rgba(0,0,0,.35);border:1px solid #6b1a1a;border-radius:6px;padding:10px 12px;margin-bottom:14px;text-align:left;";
+      lostLines.forEach(line=>{
+        const d=document.createElement("div");
+        d.style.cssText="font-size:11px;color:#ff8888;margin-bottom:3px;font-family:Georgia,serif;";
+        d.textContent=line;
+        lossBox.appendChild(d);
+      });
+
+      const statsRow=document.createElement("div");
+      statsRow.style.cssText="display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;";
+      [{icon:"🌡️",label:L==="cs"?"-25% teplota":"-25% temp"},{icon:"🏺",label:L==="cs"?"pánev odepsána":"crucible lost"},{icon:"😞",label:L==="cs"?"-15 nálada":"-15 morale"}].forEach(s=>{
+        const chip=document.createElement("div");
+        chip.style.cssText="background:rgba(160,0,0,.2);border:1px solid #6b1a1a;border-radius:4px;padding:3px 8px;font-size:10px;color:#ff8888;";
+        chip.textContent=s.icon+" "+s.label;
+        statsRow.appendChild(chip);
+      });
+
+      const chron=document.createElement("div");
+      chron.style.cssText="font-size:10px;color:#884444;font-style:italic;margin-bottom:16px;line-height:1.5;border-top:1px solid #4a1a1a;padding-top:10px;";
+      const chronTexts={
+        cs:[`„Praskot byl slýšet až na druhém konci hvozdu.“`,`„Hanns se zastavil, podíval se na střepy a neřekl nic.“`,`„Rok 1680. Pánev nevydřela. Sklovina se rozlila po výh ni.“`],
+        en:["\"The crack echoed through the forest.\"","\"Hanns stopped, looked at the shards, and said nothing.\"","\"Year 1680. The crucible gave out. Glass spilled across the hearth.\""]
+      };
+      chron.textContent=(L==="cs"?chronTexts.cs:chronTexts.en)[Math.floor(Math.random()*3)];
+
+      const btn=document.createElement("button");
+      btn.className="btn btn-danger";
+      btn.style.cssText="width:100%;padding:10px;font-size:13px;font-family:Georgia,serif;";
+      btn.textContent=L==="cs"?"Smolař — rozumím":"Tough luck — understood";
+      btn.onclick=()=>{G._crackLoss=null;dismissEvt();};
+
+      crackBox.append(icon,title,subtitle,lossBox,statsRow,chron,btn);
+      crackModal.appendChild(crackBox);
+      app.appendChild(crackModal);
+      return;
+    }
+
     const evtData={
       crack:{i:"💔",cs:"Prasklá pánev!",en:"Cracked crucible!",
         dcs:"Pánev nevydržela žár. Várka je ztracena.",den:"The crucible cracked. Batch lost."},
