@@ -82,8 +82,14 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .round-bar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;font-size:11px;}
 .round-pip{width:22px;height:20px;border-radius:3px;display:flex;align-items:center;
   justify-content:center;font-size:8px;flex-shrink:0;}
-.res-bar{display:flex;flex-wrap:wrap;gap:3px;padding:5px 14px;
+.res-bar{display:flex;flex-direction:column;gap:2px;padding:5px 14px;
   border-bottom:1px solid rgba(42,26,10,.13);flex-shrink:0;}
+.pill-row{display:flex;flex-wrap:nowrap;gap:3px;align-items:center;}
+.pill-sep{color:rgba(42,26,10,.25);font-size:11px;padding:0 2px;flex-shrink:0;}
+.pill-primary .pill{padding:2px 7px;font-size:11px;}
+#app.desktop .res-bar{flex-direction:row;align-items:center;flex-wrap:nowrap;}
+#app.desktop .pill-row{flex-wrap:nowrap;}
+#app.desktop .pill-row+.pill-row{margin-left:0;}
 .worker-card{margin-bottom:8px;padding:6px;background:rgba(0,0,0,.02);border-radius:4px;}
 .worker-name{font-size:12px;font-weight:700;margin-bottom:3px;}
 .task-btns{display:flex;flex-wrap:wrap;gap:2px;}
@@ -2582,29 +2588,65 @@ function render(){
   const md=MONTH_DATA[p.round]||MONTH_DATA[0];
   const wMult=WINTER_LOG_MULT[p.round]||1;
   const resBar=h("div",{class:"res-bar"});
-  resBar.append(
-    pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",
-      L==="cs"?`Hvozd: ${p.forest} parcel${wMult>1?" · ❄️ sáně +"+Math.round((wMult-1)*100)+"%":""}`:
-               `Forest: ${p.forest} parcels${wMult>1?" · ❄️ sleds +"+Math.round((wMult-1)*100)+"%":""}`),
-    pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",
-      L==="cs"?`Dřevo: ${p.res.wood} · palivo/potaš/stavba`:`Wood: ${p.res.wood} · fuel/potash/build`),
-    pillTip("🏖️",p.res.sand,"",L==="cs"?`Křemenný písek: ${p.res.sand}`:`Quartz sand: ${p.res.sand}`),
-    pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
-    pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",
-      L==="cs"?`Potaš: ${p.res.potash} · z bukového popela`:`Potash: ${p.res.potash} · from beech ash`),
-    pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
-    pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay} · pro výrobu pánví`:`Clay: ${p.res.clay} · for crucibles`),
-    pillTip("🍞",p.res.food,p.res.food<2?"warn":"",
-      L==="cs"?`Jídlo: ${p.res.food} · spotřeba ${Math.ceil(p.workers.length*0.5)}/kolo · zabijačka v září/říjnu`
-              :`Food: ${p.res.food} · consumption ${Math.ceil(p.workers.length*0.5)}/round · autumn slaughter`),
-    pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",
-      L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`
-              :`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing · qual. ${stars(p.panevQuality)}`),
-    pillTip("🌳",p.res.formy||0,"",
-      L==="cs"?`Formy: ${p.res.formy||0} · dřevěné formy pro foukání`:`Moulds: ${p.res.formy||0} · wooden moulds for blowing`),
-    pillTip("😊",p.morale+"%",p.morale<40?"warn":"",
-      L==="cs"?`Nálada hutě: ${p.morale}% · pivo: ${["žádné","1 džbán","2 džbány","3+ džbánů"][Math.min(p.beer,3)]}`
-              :`Foundry morale: ${p.morale}% · beer: ${["none","1 jug","2 jugs","3+ jugs"][Math.min(p.beer,3)]}`));
+  const sep=()=>h("span",{class:"pill-sep"},"│");
+  const grpLabel=(txt)=>h("span",{style:{fontSize:"8px",color:"#8b5e34",textTransform:"uppercase",
+    letterSpacing:"1px",opacity:.6,flexShrink:0,alignSelf:"center",marginRight:"1px"}},txt);
+  const colorStockKeys=["modra","smaragd","lattimo","rubin"];
+  const colorIcons={modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
+  const colorStock=colorStockKeys.reduce((s,k)=>{const arr=p[k];return s+(Array.isArray(arr)?arr.length:0);},0);
+  const rainbowTip=colorStockKeys.map(k=>{const n=Array.isArray(p[k])?p[k].length:0;return n>0?`${colorIcons[k]}${n}`:"";}).filter(Boolean).join(" ")||"—";
+  // Přísady na skladě
+  const additives=p.additives||{};
+  const additivesTotal=Object.values(additives).reduce((s,v)=>s+(v||0),0);
+  const additivesTip=Object.entries(ADDITIVES).map(([k,ad])=>{const n=additives[k]||0;return n>0?`${ad.icon}${n}`:""}).filter(Boolean).join(" ")||"—";
+  if(isDesktop){
+    resBar.append(
+      grpLabel(L==="cs"?"Les":"For."),
+      pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`),
+      sep(),
+      grpLabel(L==="cs"?"Suro.":"Mats"),
+      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
+      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
+      pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`),
+      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
+      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
+      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
+      sep(),
+      grpLabel(L==="cs"?"Výr.":"Prod."),
+      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing`),
+      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`),
+      ...(additivesTotal>0?[pillTip("🧪",additivesTotal,"",L==="cs"?`Přísady: ${additivesTip}`:`Additives: ${additivesTip}`)]:[]),
+      ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barevné sklo: ${rainbowTip}`:`Coloured glass: ${rainbowTip}`)]:[]),
+      sep(),
+      grpLabel(L==="cs"?"Huť":"Hut"),
+      pillTip("😊",p.morale+"%",p.morale<40?"warn":"",L==="cs"?`Nálada: ${p.morale}%`:`Morale: ${p.morale}%`));
+  }else{
+    const row1=h("div",{class:"pill-row pill-primary"});
+    row1.append(
+      grpLabel(L==="cs"?"Les":"For."),
+      pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`),
+      sep(),
+      pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`),
+      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
+      sep(),
+      pillTip("😊",p.morale+"%",p.morale<40?"warn":"",L==="cs"?`Nálada: ${p.morale}%`:`Morale: ${p.morale}%`));
+    const row2=h("div",{class:"pill-row"});
+    row2.append(
+      grpLabel(L==="cs"?"Suro.":"Mat."),
+      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
+      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
+      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
+      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
+      sep(),
+      grpLabel(L==="cs"?"Výr.":"Pr."),
+      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready`),
+      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`),
+      ...(additivesTotal>0?[pillTip("🧪",additivesTotal,"",L==="cs"?`Přísady: ${additivesTip}`:`Additives: ${additivesTip}`)]:[]),
+      ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barvy: ${rainbowTip}`:`Colours: ${rainbowTip}`)]:[]))
+    resBar.append(row1,row2);
+  }
   app.append(resBar);
 
   // Sezónní kontext panel — vždy viditelný
