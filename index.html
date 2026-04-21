@@ -2685,7 +2685,7 @@ function render(){
     h("div",{class:"furnace-details"},
       h("div",{class:"furnace-hud-row"},
         h("span",{style:{fontWeight:"700",fontSize:"11px",color:isC&&p.fActive?tempColor:"#8b5e34"}},
-          isC&&p.fActive?`${p.fTemp}% teplota`:isP&&p.round===PREP-1?(L==="cs"?"🌡️ Temperování":"🌡️ Tempering"):(L==="cs"?"Pec chladí":"Furnace cold")),
+          isC&&p.fActive?`${p.fTemp}% teplota`:isP&&p.round===PREP-1?(L==="cs"?"🌡️ Temperování":"🌡️ Tempering"):isC&&p.round===PREP?(L==="cs"?"🔥 Rozžíháme...":"🔥 Lighting up..."):(L==="cs"?"Pec chladí":"Furnace cold")),
         h("span",{style:{marginLeft:"6px"}},`eff ${fEff}%`),
         h("span",{style:{marginLeft:"6px"}},`zaběh. ${p.furnace.runIn}%`)),
       h("div",{style:{display:"flex",gap:"3px",marginTop:"2px"}},
@@ -3390,7 +3390,7 @@ function render(){
         `:""}
         <text x="70" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="9"
           fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.9">
-          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):isCooling?"CHLADNE":isTempering?"TEMPERUJE":"STUDENÁ"}
+          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):isCooling?"CHLADNE":isTempering?"TEMPERUJE":isC&&p.round===PREP?"ROZŽÍHÁ":"STUDENÁ"}
         </text>
         ${active&&temp>60?`<circle cx="70" cy="70" r="62" fill="none" stroke="${meltColors.glow}" stroke-width="2"
           opacity="0.4" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}
@@ -3451,7 +3451,10 @@ function render(){
         ?(p.fTemp>=65&&p.fTemp<=85?{cs:"🎯 Pec na správné teplotě. Taví se!",en:"🎯 Optimal temperature. Smelting!"}
           :p.fTemp>85?{cs:"⚠️ Přetopeno — ubeř palivo!",en:"⚠️ Overheated — reduce fuel!"}
           :{cs:"🔼 Nízká teplota — přidej palivo.",en:"🔼 Low temp — add fuel."})
-        :{cs:"❌ Pec nehoří — nedostatek paliva.",en:"❌ Furnace out — not enough fuel."})
+        :p.round===PREP
+          ?{cs:`🌡️ Sv. Jiří — kampaň začíná! Přidej palivo, pec se rozžíhá. Teplota: ${p.fTemp}%.`,
+            en:`🌡️ St. George — campaign starts! Add fuel, furnace lighting up. Temp: ${p.fTemp}%.`}
+          :{cs:"❌ Pec nehoří — nedostatek paliva.",en:"❌ Furnace out — not enough fuel."})
       :isTempering
         ?{cs:`🌡️ Temperování — pec se zahřívá na provozní teplotu. Kampaň na Sv. Jiří (24. dubna). Zaběhnutost přenáší ${Math.round(p.furnace.runIn*0.65)}%.`,
           en:`🌡️ Tempering — furnace warming to working temp. Campaign starts St. George (Apr 24). Run-in carries ${Math.round(p.furnace.runIn*0.65)}%.`}
