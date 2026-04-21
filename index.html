@@ -3134,7 +3134,7 @@ function render(){
     wFormy.append(h("div",{class:"sec-title"},"🌳 "+(L==="cs"?"Dřevěné formy":"Wooden Moulds")));
     wFormy.append(h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",
       background:"rgba(0,0,0,.03)",borderRadius:"4px"}},
-      `2🪵 + 1🧱 → 🪚 · ${L==="cs"?"Formař, zrají 1 kolo":"Mould-maker, ages 1 round"}`));
+      `2🪵 + 2💧 + 1🍞 → 🪚 · ${L==="cs"?"Formař, hotové hned · uchovávány ve vodě":"Mould-maker, ready immediately · stored in water"}`));
     wFormy.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},
       formyInHutte.length>0
         ?`🌳 ${L==="cs"?"Formař":"Mould-maker"}: ${formyInHutte.map(w=>w.name).join(", ")} · ${L==="cs"?"Hotové formy":"Ready moulds"}: ${p.res.formy||0}×`
