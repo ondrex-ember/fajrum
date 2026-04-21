@@ -632,7 +632,7 @@ function fireWorker(workerId){
 
 const TASKS_PREP=["logging","quarry","potash","panev","formar","water","clay","field","reforest","idle"];
 const TASKS_CAMP=["logging","quarry","potash","formar","water","clay","field","reforest","idle"];
-const WERKSTAT_PROFS=["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","brusic","rytec"];
+const WERKSTAT_PROFS=["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","brusic_hrana","brusic_kulic","rytec"];
 const TASK_CS={logging:"Kácení",quarry:"Lůmek",potash:"Loužírna",panev:"Pánvař",formar:"Formař",water:"Voda",clay:"Jíl",field:"Políčko",reforest:"Výsadba",idle:"Odpočinek",werkstat:"⚒️ Verštat"};
 const TASK_EN={logging:"Logging",quarry:"Quarry",potash:"Potash",panev:"Crucible-maker",formar:"Mould-maker",water:"Water",clay:"Clay",field:"Field",reforest:"Reforest",idle:"Rest",werkstat:"⚒️ Workshop"};
 const TASK_INFO_CS={
@@ -660,6 +660,20 @@ const TASK_INFO_EN={
   reforest: "Reforest — +forest (slow effect)",
   idle:     "Rest — -50% fatigue",
   werkstat: "Workshop — blowing / grinding / engraving"
+};
+// Primární tasky dle role — zobrazí se pod portrétem, zbytek vpravo
+const ROLE_PRIMARY_TASKS={
+  tavic:    ["potash","panev","idle"],
+  drvorubc: ["logging","reforest","idle"],
+  popelar:  ["potash","clay","idle"],
+  panvar:   ["panev","clay","quarry"],
+  formar:   ["formar","logging","idle"],
+  hornik:   ["quarry","clay","idle"],
+  obchodnik:["field","water","idle"],
+};
+const ROLE_PRIMARY_ICONS={
+  logging:"🌲",quarry:"⛏️",potash:"🌿",panev:"🏺",formar:"🪚",
+  water:"💧",clay:"🟤",field:"🌾",reforest:"🌱",idle:"😴",werkstat:"⚒️"
 };
 const PROF_CS={tavic:"Tavič",drvorubc:"Dřevorubec",popelar:"Popelář",panvar:"Pánvař",hornik:"Horník",obchodnik:"Obchodník",formar:"Formař",
   foukat_lesni:"Foukač (lesní)",foukat_kristal:"Foukač (křišťál)",foukat_dekor:"Foukač (dekor)",foukat_formy:"Foukač (formy)",
@@ -2908,7 +2922,7 @@ function render(){
 
       // SLOUPEC 1 — portrét + citát + traity
       const colPortrait=document.createElement("div");
-      colPortrait.style.cssText="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;width:56px;";
+      colPortrait.style.cssText="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;width:80px;";
       if(npc?.portrait&&NPC_SVG[npc.portrait]){
         const pd=document.createElement("div");
         pd.style.cssText="line-height:0;border-radius:4px;overflow:hidden;";
@@ -2920,6 +2934,37 @@ function render(){
         q.style.cssText="font-size:8px;font-style:italic;color:#c9952b;text-align:center;line-height:1.2;";
         q.textContent=`„${L==="cs"?npc.quote_cs:npc.quote_en}"`;
         colPortrait.append(q);
+      }
+      // Primární tasky pod portrétem dle role
+      const primaryTaskKeys=ROLE_PRIMARY_TASKS[w.prof]||[];
+      const primaryAvailable=primaryTaskKeys.filter(t=>{
+        if(t==="panev")return isP;
+        if(t==="idle")return true;
+        return tasks.includes(t);
+      });
+      if(primaryAvailable.length>0){
+        const primCol=document.createElement("div");
+        primCol.style.cssText="display:flex;flex-direction:column;gap:2px;width:100%;margin-top:3px;";
+        primaryAvailable.forEach(t=>{
+          const isActive=w.task===t;
+          const icon=ROLE_PRIMARY_ICONS[t]||"";
+          const label=L==="cs"?TASK_CS[t]:TASK_EN[t];
+          let disabled=false;
+          if(t==="idle"&&(w.fat||0)<0.25)disabled=true;
+          const pb=document.createElement("button");
+          pb.className="btn btn-s"+(isActive?" btn-active":"");
+          pb.style.cssText="font-size:9px;padding:2px 4px;text-align:left;width:100%;"+(disabled?"opacity:.35;cursor:not-allowed;":"");
+          pb.title=(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])||"";
+          pb.textContent=icon+" "+label;
+          pb.onclick=()=>{
+            if(disabled)return;
+            const ww=G.workers.find(x=>x.id===w.id);
+            ww.task=t;
+            render();
+          };
+          primCol.append(pb);
+        });
+        colPortrait.append(primCol);
       }
       row.append(colPortrait);
 
@@ -2954,8 +2999,9 @@ function render(){
             h("div",{style:{width:m.v+"%",height:"100%",background:m.c,borderRadius:"2px"}})),
           h("span",{style:{fontSize:"8px",color:m.c,width:"20px",textAlign:"right",flexShrink:0}},m.v+"%")));
       });
-      // Tasky — flex wrap
+      // Tasky — flex wrap (sekundární: bez těch co jsou jako primární vlevo pod portrétem)
       const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
+      const primarySet=new Set(primaryAvailable);
       const isWerkstatProf=WERKSTAT_PROFS.includes(w.prof);
       if(isWerkstatProf){
         // Verštat — jen při nízké únavě (<25%); Odpočinek dostupný při únavě ≥25%
@@ -2971,19 +3017,24 @@ function render(){
             ww.task="werkstat";
             render();
           }},"⚒️ Verštat");
-        const idleBtn=h("button",{
-          class:"btn btn-s"+(w.task==="idle"?" btn-active":""),
-          style:{fontSize:"9px",padding:"2px 5px",...(!needsRest?{opacity:.35,cursor:"not-allowed"}:{})},
-          onClick:()=>{
-            if(!needsRest)return;
-            const ww=G.workers.find(x=>x.id===w.id);
-            ww.task="idle";
-            render();
-          }},"😴 Odpočinek");
-        tasksCol.append(werkBtn,idleBtn);
+        tasksCol.append(werkBtn);
+        // Odpočinek jen pokud není v primárních
+        if(!primarySet.has("idle")){
+          const idleBtn=h("button",{
+            class:"btn btn-s"+(w.task==="idle"?" btn-active":""),
+            style:{fontSize:"9px",padding:"2px 5px",...(!needsRest?{opacity:.35,cursor:"not-allowed"}:{})},
+            onClick:()=>{
+              if(!needsRest)return;
+              const ww=G.workers.find(x=>x.id===w.id);
+              ww.task="idle";
+              render();
+            }},"😴 Odpočinek");
+          tasksCol.append(idleBtn);
+        }
       }
       tasks.forEach(t=>{
-        if(t==="idle"&&isWerkstatProf)return; // idle je součástí werkstat tlačítka
+        if(t==="idle"&&isWerkstatProf)return;
+        if(primarySet.has(t))return; // už je vlevo pod portrétem
           tasksCol.append(h("button",{
           class:"btn btn-s"+(w.task===t?" btn-active":""),
           style:{fontSize:"9px",padding:"2px 5px"},
