@@ -1295,7 +1295,7 @@ function processRound(){
   // 8. Náhodné události
   const evts=[];
   if(isC&&beer.acc>0&&Math.random()<beer.acc){evts.push("crack");if(pR>0){pR--;mor-=8;}}
-  if(isC&&mor>65&&Math.random()<.15)evts.push("good");
+  if(isC&&fA&&mor>65&&(wg.length>p.waldglas.length||cr.length>p.crystal.length)&&Math.random()<.15)evts.push("good");
   if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
   if(forest<=0&&!evts.includes("forestDepleted"))evts.push("forestDepleted");
