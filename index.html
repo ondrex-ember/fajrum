@@ -75,8 +75,10 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .tab{padding:6px 10px;font-size:11px;font-weight:500;color:var(--warm);background:none;
   border:none;border-radius:4px 4px 0 0;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .tab.active{font-weight:700;color:var(--light);background:var(--warm);}
-.content{flex:1;overflow:auto;min-height:180px;}
-.action-bar{padding:10px 14px;border-top:1px solid rgba(42,26,10,.2);flex-shrink:0;}
+.content{flex:1;overflow-y:auto;min-height:0;}
+.action-bar{padding:10px 14px;border-top:2px solid rgba(42,26,10,.2);flex-shrink:0;
+  background:linear-gradient(135deg,var(--card),var(--card2));
+  position:sticky;bottom:0;z-index:10;}
 .round-bar{display:flex;flex-direction:column;padding:4px 14px;
   background:rgba(0,0,0,.03);border-bottom:1px solid rgba(42,26,10,.13);flex-shrink:0;}
 .round-bar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;font-size:11px;}
