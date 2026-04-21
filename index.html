@@ -1170,9 +1170,20 @@ function processRound(){
       log.push(`✨ → 1× ${L==="cs"?"křišťál":"crystal"} ${stars(q)}`);
     }
   }else{
-    // Příprava: pec chladne, ale neztrácí zaběhnutost
-    fT=Math.max(0,fT-8);
-    if(fT<20)fA=false;
+    // Příprava: pec chladne
+    if(round===PREP-1){
+      // Duben — temperování
+      fT=Math.max(fT, 35);
+      fA=false;
+      log.push(`🌡️ ${L==="cs"?"Temperování pece — zahřívá se na provozní teplotu.":"Furnace tempering — warming to operating temperature."}`);
+    }else if(round<=1){
+      // Listopad (0) a Prosinec (1) — rychlé chladnutí, max 15%
+      fT=Math.min(15, Math.max(0, fT-20));
+      if(fT<10)fA=false;
+    }else{
+      // Leden (2) a dál — studená
+      fT=0; fA=false;
+    }
   }
 
   // 4. Pivo
@@ -1424,14 +1435,41 @@ function processRound(){
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
 
-  // Toast — zobraz klíčové info z tohoto kola
+  // Toast — kompaktní delta přehled kola
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
-  const toastLines=[
-    ...log.filter(l=>l.includes("→")&&(l.includes("waldglas")||l.includes("křišťál")||l.includes("crystal"))),
-    ...log.filter(l=>l.includes("💔")||l.includes("📜")||l.includes("❄️")||l.includes("⚠️")),
-    `${L==="cs"?"Groše":"Groats"}: ${grose}g · ${L==="cs"?"morálka":"morale"}: ${mor}`
-  ].filter(Boolean);
-  showToast(toastTitle, toastLines);
+  const tL=[];
+
+  // Produkce (kampaň)
+  const newWg=wg.length-p.waldglas.length, newCr=cr.length-p.crystal.length;
+  if(newWg>0)tL.push(`🔥 +${newWg}× waldglas`);
+  if(newCr>0)tL.push(`✨ +${newCr}× křišťál`);
+  // Pec stav (kampaň)
+  if(isC&&fA)tL.push(`🌡️ ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
+
+  // Les
+  const fCut=p.forest-forest;
+  if(fCut>0)tL.push(`🌲 ${forest}/${p.forestMax||INIT_FOREST} (-${fCut})`);
+
+  // Pánve — dozrálé nebo prasklé
+  const crackedLog=log.filter(l=>l.includes("💔")).length;
+  if(crackedLog>0)tL.push(`💔 pánev praskla ×${crackedLog}`);
+  const rdyPanveCount=log.filter(l=>l.includes("pánev dozrálo")||l.includes("crucible ready")).length;
+  if(rdyPanveCount>0)tL.push(`🏺 +${rdyPanveCount}× pánev hotová`);
+
+  // Ekonomika — delta
+  const groseDelta=grose-p.grose;
+  tL.push(`💰 ${grose}g (${groseDelta>=0?"+":""}${groseDelta}g)`);
+  if(wages>0||bCost>0)tL.push(`💸 -${wages+bCost}g (mzdy+pivo${dPay?"+dluh":""})`);
+
+  // Morálka — jen pokud se výrazně změnila
+  const morDelta=mor-p.morale;
+  if(Math.abs(morDelta)>=5)tL.push(`😊 ${mor} (${morDelta>=0?"+":""}${morDelta})`);
+
+  // Eventy
+  const evtLog=log.filter(l=>l.includes("❄️")||l.includes("⭐")||l.includes("👋")||l.includes("🧱"));
+  evtLog.slice(0,2).forEach(l=>tL.push(l.replace(/__EVT__/g,"").replace(/__EVT__/g,"").trim().slice(0,50)));
+
+  showToast(toastTitle, tL);
   autoSave();
   render();
 }
@@ -2442,9 +2480,10 @@ function render(){
     const grid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}});
     grid.append(
       h("div",{style:{padding:"8px",background:"rgba(74,122,58,.08)",borderRadius:"4px"}},
-        h("div",{style:{fontSize:"10px",color:"#4a7a3a",fontWeight:"700"}},L==="cs"?"PRODUKCE":"PRODUCTION"),
+        h("div",{style:{fontSize:"10px",color:"#4a7a3a",fontWeight:"700"}},L==="cs"?"SKLAD SKLA":"GLASS STOCK"),
         h("div",{style:{fontSize:"18px",fontWeight:"700"}},"🔥 "+p.waldglas.length),
-        p.crystal.length?h("div",{style:{fontSize:"12px",color:"#3a6a9a"}},"✨ "+p.crystal.length):null),
+        p.crystal.length?h("div",{style:{fontSize:"12px",color:"#3a6a9a"}},"✨ "+p.crystal.length):null,
+        h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},L==="cs"?"kusů čeká na prodej":"pieces awaiting sale")),
       h("div",{style:{padding:"8px",background:"rgba(139,94,52,.08)",borderRadius:"4px"}},
         h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"700"}},L==="cs"?"EKONOMIKA":"ECONOMY"),
         h("div",{style:{fontSize:"18px",fontWeight:"700"}},"💰 "+p.grose+"g"),
@@ -3203,6 +3242,8 @@ function render(){
   }else if(p.tab==="furnace"){
     const z=zone(p.fTemp);
     const tempColor=z.c;
+    const isTempering=isP&&p.round===PREP-1;
+    const isCooling=isP&&p.fTemp>10;
     const tempLabel=[
       {max:10,cs:"Studená · topeniště mlčí",en:"Cold · hearth is silent"},
       {max:25,cs:"Tmavý žár · ~600°C",en:"Dark heat · ~600°C"},
@@ -3218,15 +3259,29 @@ function render(){
     const dash=h("div",{class:"furnace-dash"});
 
     // Teplotní gauge — svislé pruhy jako organové píšťaly
-    const gauge=h("div",{class:"furnace-temp-gauge"});
+    const gaugeWrap=h("div",null);
+    // Teplota nad gauge — řádek s labelm a číslem
+    if(p.fTemp>0||isC){
+      const tempRow=h("div",{style:{display:"flex",justifyContent:"space-between",
+        alignItems:"center",marginBottom:"4px",fontSize:"9px",color:"#6a4a2a"}});
+      tempRow.append(
+        h("span",{style:{letterSpacing:"1px",textTransform:"uppercase",opacity:.7}},
+          L==="cs"?"Teplota":"Temp."),
+        h("span",{style:{fontWeight:"700",letterSpacing:"1px",
+          color:isC&&p.fActive?zone(p.fTemp).c:"#8b5e34"}},
+          p.fTemp+"%"));
+      gaugeWrap.append(tempRow);
+    }
+    const gaugeInner=h("div",{class:"furnace-temp-gauge"});
     ZONES.forEach((z2,i)=>{
       const active=p.fTemp>=z2.max-(i===0?10:12);
       const heightPct=active?30+i*10:5;
-      gauge.append(h("div",{class:"gauge-bar",style:{
+      gaugeInner.append(h("div",{class:"gauge-bar",style:{
         height:heightPct+"%",
         background:active?z2.c:"rgba(255,255,255,.06)"}}));
     });
-    dash.append(gauge);
+    gaugeWrap.append(gaugeInner);
+    dash.append(gaugeWrap);
 
     // Teplota readout + SVG kruh — 2 sloupce: kruh vlevo, info vpravo
     (()=>{
@@ -3287,14 +3342,9 @@ function render(){
           <circle cx="68" cy="60" r="2.5" fill="none" stroke="${meltColors.c3}" stroke-width="0.8" opacity="0.35"
             style="animation:bubbleRise ${(spd*0.6).toFixed(1)}s ${(spd*0.5).toFixed(1)}s ease-in infinite"/>
         `:""}
-        <text x="70" y="67" text-anchor="middle" font-family="Georgia,serif" font-size="22"
-          fill="${active&&temp>10?meltColors.c3:"#3a2a14"}" font-weight="700"
-          style="filter:${meltColors.glow!=="none"?`drop-shadow(0 0 6px ${meltColors.glow})`:"none"}">
-          ${active?temp+"%":"—"}
-        </text>
-        <text x="70" y="82" text-anchor="middle" font-family="Georgia,serif" font-size="8"
-          fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.8">
-          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):"STUDENÁ"}
+        <text x="70" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="9"
+          fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.9">
+          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):isCooling?"CHLADNE":isTempering?"TEMPERUJE":"STUDENÁ"}
         </text>
         ${active&&temp>60?`<circle cx="70" cy="70" r="62" fill="none" stroke="${meltColors.glow}" stroke-width="2"
           opacity="0.4" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}
@@ -3356,8 +3406,14 @@ function render(){
           :p.fTemp>85?{cs:"⚠️ Přetopeno — ubeř palivo!",en:"⚠️ Overheated — reduce fuel!"}
           :{cs:"🔼 Nízká teplota — přidej palivo.",en:"🔼 Low temp — add fuel."})
         :{cs:"❌ Pec nehoří — nedostatek paliva.",en:"❌ Furnace out — not enough fuel."})
-      :{cs:`⏸️ Kampaň spouštěs v dubnu (Sv. Jiří). Zaběhnutost přenáší ${Math.round(p.furnace.runIn*0.65)}%.`,
-        en:`⏸️ Campaign starts April (St. George). Run-in carries ${Math.round(p.furnace.runIn*0.65)}%.`};
+      :isTempering
+        ?{cs:`🌡️ Temperování — pec se zahřívá na provozní teplotu. Kampaň na Sv. Jiří (24. dubna). Zaběhnutost přenáší ${Math.round(p.furnace.runIn*0.65)}%.`,
+          en:`🌡️ Tempering — furnace warming to working temp. Campaign starts St. George (Apr 24). Run-in carries ${Math.round(p.furnace.runIn*0.65)}%.`}
+        :isCooling
+          ?{cs:`🌡️ Pec chladne — ${p.fTemp}%. Přípravná sezóna. Zaběhnutost přenáší ${Math.round(p.furnace.runIn*0.65)}%.`,
+            en:`🌡️ Furnace cooling — ${p.fTemp}%. Prep season. Run-in carries ${Math.round(p.furnace.runIn*0.65)}%.`}
+          :{cs:`⏸️ Pec studená. Kampaň spouštíš v dubnu (Sv. Jiří). Zaběhnutost přenáší ${Math.round(p.furnace.runIn*0.65)}%.`,
+            en:`⏸️ Furnace cold. Campaign starts April (St. George). Run-in carries ${Math.round(p.furnace.runIn*0.65)}%.`};
     dash.append(h("div",{style:{marginTop:"8px",padding:"6px 8px",background:"rgba(255,255,255,.04)",
       borderRadius:"4px",fontSize:"11px",color:isC&&p.fActive&&p.fTemp>=65&&p.fTemp<=85?"#9fca6a":"#c9952b",
       lineHeight:"1.5"}},L==="cs"?phaseMsg.cs:phaseMsg.en));
