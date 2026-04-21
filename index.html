@@ -2234,6 +2234,7 @@ function render(){
       }
     }catch{}
     return;
+
   }
 
   // ── EVENT ──
@@ -4152,6 +4153,8 @@ function render(){
         h("button",{class:"btn btn-p",onClick:()=>{G.help=false;render();}},"OK")));
     app.append(modal);
   }
+	const _newContent = app.querySelector(".content");
+	if (_newContent && _scrollTop) _newContent.scrollTop = _scrollTop;
 }
 
 // ── INIT ──
