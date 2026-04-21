@@ -723,48 +723,99 @@ const SPEC_PROFS={
 // input = waldglas nebo crystal (počet kusů)
 // spec = která profese dostává ×2.5 bonus (null = základní, všichni)
 // specOnly = true → vyrábí jen specializace
+// Cenové multiplikátory dle vstupního materiálu/barvy
+// waldglas = základní, crystal = čirý luxus, barvy = prémiové
+const COLOR_MULT={
+  waldglas:1.0, crystal:2.5,
+  modra:3.5, smaragd:3.2, lattimo:4.0, rubin:10.0
+};
+// Ikony barev pro UI
+const COLOR_ICON={waldglas:"🟫",crystal:"✨",modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
+// Pravidla: které barvy lze brousit / rytí
+const COLOR_CAN_GRIND={waldglas:false,crystal:true,modra:false,smaragd:false,lattimo:false,rubin:false};
+const COLOR_CAN_ENGRAVE={waldglas:false,crystal:true,modra:true,smaragd:true,lattimo:false,rubin:false};
+
+// inputs[] = seznam povolených vstupních surovin/barev (první = výchozí)
+// base = základní cena při waldglas×1.0; skutečná cena = base × COLOR_MULT[color] × quality
 const BLOWN_ITEMS={
-  cise:    {cs:"Číše",          en:"Goblet",        icon:"🥃", input:"waldglas", qty:1, base:5,  spec:"foukat_lesni",   specOnly:false},
-  dzban:   {cs:"Džbán",         en:"Jug",           icon:"🫙", input:"waldglas", qty:1, base:5,  spec:"foukat_lesni",   specOnly:false},
-  pullitr: {cs:"Půllitr",       en:"Pint mug",      icon:"🍺", input:"waldglas", qty:1, base:4,  spec:"foukat_lesni",   specOnly:false},
-  misa:    {cs:"Mísa",          en:"Bowl",          icon:"🥣", input:"waldglas", qty:1, base:5,  spec:"foukat_formy",   specOnly:false},
-  pohar:   {cs:"Pohár (křišťál)",en:"Crystal cup",  icon:"🍷", input:"crystal",  qty:1, base:14, spec:"foukat_kristal", specOnly:true},
-  kalamar: {cs:"Kalamář",       en:"Inkwell",       icon:"🖋️", input:"crystal",  qty:1, base:12, spec:"foukat_kristal", specOnly:true},
-  koule:   {cs:"Skleněná koule",en:"Glass sphere",  icon:"🔮", input:"waldglas", qty:1, base:10, spec:"foukat_dekor",   specOnly:true},
-  tezitko: {cs:"Těžítko",       en:"Paperweight",   icon:"💠", input:"crystal",  qty:1, base:18, spec:"foukat_dekor",   specOnly:true},
-  pucmeloun:{cs:"Pucmeloun",    en:"Pucmeloun ball",icon:"🫧", input:"waldglas", qty:1, base:8,  spec:"foukat_dekor",   specOnly:true},
-  dzban_forma:{cs:"Džbán (forma)",en:"Mould jug",   icon:"🫗", input:"waldglas", qty:2, base:7,  spec:"foukat_formy",   specOnly:true}
+  // ── FOUKAT_LESNI — základní nádoby ──
+  cise:       {cs:"Číše",           en:"Goblet",        icon:"🥃",
+               inputs:["waldglas","crystal","modra","smaragd","rubin"],
+               qty:1, base:5,  spec:"foukat_lesni", specOnly:false},
+  dzban:      {cs:"Džbán",          en:"Jug",            icon:"🫙",
+               inputs:["waldglas","modra","smaragd"],
+               qty:1, base:5,  spec:"foukat_lesni", specOnly:false},
+  pullitr:    {cs:"Půllitr",        en:"Pint mug",       icon:"🍺",
+               inputs:["waldglas"],
+               qty:1, base:4,  spec:"foukat_lesni", specOnly:false},
+  romer:      {cs:"Römer",          en:"Römer glass",    icon:"🍶",
+               inputs:["waldglas","crystal"],
+               qty:1, base:6,  spec:"foukat_lesni", specOnly:false},
+  // ── FOUKAT_KRISTAL — křišťálové a barevné poháry ──
+  pohar:      {cs:"Pohár",          en:"Crystal cup",    icon:"🍷",
+               inputs:["crystal","modra","smaragd","rubin"],
+               qty:1, base:14, spec:"foukat_kristal", specOnly:true},
+  dekantr:    {cs:"Dekantér",       en:"Decanter",       icon:"🍾",
+               inputs:["crystal","modra"],
+               qty:1, base:20, spec:"foukat_kristal", specOnly:true},
+  romer_krist:{cs:"Römer křišťál", en:"Crystal Römer",  icon:"🔮",
+               inputs:["crystal"],
+               qty:1, base:16, spec:"foukat_kristal", specOnly:true},
+  kalamar:    {cs:"Kalamář",        en:"Inkwell",        icon:"🖋️",
+               inputs:["crystal"],
+               qty:1, base:12, spec:"foukat_kristal", specOnly:true},
+  // ── FOUKAT_DEKOR — dekorativní kusy ──
+  koule:      {cs:"Skleněná koule", en:"Glass sphere",   icon:"🔮",
+               inputs:["waldglas","lattimo"],
+               qty:1, base:10, spec:"foukat_dekor", specOnly:true},
+  tezitko:    {cs:"Těžítko",        en:"Paperweight",    icon:"💠",
+               inputs:["crystal","lattimo"],
+               qty:1, base:18, spec:"foukat_dekor", specOnly:true},
+  pucmeloun:  {cs:"Pucmeloun",      en:"Pucmeloun ball", icon:"🫧",
+               inputs:["waldglas","lattimo"],
+               qty:1, base:8,  spec:"foukat_dekor", specOnly:true},
+  vaza_dekor: {cs:"Váza",           en:"Vase",           icon:"🏺",
+               inputs:["crystal","lattimo","modra"],
+               qty:1, base:22, spec:"foukat_dekor", specOnly:true},
+  // ── FOUKAT_FORMY — tvarované do forem ──
+  misa:       {cs:"Mísa",           en:"Bowl",           icon:"🥣",
+               inputs:["waldglas","crystal"],
+               qty:1, base:5,  spec:"foukat_formy", specOnly:false},
+  dzban_forma:{cs:"Džbán (forma)",  en:"Mould jug",      icon:"🫗",
+               inputs:["waldglas"],
+               qty:2, base:7,  spec:"foukat_formy", specOnly:true},
 };
 
 // Všechny foukané typy pro state/sell
 const BLOWN_TYPES=Object.keys(BLOWN_ITEMS);
 
-// Craft foukaného výrobku
-function craftBlown(itemKey){
+// Craft foukaného výrobku — inputColor = konkrétní surovina/barva z it.inputs[]
+function craftBlown(itemKey, inputColor){
   const it=BLOWN_ITEMS[itemKey];
   if(!it)return;
   const p=G, L=p.lang;
-  // Musí být kampaň + pec aktivní
+  const color=inputColor||it.inputs[0];
+  if(!it.inputs.includes(color)){
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Tento vstup není povolen pro tento výrobek":"Input not allowed for this item"}`);
+    render(); return;
+  }
   if(p.round<PREP||!p.fActive){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet (kampaň)":"Furnace must be running (campaign)"}`);
     render(); return;
   }
-  // Musí být forma (pokud potřebuje)
   const needsForma=["dzban","misa","dzban_forma"].includes(itemKey);
   if(needsForma&&(p.res.formy||0)<1){
-    G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí forma (Formař musí vyrobit)":"No mould available (Formař must make one)"}`);
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí forma":"No mould available"}`);
     render(); return;
   }
-  // Vstupní surovina
-  const inv=[...(p[it.input]||[])];
+  // Vstupní zásoba — barva/surovina je klíč v state
+  const inv=[...(p[color]||[])];
   if(inv.length<it.qty){
-    G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek suroviny":"Not enough input material"}: ${it.input}`);
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek":"Not enough"}: ${color}`);
     render(); return;
   }
-  // Najít foukače v huti
   const specialists=p.workers.filter(w=>w.prof===it.spec);
   const anyBlower=p.workers.filter(w=>["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy"].includes(w.prof));
-  // specOnly → potřeba specialista
   if(it.specOnly&&specialists.length===0){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje specializovaného foukače":"Requires specialist glassblower"}: ${PROF_CS[it.spec]}`);
     render(); return;
@@ -773,22 +824,22 @@ function craftBlown(itemKey){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Žádný foukač v huti":"No glassblower in foundry"}`);
     render(); return;
   }
-  // Spotřeba suroviny
   inv.sort((a,b)=>b-a);
   const used=inv.slice(0,it.qty);
   const avgQ=Math.round(used.reduce((s,q)=>s+q,0)/it.qty);
-  G[it.input]=inv.slice(it.qty);
+  G[color]=inv.slice(it.qty);
   if(needsForma)G.res.formy=Math.max(0,(G.res.formy||0)-1);
-  // Kvalita: základ průměr vstupů, specialista ×bonus na kvalitu
   const isSpec=specialists.length>0;
   const specLv=isSpec?specialists[0].lv:1;
   const qBonus=isSpec?Math.round(specLv*0.8):0;
   const outQ=clamp(avgQ+qBonus+(Math.random()>.6?1:0),1,5);
-  // Počet výstupů: specialista 2-3 kusy, ostatní 1
   const outCount=isSpec?Math.min(3,1+Math.floor(Math.random()*2.5+0.5)):1;
-  if(!G[itemKey])G[itemKey]=[];
-  for(let i=0;i<outCount;i++)G[itemKey].push(outQ);
-  G.log.push(`__PROD__${it.icon} ${outCount}× ${L==="cs"?it.cs:it.en} ${stars(outQ)}${isSpec?" (specialista ×"+outCount+")":""}`);
+  // State klíč: itemKey + color suffix (jen pokud není waldglas = default)
+  const stateKey=color==="waldglas"?itemKey:itemKey+"_"+color;
+  if(!G[stateKey])G[stateKey]=[];
+  for(let i=0;i<outCount;i++)G[stateKey].push(outQ);
+  const colorLabel=color!=="waldglas"?` (${COLOR_ICON[color]||color})`:"";
+  G.log.push(`__PROD__${it.icon} ${outCount}× ${L==="cs"?it.cs:it.en}${colorLabel} ${stars(outQ)}${isSpec?" (spec ×"+outCount+")":""}`);
   render();
 }
 
@@ -796,22 +847,31 @@ function craftBlown(itemKey){
 // spec: která profese dělá (brusic_hrana / brusic_kulic)
 // input: crystal nebo blown item key
 const GROUND_ITEMS={
-  // Hranař (brusic_hrana) — hrany, fazety, koule, těžítka
-  brus_hrana_cise: {cs:"Broušená číše",    en:"Cut goblet",      icon:"🔷", input:"crystal",  qty:1, base:20, spec:"brusic_hrana"},
-  brus_hrana_panel:{cs:"Fazetový panel",   en:"Faceted panel",   icon:"🪟", input:"crystal",  qty:1, base:22, spec:"brusic_hrana"},
-  brus_koule:      {cs:"Broušená koule",   en:"Cut sphere",      icon:"🔵", input:"crystal",  qty:1, base:25, spec:"brusic_hrana"},
-  brus_tezitko:    {cs:"Broušené těžítko", en:"Cut paperweight", icon:"💎", input:"crystal",  qty:1, base:28, spec:"brusic_hrana"},
-  // Kulič (brusic_kulic) — kulaté tvary, vázy, mísy
-  brus_vaza:       {cs:"Broušená váza",    en:"Cut vase",        icon:"🏺", input:"crystal",  qty:1, base:24, spec:"brusic_kulic"},
-  brus_misa:       {cs:"Broušená mísa",    en:"Cut bowl",        icon:"🥗", input:"crystal",  qty:1, base:20, spec:"brusic_kulic"},
-  brus_poharak:    {cs:"Broušený pohárek", en:"Cut cup",         icon:"🫗", input:"crystal",  qty:1, base:18, spec:"brusic_kulic"},
+  // ── Hranař (brusic_hrana) — hrany, fazety, koule, těžítka, lustr, pokal ──
+  brus_hrana_cise:  {cs:"Broušená číše",     en:"Cut goblet",       icon:"🔷", input:"crystal", qty:1, base:20, spec:"brusic_hrana"},
+  brus_hrana_panel: {cs:"Fazetový panel",    en:"Faceted panel",    icon:"🪟", input:"crystal", qty:1, base:22, spec:"brusic_hrana"},
+  brus_koule:       {cs:"Broušená koule",    en:"Cut sphere",       icon:"🔵", input:"crystal", qty:1, base:25, spec:"brusic_hrana"},
+  brus_tezitko:     {cs:"Broušené těžítko",  en:"Cut paperweight",  icon:"💎", input:"crystal", qty:1, base:28, spec:"brusic_hrana"},
+  brus_lustr_dil:   {cs:"Lustrový díl",      en:"Chandelier piece", icon:"💡", input:"crystal", qty:1, base:35, spec:"brusic_hrana"},
+  brus_pokal:       {cs:"Pokal s víkem",     en:"Covered goblet",   icon:"🏆", input:"crystal", qty:2, base:45, spec:"brusic_hrana"},
+  // ── Kulič (brusic_kulic) — kulaté tvary, vázy, mísy ──
+  brus_vaza:        {cs:"Broušená váza",     en:"Cut vase",         icon:"🏺", input:"crystal", qty:1, base:30, spec:"brusic_kulic"},
+  brus_vaza_velka:  {cs:"Velká broušená váza",en:"Large cut vase",  icon:"🪔", input:"crystal", qty:2, base:48, spec:"brusic_kulic"},
+  brus_misa:        {cs:"Broušená mísa",     en:"Cut bowl",         icon:"🥗", input:"crystal", qty:1, base:20, spec:"brusic_kulic"},
+  brus_poharak:     {cs:"Broušený pohárek",  en:"Cut cup",          icon:"🫗", input:"crystal", qty:1, base:18, spec:"brusic_kulic"},
 };
 const GROUND_TYPES=Object.keys(GROUND_ITEMS);
 
-// Rytecké výrobky — rytec vezme hotový broušený nebo foukaný kus a přidá rytinu
-// Vstup: libovolný kus ze seznamu, výstup: rytina_X s +40% cenou
-const ENGRAVE_INPUTS=["brus_hrana_cise","brus_vaza","brus_poharak","pohar","cise"];
-const ENGRAVE_BONUS=1.4; // +40% k základní ceně
+// Rytecké výrobky — motiv přidá bonus k ceně
+// Pravidla: rytí jen crystal a modra/smaragd (COLOR_CAN_ENGRAVE)
+const ENGRAVE_INPUTS=["brus_hrana_cise","brus_pokal","brus_vaza","brus_vaza_velka","brus_poharak","pohar","dekantr","cise"];
+const ENGRAVE_MOTIFS={
+  basic:   {cs:"Základní rytina",  en:"Basic engraving",   mult:1.4},
+  hunting: {cs:"Lovecká scéna",    en:"Hunting scene",     mult:1.6},
+  floral:  {cs:"Florální motiv",   en:"Floral motif",      mult:1.5},
+  coat:    {cs:"Erb (zakázka)",    en:"Coat of arms",      mult:1.8},
+};
+const ENGRAVE_BONUS=1.4; // základní bonus (zpětná kompatibilita sellItems)
 
 function craftGround(itemKey){
   const it=GROUND_ITEMS[itemKey];
@@ -1021,15 +1081,29 @@ function initState(){
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
     waldglas:[], crystal:[],
-    // Foukané výrobky
-    cise:[], dzban:[], pullitr:[], misa:[],
-    pohar:[], kalamar:[], koule:[], tezitko:[], pucmeloun:[], dzban_forma:[],
+    // Foukané — základní (waldglas vstup)
+    cise:[], dzban:[], pullitr:[], romer:[], misa:[], dzban_forma:[],
+    // Foukané — crystal vstup
+    pohar:[], dekantr:[], romer_krist:[], kalamar:[],
+    tezitko:[], vaza_dekor:[],
+    // Foukané — dekor waldglas
+    koule:[], pucmeloun:[],
+    // Foukané — barevné varianty (suffix _barva)
+    cise_modra:[], cise_smaragd:[], cise_rubin:[],
+    dzban_modra:[], dzban_smaragd:[],
+    pohar_modra:[], pohar_smaragd:[], pohar_rubin:[],
+    dekantr_modra:[],
+    koule_lattimo:[], tezitko_lattimo:[], pucmeloun_lattimo:[],
+    vaza_dekor_lattimo:[], vaza_dekor_modra:[],
+    romer_crystal:[],
     // Broušené výrobky
     brus_hrana_cise:[], brus_hrana_panel:[], brus_koule:[], brus_tezitko:[],
-    brus_vaza:[], brus_misa:[], brus_poharak:[],
+    brus_lustr_dil:[], brus_pokal:[],
+    brus_vaza:[], brus_vaza_velka:[], brus_misa:[], brus_poharak:[],
     // Rytiny (prefix rytina_)
-    rytina_brus_hrana_cise:[], rytina_brus_vaza:[], rytina_brus_poharak:[],
-    rytina_pohar:[], rytina_cise:[],
+    rytina_brus_hrana_cise:[], rytina_brus_pokal:[],
+    rytina_brus_vaza:[], rytina_brus_vaza_velka:[],
+    rytina_brus_poharak:[], rytina_pohar:[], rytina_dekantr:[], rytina_cise:[],
     fTemp:0, fActive:false,
     workers:[
       {...NPC_ROSTER[0], id:"w1", npcId:NPC_ROSTER[0].id, task:"potash",  xp:0, fat:0},
@@ -1707,8 +1781,13 @@ function startNewSeason(){
     // sklo se přenáší, jen nedozrálé pánve propadají
     waldglas:[...p.waldglas],
     crystal:[...p.crystal],
-    // Foukané výrobky přeneseny
+    // Foukané základní + barevné varianty
     ...Object.fromEntries(BLOWN_TYPES.map(k=>[k,[...(p[k]||[])]])),
+    ...Object.fromEntries(BLOWN_TYPES.flatMap(k=>
+      (BLOWN_ITEMS[k].inputs||[]).filter(c=>c!=="waldglas").map(c=>{
+        const sk=k+"_"+c; return [sk,[...(p[sk]||[])]];
+      })
+    )),
     // Broušené a rytiny přeneseny
     ...Object.fromEntries(GROUND_TYPES.map(k=>[k,[...(p[k]||[])]])),
     ...Object.fromEntries(ENGRAVE_INPUTS.map(k=>["rytina_"+k,[...(p["rytina_"+k]||[])]])),
@@ -1752,14 +1831,25 @@ function sellItems(type,n){
   inv.sort((a,b)=>b-a);
   const selling=inv.slice(0,cnt),rest=inv.slice(cnt);
   const hasObchodnik=G.workers.some(w=>w.traits?.includes("obchodnik"));
-  // Ceny dle typu
-  const basePrices={waldglas:3.5,crystal:9,modra:14,smaragd:16,lattimo:22,rubin:50,
-    ...Object.fromEntries(Object.entries(BLOWN_ITEMS).map(([k,v])=>[k,v.base])),
-    ...Object.fromEntries(Object.entries(GROUND_ITEMS).map(([k,v])=>[k,v.base])),
-    ...Object.fromEntries(ENGRAVE_INPUTS.map(k=>{
-      const srcBase=GROUND_ITEMS[k]?.base||BLOWN_ITEMS[k]?.base||10;
-      return ["rytina_"+k, Math.round(srcBase*ENGRAVE_BONUS)];
-    }))};
+  // Ceny: základní suroviny + foukané (s color multiplikátorem) + broušené + rytiny
+  const basePrices={waldglas:3.5,crystal:9,modra:14,smaragd:16,lattimo:22,rubin:50};
+  // Foukané — základní (waldglas) a barevné varianty
+  Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{
+    basePrices[k]=v.base; // waldglas verze
+    v.inputs.forEach(col=>{
+      if(col!=="waldglas"){
+        const stateKey=k+"_"+col;
+        basePrices[stateKey]=Math.round(v.base*COLOR_MULT[col]);
+      }
+    });
+  });
+  // Broušené
+  Object.entries(GROUND_ITEMS).forEach(([k,v])=>{basePrices[k]=v.base;});
+  // Rytiny — motiv basic = ×1.4, ostatní dle ENGRAVE_MOTIFS
+  ENGRAVE_INPUTS.forEach(k=>{
+    const srcBase=GROUND_ITEMS[k]?.base||basePrices[k]||10;
+    basePrices["rytina_"+k]=Math.round(srcBase*ENGRAVE_BONUS);
+  });
   const bp=basePrices[type]||3.5;
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
@@ -3214,39 +3304,63 @@ function render(){
       wFouk.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",fontStyle:"italic",padding:"4px 0"}},
         L==="cs"?"Žádný foukač v huti. Nastupují v dubnu (Sv. Jiří).":"No glassblower in foundry. They start in April (St. George)."));
     } else {
-      // Rozdělení: základní výrobky (všichni) a specializované (jen spec)
       const basicItems=Object.entries(BLOWN_ITEMS).filter(([,v])=>!v.specOnly);
       const specItems=Object.entries(BLOWN_ITEMS).filter(([,v])=>v.specOnly);
+
+      // Helper: vykreslí kartu výrobku s výběrem barvy/vstupu
+      function blownCard(key, it, isSpecWorker){
+        const defaultColor=it.inputs[0];
+        // Aktuálně vybraná barva pro tuto kartu (uložena v G._blownColor)
+        if(!G._blownColor)G._blownColor={};
+        const selColor=G._blownColor[key]||defaultColor;
+        const stateKey=selColor==="waldglas"?key:key+"_"+selColor;
+        const inv=p[stateKey]||[];
+        const hasInput=(p[selColor]||[]).length>=it.qty;
+        const needsForma=["dzban","misa","dzban_forma"].includes(key);
+        const hasForma=!needsForma||(p.res.formy||0)>0;
+        const ok=isC&&p.fActive&&hasInput&&hasForma&&(isSpecWorker||!it.specOnly);
+        const estPrice=Math.round(it.base*COLOR_MULT[selColor]);
+        const card=h("div",{style:{padding:"6px",borderRadius:"4px",
+          border:`1px solid ${ok?"rgba(201,149,43,.3)":"rgba(42,26,10,.08)"}`,
+          background:ok?"rgba(201,149,43,.05)":"rgba(0,0,0,.02)"}});
+        // Hlavička: ikona + jméno + cena
+        card.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"3px"}},
+          h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
+          h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700"}},`~${estPrice}g`)));
+        // Výběr barvy/vstupu — jen pokud má více možností
+        if(it.inputs.length>1){
+          const colorRow=h("div",{style:{display:"flex",gap:"2px",flexWrap:"wrap",marginBottom:"3px"}});
+          it.inputs.forEach(col=>{
+            const hasCol=(p[col]||[]).length>=it.qty;
+            const btn=h("button",{
+              class:"btn btn-s"+(col===selColor?" btn-active":""),
+              style:{fontSize:"8px",padding:"1px 4px",opacity:hasCol?1:.45},
+              title:`${col} · ${hasCol?(p[col]||[]).length+"×":"chybí"}`,
+              onClick:()=>{G._blownColor[key]=col;render();}},
+              `${COLOR_ICON[col]||col}`);
+            colorRow.append(btn);
+          });
+          card.append(colorRow);
+        }
+        // Sklad + craft button
+        if(inv.length>0)card.append(h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
+          `${L==="cs"?"Sklad":"Stock"}: ${inv.length}× ${stars(Math.round(inv.reduce((a,b)=>a+b,0)/inv.length))}`));
+        card.append(h("button",{class:"btn btn-s"+(ok?" btn-p":""),
+          style:{width:"100%",fontSize:"9px",opacity:ok?1:.45},
+          onClick:()=>{if(ok)craftBlown(key,selColor);}},
+          ok?(L==="cs"?"Foukat →":"Blow →")
+            :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
+            :!hasInput?(L==="cs"?`Chybí ${selColor}`:`No ${selColor}`)
+            :(L==="cs"?"Chybí forma":"No mould")));
+        return card;
+      }
 
       wFouk.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"6px",fontWeight:"700"}},
         L==="cs"?"Základní výrobky (všichni foukači):":"Basic wares (all blowers):"));
       const basicGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"10px"}});
       basicItems.forEach(([key,it])=>{
-        const inv=p[key]||[];
         const spec=foukaci.find(w=>w.prof===it.spec);
-        const hasInput=(p[it.input]||[]).length>=it.qty;
-        const canCraft=isC&&p.fActive&&hasInput&&(p.round>=PREP);
-        const needsForma=["dzban","misa"].includes(key);
-        const hasForma=!needsForma||(p.res.formy||0)>0;
-        const ok=canCraft&&hasForma;
-        const card=h("div",{style:{padding:"6px",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)",
-          background:ok?"rgba(74,122,58,.04)":"rgba(0,0,0,.02)"}});
-        card.append(
-          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"3px"}},
-            h("span",{style:{fontSize:"12px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
-            h("span",{style:{fontSize:"10px",color:"#c9952b"}},`~${it.base}g`)),
-          h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-            `${it.input==="waldglas"?"🔥":"✨"} ${it.qty}× ${needsForma?"+ 🪚":""}${spec?` · ${L==="cs"?"Spec":"Spec"}: ×2.5`:" · základní"}`),
-          inv.length>0?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
-            `${L==="cs"?"Sklad":"Stock"}: ${inv.length}× ${stars(Math.round(inv.reduce((a,b)=>a+b,0)/inv.length))}`):"",
-          h("button",{class:"btn btn-s"+(ok?" btn-p":""),
-            style:{width:"100%",fontSize:"9px",opacity:ok?1:.45},
-            onClick:()=>{if(ok)craftBlown(key);}},
-            ok?(L==="cs"?"Foukat →":"Blow →")
-              :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
-              :!hasInput?(L==="cs"?"Chybí suroviny":"No materials")
-              :(L==="cs"?"Chybí forma":"No mould")));
-        basicGrid.append(card);
+        basicGrid.append(blownCard(key,it,!!spec));
       });
       wFouk.append(basicGrid);
 
@@ -3265,29 +3379,7 @@ function render(){
         wFouk.append(secLabel);
         const sGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"4px",
           opacity:specWorker?1:.4}});
-        items.forEach(([key,it])=>{
-          const inv=p[key]||[];
-          const hasInput=(p[it.input]||[]).length>=it.qty;
-          const ok=isC&&p.fActive&&hasInput&&!!specWorker;
-          const card=h("div",{style:{padding:"6px",borderRadius:"4px",
-            border:`1px solid ${ok?"rgba(201,149,43,.3)":"rgba(42,26,10,.08)"}`,
-            background:ok?"rgba(201,149,43,.06)":"rgba(0,0,0,.02)"}});
-          card.append(
-            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"2px"}},
-              h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
-              h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700"}},`~${it.base}g ⭐`)),
-            h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-              `${it.input==="waldglas"?"🔥":"✨"} ${it.qty}× · ${L==="cs"?"pouze specializace":"spec only"}`),
-            inv.length>0?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
-              `${L==="cs"?"Sklad":"Stock"}: ${inv.length}×`):"",
-            h("button",{class:"btn btn-s"+(ok?" btn-p":""),
-              style:{width:"100%",fontSize:"9px",opacity:ok?1:.4},
-              onClick:()=>{if(ok)craftBlown(key);}},
-              ok?(L==="cs"?"Foukat →":"Blow →")
-                :!specWorker?(L==="cs"?"Chybí specialista":"No specialist")
-                :(L==="cs"?"Pec / surovina":"Furnace / input")));
-          sGrid.append(card);
-        });
+        items.forEach(([key,it])=>sGrid.append(blownCard(key,it,!!specWorker)));
         wFouk.append(sGrid);
       });
     }
@@ -3962,19 +4054,29 @@ function render(){
     if(!closed&&!p.waldglas.length&&!p.crystal.length){
       sSec2.append(h("div",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Nic k prodeji.":"Nothing to sell."));
     }
-    // Foukané výrobky na trhu
+      // Foukané výrobky na trhu — základní + barevné varianty
     if(!closed){
-      const blownAvail=BLOWN_TYPES.filter(k=>(p[k]||[]).length>0);
-      if(blownAvail.length>0){
+      // Collect all blown state keys: základní + barevné varianty
+      const allBlownKeys=[];
+      BLOWN_TYPES.forEach(k=>{
+        if((p[k]||[]).length>0)allBlownKeys.push({key:k,it:BLOWN_ITEMS[k],color:"waldglas"});
+        (BLOWN_ITEMS[k].inputs||[]).forEach(col=>{
+          if(col==="waldglas")return;
+          const sk=k+"_"+col;
+          if((p[sk]||[]).length>0)allBlownKeys.push({key:sk,it:BLOWN_ITEMS[k],color:col});
+        });
+      });
+      if(allBlownKeys.length>0){
         sSec2.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"700",
           margin:"6px 0 3px",borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
           "💨 "+(L==="cs"?"Foukané výrobky:":"Blown glassware:")));
-        blownAvail.forEach(key=>{
-          const it=BLOWN_ITEMS[key];
+        allBlownKeys.forEach(({key,it,color})=>{
           const inv=p[key]||[];
+          const price=Math.round(it.base*COLOR_MULT[color]);
+          const colorLabel=color!=="waldglas"?` ${COLOR_ICON[color]}`:"";
           sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",
             alignItems:"center",marginBottom:"4px"}},
-            h("span",{style:{fontSize:"12px"}},`${it.icon} ${L==="cs"?it.cs:it.en} (${inv.length}×) · ~${it.base}g/★`),
+            h("span",{style:{fontSize:"12px"}},`${it.icon}${colorLabel} ${L==="cs"?it.cs:it.en} (${inv.length}×) · ~${price}g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems(key,1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems(key,999)},
