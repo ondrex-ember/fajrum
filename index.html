@@ -2790,9 +2790,10 @@ function render(){
   // Tabs
   const tabBar=h("div",{class:"tabs"});
   const tabLabels={overview:L==="cs"?"Přehled":"Overview",production:L==="cs"?"Výroba":"Smelting",
+    storage:L==="cs"?"Sklad":"Storage",
     furnace:L==="cs"?"Pec":"Furnace",
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"}].forEach(({k,e})=>{
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"}].forEach(({k,e})=>{
     const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
     const btn=h("button",{class:"tab"+(p.tab===k?" active":""),onClick:()=>{G.tab=k;render();}},
       e+" "+tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:""));
@@ -3102,7 +3103,7 @@ function render(){
     w2.append(
       h("div",{class:"sec-title"},L==="cs"?"🏺 Výroba pánví":"🏺 Crucible Making"),
       h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px"}},
-        `2🧱 + 1🍞 → 🏺 · ${L==="cs"?"Zrají":"Ages"} ${PANEV_AGE} ${L==="cs"?"měsíců · zimní výroba +1 kvalita":"months · winter production +1 quality"}`),
+        `2🧱 + 1🍞 → 🏺 · ${L==="cs"?"Zrají":"Ages"} ${PANEV_AGE} ${L==="cs"?"měsíce · zimní výroba +1 kvalita":"months · winter production +1 quality"}`),
       h("div",{style:{display:"flex",gap:"8px",flexWrap:"wrap",fontSize:"11px",color:"#8b5e34"}},
         h("span",null,`${L==="cs"?"Hotové":"Ready"}: ${p.pReady}× ${stars(p.panevQuality)}`),
         h("span",null,`${L==="cs"?"Zrají":"Aging"}: ${p.pAging.length}×`),
@@ -3343,6 +3344,169 @@ function render(){
       wRyt.append(rytGrid);
     }
     content.append(wRyt);
+
+  // ── TAB: SKLAD ──
+  }else if(p.tab==="storage"){
+
+    // ── SEKCE 1: Sklo na skladě ──
+    const glassSec=h("div",{class:"sec"});
+    glassSec.append(h("div",{class:"sec-title"},L==="cs"?"🔥 Sklo na skladě":"🔥 Glass in stock"));
+
+    const glassGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}});
+
+    // Waldglas
+    const wg=p.waldglas||[];
+    const wgAvg=wg.length?Math.round(wg.reduce((s,q)=>s+q,0)/wg.length):0;
+    glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+      border:`1px solid ${wg.length?"rgba(139,94,52,.2)":"rgba(42,26,10,.08)"}`}},
+      h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},"🔥 "+(L==="cs"?"Lesní sklo":"Waldglas")),
+      h("div",{style:{fontSize:"18px",fontWeight:"700",color:wg.length?"#3a2a14":"#bbb"}},wg.length+"×"),
+      wg.length?h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+        `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(wgAvg)} · ~${Math.round(3.5*wgAvg)}g`):
+      h("div",{style:{fontSize:"10px",color:"#bbb",fontStyle:"italic"}},L==="cs"?"Prázdný sklad":"Empty")));
+
+    // Křišťál
+    const cr=p.crystal||[];
+    const crAvg=cr.length?Math.round(cr.reduce((s,q)=>s+q,0)/cr.length):0;
+    glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+      border:`1px solid ${cr.length?"rgba(58,106,154,.3)":"rgba(42,26,10,.08)"}`}},
+      h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},"✨ "+(L==="cs"?"Křišťál":"Crystal")),
+      h("div",{style:{fontSize:"18px",fontWeight:"700",color:cr.length?"#3a6a9a":"#bbb"}},cr.length+"×"),
+      cr.length?h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+        `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(crAvg)} · ~${Math.round(9*crAvg)}g`):
+      h("div",{style:{fontSize:"10px",color:"#bbb",fontStyle:"italic"}},L==="cs"?"Prázdný sklad":"Empty")));
+
+    // Barevné sklo
+    const colorDefs={modra:{icon:"🔵",cs:"Temná modř",en:"Dark blue",base:14},
+      smaragd:{icon:"🟢",cs:"Smaragd",en:"Emerald",base:16},
+      lattimo:{icon:"⚪",cs:"Lattimo",en:"Milk glass",base:22},
+      rubin:{icon:"🔴",cs:"Rubín",en:"Ruby",base:50}};
+    Object.entries(colorDefs).forEach(([k,def])=>{
+      const arr=p[k]||[];
+      if(arr.length===0)return;
+      const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
+      glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        border:"1px solid rgba(139,94,52,.2)"}},
+        h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},def.icon+" "+(L==="cs"?def.cs:def.en)),
+        h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
+        h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+          `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(avg)} · ~${Math.round(def.base*avg/3)}g`)));
+    });
+
+    // Foukané výrobky
+    BLOWN_TYPES.forEach(k=>{
+      const arr=p[k]||[];
+      if(!arr.length)return;
+      const it=BLOWN_ITEMS[k];
+      const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
+      glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        border:"1px solid rgba(139,94,52,.15)"}},
+        h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},it.icon+" "+(L==="cs"?it.cs:it.en)),
+        h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
+        h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+          `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(avg)} · ~${it.base}g`)));
+    });
+
+    // Broušené + rytiny
+    [...GROUND_TYPES,...ENGRAVE_INPUTS.map(k=>"rytina_"+k)].forEach(k=>{
+      const arr=p[k]||[];
+      if(!arr.length)return;
+      const isEngrave=k.startsWith("rytina_");
+      const baseKey=isEngrave?k.replace("rytina_",""):k;
+      const it=GROUND_ITEMS[baseKey]||BLOWN_ITEMS[baseKey];
+      if(!it)return;
+      const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
+      const basePrice=isEngrave?Math.round(it.base*ENGRAVE_BONUS):it.base;
+      glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        border:"1px solid rgba(139,94,52,.15)"}},
+        h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},
+          (isEngrave?"✂️ ":it.icon+" ")+(L==="cs"?it.cs:it.en)+(isEngrave?" ✂️":"")),
+        h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
+        h("div",{style:{fontSize:"10px",color:"#8b5e34"}},`~${basePrice}g`)));
+    });
+
+    glassSec.append(glassGrid);
+    content.append(glassSec);
+
+    // ── SEKCE 2: Přísady & barvy ──
+    const addSec=h("div",{class:"sec"});
+    addSec.append(h("div",{class:"sec-title"},L==="cs"?"🧪 Přísady & barvy":"🧪 Additives & colorants"));
+    const addGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    let anyAdd=false;
+    Object.entries(ADDITIVES).forEach(([k,ad])=>{
+      const qty=p.additives?.[k]||0;
+      if(!qty)return;
+      anyAdd=true;
+      addGrid.append(h("div",{style:{padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        border:"1px solid rgba(139,94,52,.15)",display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"16px"}},ad.icon),
+        h("div",null,
+          h("div",{style:{fontSize:"10px",fontWeight:"700"}},L==="cs"?ad.cs:ad.en),
+          h("div",{style:{fontSize:"14px",fontWeight:"700",color:"#3a2a14"}},qty+"×"))));
+    });
+    if(!anyAdd){
+      addGrid.append(h("div",{style:{gridColumn:"1/-1",fontSize:"11px",color:"#8b5e34",fontStyle:"italic",padding:"4px 0"}},
+        L==="cs"?"Žádné přísady na skladě. Baranovský přiveze v mezisezóně.":"No additives in stock."));
+    }
+    addSec.append(addGrid);
+    content.append(addSec);
+
+    // ── SEKCE 3: Suroviny ──
+    const resSec=h("div",{class:"sec"});
+    resSec.append(h("div",{class:"sec-title"},L==="cs"?"🌲 Suroviny":"🌲 Raw materials"));
+    const resItems=[
+      {icon:"🌳",label:L==="cs"?"Dřevo":"Wood",val:p.res.wood,warn:p.res.wood<5},
+      {icon:"🏖️",label:L==="cs"?"Křemenný písek":"Quartz sand",val:p.res.sand,warn:p.res.sand<3},
+      {icon:"🟩",label:L==="cs"?"Vápenec":"Limestone",val:p.res.limestone,warn:p.res.limestone<1},
+      {icon:"🌿",label:L==="cs"?"Potaš":"Potash",val:p.res.potash,warn:p.res.potash<2},
+      {icon:"💧",label:L==="cs"?"Voda":"Water",val:p.res.water},
+      {icon:"🧱",label:L==="cs"?"Jíl":"Clay",val:p.res.clay},
+      {icon:"🪨",label:L==="cs"?"Šamot":"Shamot",val:p.res.shamot},
+      {icon:"🍞",label:L==="cs"?"Jídlo":"Food",val:p.res.food,warn:p.res.food<2},
+      {icon:"⚫",label:L==="cs"?"Dřevěné uhlí":"Charcoal",val:p.res.charcoal},
+      {icon:"✨",label:L==="cs"?"Čistý písek":"Pure sand",val:p.res.pureSand||0},
+      {icon:"🌿",label:L==="cs"?"Čistá potaš":"Refined potash",val:p.res.refinedPotash||0},
+      {icon:"🪚",label:L==="cs"?"Formy":"Moulds",val:p.res.formy||0,warn:(p.res.formy||0)<1&&isC},
+    ];
+    const resGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    resItems.forEach(item=>{
+      resGrid.append(h("div",{style:{padding:"6px",background:item.warn?"rgba(160,48,32,.06)":"rgba(0,0,0,.03)",
+        borderRadius:"4px",border:`1px solid ${item.warn?"rgba(160,48,32,.2)":"rgba(42,26,10,.1)"}`,
+        display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"14px"}},item.icon),
+        h("div",null,
+          h("div",{style:{fontSize:"9px",color:item.warn?"#a03020":"#8b5e34",textTransform:"uppercase",letterSpacing:".5px"}},item.label),
+          h("div",{style:{fontSize:"16px",fontWeight:"700",color:item.warn?"#a03020":"#3a2a14"}},item.val))));
+    });
+    resSec.append(resGrid);
+    content.append(resSec);
+
+    // ── SEKCE 4: Ekonomika ──
+    const ecoSec=h("div",{class:"sec"});
+    ecoSec.append(h("div",{class:"sec-title"},L==="cs"?"💰 Ekonomika & huť":"💰 Economy & foundry"));
+    const ecoItems=[
+      {icon:"💰",label:L==="cs"?"Groše":"Groats",val:p.grose+"g",color:p.grose<5?"#a03020":"#3a2a14"},
+      {icon:"📜",label:L==="cs"?"Dluh":"Debt",val:p.debt>0?p.debt+"g":"—",color:p.debt>0?"#a03020":"#8b5e34"},
+      {icon:"😊",label:L==="cs"?"Nálada":"Morale",val:p.morale+"%",color:p.morale>60?"#4a7a3a":p.morale>35?"#c9952b":"#a03020"},
+      {icon:"🌲",label:L==="cs"?"Parcely lesa":"Forest parcels",val:`${p.forest}/${p.forestMax||INIT_FOREST}`,color:p.forest<=FOREST_WARN?"#a03020":"#3a2a14"},
+      {icon:"🏺",label:L==="cs"?"Pánve hotové":"Crucibles ready",val:p.pReady+"×",color:p.pReady<1&&isC?"#a03020":"#3a2a14"},
+      {icon:"🏺",label:L==="cs"?"Pánve zrají":"Crucibles aging",val:p.pAging.length+"×",color:"#8b5e34"},
+      {icon:"⭐",label:L==="cs"?"Kvalita pánve":"Crucible quality",val:stars(p.panevQuality),color:"#c9952b"},
+      {icon:"🔥",label:L==="cs"?"Účinnost pece":"Furnace eff.",val:fEff+"%",color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"},
+      {icon:"⚙️",label:L==="cs"?"Zaběhnutost":"Run-in",val:p.furnace.runIn+"%",color:"#c9952b"},
+      {icon:"🧱",label:L==="cs"?"Šamot (opotřeben)":"Shamot worn",val:p.furnace.shamotWear+"%",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"},
+    ];
+    const ecoGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    ecoItems.forEach(item=>{
+      ecoGrid.append(h("div",{style:{padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        border:"1px solid rgba(42,26,10,.1)",display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"14px"}},item.icon),
+        h("div",null,
+          h("div",{style:{fontSize:"9px",color:"#8b5e34",textTransform:"uppercase",letterSpacing:".5px"}},item.label),
+          h("div",{style:{fontSize:"14px",fontWeight:"700",color:item.color||"#3a2a14"}},item.val))));
+    });
+    ecoSec.append(ecoGrid);
+    content.append(ecoSec);
 
   // ── TAB: PEC ──
   }else if(p.tab==="furnace"){
