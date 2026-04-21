@@ -633,6 +633,32 @@ const TASKS_CAMP=["logging","quarry","potash","formar","water","clay","field","r
 const WERKSTAT_PROFS=["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","brusic","rytec"];
 const TASK_CS={logging:"Kácení",quarry:"Lůmek",potash:"Loužírna",panev:"Pánvař",formar:"Formař",water:"Voda",clay:"Jíl",field:"Políčko",reforest:"Výsadba",idle:"Odpočinek",werkstat:"⚒️ Verštat"};
 const TASK_EN={logging:"Logging",quarry:"Quarry",potash:"Potash",panev:"Crucible-maker",formar:"Mould-maker",water:"Water",clay:"Clay",field:"Field",reforest:"Reforest",idle:"Rest",werkstat:"⚒️ Workshop"};
+const TASK_INFO_CS={
+  logging:  "Kácení — +dřevo, +únava. Zimní bonus: ×1.5",
+  quarry:   "Lůmek — +vápenec, +jíl, +únava",
+  potash:   "Loužírna — 6🪵→1🌿 potaš, +únava",
+  panev:    "Pánvař — vyrábí pánve (zrají 3 kola)",
+  formar:   "Formař — vyrábí formy pro foukání",
+  water:    "Voda — +voda do zásobníku",
+  clay:     "Jíl — +jíl ze svahu",
+  field:    "Políčko — +jídlo pro hutníky",
+  reforest: "Výsadba — +les (pomalý efekt)",
+  idle:     "Odpočinek — -50% únavy",
+  werkstat: "Verštat — foukání / broušení / rytí"
+};
+const TASK_INFO_EN={
+  logging:  "Logging — +wood, +fatigue. Winter bonus: ×1.5",
+  quarry:   "Quarry — +limestone, +clay, +fatigue",
+  potash:   "Potash — 6🪵→1🌿 potash, +fatigue",
+  panev:    "Crucible — makes crucibles (cure 3 rounds)",
+  formar:   "Mould-maker — makes moulds for blowing",
+  water:    "Water — +water to reservoir",
+  clay:     "Clay — +clay from the hillside",
+  field:    "Field — +food for workers",
+  reforest: "Reforest — +forest (slow effect)",
+  idle:     "Rest — -50% fatigue",
+  werkstat: "Workshop — blowing / grinding / engraving"
+};
 const PROF_CS={tavic:"Tavič",drvorubc:"Dřevorubec",popelar:"Popelář",panvar:"Pánvař",hornik:"Horník",obchodnik:"Obchodník",formar:"Formař",
   foukat_lesni:"Foukač (lesní)",foukat_kristal:"Foukač (křišťál)",foukat_dekor:"Foukač (dekor)",foukat_formy:"Foukač (formy)",
   brusic_hrana:"Hranař",brusic_kulic:"Kulič",rytec:"Rytec"};
@@ -2918,11 +2944,14 @@ function render(){
       }
       tasks.forEach(t=>{
         if(t==="idle"&&isWerkstatProf)return; // idle je součástí werkstat tlačítka
-        tasksCol.append(h("button",{
+          tasksCol.append(h("button",{
           class:"btn btn-s"+(w.task===t?" btn-active":""),
           style:{fontSize:"9px",padding:"2px 5px"},
-          onClick:()=>{G.workers.find(x=>x.id===w.id).task=t;render();}},tsk[t]));
-      });
+          title:(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])||"",
+          onClick:()=>{G.workers.find(x=>x.id===w.id).task=t;render();}},
+          tsk[t]+((L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])?" · "+(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t]).split(" — ")[1]:"")
+        ));
+		});
       if(isC){
         tasksCol.append(h("button",{class:"btn btn-s",
           style:{fontSize:"9px",padding:"2px 5px",opacity:.35,cursor:"not-allowed"},
