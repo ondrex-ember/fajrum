@@ -1361,8 +1361,23 @@ function processRound(){
       else log.push(`🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
     }
   }
-  // 5. Mzdy
-  const wages=p.workers.length*2; grose-=wages;
+  // 5. Mzdy — individuální dle wageMod, penalizace za neplacení
+  let wages=0;
+  const workerWages=p.workers.map(w=>{
+    const ww=2+(w.wageMod||0); // základní 2g + wageMod
+    wages+=ww;
+    return{id:w.id,wage:ww};
+  });
+  // Kolik reálně zaplatíme — pokud grose nestačí, platíme co jde (zbytek = dluh)
+  const wagesAvail=Math.max(0,grose); // nemůžeme platit z ničeho
+  const wagesPaid=Math.min(wages,wagesAvail);
+  const wagesDeficit=wages-wagesPaid;
+  grose-=wagesPaid;
+  // Deficit jde do dluhu hutě
+  if(wagesDeficit>0){debt+=wagesDeficit;}
+  // Per-worker: kolik kdo dostal (proporcionálně)
+  const payRatio=wages>0?wagesPaid/wages:1;
+  workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
   // 6. Splácení dluhu
   let dPay=0;
   if(debt>0&&grose>5){dPay=Math.min(6,grose-2,debt);grose-=dPay;debt-=dPay;}
@@ -1551,13 +1566,29 @@ function processRound(){
     if(newFat>0.8&&!effectiveIdle) newHealth=Math.max(0,newHealth-3); // přepracování
     if(effectiveIdle) newHealth=Math.min(100,newHealth+5); // odpočinek regeneruje
     if(hasFood&&newHealth<100) newHealth=Math.min(100,newHealth+1); // jídlo pomáhá
-    // Loajalita — sdílí směr s morálkou hutě
+    // Loajalita — sdílí směr s morálkou hutě + penalizace za neplacení
     let newLoyalty=w.loyalty||75;
     const moraleDir=mor>60?1:mor>40?0:-1;
     newLoyalty=Math.max(0,Math.min(100,newLoyalty+moraleDir));
-    if(effectiveIdle) newLoyalty=Math.min(100,newLoyalty+1); // odpočinek zlepšuje loajalitu
-    // Odchod při nízké loajalitě (ne Houževnatý)
-    const willLeave=newLoyalty<25&&!w.traits?.includes("houzevatny")&&Math.random()<0.15;
+    if(effectiveIdle) newLoyalty=Math.min(100,newLoyalty+1);
+    // Neplacení — skokový pád loajality
+    const wageEntry=workerWages.find(x=>x.id===w.id);
+    const newUnpaid=(w.unpaidDebt||0)+(wageEntry?.shortfall||0);
+    if(newUnpaid>0){
+      // Čím víc dluží, tím rychleji klesá loajalita
+      const loyPenalty=Math.min(20, Math.ceil(newUnpaid/2)*4);
+      newLoyalty=Math.max(0,newLoyalty-loyPenalty);
+      // Lakomec reaguje 1.5× silněji
+      if(w.traits?.includes("lakomec")) newLoyalty=Math.max(0,newLoyalty-Math.ceil(loyPenalty*0.5));
+    } else {
+      // Zaplaceno → pomalu odpouštět dluh paměti (odpustit 1g/kolo)
+      // newUnpaid zůstane 0
+    }
+    // Odchod při nízké loajalitě
+    const leaveThreshold=w.traits?.includes("houzevatny")?5:20;
+    const leaveChance=newLoyalty<leaveThreshold?(w.traits?.includes("houzevatny")?0:0.35):
+                      newLoyalty<35?0.12:0;
+    const willLeave=leaveChance>0&&Math.random()<leaveChance;
     // XP: za každé aktivní kolo +1 (učitel bonus); werkstat počítá jako aktivní
     const xpGain=isIdle?0:(hasUcitel&&!w.traits?.includes("ucitel")?1.5:1);
     const newXp=(w.xp||0)+xpGain;
@@ -1569,12 +1600,16 @@ function processRound(){
       log.push(`__EVT__⭐ ${w.name} ${L==="cs"?"postoupil na úroveň":"leveled up to"} ${newLv}!`);
     }
     if(willLeave){
-      log.push(`__EVT__👋 ${w.name} ${L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low."}`);
-      return null; // odstraní z pole
+      const reason=newUnpaid>0
+        ?(L==="cs"?`odešel — ${newUnpaid}g dluhu mu huť nikdy nesplatila.`:`left — foundry owed him ${newUnpaid}g.`)
+        :(L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low.");
+      log.push(`__EVT__👋 ${w.name} ${reason}`);
+      return null;
     }
-    // Zdraví ovlivňuje výkon
     const healthPenalty=newHealth<50?0.15:newHealth<30?0.3:0;
-    return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,health:Math.round(newHealth),loyalty:Math.round(newLoyalty)};
+    return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,
+      health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
+      unpaidDebt:newUnpaid};
   }).filter(Boolean);
 
   const nr=round+1;
@@ -1586,7 +1621,7 @@ function processRound(){
   if(isC&&cr.length>p.crystal.length)prodLines.push(`✨ ${cr.length-p.crystal.length}× křišťál uvařen`);
   if(isC&&fA)prodLines.push(`Pec: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
   ecoLines.push(`💰 ${grose}g`+(debt>0?` · dluh ${debt}g`:""));
-  ecoLines.push(`💸 mzdy ${wages}g · pivo ${bCost}g`+(dPay?` · dluh -${dPay}g`:""));
+  ecoLines.push(`💸 mzdy ${wagesPaid}g${wagesDeficit>0?` · ⚠️ nezaplaceno ${wagesDeficit}g`:""} · pivo ${bCost}g`+(dPay?` · dluh -${dPay}g`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
   Object.assign(G,{
@@ -3130,6 +3165,7 @@ function render(){
       const xpPct=w.lv>=5?100:Math.round(((w.xp||0)/xpNeeded)*100);
       const loyalty=w.loyalty||75;
       const health=w.health||100;
+      const unpaid=w.unpaidDebt||0;
       // 2 sloupce: portrét+citát+traity | bary+tasky
       const row=h("div",{style:{display:"flex",gap:"6px",alignItems:"flex-start"}});
 
@@ -3212,6 +3248,14 @@ function render(){
             h("div",{style:{width:m.v+"%",height:"100%",background:m.c,borderRadius:"2px"}})),
           h("span",{style:{fontSize:"8px",color:m.c,width:"20px",textAlign:"right",flexShrink:0}},m.v+"%")));
       });
+      // Dluh mzdy — červený badge pokud > 0
+      if(unpaid>0){
+        barsCol.append(h("div",{style:{
+          marginTop:"3px",padding:"2px 5px",borderRadius:"3px",
+          background:"rgba(160,0,0,.12)",border:"1px solid rgba(160,0,0,.3)",
+          fontSize:"8px",color:"#a03020",fontWeight:"700"}},
+          `💸 ${L==="cs"?"dluh":"owed"}: ${unpaid}g`));
+      }
       // Tasky — flex wrap (sekundární: bez těch co jsou jako primární vlevo pod portrétem)
       const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
       const primarySet=new Set(primaryAvailable);
