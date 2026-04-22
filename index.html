@@ -1158,7 +1158,7 @@ function processRound(){
     const eff=1+w.lv*.3-w.fat*.2;
     if(w.task==="logging"){
       if(forest<=0){
-        log.push(`🌲 ${w.name}: ${L==="cs"?"les vyčerpán — přesuňte na výsadbu":"forest depleted — reassign to reforest"}!`);
+        log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"les vyčerpán — přesuňte na výsadbu":"forest depleted — reassign to reforest"}!`);
         continue;
       }
       const silakMult=w.traits?.includes("silak")?1.5:1;
@@ -1166,22 +1166,22 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*3;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
+      log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
-      log.push(`🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
+      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
     }else if(w.task==="quarry"){
       const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2);
       r.sand+=sa; r.limestone+=li;
-      log.push(`⛏️ ${w.name}: +${sa} 🏖️, +${li} 🪨`);
+      log.push(`__PROD__⛏️ ${w.name}: +${sa} 🏖️, +${li} 🪨`);
     }else if(w.task==="potash"){
       // Potaš: přímo spotřebuje dřevo z alokace, ne přes koeficient
       const woodForPotash=Math.floor(r.wood*(p.wa.potash/100));
       if(woodForPotash>=WOOD_PER_POTASH){
         const m=Math.floor(woodForPotash/WOOD_PER_POTASH);
         r.wood-=m*WOOD_PER_POTASH; r.potash+=m;
-        log.push(`🌿 ${w.name}: -${m*WOOD_PER_POTASH} 🪵 → +${m} potaš`);
-      }else log.push(`🌿 ${w.name}: ${L==="cs"?"málo dřeva pro potaš":"not enough wood for potash"}`);
+        log.push(`__PROD__🌿 ${w.name}: -${m*WOOD_PER_POTASH} 🪵 → +${m} potaš`);
+      }else log.push(`__EVT__🌿 ${w.name}: ${L==="cs"?"málo dřeva pro potaš":"not enough wood for potash"}`);
     }else if(w.task==="panev"&&isP){
       if(r.clay>=2&&r.food>=1){
         r.clay-=2; r.food-=1;
@@ -1192,12 +1192,12 @@ function processRound(){
         const pNewQ=clamp(panvarLv+kovakBonus+winterBonus+Math.floor(Math.random()*2),1,5);
         pA.push({cr:round,rdy:round+PANEV_AGE,q:pNewQ});
         const winterNote=winterBonus>0?` ❄️ (mráz čistí jíl +1)`:"";
-        log.push(`🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
-      }else log.push(`🏺 ${w.name}: ${L==="cs"?"chybí jíl nebo jídlo":"need clay or food"}`);
+        log.push(`__PROD__🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
+      }else log.push(`__EVT__🏺 ${w.name}: ${L==="cs"?"chybí jíl nebo jídlo":"need clay or food"}`);
     }else if(w.task==="formar"){
       // Formař vyrábí dřevěné formy — okamžitě hotové, aktivní od března (kolo 4)
       if(round<4){
-        log.push(`🌳 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
+        log.push(`__PROD__🌳 ${w.name}: ${L==="cs"?"čeká na jaro — začíná v březnu":"waiting for spring — starts in March"}`);
       }else{
         const FORMA_WOOD=2, FORMA_WATER=2, FORMA_FOOD=1; // 2 voda — 1 na výrobu + 1 na uložení ve vodě
         if(r.wood>=FORMA_WOOD&&r.water>=FORMA_WATER&&r.food>=FORMA_FOOD){
@@ -1207,22 +1207,30 @@ function processRound(){
           const formQ=clamp(formarLv+kovakBonus+Math.floor(Math.random()*2),1,5);
           // Forma je hotová okamžitě — čerstvější = lepší, uchovávána ve vodě
           r.formy=(r.formy||0)+1;
-          log.push(`🌳 ${w.name}: ${L==="cs"?"forma hotová (čerstvá, uložena ve vodě)":"mould ready (fresh, stored in water)"} ${stars(formQ)}`);
+          log.push(`__PROD__🌳 ${w.name}: ${L==="cs"?"forma hotová (čerstvá, uložena ve vodě)":"mould ready (fresh, stored in water)"} ${stars(formQ)}`);
         }else{
           const missing=[];
           if(r.wood<FORMA_WOOD)missing.push("2🪵");
           if(r.water<FORMA_WATER)missing.push("2💧");
           if(r.food<1)missing.push("1🍞");
-          log.push(`🌳 ${w.name}: ${L==="cs"?"chybí":"missing"} ${missing.join(", ")}`);
+          log.push(`__EVT__🌳 ${w.name}: ${L==="cs"?"chybí":"missing"} ${missing.join(", ")}`);
         }
       }
     }else if(w.task==="water"){
       const wa=clamp(Math.round(3*eff),2,5);r.water+=wa;
-      log.push(`💧 ${w.name}: +${wa}`);
+      log.push(`__PROD__💧 ${w.name}: +${wa}`);
     }else if(w.task==="clay"){
       const cl=clamp(Math.round(2*eff),1,3);r.clay+=cl;
-      log.push(`🧱 ${w.name}: +${cl}`);
-    }else log.push(`😴 ${w.name}: ${L==="cs"?"odpočívá":"resting"}`);
+      log.push(`__PROD__🧱 ${w.name}: +${cl}`);
+    }else if(w.task==="field"){
+      // Políčko — zpracováno v samostatné smyčce níže, jen přeskočit
+    }else if(w.task==="werkstat"){
+      log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"pracuje ve verštatě":"working in workshop"}`);
+    }else if(w.task==="idle"){
+      log.push(`__PROD__😴 ${w.name}: ${L==="cs"?"odpočívá":"resting"}`);
+    }else{
+      log.push(`__PROD__❓ ${w.name}: ${w.task}`);
+    }
   }
 
   // 2b. Pánve dozrávají
@@ -1232,7 +1240,7 @@ function processRound(){
     // Nová pánev: bereme průměrnou kvalitu dozrálých
     const avgQ=Math.round(rdyPanve.reduce((s,x)=>s+x.q,0)/rdyPanve.length);
     pQ=avgQ;
-    log.push(`🏺 ${rdyPanve.length}× ${L==="cs"?"pánev dozrálo":"crucible ready"} (${stars(avgQ)})!`);
+    log.push(`__PROD__🏺 ${rdyPanve.length}× ${L==="cs"?"pánev dozrálo":"crucible ready"} (${stars(avgQ)})!`);
   }
   pA=pA.filter(x=>round<x.rdy);
 
@@ -1263,17 +1271,17 @@ function processRound(){
       fT=Math.round(fT*.25+tgt*.75); fA=true;
       // Zaběhávání pece — každá kampaňová várka trochu pomáhá
       furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+2);
-      log.push(`🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
+      log.push(`__PROD__🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
     }else{
       r.wood=Math.max(0,r.wood-fuelUsed);
       fT=Math.max(0,fT-25);
       if(fT<30)fA=false;
-      log.push(`⚠️ ${L==="cs"?"Málo paliva! Teplota klesá":"Low fuel! Temp drops"}: ${fT}%`);
+      log.push(`__EVT__⚠️ ${L==="cs"?"Málo paliva! Teplota klesá":"Low fuel! Temp drops"}: ${fT}%`);
     }
 
     // Varování: šamot
     if(furnace.shamotWear>=80&&!log.some(l=>l.includes("šamot"))){
-      log.push(`⚠️ ${L==="cs"?"Šamot kriticky opotřeben! Opravit v mezisezóně.":"Shamot critically worn! Repair between seasons."}`);
+      log.push(`__EVT__⚠️ ${L==="cs"?"Šamot kriticky opotřeben! Opravit v mezisezóně.":"Shamot critically worn! Repair between seasons."}`);
     }
 
     // Kolo 1 — Waldglas
@@ -1281,15 +1289,15 @@ function processRound(){
       r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;
       const q=qRoll(tAcc(fT),fEff*3,mor,pQ);
       wg.push(q);tW++;tQS+=q;tQN++;
-      log.push(`🔥 → 1× ${L==="cs"?"lesní sklo":"waldglas"} ${stars(q)} (eff:${Math.round(fEff*100)}%)`);
+      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo":"waldglas"} ${stars(q)} (eff:${Math.round(fEff*100)}%)`);
       if(pU<=0){
         pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;
         mor-=4;
-        log.push(`💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
+        log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
         if(pR>0)pQ=Math.max(1,pQ-1); // prasklá → další pánev nižší kvality
       }
     }else if(fA&&fT>=40&&pR<=0){
-      log.push(`🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
+      log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
     }
 
     // Kolo 3 — Křišťál
@@ -1298,7 +1306,7 @@ function processRound(){
       const znalecBonus=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle")?1:0;
       const q=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+znalecBonus,1,5);
       cr.push(q);tC++;tQS+=q;tQN++;
-      log.push(`✨ → 1× ${L==="cs"?"křišťál":"crystal"} ${stars(q)}`);
+      log.push(`__PROD__✨ → 1× ${L==="cs"?"křišťál":"crystal"} ${stars(q)}`);
     }
   }else{
     // Příprava: pec chladne
@@ -1310,7 +1318,7 @@ function processRound(){
       r.wood=Math.max(0,r.wood-fuelUsedTemp);
       fT=clamp(30+Math.round(Math.random()*10), 30, 40); // 30-40%
       fA=false;
-      log.push(`🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → ${fT}% (~${Math.round(fT*14)}°C)`);
+      log.push(`__PROD__🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → ${fT}% (~${Math.round(fT*14)}°C)`);
     }else if(round<=1){
       // Listopad (0) a Prosinec (1) — rychlé chladnutí, max 15%
       fT=Math.min(15, Math.max(0, fT-20));
@@ -1363,8 +1371,8 @@ function processRound(){
       // Léto nejlepší, zima nic
       const fieldYield=[0,0,0,0,1,1,2,2,2,2,1,0]; // dle měsíce
       const yld=fieldYield[round]||0;
-      if(yld>0){r.food+=yld;log.push(`🌾 ${w.name}: +${yld} 🍞 ${L==="cs"?"z políčka":"from field"}`);}
-      else log.push(`🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
+      if(yld>0){r.food+=yld;log.push(`__PROD__🌾 ${w.name}: +${yld} 🍞 ${L==="cs"?"z políčka":"from field"}`);}
+      else log.push(`__PROD__🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
     }
   }
   // 5. Mzdy — individuální dle wageMod, penalizace za neplacení
@@ -1393,10 +1401,10 @@ function processRound(){
     if(inv.length>=c.qty&&round<=c.due){
       for(let j=0;j<c.qty;j++)inv.pop();
       grose+=c.reward;done++;
-      log.push(`📜 ${L==="cs"?"Zakázka splněna":"Contract done"}! +${c.reward}g`);
+      log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}! +${c.reward}g`);
       con.splice(i,1);
     }else if(round>c.due){
-      log.push(`📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}`);
+      log.push(`__EVT__📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}`);
       con.splice(i,1);
     }
   }
@@ -1815,12 +1823,12 @@ function craftColorGlass(recipeKey){
 function repairShamot(){
   const cost={clay:4,limestone:2,grose:8};
   if(G.res.clay<cost.clay||G.res.limestone<cost.limestone||G.grose<cost.grose){
-    G.log.push(`❌ ${G.lang==="cs"?"Nedostatek surovin pro opravu šamotu":"Not enough materials to repair shamot"}`);
+    G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek surovin pro opravu šamotu":"Not enough materials to repair shamot"}`);
     render(); return;
   }
   G.res.clay-=cost.clay; G.res.limestone-=cost.limestone; G.grose-=cost.grose;
   G.furnace.shamotWear=Math.max(0,G.furnace.shamotWear-70);
-  G.log.push(`🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${cost.grose}g, -${cost.clay} jíl)`);
+  G.log.push(`__ECO__🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${cost.grose}g, -${cost.clay} jíl)`);
   render();
 }
 
@@ -1836,7 +1844,7 @@ function upgradeFurnace(type){
   G.res.clay-=cost.clay; G.grose-=cost.grose;
   G.furnace.type=type; G.furnace.runIn=Math.round(G.furnace.runIn*0.4); // reset zaběhnutosti
   G.furnace.shamotWear=0;
-  G.log.push(`🔥 ${G.lang==="cs"?"Pec vylepšena":"Furnace upgraded"}: ${FURNACE_TYPES[type][G.lang==="cs"?"name":"nameEn"]}`);
+  G.log.push(`__ECO__🔥 ${G.lang==="cs"?"Pec vylepšena":"Furnace upgraded"}: ${FURNACE_TYPES[type][G.lang==="cs"?"name":"nameEn"]}`);
   G.showUpgrade=false;
   render();
 }
@@ -1942,13 +1950,13 @@ function sellItems(type,n){
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
   G[type]=rest; G.grose+=total;
-  G.log.push(`💰 ${cnt}× ${type} → ${total}g`);
+  G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
   render();
 }
 function buyItem(k){
   const it=G.shop[k];if(!it||it.stock<=0||G.grose<it.price)return;
   it.stock--; G.grose-=it.price; G.res[k]=(G.res[k]||0)+1;
-  G.log.push(`🛒 ${k} → -${it.price}g`);
+  G.log.push(`__ECO__🛒 ${k} → -${it.price}g`);
   render();
 }
 function acceptContract(id){
