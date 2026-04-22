@@ -70,11 +70,15 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .pill.ok{background:rgba(74,122,58,.15);color:var(--ok);border-color:rgba(74,122,58,.2);}
 .bar-track{width:100%;height:8px;background:rgba(0,0,0,.12);border-radius:4px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width .3s;}
-.tabs{display:flex;gap:1px;padding:0 10px;border-bottom:1px solid rgba(42,26,10,.13);
-  background:rgba(0,0,0,.02);flex-shrink:0;overflow-x:auto;}
-.tab{padding:6px 10px;font-size:11px;font-weight:500;color:var(--warm);background:none;
-  border:none;border-radius:4px 4px 0 0;cursor:pointer;font-family:inherit;white-space:nowrap;}
-.tab.active{font-weight:700;color:var(--light);background:var(--warm);}
+.tabs{display:flex;gap:1px;padding:0 6px;border-bottom:1px solid rgba(42,26,10,.13);
+  background:rgba(0,0,0,.02);flex-shrink:0;overflow:hidden;}
+.tab{padding:6px 7px;font-size:13px;font-weight:500;color:var(--warm);background:none;
+  border:none;border-radius:4px 4px 0 0;cursor:pointer;font-family:inherit;white-space:nowrap;
+  display:flex;align-items:center;gap:3px;flex-shrink:0;}
+.tab .tab-label{font-size:11px;font-weight:700;max-width:0;overflow:hidden;opacity:0;
+  transition:max-width .2s ease,opacity .15s ease;white-space:nowrap;}
+.tab.active{color:var(--light);background:var(--warm);}
+.tab.active .tab-label{max-width:80px;opacity:1;}
 .content{flex:1;overflow-y:auto;min-height:0;}
 .action-bar{padding:10px 14px;border-top:2px solid rgba(42,26,10,.2);flex-shrink:0;
   background:linear-gradient(135deg,var(--card),var(--card2));
@@ -192,6 +196,7 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
   border-radius:4px 0 0 4px;text-align:left;
   padding:9px 14px;font-size:12px;white-space:normal;
   border-right:3px solid transparent;}
+#app.desktop .tab .tab-label{max-width:100px!important;opacity:1!important;}
 #app.desktop .tab.active{
   border-radius:4px 0 0 4px;
   border-right:3px solid var(--gold);
@@ -1005,20 +1010,20 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
   const prepTexts=L==="cs"?CHRON_PREP_CS:CHRON_PREP_EN;
   const campTexts=L==="cs"?CHRON_CAMP_CS:CHRON_CAMP_EN;
   const flavor=isP?prepTexts[round%prepTexts.length]:campTexts[(round-4)%campTexts.length];
-  lines.push(`__FLAVOR__${flavor}`);
 
   // Humorné příhody — šance závisí na pivu
   const beerLvl=G?.beer||0;
   const beerChance=[0.05,0.15,0.30,0.50][Math.min(beerLvl,3)];
   const roll=Math.random();
+  let humorLine=null;
   if(roll<beerChance){
     const r2=Math.random();
     if(r2<0.4){
       const h=CHRON_HUMOR_CS[Math.floor(Math.random()*CHRON_HUMOR_CS.length)];
-      lines.push(`__FLAVOR__😄 ${h}`);
+      humorLine=`__FLAVOR__😄 ${h}`;
     }else if(r2<0.7){
       const ev=CHRON_HUMOR_BAD[Math.floor(Math.random()*CHRON_HUMOR_BAD.length)];
-      lines.push(`__FLAVOR__🍺😬 ${ev.cs}`);
+      humorLine=`__FLAVOR__🍺😬 ${ev.cs}`;
       if(G){
         if(ev.effect==="morale")G.morale=Math.max(0,G.morale+ev.val);
         else if(ev.effect==="panev")G.pReady=Math.max(0,G.pReady+ev.val);
@@ -1029,7 +1034,7 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
       }
     }else{
       const ev=CHRON_HUMOR_GOOD[Math.floor(Math.random()*CHRON_HUMOR_GOOD.length)];
-      lines.push(`__FLAVOR__🍺😄 ${ev.cs}`);
+      humorLine=`__FLAVOR__🍺😄 ${ev.cs}`;
       if(G){
         if(ev.effect==="morale")G.morale=Math.min(100,G.morale+ev.val);
         else if(ev.effect==="wood")G.res.wood+=ev.val;
@@ -1038,11 +1043,13 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
       }
     }
   }
+  // Správné pořadí: měsíc → produkce → ekonomika → eventy → atmosféra
   lines.push(`__MONTH__${ms[round]}`);
-  lines.push(`__FLAVOR__${flavor}`);
   productionLines.forEach(l=>lines.push(`__PROD__${l}`));
   economyLines.forEach(l=>lines.push(`__ECO__${l}`));
   eventLines.forEach(l=>lines.push(`__EVT__${l}`));
+  lines.push(`__FLAVOR__${flavor}`);
+  if(humorLine) lines.push(humorLine);
   return lines;
 }
 
@@ -1063,7 +1070,7 @@ function initState(){
   return{
     phase:"intro", lang:"cs",
     season:1, round:0,
-    grose:15, debt:50, morale:60, beer:1,
+    grose:40, debt:50, morale:60, beer:1,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
     res:{wood:30,sand:10,limestone:10,potash:10,water:10,clay:5,shamot:5,food:10,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
@@ -1140,7 +1147,6 @@ function processRound(){
   const con=[...p.contracts];
   const log=[...p.log];
 
-  log.push(`\n── ${ms[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")} ──`);
 
   // Výpočet aktuální účinnosti pece
   const fEff=calcFurnaceEff(furnace, pQ);
@@ -1380,7 +1386,7 @@ function processRound(){
   workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
   // 6. Splácení dluhu
   let dPay=0;
-  if(debt>0&&grose>5){dPay=Math.min(6,grose-2,debt);grose-=dPay;debt-=dPay;}
+  if(debt>0&&grose>5){dPay=Math.min(5,grose-2,debt);grose-=dPay;debt-=dPay;}
   // 7. Zakázky
   for(let i=con.length-1;i>=0;i--){
     const c=con[i],inv=c.item==="crystal"?cr:wg;
@@ -1727,8 +1733,8 @@ function startInterseason(){
   const brusNarr=p.season>=2&&candidates.some(c=>["brusic_hrana","brusic_kulic","rytec"].includes(c.prof));
   if(foukNarr){
     G.log.push(`__EVT__💨 ${G.lang==="cs"
-      ?"Kampaň na Sv. Jiří úspěšně rozžehnuta. Zpráva se šíří krajem — u hutě se zastavují zájemci o místo foukače."
-      :"Campaign lit on St. George's Day. Word spreads — glassblowers are asking about positions at the foundry."}`);
+      ?"Zpráva o hutě se šíří krajem — foukači se ptají po místě. Na Sv. Jiří příští jaro se mohou hlásit."
+      :"Word of the foundry spreads — glassblowers are asking about positions. They may apply come St. George's Day next spring."}`);
   }
   if(brusNarr){
     G.log.push(`__EVT__💎 ${G.lang==="cs"
@@ -2335,7 +2341,7 @@ function render(){
         G.furnace.runIn=35;
         G.panevQuality=3;
         G.pReady=3;
-        G.grose=45;
+        G.grose=80;
         G.res.wood=55;
         G.res.sand=15;
         G.res.potash=12;
@@ -2398,10 +2404,15 @@ function render(){
               style:{flex:1},
               onClick:()=>{G.difficulty="easy";render();}},
               L==="cs"?"🕯️ Lehký start":"🕯️ Easy start")),
-          h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
+          h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic",lineHeight:"1.5",
+            padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"3px",borderLeft:"2px solid #8b5e34"}},
             G.difficulty==="easy"
-              ?(L==="cs"?"Otcova pec zaběhnutá (runIn 35), lepší pánev, více zásob a grošů":"Father's furnace run-in (35), better crucible, more stock and coin")
-              :(L==="cs"?"Studená pec, prázdný sklad — začínáš od nuly":"Cold furnace, empty store — start from scratch"))),
+              ?(L==="cs"
+                ?"🕯️ Otcova pec zaběhnutá, pánev kvalitní, zásoby plné. Začínáš s 80 groši a dluhem 50g. Čas na učení."
+                :"🕯️ Father's furnace is run-in, crucible quality, stores full. Start with 80 coins and 50g debt.")
+              :(L==="cs"
+                ?"⚔️ Studená pec, prázdný sklad, 40 grošů a dluh 50g. Každý groš se počítá."
+                :"⚔️ Cold furnace, empty store, 40 coins and 50g debt. Every coin counts."))),
         h("div",{style:{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}},
           h("button",{class:"btn btn-p",onClick:()=>{startGame(G.difficulty||"normal");}},
             L==="cs"?"Vstoupit do hutě →":"Enter the Foundry →"),
@@ -3056,11 +3067,15 @@ function render(){
   const tabLabels={overview:L==="cs"?"Přehled":"Overview",production:L==="cs"?"Výroba":"Smelting",
     storage:L==="cs"?"Sklad":"Storage",
     furnace:L==="cs"?"Pec":"Furnace",
-    market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"}].forEach(({k,e})=>{
+    market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
+    accounts:L==="cs"?"Účty":"Accounts"};
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"📒"}].forEach(({k,e})=>{
     const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
-    const btn=h("button",{class:"tab"+(p.tab===k?" active":""),onClick:()=>{G.tab=k;render();}},
-      e+" "+tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:""));
+    const isActive=p.tab===k;
+    const labelText=tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:"");
+    const btn=h("button",{class:"tab"+(isActive?" active":""),onClick:()=>{G.tab=k;render();}});
+    btn.append(e);
+    btn.append(h("span",{class:"tab-label"},labelText));
     tabBar.append(btn);
   });
 
@@ -3233,80 +3248,79 @@ function render(){
           }).filter(Boolean)||[])),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},
           L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof));
-      // Bary + tasky vedle sebe
-      const barsAndTasks=h("div",{style:{display:"flex",gap:"8px",alignItems:"flex-start"}});
-      // Bary — pevná šířka ~130px (cca polovina dostupného prostoru)
-      const barsCol=h("div",{style:{width:"130px",flexShrink:0}});
+      // Layout: bary nahoře, pod nimi 2 sloupce tasků
+      const primarySet=new Set(primaryAvailable);
+      const isWerkstatProf=WERKSTAT_PROFS.includes(w.prof);
+      const REST_TASKS=new Set(["idle","reforest","field"]);
+
+      // Pomocná funkce pro task tlačítko
+      const makeTaskBtn=(t,overrideLabel,disabled)=>{
+        const isActive=w.task===t;
+        const label=overrideLabel||(tsk[t]+((L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])?" · "+(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t]).split(" — ")[1]:""));
+        const btn=h("button",{
+          class:"btn btn-s"+(isActive?" btn-active":""),
+          style:{fontSize:"9px",padding:"2px 5px",width:"100%",...(disabled?{opacity:.35,cursor:"not-allowed"}:{})},
+          title:(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])||"",
+          onClick:()=>{if(disabled)return;G.workers.find(x=>x.id===w.id).task=t;render();}},label);
+        return btn;
+      };
+
+      // BARY — celou šířku colRight
+      const barsRow=h("div",{style:{display:"flex",alignItems:"center",gap:"4px",flexWrap:"wrap",marginBottom:"4px"}});
       [{label:L==="cs"?"Únava":"Fat.",v:fatPct,c:fatColor},
        {label:"XP",v:xpPct,c:"#c9952b"},
        {label:L==="cs"?"Loaj.":"Loy.",v:loyalty,c:loyalty>60?"#4a7a3a":loyalty>35?"#c9952b":"#a03020"},
        {label:L==="cs"?"Zdraví":"HP",v:health,c:health>70?"#4a7a3a":health>40?"#c9952b":"#a03020"}
       ].forEach(m=>{
-        barsCol.append(h("div",{style:{display:"flex",alignItems:"center",gap:"3px",marginBottom:"2px"}},
-          h("span",{style:{fontSize:"8px",color:"#8b5e34",width:"28px",flexShrink:0}},m.label),
-          h("div",{style:{width:"60px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
+        barsRow.append(h("div",{style:{display:"flex",alignItems:"center",gap:"2px",marginBottom:"1px",flex:"1 0 45%"}},
+          h("span",{style:{fontSize:"8px",color:"#8b5e34",width:"26px",flexShrink:0}},m.label),
+          h("div",{style:{flex:1,height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px"}},
             h("div",{style:{width:m.v+"%",height:"100%",background:m.c,borderRadius:"2px"}})),
-          h("span",{style:{fontSize:"8px",color:m.c,width:"20px",textAlign:"right",flexShrink:0}},m.v+"%")));
+          h("span",{style:{fontSize:"8px",color:m.c,width:"22px",textAlign:"right",flexShrink:0}},m.v+"%")));
       });
-      // Dluh mzdy — červený badge pokud > 0
       if(unpaid>0){
-        barsCol.append(h("div",{style:{
-          marginTop:"3px",padding:"2px 5px",borderRadius:"3px",
+        barsRow.append(h("div",{style:{
+          width:"100%",marginTop:"2px",padding:"2px 5px",borderRadius:"3px",
           background:"rgba(160,0,0,.12)",border:"1px solid rgba(160,0,0,.3)",
           fontSize:"8px",color:"#a03020",fontWeight:"700"}},
-          `💸 ${L==="cs"?"dluh":"owed"}: ${unpaid}g`));
+          "💸 "+(L==="cs"?"dluh":"owed")+": "+unpaid+"g"));
       }
-      // Tasky — flex wrap (sekundární: bez těch co jsou jako primární vlevo pod portrétem)
-      const tasksCol=h("div",{style:{flex:"1",display:"flex",flexWrap:"wrap",gap:"2px",alignContent:"flex-start"}});
-      const primarySet=new Set(primaryAvailable);
-      const isWerkstatProf=WERKSTAT_PROFS.includes(w.prof);
+
+      // 2 SLOUPCE TASKŮ pod bary
+      const barsAndTasks=h("div",{style:{display:"flex",gap:"4px",alignItems:"flex-start"}});
+
+      // STŘED — výrobní tasky
+      const tasksMain=h("div",{style:{flex:"1",display:"flex",flexDirection:"column",gap:"2px"}});
       if(isWerkstatProf){
-        // Verštat — jen při nízké únavě (<25%); Odpočinek dostupný při únavě ≥25%
         const fatigue=w.fat||0;
-        const canWerkstat=fatigue<0.25;
-        const needsRest=fatigue>=0.25;
-        const werkBtn=h("button",{
-          class:"btn btn-s"+(w.task==="werkstat"?" btn-active":""),
-          style:{fontSize:"9px",padding:"2px 5px",...(!canWerkstat?{opacity:.35,cursor:"not-allowed"}:{})},
-          onClick:()=>{
-            if(!canWerkstat)return;
-            const ww=G.workers.find(x=>x.id===w.id);
-            ww.task="werkstat";
-            render();
-          }},"⚒️ Verštat");
-        tasksCol.append(werkBtn);
-        // Odpočinek jen pokud není v primárních
-        if(!primarySet.has("idle")){
-          const idleBtn=h("button",{
-            class:"btn btn-s"+(w.task==="idle"?" btn-active":""),
-            style:{fontSize:"9px",padding:"2px 5px",...(!needsRest?{opacity:.35,cursor:"not-allowed"}:{})},
-            onClick:()=>{
-              if(!needsRest)return;
-              const ww=G.workers.find(x=>x.id===w.id);
-              ww.task="idle";
-              render();
-            }},"😴 Odpočinek");
-          tasksCol.append(idleBtn);
-        }
+        tasksMain.append(makeTaskBtn("werkstat","⚒️ Verštat",fatigue>=0.25));
       }
       tasks.forEach(t=>{
-        if(t==="idle"&&isWerkstatProf)return;
-        if(primarySet.has(t))return; // už je vlevo pod portrétem
-          tasksCol.append(h("button",{
-          class:"btn btn-s"+(w.task===t?" btn-active":""),
-          style:{fontSize:"9px",padding:"2px 5px"},
-          title:(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])||"",
-          onClick:()=>{G.workers.find(x=>x.id===w.id).task=t;render();}},
-          tsk[t]+((L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])?" · "+(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t]).split(" — ")[1]:"")
-        ));
-		});
+        if(REST_TASKS.has(t))return;
+        if(t==="idle")return;
+        if(primarySet.has(t))return;
+        tasksMain.append(makeTaskBtn(t));
+      });
       if(isC){
-        tasksCol.append(h("button",{class:"btn btn-s",
-          style:{fontSize:"9px",padding:"2px 5px",opacity:.35,cursor:"not-allowed"},
+        tasksMain.append(h("button",{class:"btn btn-s",
+          style:{fontSize:"9px",padding:"2px 5px",width:"100%",opacity:.35,cursor:"not-allowed"},
           title:L==="cs"?"Jen v přípravě":"Prep only"},tsk["panev"]));
       }
-      barsAndTasks.append(barsCol,tasksCol);
-      colRight.append(barsAndTasks);
+
+      // PRAVÝ — políčko, výsadba, odpočinek
+      const tasksRest=h("div",{style:{width:"68px",flexShrink:0,display:"flex",flexDirection:"column",gap:"2px"}});
+      ["field","reforest"].forEach(t=>{
+        if(!tasks.includes(t))return;
+        if(primarySet.has(t))return;
+        tasksRest.append(makeTaskBtn(t));
+      });
+      if(!primarySet.has("idle")){
+        const fatigue=w.fat||0;
+        tasksRest.append(makeTaskBtn("idle","😴 "+(L==="cs"?"Odpočinek":"Rest"),fatigue<0.25));
+      }
+
+      barsAndTasks.append(tasksMain,tasksRest);
+      colRight.append(barsRow,barsAndTasks);
       row.append(colRight);
       card.append(row);
       wGrid.append(card);
@@ -4335,6 +4349,34 @@ function render(){
     bSec.append(grid);
     content.append(bSec);
 
+    // Faktor Weiss — půjčky
+    const faktorSec=h("div",{class:"sec"});
+    faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Weiss — půjčky":"Factor Weiss — loans")));
+    faktorSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
+      L==="cs"
+        ?"Groše vždy najdu, jen se vrátíte s úrokem. Půjčka přidá 25 % k dluhu."
+        :"I always have coin — return with interest. Loan adds 25% to debt."));
+    if(p.debt>0)faktorSec.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginBottom:"6px"}},
+      (L==="cs"?"Aktuální dluh: ":"Current debt: ")+p.debt+"g"));
+    const fLoanRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+    [15,25,40].forEach(amt=>{
+      const totalDebt=amt+Math.round(amt*0.25);
+      fLoanRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
+        onClick:()=>{
+          G.grose+=amt; G.debt+=totalDebt;
+          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g)");
+          render();
+        }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
+    });
+    faktorSec.append(fLoanRow);
+    if(p.debt>0&&p.grose>=p.debt){
+      faktorSec.append(h("div",{style:{marginTop:"6px"}},
+        h("button",{class:"btn btn-s btn-p",
+          onClick:()=>{G.grose-=p.debt;G.debt=0;G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));render();}},
+          (L==="cs"?"✅ Splatit celý dluh (":"✅ Clear all debt (")+p.debt+"g)")));
+    }
+    content.append(faktorSec);
+
     // Zakázky
     const cSec=h("div",{class:"sec"});
     cSec.append(h("div",{class:"sec-title"},"📜 "+(L==="cs"?"Zakázky":"Contracts")));
@@ -4442,6 +4484,109 @@ function render(){
     lSec.append(box);
     content.append(lSec);
     setTimeout(()=>{const lb=document.getElementById("logBox");if(lb)lb.scrollTop=lb.scrollHeight;},10);
+
+
+  // ── TAB: ÚČTY ──
+  }else if(p.tab==="accounts"){
+    const aSec=h("div",{class:"sec"});
+    const wagesNext=p.workers.reduce((s,w)=>s+(2+(w.wageMod||0)),0);
+    const beerCostNext=([0,1,2,4][p.beer]||0)*Math.ceil(p.workers.length/3);
+    const totalOutNext=wagesNext+beerCostNext;
+    const debtAutoNext=p.debt>0&&p.grose>5?Math.min(5,p.grose-2,p.debt):0;
+    let projDebt=p.debt,projGrose=p.grose;
+    const proj=[];
+    for(let i=0;i<3;i++){
+      projGrose=Math.max(0,projGrose-totalOutNext);
+      const dPay=projDebt>0&&projGrose>5?Math.min(5,projGrose-2,projDebt):0;
+      projGrose-=dPay; projDebt=Math.max(0,projDebt-dPay);
+      if(projGrose<totalOutNext) projDebt+=Math.max(0,totalOutNext-projGrose);
+      proj.push({debt:Math.round(projDebt),grose:Math.round(projGrose)});
+    }
+    aSec.append(h("div",{class:"sec-title"},"📒 "+(L==="cs"?"Účty hutě — Schuldenbuch":"Foundry Accounts — Schuldenbuch")));
+    // Aktuální stav
+    const nowBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #c9952b"}});
+    nowBox.append(
+      h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Hotovost v pokladně:":"Cash in hand:"),
+        h("strong",{style:{fontSize:"13px",color:p.grose>20?"#4a7a3a":"#a03020"}},p.grose+"g")),
+      h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Dluh u Weisse:":"Debt owed to Weiss:"),
+        h("strong",{style:{fontSize:"13px",color:p.debt>0?"#a03020":"#4a7a3a"}},
+          p.debt>0?p.debt+"g":(L==="cs"?"✅ Splaceno":"✅ Clear"))),
+      p.debt>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
+        L==="cs"?"Auto-splátka: až 5g/kolo je-li hotovost nad 5g":"Auto-payment: up to 5g/round when cash above 5g"):h("span",{})
+    );
+    aSec.append(nowBox);
+    // Ruční splacení
+    if(p.debt>0){
+      const payBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(160,48,32,.05)",borderRadius:"4px",border:"1px solid rgba(160,48,32,.15)"}});
+      payBox.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"6px",fontWeight:"600"}},
+        L==="cs"?"💸 Splatit dluh předčasně:":"💸 Early debt repayment:"));
+      const payBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+      [10,20,p.debt].forEach(amt=>{
+        if(amt<=0) return;
+        const lbl=amt===p.debt?(L==="cs"?"Vše ("+amt+"g)":"All ("+amt+"g)"):amt+"g";
+        const canPay=p.grose>=amt;
+        payBtns.append(h("button",{class:"btn btn-s",style:{opacity:canPay?1:0.45,cursor:canPay?"pointer":"not-allowed"},
+          onClick:()=>{
+            if(!canPay) return;
+            const pay=Math.min(amt,p.debt);
+            G.grose-=pay; G.debt=Math.max(0,G.debt-pay);
+            G.log.push("__ECO__📜 "+(L==="cs"?"Splácení dluhu":"Debt payment")+": -"+pay+"g");
+            render();
+          }},lbl));
+      });
+      payBox.append(payBtns);
+      aSec.append(payBox);
+    }
+    // Výdaje příští kolo
+    const outBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(0,0,0,.03)",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)"}});
+    outBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"5px"}},
+      L==="cs"?"📊 Výdaje příští kolo:":"📊 Next round expenses:"));
+    [{label:(L==="cs"?"Mzdy ("+p.workers.length+") dělníků":"Wages ("+p.workers.length+") workers"),val:wagesNext+"g",c:"#a03020"},
+     {label:(L==="cs"?"Pivo (příděl "+p.beer+")":"Beer (ration "+p.beer+")"),val:beerCostNext+"g",c:"#8b5e34"},
+     {label:(L==="cs"?"Celkem":"Total"),val:totalOutNext+"g",c:"#a03020",bold:true}
+    ].forEach(r=>outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
+      h("span",{style:{color:"#8b5e34"}},r.label),h("span",{style:{color:r.c}},r.val))));
+    if(debtAutoNext>0)outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#4a7a3a",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
+      h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+debtAutoNext+"g")));
+    aSec.append(outBox);
+    // Projekce dluhu
+    if(p.debt>0){
+      const projBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(0,0,0,.03)",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)"}});
+      projBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"5px"}},
+        L==="cs"?"🔮 Projekce dluhu (bez příjmů):":"🔮 Debt projection (no income):"));
+      proj.forEach((p2,i)=>{
+        const prev=i===0?p.debt:proj[i-1].debt;
+        const col=p2.debt<prev?"#4a7a3a":"#a03020";
+        const arrow=p2.debt<prev?"↓":"↑";
+        projBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px"}},
+          h("span",{style:{color:"#8b5e34"}},(L==="cs"?"Kolo ":"Round ")+(i+1)),
+          h("span",{style:{color:col}},arrow+" "+p2.debt+"g dluh · "+p2.grose+"g pokladna")));
+      });
+      aSec.append(projBox);
+    }
+    // Faktor — půjčit
+    const lichBox=h("div",{style:{padding:"8px 10px",background:"rgba(42,26,10,.06)",borderRadius:"4px",border:"1px dashed rgba(139,94,52,.3)",marginBottom:"4px"}});
+    lichBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
+      "🪙 "+(L==="cs"?"Faktor Weiss — půjčky a zálohy":"Factor Weiss — loans & advances")));
+    lichBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
+      L==="cs"
+        ?"Groše vždy najdu, jen se vrátíte s úrokem. Půjčka přidá 25 % k dluhu."
+        :"I always have coin — return with interest. Loan adds 25% to debt."));
+    const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+    [15,25,40].forEach(amt=>{
+      const totalDebt=amt+Math.round(amt*0.25);
+      loanBtns.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
+        onClick:()=>{
+          G.grose+=amt; G.debt+=totalDebt;
+          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g)");
+          render();
+        }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
+    });
+    lichBox.append(loanBtns);
+    aSec.append(lichBox);
+    content.append(aSec);
 
   // ── TAB: NASTAVENÍ ──
   }else if(p.tab==="settings"){
