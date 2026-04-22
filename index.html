@@ -1639,7 +1639,15 @@ function processRound(){
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
     formyAging:[], // formy jsou okamžité — queue vždy prázdná
-    summary:{wages,bCost,dPay,mDelta:mor-p.morale,fCut:p.forest-forest,fEff:Math.round(calcFurnaceEff(furnace,pQ)*100)},
+    summary:{
+      wages, wagesPaid, wagesDeficit, bCost, dPay,
+      mDelta:mor-p.morale, fCut:p.forest-forest,
+      fEff:Math.round(calcFurnaceEff(furnace,pQ)*100),
+      groseDelta:grose-p.grose,
+      groseAfter:grose, debtAfter:debt,
+      workerWages:[...workerWages],
+      contractIncome:con.length<p.contracts.length?(p.contracts.filter(c=>!con.find(x=>x.id===c.id)).reduce((s,c)=>s+c.reward,0)):0
+    },
     events:evts.slice(1), curEvt:evts[0]||null,
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
@@ -2791,7 +2799,9 @@ function render(){
     const sd=p.summary, pr=p.round-1;
     const hdr=h("div",{class:"hdr"},
       h("span",{style:{fontWeight:"700"}},ms[pr]+" — "+(pr<PREP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign"))));
-    const body=h("div",{class:"sec"});
+    const body=h("div",{class:"sec",style:{overflowY:"auto",maxHeight:"calc(100vh - 140px)"}});
+
+    // ── SKLAD SKLA + EKONOMIKA (původní 2-sloupcový grid) ──
     const grid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"10px"}});
     grid.append(
       h("div",{style:{padding:"8px",background:"rgba(74,122,58,.08)",borderRadius:"4px"}},
@@ -2803,16 +2813,145 @@ function render(){
         h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"700"}},L==="cs"?"EKONOMIKA":"ECONOMY"),
         h("div",{style:{fontSize:"18px",fontWeight:"700"}},"💰 "+p.grose+"g"),
         p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+p.debt+"g"):null));
-    body.append(grid,
+    body.append(grid);
+
+    // ── STAV HUTĚ ──
+    body.append(
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · zaběhnutost ${p.furnace.runIn}%`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.forestMax||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`),
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"10px"}},`💸 ${sd.wages}g mzdy + ${sd.bCost}g pivo${sd.dPay?" + "+sd.dPay+"g dluh":""}`));
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"8px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`));
+
+    // ── ROZPAD EKONOMIKY ──
+    const ecoBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #c9952b"}});
+    ecoBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"📊 ÚČETNICTVÍ KOLA":"📊 ROUND ACCOUNTS"));
+    const ecoRows=[
+      ...(sd.contractIncome>0?[{label:L==="cs"?"✅ Zakázky":"✅ Contracts",val:"+"+sd.contractIncome+"g",c:"#4a7a3a"}]:[]),
+      {label:L==="cs"?"💸 Mzdy celkem":"💸 Wages total",val:"-"+sd.wages+"g",c:"#a03020"},
+      ...(sd.wagesDeficit>0?[{label:L==="cs"?"⚠️ Nezaplaceno":"⚠️ Unpaid",val:sd.wagesDeficit+"g → dluh",c:"#a03020",bold:true}]:[]),
+      {label:L==="cs"?"🍺 Pivo":"🍺 Beer",val:"-"+sd.bCost+"g",c:"#8b5e34"},
+      ...(sd.dPay>0?[{label:L==="cs"?"📜 Auto-splátka dluhu":"📜 Auto debt payment",val:"-"+sd.dPay+"g",c:"#4a7a3a"}]:[]),
+      {label:L==="cs"?"Δ Pokladna":"Δ Cash",val:(sd.groseDelta>=0?"+":"")+sd.groseDelta+"g",c:sd.groseDelta>=0?"#4a7a3a":"#a03020",bold:true},
+    ];
+    ecoRows.forEach(r=>ecoBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",
+      marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
+      h("span",{style:{color:"#8b5e34"}},r.label),
+      h("span",{style:{color:r.c}},r.val))));
+    body.append(ecoBox);
+
+    // ── DĚLNÍCI — mzdy a dluhy ──
+    const workerBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #8b5e34"}});
+    workerBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"👷 MZDY DĚLNÍKŮ":"👷 WORKER WAGES"));
+    p.workers.forEach(w=>{
+      const wEntry=sd.workerWages?sd.workerWages.find(x=>x.id===w.id):null;
+      const wage=wEntry?wEntry.wage:(2+(w.wageMod||0));
+      const paid=wEntry?wEntry.paid:true;
+      const shortfall=wEntry?wEntry.shortfall:0;
+      const unpaid=w.unpaidDebt||0;
+      const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+        fontSize:"10px",marginBottom:"3px",padding:"2px 0",
+        borderBottom:"1px solid rgba(42,26,10,.06)"}});
+      row.append(
+        h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(w.lv)),
+        h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
+          h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+wage+"g"):("✗ "+wage+"g → dluh")),
+          unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},"celk. dluh: "+unpaid+"g"):h("span",{},"")
+        ));
+      workerBox.append(row);
+    });
+    // Možnost splatit dluhy dělníkům
+    const indebted=p.workers.filter(w=>(w.unpaidDebt||0)>0);
+    if(indebted.length>0){
+      const totalUnpaid=indebted.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+      const canPay=p.grose>=totalUnpaid;
+      workerBox.append(h("div",{style:{marginTop:"6px"}},
+        h("button",{class:"btn btn-s"+(canPay?" btn-p":""),
+          style:{width:"100%",fontSize:"10px",opacity:canPay?1:0.5,cursor:canPay?"pointer":"not-allowed"},
+          onClick:()=>{
+            if(!canPay)return;
+            G.workers.forEach(w=>{if(w.unpaidDebt>0){G.grose-=w.unpaidDebt;w.unpaidDebt=0;}});
+            G.log.push("__ECO__💸 "+(L==="cs"?"Dluhy dělníkům splaceny: -"+totalUnpaid+"g":"Worker debts cleared: -"+totalUnpaid+"g"));
+            render();
+          }},L==="cs"?"💸 Splatit dluhy dělníkům ("+totalUnpaid+"g)":"💸 Clear worker debts ("+totalUnpaid+"g)")));
+    }
+    body.append(workerBox);
+
+    // ── NÁLADA A MORÁLKA ──
+    const morBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"12px",borderLeft:"3px solid "+(sd.mDelta>=0?"#4a7a3a":"#a03020")}});
+    morBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"4px"}},L==="cs"?"😊 NÁLADA HUTĚ":"😊 FOUNDRY MORALE"));
+    morBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px"}},
+      h("span",{style:{color:"#8b5e34"}},L==="cs"?"Aktuální nálada:":"Current morale:"),
+      h("span",{style:{color:p.morale>60?"#4a7a3a":p.morale>35?"#c9952b":"#a03020",fontWeight:"700"}},p.morale+" "+(sd.mDelta!==0?"("+(sd.mDelta>0?"+":"")+sd.mDelta+")":""))));
+    body.append(morBox);
+
     const btn=h("button",{class:"btn btn-p",style:{width:"100%",padding:"10px",fontSize:"14px"},
-      onClick:()=>{G.phase="playing";G.summary=null;render();}},
+      onClick:()=>{
+        G.phase="playing"; G.summary=null;
+        // Loajalitní modal — pokud existují dělníci s dluhem po zavření summary
+        const debtedWorkers=G.workers.filter(w=>(w.unpaidDebt||0)>0);
+        if(debtedWorkers.length>0) G._loyaltyModalPending=true;
+        render();
+      }},
       L==="cs"?"Další měsíc →":"Next Month →");
-    app.append(hdr,body,h("div",{style:{padding:"12px 14px"}},btn));
+    app.append(hdr,body,h("div",{style:{padding:"12px 14px",flexShrink:0}},btn));
     return;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // LOAJALITNÍ MODAL — dělníci s nezaplacenými dluhy
+  // ════════════════════════════════════════════════════════════
+  if(p._loyaltyModalPending&&p.phase==="playing"){
+    const debtedWorkers=p.workers.filter(w=>(w.unpaidDebt||0)>0);
+    if(debtedWorkers.length>0){
+      const modal=h("div",{class:"modal-bg",style:{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",
+        display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}});
+      const box=h("div",{style:{background:"linear-gradient(145deg,#f4e4c1,#e8d5a3)",borderRadius:"6px",
+        padding:"20px",maxWidth:"340px",width:"90%",boxShadow:"0 4px 24px rgba(0,0,0,.5)",
+        fontFamily:"Georgia,serif",border:"2px solid #8b5e34"}});
+      box.append(
+        h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#3a2a14",marginBottom:"8px",borderBottom:"1px solid rgba(42,26,10,.15)",paddingBottom:"6px"}},
+          "⚠️ "+(L==="cs"?"Nespokojení dělníci":"Disgruntled Workers")),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"10px",lineHeight:"1.6"}},
+          L==="cs"
+            ?"Tito dělníci nedostali plnou mzdu. Uvažují o odchodu do jiné hutě."
+            :"These workers did not receive full wages. They are considering leaving for another foundry."));
+      debtedWorkers.forEach(w=>{
+        box.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"4px 8px",marginBottom:"3px",background:"rgba(160,0,0,.07)",borderRadius:"3px",
+          fontSize:"11px",border:"1px solid rgba(160,0,0,.15)"}},
+          h("span",{style:{fontWeight:"700",color:"#3a2a14"}},w.name+" "+"★".repeat(w.lv)),
+          h("span",{style:{color:"#a03020"}},(L==="cs"?"dluh: ":"owes: ")+(w.unpaidDebt||0)+"g")));
+      });
+      const totalUnpaid=debtedWorkers.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+      const canPayAll=p.grose>=totalUnpaid;
+      box.append(h("div",{style:{marginTop:"10px",display:"flex",flexDirection:"column",gap:"5px"}}));
+      const btnRow=h("div",{style:{display:"flex",flexDirection:"column",gap:"5px",marginTop:"10px"}});
+      if(canPayAll){
+        btnRow.append(h("button",{class:"btn btn-p",style:{width:"100%",fontSize:"11px"},
+          onClick:()=>{
+            G.workers.forEach(w=>{if(w.unpaidDebt>0){G.grose-=w.unpaidDebt;w.unpaidDebt=0;w.loyalty=Math.min(100,w.loyalty+15);}});
+            G.log.push("__ECO__💚 "+(L==="cs"?"Dluhy splaceny — dělníci zůstávají (+loajalita)":"Debts paid — workers staying (+loyalty)"));
+            G._loyaltyModalPending=false;
+            render();
+          }},L==="cs"?"💸 Splatit vše ("+totalUnpaid+"g) — dělníci zůstanou":"💸 Pay all ("+totalUnpaid+"g) — workers stay"));
+      }
+      btnRow.append(h("button",{class:"btn",style:{width:"100%",fontSize:"11px"},
+        onClick:()=>{
+          // Slíbit — loajalita mírně roste ale dluh zůstává
+          G.workers.forEach(w=>{if(w.unpaidDebt>0) w.loyalty=Math.min(100,w.loyalty+5);});
+          G.log.push("__EVT__🤝 "+(L==="cs"?"Hutmistr slíbil doplatit — dělníci váhají":"Foundry master promised payment — workers hesitate"));
+          G._loyaltyModalPending=false;
+          render();
+        }},L==="cs"?"🤝 Slíbit doplatek — dělníci váhají (+5 loaj.)":"🤝 Promise payment — workers hesitate (+5 loy.)"));
+      btnRow.append(h("button",{class:"btn",style:{width:"100%",fontSize:"11px",opacity:.7},
+        onClick:()=>{G._loyaltyModalPending=false;render();}},
+        L==="cs"?"Pokračovat bez slíbu":"Continue without promise"));
+      box.append(btnRow);
+      modal.append(box);
+      app.append(modal);
+      return;
+    }else{
+      G._loyaltyModalPending=false;
+    }
   }
 
   // ════════════════════════════════════════════════════════════
