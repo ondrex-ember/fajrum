@@ -2414,6 +2414,110 @@ function buildCandidateCard(c,body,p,L){
   body.append(card);
 }
 
+// ── MOLTEN CANVAS — kombinace Bézier víření + canvas částice ──
+let _moltenRaf=null;
+function startMoltenCanvas(canvas,temp,mc){
+  if(_moltenRaf){cancelAnimationFrame(_moltenRaf);_moltenRaf=null;}
+  if(!mc||mc.speed===0)return;
+  const ctx=canvas.getContext("2d");
+  const W=140,H=140;
+  canvas.width=W;canvas.height=H;
+  const cx=W/2,cy=H/2,R=W/2-3;
+  let t=Math.random()*100;
+  // paleta přímo z mc (hra už má správné barvy)
+  const pal={bg:[mc.c1,mc.c2,mc.c3],hot:mc.c3,glow:mc.glow};
+  function mkParticle(){
+    const angle=Math.random()*Math.PI*2;
+    const r=Math.random()*R*.75;
+    const speed=(0.2+Math.random()*0.6)*(temp/60);
+    const isBubble=Math.random()<(temp>60?.4:.15);
+    return{
+      x:cx+Math.cos(angle)*r,
+      y:cy+Math.sin(angle)*r,
+      vx:(Math.random()-.5)*speed*.6,
+      vy:isBubble?-(speed*.8+Math.random()*.4):(Math.random()-.5)*speed,
+      life:Math.random(),
+      maxLife:.4+Math.random()*.6,
+      size:isBubble?1.5+Math.random()*3:3+Math.random()*8,
+      isBubble,
+      wobble:(Math.random()-.5)*.02,
+      phase:Math.random()*Math.PI*2
+    };
+  }
+  const pCount=temp>80?28:temp>60?20:temp>40?13:8;
+  const particles=[];
+  for(let i=0;i<pCount;i++) particles.push(mkParticle());
+  function drawMolten(){
+    const grad=ctx.createRadialGradient(cx,cy*.9,0,cx,cy,R);
+    grad.addColorStop(0,pal.bg[0]);
+    grad.addColorStop(.5,pal.bg[1]);
+    grad.addColorStop(1,pal.bg[2]);
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+    // slow swirl — 3 radialGradient blobs
+    if(temp>15){
+      for(let s=0;s<3;s++){
+        const sx=cx+Math.cos(t*(0.4+s*.3)+s*2.1)*R*.35;
+        const sy=cy+Math.sin(t*(0.35+s*.25)+s*1.7)*R*.3;
+        const sr=R*(.3+s*.08);
+        const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,sr);
+        const alpha=Math.min(.18,(temp/100)*.22);
+        // rgba z hex
+        function hx(h,a){const r2=parseInt(h.slice(1,3),16),g2=parseInt(h.slice(3,5),16),b2=parseInt(h.slice(5,7),16);return`rgba(${r2},${g2},${b2},${a})`;}
+        sg.addColorStop(0,hx(pal.hot,alpha));
+        sg.addColorStop(1,"rgba(0,0,0,0)");
+        ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);
+        ctx.fillStyle=sg;ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  function frame(){
+    _moltenRaf=requestAnimationFrame(frame);
+    t+=0.016;
+    ctx.clearRect(0,0,W,H);
+    // swirl background
+    drawMolten();
+    // clip circle for particles
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+    particles.forEach((p,i)=>{
+      p.life+=.006+Math.random()*.004;
+      p.x+=p.vx+Math.sin(t*.9+p.phase)*.3;
+      p.y+=p.vy;
+      p.vx+=p.wobble;
+      // boundary repel
+      const dx=p.x-cx,dy=p.y-cy,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>R-p.size){p.vx-=(dx/dist)*.15;p.vy-=(dy/dist)*.15;}
+      if(p.life>=p.maxLife){particles[i]=mkParticle();return;}
+      const fadeIn=p.life<.2?p.life/.2:1;
+      const fadeOut=p.life>p.maxLife*.7?1-(p.life-p.maxLife*.7)/(p.maxLife*.3):1;
+      const alpha=fadeIn*fadeOut;
+      if(p.isBubble){
+        // kruh bubliny
+        ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+        ctx.strokeStyle=pal.hot;ctx.globalAlpha=alpha*.5;ctx.lineWidth=.8;ctx.stroke();
+        // odlesk
+        ctx.beginPath();ctx.arc(p.x-p.size*.3,p.y-p.size*.3,p.size*.25,0,Math.PI*2);
+        ctx.fillStyle="#ffffff";ctx.globalAlpha=alpha*.3;ctx.fill();
+      } else {
+        // lava blob s radialGradient
+        ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+        const g=ctx.createRadialGradient(p.x-p.size*.3,p.y-p.size*.3,0,p.x,p.y,p.size);
+        g.addColorStop(0,pal.hot);g.addColorStop(1,pal.bg[0]);
+        ctx.fillStyle=g;ctx.globalAlpha=alpha*.25;ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    });
+    ctx.restore();
+    // rim
+    ctx.beginPath();ctx.arc(cx,cy,R-1,0,Math.PI*2);
+    ctx.strokeStyle="#2a1608";ctx.lineWidth=3;ctx.stroke();
+  }
+  frame();
+}
+
 function render(){
   const p=G, L=p.lang;
   const ms=L==="cs"?MONTHS_CS:MONTHS_EN, hs=L==="cs"?HINTS_CS:HINTS_EN;
@@ -4161,11 +4265,13 @@ function render(){
       const twoCol=document.createElement("div");
       twoCol.style.cssText="display:flex;gap:14px;align-items:center;margin-bottom:10px;";
 
-      // Levý sloupec — SVG kruh (1/2)
+      // Levý sloupec — SVG základ + canvas overlay (Bézier víření + fyzikální bubliny)
       const leftWrap=document.createElement("div");
       leftWrap.style.cssText="flex:1;min-width:0;display:flex;justify-content:center;";
       const sid="fsvg_"+Date.now();
-      leftWrap.innerHTML=`<svg width="160" height="160" viewBox="0 0 140 140" xmlns="${svgNS}" style="display:block;width:100%;max-width:180px;height:auto;">
+      const panevWrap=document.createElement("div");
+      panevWrap.style.cssText="position:relative;display:inline-block;width:100%;max-width:180px;";
+      panevWrap.innerHTML=`<svg id="${sid}_svg" width="160" height="160" viewBox="0 0 140 140" xmlns="${svgNS}" style="display:block;width:100%;height:auto;">
         <defs>
           <radialGradient id="${sid}_bg" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="${meltColors.c1}" stop-opacity="1"/>
@@ -4173,41 +4279,29 @@ function render(){
             <stop offset="100%" stop-color="${meltColors.c3}" stop-opacity="1"/>
           </radialGradient>
           <radialGradient id="${sid}_g2" cx="40%" cy="38%" r="55%">
-            <stop offset="0%" stop-color="${meltColors.c3}" stop-opacity="${active&&temp>15?0.35:0}"/>
+            <stop offset="0%" stop-color="${meltColors.c3}" stop-opacity="${active&&temp>15?0.3:0}"/>
             <stop offset="100%" stop-color="${meltColors.c1}" stop-opacity="0"/>
           </radialGradient>
-          <filter id="${sid}_blur"><feGaussianBlur stdDeviation="2.5"/></filter>
           <clipPath id="${sid}_clip"><circle cx="70" cy="70" r="58"/></clipPath>
         </defs>
         <circle cx="70" cy="70" r="62" fill="#0e0806" stroke="#3a2010" stroke-width="1.5"/>
         <circle cx="70" cy="70" r="58" fill="url(#${sid}_bg)" clip-path="url(#${sid}_clip)"/>
-        ${spd>0?`<g clip-path="url(#${sid}_clip)" style="transform-origin:70px 70px;animation:meltRot1 ${(spd*1.4).toFixed(1)}s linear infinite">
-          <ellipse cx="70" cy="55" rx="42" ry="22" fill="${meltColors.c3}" opacity="0.18" filter="url(#${sid}_blur)"/>
-          <ellipse cx="52" cy="82" rx="28" ry="14" fill="${meltColors.c1}" opacity="0.22" filter="url(#${sid}_blur)"/>
-        </g>`:""}
-        ${spd>0?`<g clip-path="url(#${sid}_clip)" style="transform-origin:70px 70px;animation:meltRot2 ${(spd*0.9).toFixed(1)}s linear infinite">
-          <ellipse cx="85" cy="65" rx="32" ry="18" fill="${meltColors.c2}" opacity="0.25" filter="url(#${sid}_blur)"/>
-          <ellipse cx="60" cy="88" rx="24" ry="12" fill="${meltColors.c3}" opacity="0.15" filter="url(#${sid}_blur)"/>
-        </g>`:""}
         <circle cx="70" cy="70" r="58" fill="url(#${sid}_g2)" clip-path="url(#${sid}_clip)"
           style="animation:${spd>0?`meltPulse ${(spd*1.1).toFixed(1)}s ease-in-out infinite`:"none"}"/>
-        ${active&&temp>50?`
-          <circle cx="58" cy="72" r="4" fill="none" stroke="${meltColors.c3}" stroke-width="1" opacity="0.4"
-            style="animation:bubbleRise ${(spd*0.7).toFixed(1)}s ${(spd*0.3).toFixed(1)}s ease-in infinite"/>
-          <circle cx="78" cy="82" r="3" fill="none" stroke="${meltColors.c3}" stroke-width="1" opacity="0.3"
-            style="animation:bubbleRise ${(spd*0.85).toFixed(1)}s 0s ease-in infinite"/>
-          <circle cx="68" cy="60" r="2.5" fill="none" stroke="${meltColors.c3}" stroke-width="0.8" opacity="0.35"
-            style="animation:bubbleRise ${(spd*0.6).toFixed(1)}s ${(spd*0.5).toFixed(1)}s ease-in infinite"/>
-        `:""}
         <text x="70" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="9"
           fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.9">
           ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):isCooling?"CHLADNE":isTempering?"TEMPERUJE":isC&&p.round===PREP?"ROZŽÍHÁ":"STUDENÁ"}
         </text>
         ${active&&temp>60?`<circle cx="70" cy="70" r="62" fill="none" stroke="${meltColors.glow}" stroke-width="2"
-          opacity="0.4" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}
-        <circle cx="70" cy="70" r="63" fill="none" stroke="#2a1608" stroke-width="2"/>
+          opacity="0.35" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}`+
+        `<circle cx="70" cy="70" r="63" fill="none" stroke="#2a1608" stroke-width="2"/>
       </svg>`;
-
+      const panevCanvas=document.createElement("canvas");
+      panevCanvas.width=160;panevCanvas.height=160;
+      panevCanvas.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%;";
+      panevWrap.appendChild(panevCanvas);
+      leftWrap.appendChild(panevWrap);
+      startMoltenCanvas(panevCanvas,temp,meltColors);
       // Pravý sloupec — teplota label + stats (1/2)
       const rightWrap=document.createElement("div");
       rightWrap.style.cssText="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;";
