@@ -68,6 +68,30 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
   font-size:10px;font-weight:700;background:rgba(139,94,52,.1);border:1px solid rgba(139,94,52,.15);}
 .pill.warn{background:rgba(160,48,32,.15);color:var(--danger);border-color:rgba(160,48,32,.2);}
 .pill.ok{background:rgba(74,122,58,.15);color:var(--ok);border-color:rgba(74,122,58,.2);}
+/* Ember glow — kritické metriky */
+@keyframes emberPulse{
+  0%,100%{box-shadow:0 0 4px 1px rgba(200,80,20,.55),0 0 0 0 rgba(200,80,20,.0);background:rgba(180,50,10,.22);}
+  50%{box-shadow:0 0 8px 3px rgba(220,100,30,.75),0 0 0 3px rgba(220,100,30,.12);background:rgba(200,70,15,.32);}
+}
+.pill.ember{animation:emberPulse 1.6s ease-in-out infinite;color:#e84020;border-color:rgba(200,60,10,.4);font-weight:700;}
+/* Attention banner */
+.attention-banner{background:linear-gradient(90deg,rgba(160,48,32,.12),rgba(200,80,20,.08));
+  border:1px solid rgba(180,60,20,.3);border-radius:5px;padding:6px 10px;margin-bottom:8px;}
+.attention-banner .att-title{font-size:10px;font-weight:700;color:#a03020;margin-bottom:4px;letter-spacing:.03em;}
+.attention-item{display:flex;align-items:flex-start;gap:5px;font-size:10px;color:#5a2a10;
+  margin-bottom:3px;line-height:1.5;}
+.attention-item.critical{color:#a03020;font-weight:600;}
+.attention-item .att-action{color:#8b5e34;font-style:italic;margin-left:3px;}
+/* Retention modal */
+.retention-modal-box{background:linear-gradient(145deg,#f5e9c8,#ead8a5);border-radius:7px;
+  padding:18px 20px;max-width:360px;width:92%;box-shadow:0 6px 32px rgba(0,0,0,.5);
+  border:2px solid #8b5e34;font-family:Georgia,serif;}
+.contract-btn{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 10px;border-radius:4px;border:1px solid rgba(42,26,10,.2);
+  background:rgba(255,255,255,.35);cursor:pointer;font-size:11px;margin-bottom:3px;
+  transition:background .15s;}
+.contract-btn:hover{background:rgba(139,94,52,.15);}
+.contract-btn.selected{background:rgba(139,94,52,.25);border-color:#8b5e34;font-weight:700;}
 .bar-track{width:100%;height:8px;background:rgba(0,0,0,.12);border-radius:4px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width .3s;}
 .tabs{display:flex;gap:1px;padding:0 6px;border-bottom:1px solid rgba(42,26,10,.13);
@@ -556,7 +580,13 @@ const HINTS_EN=MONTH_DATA.map(m=>m.priority_en);
 
 const STORAGE_COST_PER_ITEM=1;
 const MAX_WORKERS=6;
-const XP_PER_LEVEL=[0,8,15,25,40]; // kola práce pro lv 1→2, 2→3, atd.
+const XP_PER_LEVEL=[6,10,15,22,32,45,60,80,110,999]; // kola prace pro lv1->2 ... lv9->10; index = lv-1
+function workerTier(lv){
+  if(lv>=10) return {cs:"Velmistr",de:"Glasmeister"};
+  if(lv>=7)  return {cs:"Mistr",   de:"Meister"};
+  if(lv>=4)  return {cs:"Tovarys", de:"Geselle"};
+  return              {cs:"Ucen",   de:"Lehrling"};
+}
 
 // Traity dělníků
 const TRAITS={
@@ -594,59 +624,99 @@ const NPC_SVG={
   mana:     `<svg width="48" height="56" viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="56" fill="#2a1608" rx="6"/><text x="24" y="40" text-anchor="middle" font-size="32">👩</text></svg>`
 };
 
+// NPC_BONDS: explicitní vazby mezi postavami
+// type: "affinity" = spolupracují lépe, "tension" = třecí plocha
+// effect popisuje herní dopad (tooltip), mentor se nastavuje dynamicky za běhu
+const NPC_BONDS=[
+  {a:"npc_kunc",   b:"npc_mana",    type:"affinity",
+   desc_cs:"Kunc a Máňa — táta a máma hutě. Spolu zvyšují kvalitu tavení o 5 %.",
+   desc_en:"Kunc and Máňa — the foundry's father and mother. Together they raise melt quality by 5%."},
+  {a:"npc_kanin",  b:"npc_hrana1",  type:"affinity",
+   desc_cs:"Oba pedanti. Káninského pánev vydrží o 1 várku déle, pokud Hranař dohleduje chlazení.",
+   desc_en:"Both perfectionists. Káninský's crucible lasts 1 extra melt when Hranař oversees cooling."},
+  {a:"npc_foukac3",b:"npc_foukac4", type:"affinity",
+   desc_cs:"Josef a Kateřina — Kateřina ho učí foukání do formy. Josef leveluje 2× rychleji.",
+   desc_en:"Josef and Kateřina — she teaches him mould-blowing. Josef levels up twice as fast."},
+  {a:"npc_foukac2",b:"npc_foukac3", type:"tension",
+   desc_cs:"Hanns kritizuje Josefovu techniku. Josef má -10 nálady pokud pracují na stejné směně.",
+   desc_en:"Hanns criticises Josef's technique. Josef gets -10 mood when they share a shift."},
+  {a:"npc_komar",  b:"npc_kanin",   type:"tension",
+   desc_cs:"Komár ignoruje Káninského instrukce. 10 % šance na chybu v práci.",
+   desc_en:"Komár ignores Káninský's instructions. 10% chance of a work error."},
+  {a:"npc_kanin",  b:"npc_foukac4", type:"tension",
+   desc_cs:"Strejda jí nedůvěřuje. Kateřinina loajalita klesá o 1 za kolo pokud Káninský velí.",
+   desc_en:"Old man doesn't trust her. Kateřina's loyalty drops 1/round when Káninský leads."},
+];
+
 const NPC_ROSTER=[
-  {id:"npc_kunc",    name:"František Kunc",   prof:"tavic",    lv:3, traits:["houzevatny","ucitel"],
-   quote_cs:"U pece třicet let. Sklo mi zpívá.",  quote_en:"Thirty years at the furnace. I hear the glass sing.",
-   hireCost:18, wageMod:1, portrait:"kunc",    loyalty:90, health:75, mood:70},
-  {id:"npc_komar",  name:"Milan Komár",       prof:"drvorubc", lv:2, traits:["silak","vytrvalec"],
-   quote_cs:"Padne to nebo ne?",                  quote_en:"Will it fall or not?",
-   hireCost:12, wageMod:0, portrait:"komar",   loyalty:75, health:95, mood:65},
-  {id:"npc_kanin",  name:"Strejda Káninský",  prof:"panvar",   lv:3, traits:["pedant","kovak"],
-   quote_cs:"To se dělá takhle. Ne tak.",          quote_en:"This is how it's done. Not like that.",
-   hireCost:16, wageMod:1, portrait:"kaninsky",loyalty:80, health:80, mood:60},
-  {id:"npc_tabor",  name:"Ferda Táborský",    prof:"popelar",  lv:1, traits:["mlady","ucitel"],
-   quote_cs:"Jasně, hned... co jsem to měl dělat?",quote_en:"Sure, right away... what was I doing?",
-   hireCost:6,  wageMod:-1,portrait:"taborsky",loyalty:60, health:100,mood:80},
-  {id:"npc_smrk",  name:"Tonda Smrkovský",   prof:"hornik",   lv:2, traits:["vytrvalec","hasic"],
-   quote_cs:"Hmm.",                               quote_en:"Hmm.",
+  // ── STARTOVNÍ PARTA (kolo 1) ──────────────────────────────────────────────
+  {id:"npc_kunc",   name:"František Kunc",    prof:"tavic",    lv:3, traits:["houzevatny","ucitel"],
+   quote_cs:"U pece třicet let. Sklo mi zpívá.",
+   quote_en:"Thirty years at the furnace. I hear the glass sing.",
+   hireCost:18, wageMod:1, portrait:"kunc",     loyalty:90, health:75, mood:70},
+  {id:"npc_komar",  name:"Milan Komár",        prof:"drvorubc", lv:1, traits:["silak","vytrvalec"],
+   quote_cs:"Padne to nebo ne?",
+   quote_en:"Will it fall or not?",
+   hireCost:12, wageMod:0, portrait:"komar",    loyalty:75, health:95, mood:65},
+  {id:"npc_kanin",  name:"Strejda Káninský",   prof:"panvar",   lv:2, traits:["pedant","kovak"],
+   quote_cs:"To se dělá takhle. Ne tak.",
+   quote_en:"This is how it's done. Not like that.",
+   hireCost:16, wageMod:1, portrait:"kaninsky", loyalty:80, health:80, mood:60},
+  {id:"npc_tabor",  name:"Ferda Táborský",     prof:"popelar",  lv:1, traits:["mlady","ucitel"],
+   quote_cs:"Jasně, hned... co jsem to měl dělat?",
+   quote_en:"Sure, right away... what was I doing?",
+   hireCost:6,  wageMod:-1,portrait:"taborsky", loyalty:60, health:100,mood:80},
+  {id:"npc_smrk",   name:"Tonda Smrkovský",    prof:"hornik",   lv:1, traits:["vytrvalec","hasic"],
+   quote_cs:"Hmm.",
+   quote_en:"Hmm.",
    hireCost:10, wageMod:0, portrait:"smrkovsky",loyalty:85, health:85, mood:50},
-  {id:"npc_baran",  name:"Strejda Baranovský",prof:"obchodnik",lv:2, traits:["obchodnik","lakomec"],
-   quote_cs:"Já to seženu. Za příplatek.",         quote_en:"I'll get it. For a fee.",
+  {id:"npc_baran",  name:"Strejda Baranovský", prof:"obchodnik",lv:1, traits:["obchodnik","lakomec"],
+   quote_cs:"Já to seženu. Za příplatek.",
+   quote_en:"I'll get it. For a fee.",
    hireCost:14, wageMod:-1,portrait:"baranovsky",loyalty:55, health:90, mood:70},
-  {id:"npc_mana",   name:"Máňa",              prof:"popelar",  lv:2, traits:["ucitel","houzevatny"],
-   quote_cs:"Tak, hoši, do práce.",               quote_en:"Right then, lads. Back to work.",
-   hireCost:10, wageMod:0, portrait:"mana",    loyalty:95, health:90, mood:75, gender:"f"},
-  // Formaři — vyrábějí dřevěné formy pro foukání (od startu)
-  {id:"npc_formar1", name:"Jirka Formař",      prof:"formar",   lv:2, traits:["kovak","vytrvalec"],
-   quote_cs:"Forma musí sedět. Jinak to nefoukneš.",quote_en:"The mould must fit. Or you can't blow it.",
-   hireCost:10, wageMod:0, portrait:"formar1", loyalty:75, health:90, mood:70, availRound:0, availSeason:1},
-  {id:"npc_formar2", name:"Péťa Dřevák",       prof:"formar",   lv:1, traits:["silak","mlady"],
-   quote_cs:"Jedu, jedu, jedu.",                  quote_en:"Working, working, working.",
-   hireCost:7,  wageMod:-1,portrait:"formar2", loyalty:70, health:100,mood:75, availRound:0, availSeason:1},
-  // Foukači — hlásí se po sezóně 1, nastupují od dubna
-  {id:"npc_foukac1", name:"Václav Puchýř",     prof:"foukat_lesni",   lv:3, traits:["znalec","vytrvalec"],
-   quote_cs:"Sklo tváří jako matka děcko. Teplé ruce, lehký dech.",quote_en:"Glass shaped like a mother shapes a child. Warm hands, gentle breath.",
-   hireCost:20, wageMod:2, portrait:"foukac1", loyalty:80, health:85, mood:70, availRound:5, availSeason:1},
-  {id:"npc_foukac2", name:"Hanns Glaser",      prof:"foukat_kristal", lv:2, traits:["pedant","hasic"],
-   quote_cs:"Saský způsob. Lepší forma, čistší střep.",quote_en:"Saxon method. Better mould, cleaner piece.",
-   hireCost:16, wageMod:1, portrait:"foukac2", loyalty:65, health:90, mood:60, availRound:5, availSeason:1},
-  {id:"npc_foukac3", name:"Josef Sklenář",     prof:"foukat_dekor",   lv:1, traits:["mlady","silak"],
-   quote_cs:"Foukal jsem u Riedlů. Tady to zkusím taky.",quote_en:"I blew at Riedel's. I'll try here too.",
-   hireCost:10, wageMod:0, portrait:"foukac3", loyalty:60, health:100,mood:75, availRound:5, availSeason:1},
-  {id:"npc_foukac4", name:"Kateřina Sklenářka",prof:"foukat_formy",   lv:2, traits:["ucitel","obchodnik"],
-   quote_cs:"Ženy foukají od pradávna. Jen se to neříká.",quote_en:"Women have always blown glass. It's just not spoken of.",
-   hireCost:14, wageMod:0, portrait:"foukac4", loyalty:85, health:88, mood:80, availRound:5, availSeason:1, gender:"f"},
-  // Brusiči + Rytec — hlásí se po sezóně 2
-  {id:"npc_hrana1",  name:"Ignác Hranař",      prof:"brusic_hrana",   lv:3, traits:["pedant","znalec"],
-   quote_cs:"Jeden špatný tah a střep je na odpis. Rychlost není ctnost.",quote_en:"One bad stroke and the piece is waste. Speed is not virtue.",
-   hireCost:22, wageMod:2, portrait:"brusic1", loyalty:75, health:80, mood:55, availRound:7, availSeason:2},
-  {id:"npc_kulic1",  name:"Anička Kulička",    prof:"brusic_kulic",   lv:2, traits:["vytrvalec","lakomec"],
-   quote_cs:"Osm hodin denně s brusným kamenem. Víc nepotřebuju.",quote_en:"Eight hours a day at the stone. That's enough.",
-   hireCost:14, wageMod:-1,portrait:"brusic2", loyalty:70, health:90, mood:65, availRound:7, availSeason:2, gender:"f"},
-  // Rytec — hlásí se po sezóně 2
-  {id:"npc_rytec1",  name:"Kryštof Rytíř",    prof:"rytec",          lv:3, traits:["pedant","znalec"],
-   quote_cs:"Diamantový hrot a trpělivost. Nic víc nepotřebuješ.",quote_en:"Diamond point and patience. Nothing more is needed.",
-   hireCost:28, wageMod:3, portrait:"rytec1",  loyalty:70, health:80, mood:50, availRound:7, availSeason:2}
+  {id:"npc_mana",   name:"Máňa",               prof:"popelar",  lv:1, traits:["ucitel","houzevatny"],
+   quote_cs:"Tak, hoši, do práce.",
+   quote_en:"Right then, lads. Back to work.",
+   hireCost:10, wageMod:0, portrait:"mana",     loyalty:95, health:90, mood:75, gender:"f"},
+  // ── FORMAŘI (od startu, sezóna 1) ─────────────────────────────────────────
+  {id:"npc_formar1",name:"Jirka Formař",        prof:"formar",   lv:1, traits:["kovak","vytrvalec"],
+   quote_cs:"Forma musí sedět. Jinak to nefoukneš.",
+   quote_en:"The mould must fit. Or you can't blow it.",
+   hireCost:10, wageMod:0, portrait:"formar1",  loyalty:75, health:90, mood:70, availRound:0, availSeason:1},
+  {id:"npc_formar2",name:"Péťa Dřevák",         prof:"formar",   lv:1, traits:["silak","mlady"],
+   quote_cs:"Jedu, jedu, jedu.",
+   quote_en:"Working, working, working.",
+   hireCost:7,  wageMod:-1,portrait:"formar2",  loyalty:70, health:100,mood:75, availRound:0, availSeason:1},
+  // ── FOUKAČI (od kola 5, sezóna 1) ─────────────────────────────────────────
+  {id:"npc_foukac1",name:"Václav Puchýř",       prof:"foukat_lesni",   lv:1, traits:["znalec","vytrvalec"],
+   quote_cs:"Sklo tváří jako matka děcko. Teplé ruce, lehký dech.",
+   quote_en:"Glass shaped like a mother shapes a child. Warm hands, gentle breath.",
+   hireCost:20, wageMod:2, portrait:"foukac1",  loyalty:80, health:85, mood:70, availRound:5, availSeason:1},
+  {id:"npc_foukac2",name:"Hanns Glaser",         prof:"foukat_kristal", lv:1, traits:["pedant","hasic"],
+   quote_cs:"Saský způsob. Lepší forma, čistší střep.",
+   quote_en:"Saxon method. Better mould, cleaner piece.",
+   hireCost:16, wageMod:1, portrait:"foukac2",  loyalty:65, health:90, mood:60, availRound:5, availSeason:1},
+  {id:"npc_foukac3",name:"Josef Sklenář",        prof:"foukat_dekor",   lv:1, traits:["mlady","silak"],
+   quote_cs:"Foukal jsem u Riedlů. Tady to zkusím taky.",
+   quote_en:"I blew at Riedel's. I'll try here too.",
+   hireCost:10, wageMod:0, portrait:"foukac3",  loyalty:60, health:100,mood:75, availRound:5, availSeason:1},
+  {id:"npc_foukac4",name:"Kateřina Sklenářová",  prof:"foukat_formy",   lv:1, traits:["ucitel","obchodnik"],
+   quote_cs:"Ženy foukají od pradávna. Jen se to neříká.",
+   quote_en:"Women have always blown glass. It's just not spoken of.",
+   hireCost:14, wageMod:0, portrait:"foukac4",  loyalty:85, health:88, mood:80, availRound:5, availSeason:1, gender:"f"},
+  // ── BRUSIČI + RYTEC (od kola 7, sezóna 2) ─────────────────────────────────
+  {id:"npc_hrana1", name:"Ignác Hranař",         prof:"brusic_hrana",   lv:1, traits:["pedant","znalec"],
+   quote_cs:"Jeden špatný tah a střep je na odpis. Rychlost není ctnost.",
+   quote_en:"One bad stroke and the piece is waste. Speed is not virtue.",
+   hireCost:22, wageMod:2, portrait:"brusic1",  loyalty:75, health:80, mood:55, availRound:7, availSeason:2},
+  {id:"npc_kulic1", name:"Anička Kuličková",     prof:"brusic_kulic",   lv:1, traits:["vytrvalec","lakomec"],
+   quote_cs:"Osm hodin denně s brusným kamenem. Víc nepotřebuju.",
+   quote_en:"Eight hours a day at the stone. That's enough.",
+   hireCost:14, wageMod:-1,portrait:"brusic2",  loyalty:70, health:90, mood:65, availRound:7, availSeason:2, gender:"f"},
+  {id:"npc_rytec1", name:"Kryštof Rytíř",        prof:"rytec",          lv:1, traits:["pedant","znalec"],
+   quote_cs:"Diamantový hrot a trpělivost. Nic víc nepotřebuješ.",
+   quote_en:"Diamond point and patience. Nothing more is needed.",
+   hireCost:28, wageMod:3, portrait:"rytec1",   loyalty:70, health:80, mood:50, availRound:7, availSeason:2}
 ];
 
 // Kteří NPC jsou k dispozici pro nábor (ještě ne v huti)
@@ -671,7 +741,8 @@ function genCandidates(season, count){
     quote_cs:npc.quote_cs, quote_en:npc.quote_en,
     loyalty:npc.loyalty, health:npc.health, mood:npc.mood,
     gender:npc.gender||"m",
-    xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle"
+    xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle",
+    seasonsInFoundry:0, incidents:0, contract:null // contract:{months,paid,roundsLeft}
   }));
 }
 
@@ -1205,11 +1276,11 @@ function initState(){
     rytina_brus_poharak:[], rytina_pohar:[], rytina_dekantr:[], rytina_cise:[],
     fTemp:0, fActive:false,
     workers:[
-      {...NPC_ROSTER[0], id:"w1", npcId:NPC_ROSTER[0].id, task:"potash",  xp:0, fat:0},
-      {...NPC_ROSTER[1], id:"w2", npcId:NPC_ROSTER[1].id, task:"logging", xp:0, fat:0},
-      {...NPC_ROSTER[6], id:"w3", npcId:NPC_ROSTER[6].id, task:"potash",  xp:0, fat:0},
-      {...NPC_ROSTER[2], id:"w4", npcId:NPC_ROSTER[2].id, task:"panev",   xp:0, fat:0},
-      {...NPC_ROSTER[7], id:"w5", npcId:NPC_ROSTER[7].id, task:"idle",    xp:0, fat:0}],
+      {...NPC_ROSTER[0], id:"w1", npcId:NPC_ROSTER[0].id, task:"potash",  xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null},
+      {...NPC_ROSTER[1], id:"w2", npcId:NPC_ROSTER[1].id, task:"logging", xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null},
+      {...NPC_ROSTER[6], id:"w3", npcId:NPC_ROSTER[6].id, task:"potash",  xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null},
+      {...NPC_ROSTER[2], id:"w4", npcId:NPC_ROSTER[2].id, task:"panev",   xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null},
+      {...NPC_ROSTER[7], id:"w5", npcId:NPC_ROSTER[7].id, task:"idle",    xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null}],
       // Jirka Formař je v teamu od začátku ale nastupuje aktivně v březnu (kolo 4)
     shop:genShop(), mBonus:false,
     contracts:[], avail:freshContracts(), done:0,
@@ -1220,6 +1291,8 @@ function initState(){
     trhuNPC:[],
     tab:"overview", help:false, showUpgrade:false,
     _partaDetail:null, _partaSubtab:"profil",
+    _retentionPending:[], // [workerId,...] — čeká na retention modal
+    _loyaltyModalPending:false,
     huteName:"", // Jméno hutmistra — zadá uživatel
     audio:{enabled:true,volume:0.7},
     firstVisit:true, // welcome modal po prvním vstupu
@@ -1581,7 +1654,8 @@ function processRound(){
       traits:npc.traits, hireCost:npc.hireCost, wageMod:npc.wageMod,
       portrait:npc.portrait, quote_cs:npc.quote_cs, quote_en:npc.quote_en,
       loyalty:npc.loyalty, health:npc.health, mood:npc.mood,
-      gender:npc.gender||"m", xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle"
+      gender:npc.gender||"m", xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle",
+      seasonsInFoundry:0, incidents:0, contract:null
     }));
   }
   // Kampaňové kolo 3 (Červen=kolo 7) → burel a crocusMartis zdarma
@@ -1695,21 +1769,84 @@ function processRound(){
       // Zaplaceno → pomalu odpouštět dluh paměti (odpustit 1g/kolo)
       // newUnpaid zůstane 0
     }
-    // Odchod při nízké loajalitě
+    // Kontrakt tick — snížit roundsLeft, chránit loajalitu
+    let newContract=w.contract?{...w.contract}:null;
+    if(newContract){
+      newContract.roundsLeft=Math.max(0,(newContract.roundsLeft||1)-1);
+      if(newContract.roundsLeft<=0) newContract=null; // kontrakt vypršel
+    }
+    // Kontrakt chrání před odchodem — loajalita neklesne pod 30 při aktivním kontraktu
+    const contractActive=!!(newContract&&newContract.roundsLeft>0);
+    if(contractActive) newLoyalty=Math.max(30,newLoyalty);
+
+    // Seasons tracking
+    const newSeasonsInFoundry=(w.seasonsInFoundry||0);
+
+    // Odchod při nízké loajalitě — BLOKOVÁNO pokud má kontrakt
     const leaveThreshold=w.traits?.includes("houzevatny")?5:20;
     const leaveChance=newLoyalty<leaveThreshold?(w.traits?.includes("houzevatny")?0:0.35):
                       newLoyalty<35?0.12:0;
-    const willLeave=leaveChance>0&&Math.random()<leaveChance;
+    // At-risk warning: loajalita klesla pod 40 → přidat do retention queue (nezávisle na willLeave)
+    if(newLoyalty<40&&!contractActive&&!(G._retentionPending||[]).includes(w.id)){
+      if(!G._retentionPending) G._retentionPending=[];
+      if(!G._retentionPending.includes(w.id)) G._retentionPending.push(w.id);
+    }
+    const willLeave=!contractActive&&leaveChance>0&&Math.random()<leaveChance;
     // XP: za každé aktivní kolo +1 (učitel bonus); werkstat počítá jako aktivní
-    const xpGain=isIdle?0:(hasUcitel&&!w.traits?.includes("ucitel")?1.5:1);
+    // Afinita bonus XP: Josef+Kateřina
+    const hasJosef=p.workers.some(x=>x.npcId==="npc_foukac3"&&x.task!=="idle");
+    const hasKate =p.workers.some(x=>x.npcId==="npc_foukac4"&&x.task!=="idle");
+    const affinityXpBonus=(w.npcId==="npc_foukac3"&&hasKate)?1:0; // Josef leveluje 2x rychleji
+    const mentorBonus=(w.mentorId&&p.workers.some(x=>x.npcId===w.mentorId&&x.task!=="idle"))?0.15:0;
+    const xpGain=isIdle?0:((hasUcitel&&!w.traits?.includes("ucitel")?1.5:1)+affinityXpBonus)*(1+mentorBonus);
     const newXp=(w.xp||0)+xpGain;
     // Level-up?
     let newLv=w.lv;
     const xpNeeded=XP_PER_LEVEL[w.lv-1]||999;
-    if(newLv<5&&newXp>=xpNeeded){
-      newLv=Math.min(5,w.lv+1);
-      log.push(`__EVT__⭐ ${w.name} ${L==="cs"?"postoupil na úroveň":"leveled up to"} ${newLv}!`);
+    if(newLv<10&&newXp>=xpNeeded){
+      newLv=Math.min(10,w.lv+1);
+      const tier=workerTier(newLv);
+      log.push(`__EVT__⭐ ${w.name} ${L==="cs"?"postoupil na":"leveled up to"} ${tier.cs} (${tier.de}) lv.${newLv}!`);
     }
+    // ── MENTOR SYSTÉM ──
+    // Kunc může mentorovat taviče, Máňa popelář/formař, Hranař brusiče
+    // Base trigger: 4-5 kol společné aktivní práce; zkrácení traity, prodloužení tenzí
+    const MENTOR_PAIRS=[
+      {mentor:"npc_kunc",   pupil:null,           profMatch:["tavic","foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy"]},
+      {mentor:"npc_mana",   pupil:null,           profMatch:["popelar","formar"]},
+      {mentor:"npc_hrana1", pupil:"npc_kulic1",   profMatch:["brusic_kulic","rytec"]},
+      {mentor:"npc_foukac4",pupil:"npc_foukac3",  profMatch:["foukat_dekor"]},
+    ];
+    let newMentorId=w.mentorId||null;
+    let newMentorRounds=(w.mentorRounds||0);
+    if(!newMentorId&&!isIdle){
+      const pair=MENTOR_PAIRS.find(mp=>{
+        if(mp.profMatch&&!mp.profMatch.includes(w.prof)) return false;
+        if(mp.pupil&&mp.pupil!==w.npcId) return false;
+        const mentorW=p.workers.find(x=>x.npcId===mp.mentor&&x.task!=="idle");
+        if(!mentorW||mentorW.id===w.id) return false;
+        return true;
+      });
+      if(pair){
+        newMentorRounds++;
+        // Trigger base: 4; -1 pokud oba mají ucitel/znalec; +1 pokud tenze; ±1 random každých 3 kola
+        let trigger=4+Math.floor(Math.random()*2); // 4-5 base
+        const mentorW=p.workers.find(x=>x.npcId===pair.mentor);
+        if(mentorW&&(mentorW.traits?.includes("ucitel")||mentorW.traits?.includes("znalec"))) trigger--;
+        if(w.traits?.includes("znalec")) trigger--;
+        if(w.traits?.includes("lakomec")) trigger++;
+        const hasTension=NPC_BONDS.some(b=>b.type==="tension"&&
+          ((b.a===w.npcId&&b.b===pair.mentor)||(b.b===w.npcId&&b.a===pair.mentor)));
+        if(hasTension) trigger++;
+        trigger=Math.max(2,Math.min(7,trigger));
+        if(newMentorRounds>=trigger){
+          newMentorId=pair.mentor;
+          const mentorName=NPC_ROSTER.find(n=>n.id===pair.mentor)?.name||pair.mentor;
+          log.push(`__EVT__📖 ${w.name} ${L==="cs"?"přijal mentorství od":"accepted mentorship from"} ${mentorName}!`);
+        }
+      }
+    }
+    // Mentor bonus: +15% XP aplikován přes mentorBonus výše
     if(willLeave){
       const reason=newUnpaid>0
         ?(L==="cs"?`odešel — ${newUnpaid}g dluhu mu huť nikdy nesplatila.`:`left — foundry owed him ${newUnpaid}g.`)
@@ -1720,7 +1857,8 @@ function processRound(){
     const healthPenalty=newHealth<50?0.15:newHealth<30?0.3:0;
     return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,
       health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
-      unpaidDebt:newUnpaid};
+      unpaidDebt:newUnpaid,mentorId:newMentorId,mentorRounds:newMentorRounds,
+      contract:newContract,seasonsInFoundry:newSeasonsInFoundry};
   }).filter(Boolean);
 
   const nr=round+1;
@@ -1794,6 +1932,76 @@ function processRound(){
   showToast(toastTitle, tL);
   autoSave();
   render();
+}
+
+// ── KONTRAKT SYSTÉM ─────────────────────────────────────────────────────────
+const CONTRACT_OPTIONS=[
+  {months:1,  mult:1.0,  label_cs:"1 měsíc",   label_en:"1 month"},
+  {months:3,  mult:2.5,  label_cs:"3 měsíce",  label_en:"3 months"},
+  {months:6,  mult:4.0,  label_cs:"6 měsíců",  label_en:"6 months"},
+  {months:8,  mult:5.0,  label_cs:"8 měsíců",  label_en:"8 months"},
+  {months:10, mult:6.0,  label_cs:"10 měsíců", label_en:"10 months"},
+  {months:12, mult:8.0,  label_cs:"12 měsíců", label_en:"12 months"},
+];
+function contractCost(w,months){
+  const wage=2+(w.wageMod||0);
+  const opt=CONTRACT_OPTIONS.find(o=>o.months===months)||CONTRACT_OPTIONS[0];
+  return Math.round(wage*opt.mult);
+}
+function signContract(workerId,months){
+  const w=G.workers.find(x=>x.id===workerId);
+  if(!w) return;
+  const cost=contractCost(w,months);
+  if(G.grose<cost) return;
+  G.grose-=cost;
+  w.contract={months,paid:cost,roundsLeft:months};
+  w.loyalty=Math.min(100,(w.loyalty||50)+20);
+  w.mood=Math.min(100,(w.mood||60)+10);
+  // Odstranit z retention queue
+  G._retentionPending=(G._retentionPending||[]).filter(id=>id!==workerId);
+  const L=G.lang||"cs";
+  G.log.push(`__ECO__📜 ${w.name} ${L==="cs"?"podepsal kontrakt na":"signed contract for"} ${months} ${L==="cs"?"měs.":"mo."} (-${cost}g, +loaj.)`);
+  render();
+}
+
+// Osobní hodnocení hutmistra — statická báze + dynamika
+function workerAssessment(w,L){
+  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
+  const tier=workerTier(w.lv);
+  const seasons=w.seasonsInFoundry||0;
+  const incidents=w.incidents||0;
+  const loyalty=w.loyalty||75;
+  // Statická báze per NPC
+  const bases={
+    npc_kunc:    {cs:"Kunc nepotřebuje pochvalu. Pec mluví za něj.",         en:"Kunc needs no praise. The furnace speaks for him."},
+    npc_komar:   {cs:"Komár padá stromy jako stroje. Přemýšlet mu moc nejde.",en:"Komár fells trees like a machine. Thinking isn't his forte."},
+    npc_kanin:   {cs:"Káninský ví o pánvích víc než kdokoliv v kraji.",       en:"Káninský knows more about crucibles than anyone in the region."},
+    npc_tabor:   {cs:"Táborský se snaží. Opravdu. Výsledky jsou... různé.",   en:"Táborský tries hard. Really. Results vary."},
+    npc_smrk:    {cs:"Smrkovský je spolehlivý. Tichý jako kámen, tvrdý taky.",en:"Smrkovský is reliable. Silent as stone, just as hard."},
+    npc_baran:   {cs:"Baranovský umí prodat i sníh. Jen mu důvěřuj opatrně.", en:"Baranovský could sell snow. Trust him carefully."},
+    npc_mana:    {cs:"Máňa drží partu pohromadě. Bez ní by to tu dávno skřípalo.",en:"Máňa keeps the crew together. Without her it'd squeak."},
+    npc_formar1: {cs:"Formař dělá formy jako hodiny. Přesně, tiše, stále.",   en:"Formař makes moulds like clockwork. Precise, quiet, steady."},
+    npc_formar2: {cs:"Péťa je mladý a silný. Hlava přijde časem.",            en:"Péťa is young and strong. The head will come with time."},
+    npc_foukac1: {cs:"Puchýř foukne tvar z ničeho. Ruce jako z jiného světa.",en:"Puchýř blows shape from nothing. Hands from another world."},
+    npc_foukac2: {cs:"Glaser je precizní. Saský způsob — tvrdší, ale čistší.", en:"Glaser is precise. Saxon method — harder, but cleaner."},
+    npc_foukac3: {cs:"Sklenář roste rychle. Chybuje, ale nikdy dvakrát stejně.",en:"Sklenář grows fast. Makes mistakes, never the same one twice."},
+    npc_foukac4: {cs:"Sklenářová prodá víc než ostatní dohromady. A ví to.",  en:"Sklenářová sells more than the rest combined. She knows it."},
+    npc_hrana1:  {cs:"Hranař brousí s modlitbou. Jeden špatný tah ho bolí.",  en:"Hranař grinds like prayer. One bad stroke hurts him."},
+    npc_kulic1:  {cs:"Kuličková je vytrvalá. Nikdy si nestěžuje, nikdy nepřestane.",en:"Kuličková is relentless. Never complains, never stops."},
+    npc_rytec1:  {cs:"Rytíř rytím žije. Všechno ostatní je jen čekání.",      en:"Rytíř lives for engraving. Everything else is just waiting."},
+  };
+  const base=bases[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
+  const baseText=L==="cs"?base.cs:base.en;
+  // Dynamická část
+  const parts=[];
+  if(seasons>=3) parts.push(L==="cs"?`${seasons} sezóny v huti — zkušenost se počítá.`:`${seasons} seasons here — experience counts.`);
+  else if(seasons===1) parts.push(L==="cs"?"První sezóna za sebou.":"First season done.");
+  if(incidents>=3) parts.push(L==="cs"?"Pár nehod na kontě — pozor na únavu.":"A few incidents on record — watch the fatigue.");
+  if(loyalty>=85) parts.push(L==="cs"?"Loajální jako málokdo.":"As loyal as they come.");
+  else if(loyalty<30) parts.push(L==="cs"?"Uvažuje o odchodu. Nutno jednat.":"Thinking of leaving. Action needed.");
+  if(w.mentorId) parts.push(L==="cs"?"Mentor mu otevřel oči.":"Mentorship opened his eyes.");
+  if(w.lv>=7) parts.push(L==="cs"?`${tier.cs} — respekt pečeme do skla.`:`${tier.cs} — respect baked into glass.`);
+  return baseText+(parts.length?" "+parts[0]:"");
 }
 
 function autoSave(){
@@ -3169,8 +3377,107 @@ function render(){
   }
 
   // ════════════════════════════════════════════════════════════
-  // PLAYING
+  // RETENTION MODAL — dělník uvažuje o odchodu
   // ════════════════════════════════════════════════════════════
+  if(p._retentionPending&&p._retentionPending.length>0&&p.phase==="playing"){
+    const wId=p._retentionPending[0];
+    const rw=p.workers.find(x=>x.id===wId);
+    if(rw){
+      const modal=h("div",{class:"modal-bg",style:{position:"fixed",inset:0,background:"rgba(0,0,0,.65)",
+        display:"flex",alignItems:"center",justifyContent:"center",zIndex:210}});
+      const box=h("div",{class:"retention-modal-box"});
+      // Portrét + jméno
+      const headRow=h("div",{style:{display:"flex",gap:"12px",alignItems:"flex-start",marginBottom:"12px",
+        paddingBottom:"10px",borderBottom:"1px solid rgba(42,26,10,.2)"}});
+      const portBox=h("div",{style:{width:"56px",height:"56px",borderRadius:"5px",overflow:"hidden",
+        background:"#1a0e06",flexShrink:0}});
+      const imgEl=document.createElement("img");
+      imgEl.src=`img/workers/${rw.portrait||"unknown"}.jpg`;
+      imgEl.style.cssText="width:100%;height:100%;object-fit:cover;object-position:top center;";
+      imgEl.onerror=function(){this.style.display="none";};
+      portBox.appendChild(imgEl);
+      headRow.append(portBox);
+      const headInfo=h("div",{style:{flex:1}});
+      const tier=workerTier(rw.lv);
+      headInfo.append(
+        h("div",{style:{fontWeight:"700",fontSize:"13px",color:"#3a2010",marginBottom:"2px"}},
+          "👋 "+rw.name),
+        h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
+          `${tier.cs} · ${tier.de} lv.${rw.lv} · ${(L==="cs"?"Loaj.":"Loy.")}: ${rw.loyalty}%`),
+        h("div",{style:{fontSize:"10px",color:"#5a3a1a",fontStyle:"italic",lineHeight:"1.5"}},
+          `"${rw[L==="cs"?"quote_cs":"quote_en"]||"..."}"`)
+      );
+      box.append(headRow);
+      // Situace
+      const unpaid=rw.unpaidDebt||0;
+      const sitText=rw.loyalty<20
+        ?(L==="cs"?"Tenhle člověk má sbalené věci. Teď nebo nikdy.":"This man has his bags packed. Now or never.")
+        :(L==="cs"?"Přemýšlí o odchodu do jiné hutě. Slyšel o místě ve Falknově.":"He's thinking about leaving for another foundry. Heard of a spot in Falknov.");
+      box.append(h("div",{style:{fontSize:"11px",color:"#5a2a10",marginBottom:"10px",lineHeight:"1.6",
+        padding:"8px",background:"rgba(160,48,32,.07)",borderRadius:"4px",border:"1px solid rgba(160,48,32,.15)"}},
+        "⚠️ "+sitText));
+      if(unpaid>0){
+        box.append(h("div",{style:{fontSize:"11px",color:"#a03020",marginBottom:"8px",fontWeight:"600"}},
+          `💸 ${L==="cs"?"Dlužné mzdy":"Owed wages"}: ${unpaid}g — ${L==="cs"?"to ho drásá nejvíc":"this hurts him most"}`));
+      }
+      // Kontrakt volby
+      box.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},
+        L==="cs"?"📜 Nabídni kontrakt (záloha):":"📜 Offer contract (advance payment):"));
+      const contractGrid=h("div",{style:{marginBottom:"10px"}});
+      let selectedMonths=null;
+      CONTRACT_OPTIONS.forEach(opt=>{
+        const cost=contractCost(rw,opt.months);
+        const canAfford=p.grose>=cost;
+        const btn=h("div",{class:"contract-btn"+(canAfford?"":" disabled"),
+          style:{opacity:canAfford?1:0.45,cursor:canAfford?"pointer":"not-allowed"},
+          onClick:()=>{
+            if(!canAfford) return;
+            signContract(wId,opt.months);
+          }});
+        const lbl=L==="cs"?opt.label_cs:opt.label_en;
+        const moodBonus=Math.min(opt.months,12);
+        btn.append(
+          h("span",{style:{fontWeight:"600"}},lbl),
+          h("span",{style:{color:"#8b5e34",fontSize:"10px"}},`${cost}g · +20 loaj. +${moodBonus} nál.`)
+        );
+        contractGrid.append(btn);
+      });
+      box.append(contractGrid);
+      // Spodní akce
+      const actRow=h("div",{style:{display:"flex",flexDirection:"column",gap:"4px"}});
+      if(unpaid>0&&p.grose>=unpaid){
+        actRow.append(h("button",{class:"btn btn-p",style:{fontSize:"11px"},
+          onClick:()=>{
+            G.grose-=unpaid;
+            const ww=G.workers.find(x=>x.id===wId);
+            if(ww){ww.unpaidDebt=0;ww.loyalty=Math.min(100,(ww.loyalty||50)+15);ww.mood=Math.min(100,(ww.mood||60)+8);}
+            G._retentionPending=(G._retentionPending||[]).filter(id=>id!==wId);
+            G.log.push(`__ECO__💸 ${rw.name} ${L==="cs"?"— dluh splacen, zůstává":"— debt paid, staying"} (+15 loaj.)`);
+            render();
+          }},`💸 ${L==="cs"?"Splatit dluh":"Pay debt"} (${unpaid}g) ${L==="cs"?"— zůstane":"— he stays"}`));
+      }
+      actRow.append(
+        h("button",{class:"btn",style:{fontSize:"11px",opacity:.75},
+          onClick:()=>{
+            G.workers.forEach(w=>{if(w.id===wId) w.loyalty=Math.min(100,(w.loyalty||50)+5);});
+            G._retentionPending=(G._retentionPending||[]).filter(id=>id!==wId);
+            G.log.push(`__EVT__🤝 ${rw.name} ${L==="cs"?"— slíbeno zlepšení, váhá":"— promised improvement, hesitates"}`);
+            render();
+          }},L==="cs"?"🤝 Slíbit zlepšení (+5 loaj., váhá)":"🤝 Promise improvement (+5 loy., hesitates)"),
+        h("button",{class:"btn",style:{fontSize:"11px",opacity:.55},
+          onClick:()=>{
+            G._retentionPending=(G._retentionPending||[]).filter(id=>id!==wId);
+            render();
+          }},L==="cs"?"Neřešit nyní…":"Ignore for now…")
+      );
+      box.append(actRow);
+      modal.append(box);
+      app.append(modal);
+      return;
+    }else{
+      G._retentionPending=(G._retentionPending||[]).filter(id=>id!==wId);
+    }
+  }
   const tasks=isP?TASKS_PREP:TASKS_CAMP;
 
   // Header
@@ -3265,12 +3572,12 @@ function render(){
     resBar.append(
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
-      pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`),
       sep(),
       grpLabel(L==="cs"?"Suro.":"Mats"),
       pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
       pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
-      pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`),
+      pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`),
       pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
       pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
       pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
@@ -3444,6 +3751,44 @@ function render(){
   // ── TAB: PŘEHLED ──
   if(p.tab==="overview"){
     const topCols=h("div",{class:isDesktop?"overview-top-cols":""});
+
+    // ── ATTENTION BANNER — kritické akce ──
+    const attItems=[];
+    if(p.res.potash===0) attItems.push({critical:true,
+      text:L==="cs"?"🌿 Potaš: 0":"🌿 Potash: 0",
+      action:L==="cs"?"→ Přiřaď dělníka na Loužírnu (6🪵→1 potaš)":"→ Assign worker to Potash (6🪵→1 potash)"});
+    else if(p.res.potash<2&&isC) attItems.push({critical:false,
+      text:L==="cs"?`🌿 Potaš: ${p.res.potash} — brzy dojde`:`🌿 Potash: ${p.res.potash} — running low`,
+      action:L==="cs"?"→ Loužírna potřebuje dřevo a dělníka":"→ Potash station needs wood and worker"});
+    if(p.res.wood<5) attItems.push({critical:true,
+      text:L==="cs"?`🪵 Dřevo: ${p.res.wood} — kriticky málo`:`🪵 Wood: ${p.res.wood} — critically low`,
+      action:L==="cs"?"→ Pošli Komára kácet (Kácení)":"→ Send Komár to logging"});
+    const atRiskWorkers=p.workers.filter(w=>(w.loyalty||75)<40&&!w.contract);
+    if(atRiskWorkers.length) attItems.push({critical:atRiskWorkers.some(w=>(w.loyalty||75)<25),
+      text:L==="cs"?`👋 ${atRiskWorkers.map(w=>w.name.split(" ")[0]).join(", ")} — nízká loajalita`
+                   :`👋 ${atRiskWorkers.map(w=>w.name.split(" ")[0]).join(", ")} — low loyalty`,
+      action:L==="cs"?"→ Party tab → Kontrakt nebo splať dluh":"→ Party tab → Contract or pay debt"});
+    if(p.pReady<1&&isC) attItems.push({critical:true,
+      text:L==="cs"?"🏺 Žádné pánve — tavení stojí":"🏺 No crucibles — smelting halted",
+      action:L==="cs"?"→ Přiřaď Káninského na Pánvař":"→ Assign Káninský to Crucible"});
+    if(p.res.food<2) attItems.push({critical:true,
+      text:L==="cs"?`🍞 Jídlo: ${p.res.food} — hrozí únava`:`🍞 Food: ${p.res.food} — fatigue risk`,
+      action:L==="cs"?"→ Políčko nebo koupit na trhu":"→ Field task or buy at market"});
+
+    if(attItems.length>0){
+      const banner=h("div",{class:"attention-banner"});
+      banner.append(h("div",{class:"att-title"},
+        "⚠️ "+(L==="cs"?"Vyžaduje pozornost":"Requires attention")));
+      attItems.slice(0,4).forEach(item=>{
+        const row=h("div",{class:"attention-item"+(item.critical?" critical":"")});
+        row.append(
+          h("span",{},item.text),
+          h("span",{class:"att-action"},item.action)
+        );
+        banner.append(row);
+      });
+      topCols.append(banner);
+    }
     // Levý sloupec: hint sezóny + dřevo/pec quickRow
     const leftOverview=h("div",{class:"sec"});
     leftOverview.append(h("div",{class:"hint-box",style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34")}},hs[p.round]||""));
@@ -3531,7 +3876,7 @@ function render(){
       const fatColor=w.fat>.7?"#a03020":w.fat>.4?"#c9952b":"#4a7a3a";
       const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
       const xpNeeded=XP_PER_LEVEL[w.lv-1]||999;
-      const xpPct=w.lv>=5?100:Math.round(((w.xp||0)/xpNeeded)*100);
+      const xpPct=w.lv>=10?100:Math.round(((w.xp||0)/xpNeeded)*100);
       const loyalty=w.loyalty||75;
       const health=w.health||100;
       const unpaid=w.unpaidDebt||0;
@@ -3742,7 +4087,7 @@ function render(){
         if(inHutte.length>0){
           inHutte.forEach(w=>{
             const xpNeeded=XP_PER_LEVEL[w.lv-1]||999;
-            const xpPct=w.lv>=5?100:Math.round(((w.xp||0)/xpNeeded)*100);
+            const xpPct=w.lv>=10?100:Math.round(((w.xp||0)/xpNeeded)*100);
             const wRow=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",
               fontSize:"11px",padding:"3px 0",borderTop:"1px solid rgba(42,26,10,.06)"}});
             wRow.append(
@@ -4951,6 +5296,82 @@ function render(){
     );
     partaSec.append(sumRow);
 
+    // ── Vazby panel (přehled) ──
+    const bondsInPlay=NPC_BONDS.filter(b=>{
+      const wa=p.workers.find(w=>w.npcId===b.a);
+      const wb=p.workers.find(w=>w.npcId===b.b);
+      return wa&&wb;
+    });
+    if(bondsInPlay.length){
+      const bondsBox=h("div",{style:{marginBottom:"10px",padding:"8px 10px",
+        background:"rgba(0,0,0,.04)",borderRadius:"6px",border:"1px solid rgba(42,26,10,.1)"}});
+      bondsBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},
+        L==="cs"?"⚗️ Vazby v partě:":"⚗️ Bonds in crew:"));
+      bondsInPlay.forEach(b=>{
+        const wa=p.workers.find(w=>w.npcId===b.a);
+        const wb=p.workers.find(w=>w.npcId===b.b);
+        const icon=b.type==="affinity"?"🟢":"🔴";
+        const row=h("div",{style:{display:"flex",alignItems:"flex-start",gap:"5px",marginBottom:"4px",
+          fontSize:"10px",color:"#5a3a1a",lineHeight:"1.4"},
+          title:L==="cs"?b.desc_cs:b.desc_en});
+        row.append(
+          h("span",{},icon),
+          h("span",{style:{fontWeight:"600"}},`${wa.name} ↔ ${wb.name}`),
+          h("span",{style:{color:"#8b5e34",marginLeft:"4px"}},L==="cs"?b.desc_cs:b.desc_en)
+        );
+        bondsBox.append(row);
+      });
+      // Mentor vztahy
+      const mentored=p.workers.filter(w=>w.mentorId);
+      mentored.forEach(w=>{
+        const mentorW=p.workers.find(x=>x.npcId===w.mentorId);
+        if(!mentorW) return;
+        const row=h("div",{style:{display:"flex",alignItems:"flex-start",gap:"5px",marginBottom:"4px",
+          fontSize:"10px",color:"#5a3a1a",lineHeight:"1.4"},
+          title:L==="cs"?`${mentorW.name} mentoruje ${w.name} — XP +15%`:`${mentorW.name} mentors ${w.name} — XP +15%`});
+        row.append(
+          h("span",{},"📖"),
+          h("span",{style:{fontWeight:"600"}},`${mentorW.name} → ${w.name}`),
+          h("span",{style:{color:"#8b5e34",marginLeft:"4px"}},
+            L==="cs"?"Mentorství aktivní — XP +15%":"Mentorship active — XP +15%")
+        );
+        bondsBox.append(row);
+      });
+      partaSec.append(bondsBox);
+    }
+
+    // ── Hromadné vyplacení dlužných mezd ──
+    const debtedNow=p.workers.filter(w=>(w.unpaidDebt||0)>0);
+    if(debtedNow.length){
+      const totalOwed=debtedNow.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+      const canPayAll=p.grose>=totalOwed;
+      const payAllBtn=h("div",{style:{marginBottom:"10px"}});
+      payAllBtn.append(h("button",{
+        class:"btn",
+        style:{width:"100%",opacity:canPayAll?1:0.5,cursor:canPayAll?"pointer":"not-allowed",
+          fontSize:"12px",padding:"7px 10px",
+          background:canPayAll?"#4a7a3a":"#8b5e34",color:"#f5e8c8"},
+        onClick:()=>{
+          if(!canPayAll) return;
+          G.workers.forEach(w=>{
+            if((w.unpaidDebt||0)>0){
+              G.grose-=w.unpaidDebt;
+              w.loyalty=Math.min(100,(w.loyalty||70)+12);
+              w.mood=Math.min(100,(w.mood||60)+6);
+              w.unpaidDebt=0;
+            }
+          });
+          G.log.push(`__ECO__💸 ${L==="cs"?"Dluhy dělníkům splaceny":"Worker debts cleared"}: -${totalOwed}g`);
+          render();
+        }},
+        L==="cs"?`💸 Vyplatit dlužné mzdy · ${totalOwed}g (${debtedNow.length} ${debtedNow.length===1?"osoba":"osoby/osob"})`
+               :`💸 Pay owed wages · ${totalOwed}g (${debtedNow.length} ${debtedNow.length===1?"worker":"workers"})`
+      ));
+      if(!canPayAll) payAllBtn.append(h("div",{style:{fontSize:"9px",color:"#a03020",marginTop:"3px",textAlign:"center"}},
+        L==="cs"?`Chybí ${totalOwed-p.grose}g do pokladny.`:`Need ${totalOwed-p.grose}g more in treasury.`));
+      partaSec.append(payAllBtn);
+    }
+
     // ── Mřížka postav ──
     const grid=h("div",{class:"parta-grid"});
 
@@ -4959,7 +5380,8 @@ function render(){
       const moodCls=mood>=65?"mood-ok":mood>=40?"mood-warn":"mood-bad";
       const unpaid=w.unpaidDebt||0;
       const profLabel=(L==="cs"?PROF_CS:PROF_EN)[w.prof]||w.prof;
-      const stars="★".repeat(Math.min(w.lv,5))+"☆".repeat(Math.max(0,5-w.lv));
+      const tier=workerTier(w.lv);
+      const tierLabel=`${tier.cs} · ${tier.de} lv.${w.lv}`;
       const card=h("div",{class:`parta-card ${moodCls}`,onClick:()=>{G._partaDetail=w.id;G._partaSubtab="profil";render();}});
 
       // Portrét
@@ -4980,7 +5402,28 @@ function render(){
       const info=h("div",{class:"parta-info"});
       info.append(h("div",{class:"parta-name"},w.name));
       info.append(h("div",{class:"parta-prof"},profLabel));
-      info.append(h("div",{class:"parta-stars"},stars));
+      info.append(h("div",{class:"parta-stars",style:{fontSize:"10px",color:"#c9952b",fontWeight:"600"}},tierLabel));
+      // Vazby pipy
+      const wBondsCard=NPC_BONDS.filter(b=>(b.a===w.npcId||b.b===w.npcId)&&
+        p.workers.some(x=>x.npcId===(b.a===w.npcId?b.b:b.a)));
+      if(wBondsCard.length||w.mentorId){
+        const bondPips=h("div",{style:{display:"flex",gap:"2px",flexWrap:"wrap",marginTop:"2px"}});
+        wBondsCard.forEach(b=>{
+          const partnerId=b.a===w.npcId?b.b:b.a;
+          const partnerNPC=NPC_ROSTER.find(n=>n.id===partnerId);
+          const pip=h("span",{
+            style:{fontSize:"9px",cursor:"default",lineHeight:"1"},
+            title:`${b.type==="affinity"?"🟢 Afinita":"🔴 Tenze"}: ${partnerNPC?.name||partnerId} — ${L==="cs"?b.desc_cs:b.desc_en}`
+          },b.type==="affinity"?"🟢":"🔴");
+          bondPips.append(pip);
+        });
+        if(w.mentorId){
+          const mNPC=NPC_ROSTER.find(n=>n.id===w.mentorId);
+          bondPips.append(h("span",{style:{fontSize:"9px",cursor:"default"},
+            title:`📖 Mentorství: ${mNPC?.name||w.mentorId}`},"📖"));
+        }
+        info.append(bondPips);
+      }
 
       // Mini bary: mood + fatigue
       const mkBar=(lbl,val,color)=>{
@@ -5048,8 +5491,10 @@ function render(){
 
         // Subtaby
         const stabRow=h("div",{class:"detail-subtabs"});
-        ["profil","rozvoj","dluh"].forEach(s=>{
-          const lbl={profil:L==="cs"?"Profil":"Profile",rozvoj:L==="cs"?"Rozvoj":"Skills",dluh:L==="cs"?"Dluh":"Debt"}[s];
+        ["profil","rozvoj","vazby","kontrakt","dluh"].forEach(s=>{
+          const lbl={profil:L==="cs"?"Profil":"Profile",rozvoj:L==="cs"?"Rozvoj":"Skills",
+                     vazby:L==="cs"?"Vazby":"Bonds",kontrakt:L==="cs"?"Kontrakt":"Contract",
+                     dluh:L==="cs"?"Dluh":"Debt"}[s];
           const btn=h("button",{class:"detail-subtab"+(stab===s?" active":""),onClick:()=>{G._partaSubtab=s;render();}},lbl);
           stabRow.append(btn);
         });
@@ -5143,12 +5588,147 @@ function render(){
             box.append(row);
           });
           modal.append(box);
-          if(curLv<5){
+          if(curLv<10){
             modal.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
               `${L==="cs"?"Leveluje prací — každých":"Levels up through work — every"} ${xpNeeded} ${L==="cs"?"kol aktivní směny.":"active rounds."}`));
           } else {
             modal.append(h("div",{style:{fontSize:"11px",color:"#c9952b",fontWeight:"700"}},
-              L==="cs"?"⭐ Plný mistr — nelze dále rozvíjet.":"⭐ Full master — no further development."));
+              L==="cs"?"💎 Velmistr / Glasmeister — výše nelze.":"💎 Velmistr / Glasmeister — no further development."));
+          }
+        }
+
+        // ── SUBTAB: VAZBY ──
+        else if(stab==="vazby"){
+          const wBonds=NPC_BONDS.filter(b=>b.a===w.npcId||b.b===w.npcId);
+          const partnerIds=wBonds.map(b=>b.a===w.npcId?b.b:b.a);
+          const inCrew=partnerIds.filter(id=>p.workers.some(x=>x.npcId===id));
+          const notInCrew=partnerIds.filter(id=>!p.workers.some(x=>x.npcId===id));
+
+          if(wBonds.length===0){
+            modal.append(h("div",{style:{textAlign:"center",padding:"20px",color:"#8b5e34",fontSize:"11px",fontStyle:"italic"}},
+              L==="cs"?"Žádné známé vazby k ostatním.":"No known bonds to others."));
+          } else {
+            const bondsTitle=h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
+              L==="cs"?"Vazby s ostatními dělníky:":"Bonds with other workers:");
+            modal.append(bondsTitle);
+            wBonds.forEach(b=>{
+              const partnerId=b.a===w.npcId?b.b:b.a;
+              const partnerNPC=NPC_ROSTER.find(n=>n.id===partnerId);
+              const partnerW=p.workers.find(x=>x.npcId===partnerId);
+              const isInCrew=!!partnerW;
+              const icon=b.type==="affinity"?"🟢":"🔴";
+              const typeLabel=b.type==="affinity"
+                ?(L==="cs"?"Afinita":"Affinity")
+                :(L==="cs"?"Tenze":"Tension");
+              const card=h("div",{style:{marginBottom:"8px",padding:"7px 8px",
+                background:b.type==="affinity"?"rgba(74,122,58,.08)":"rgba(160,48,32,.07)",
+                borderRadius:"5px",border:`1px solid ${b.type==="affinity"?"rgba(74,122,58,.2)":"rgba(160,48,32,.2)"}`}});
+              const header=h("div",{style:{display:"flex",alignItems:"center",gap:"5px",marginBottom:"4px"}});
+              header.append(
+                h("span",{style:{fontSize:"14px"}},icon),
+                h("span",{style:{fontWeight:"700",fontSize:"11px",color:"#3a2010"}},
+                  partnerNPC?.name||partnerId),
+                h("span",{style:{fontSize:"9px",color:b.type==="affinity"?"#4a7a3a":"#a03020",
+                  fontWeight:"600",background:b.type==="affinity"?"rgba(74,122,58,.12)":"rgba(160,48,32,.1)",
+                  padding:"1px 5px",borderRadius:"3px"}},typeLabel),
+                h("span",{style:{fontSize:"9px",color:isInCrew?"#4a7a3a":"#a03020",marginLeft:"auto"}},
+                  isInCrew?(L==="cs"?"✓ v huti":"✓ in crew"):(L==="cs"?"✗ není v huti":"✗ not hired"))
+              );
+              card.append(header);
+              card.append(h("div",{style:{fontSize:"10px",color:"#5a3a1a",lineHeight:"1.5"}},
+                L==="cs"?b.desc_cs:b.desc_en));
+              modal.append(card);
+            });
+          }
+          // Mentor status
+          const mentorSection=h("div",{style:{marginTop:"10px",padding:"7px 8px",
+            background:"rgba(0,0,0,.04)",borderRadius:"5px"}});
+          if(w.mentorId){
+            const mentorW=p.workers.find(x=>x.npcId===w.mentorId);
+            const mentorNPC=NPC_ROSTER.find(n=>n.id===w.mentorId);
+            mentorSection.append(
+              h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"3px"}},"📖 "+
+                (L==="cs"?"Mentorství:":"Mentorship:")),
+              h("div",{style:{fontSize:"10px",color:"#5a3a1a"}},
+                `${mentorW?.name||mentorNPC?.name||w.mentorId} ${L==="cs"?"— XP +15% za každé kolo":"— XP +15% per round"}`)
+            );
+          } else {
+            const mentorRounds=w.mentorRounds||0;
+            mentorSection.append(
+              h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"3px"}},"📖 "+
+                (L==="cs"?"Mentorství:":"Mentorship:")),
+              h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
+                mentorRounds>0
+                  ?(L==="cs"?`Možný mentor se formuje… (${mentorRounds} kol spolu)`:`Possible mentor forming… (${mentorRounds} rounds together)`)
+                  :(L==="cs"?"Žádné aktivní mentorství.":"No active mentorship."))
+            );
+          }
+          modal.append(mentorSection);
+        }
+
+        // ── SUBTAB: KONTRAKT ──
+        else if(stab==="kontrakt"){
+          const contract=w.contract;
+          // Aktivní kontrakt
+          if(contract&&contract.roundsLeft>0){
+            const paidBox=h("div",{style:{background:"rgba(74,122,58,.1)",borderRadius:"5px",
+              padding:"10px",marginBottom:"10px",border:"1px solid rgba(74,122,58,.25)"}});
+            paidBox.append(
+              h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a6a2a",marginBottom:"4px"}},
+                "📜 "+(L==="cs"?"Aktivní kontrakt":"Active contract")),
+              h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#2a5a1a",marginBottom:"3px"}},
+                `${contract.months} ${L==="cs"?"měsíců":"months"} · ${L==="cs"?"zbývá":"remaining"}: ${contract.roundsLeft} ${L==="cs"?"kol":"rounds"}`),
+              h("div",{style:{fontSize:"10px",color:"#5a8a4a"}},
+                `${L==="cs"?"Zaplaceno":"Paid"}: ${contract.paid}g · ${L==="cs"?"Loajalita chráněna (min 30%)":"Loyalty protected (min 30%)"}`)
+            );
+            // Progress bar
+            const pct=Math.round((1-contract.roundsLeft/contract.months)*100);
+            const prog=h("div",{style:{height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",
+              overflow:"hidden",marginTop:"6px"}});
+            prog.append(h("div",{style:{height:"100%",width:pct+"%",background:"#4a7a3a",borderRadius:"2px"}}));
+            paidBox.append(prog);
+            modal.append(paidBox);
+          } else {
+            modal.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"8px",
+              fontStyle:"italic",padding:"6px 0"}},
+              L==="cs"?"Žádný aktivní kontrakt. Nabídni níže.":"No active contract. Offer one below."));
+          }
+          // Osobní hodnocení
+          const assessment=workerAssessment(w,L);
+          const assessBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",
+            padding:"8px",marginBottom:"10px",fontSize:"10px",color:"#5a3a1a",
+            lineHeight:"1.6",fontStyle:"italic",borderLeft:"3px solid #c9952b"}});
+          assessBox.append(
+            h("div",{style:{fontSize:"9px",fontWeight:"700",color:"#8b5e34",marginBottom:"3px",fontStyle:"normal"}},
+              L==="cs"?"📋 Hodnocení hutmistra:":"📋 Foundry master's assessment:"),
+            h("div",{},`"${assessment}"`)
+          );
+          // Statistiky
+          assessBox.append(h("div",{style:{marginTop:"5px",fontStyle:"normal",color:"#8b5e34",fontSize:"9px"}},
+            `${L==="cs"?"Sezóny v huti":"Seasons here"}: ${w.seasonsInFoundry||0} · ${L==="cs"?"Incidenty":"Incidents"}: ${w.incidents||0}`));
+          modal.append(assessBox);
+          // Nabídka kontraktu
+          if(!contract||contract.roundsLeft===0){
+            modal.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
+              L==="cs"?"📜 Nabídnout kontrakt:":"📜 Offer contract:"));
+            CONTRACT_OPTIONS.forEach(opt=>{
+              const cost=contractCost(w,opt.months);
+              const canAfford=p.grose>=cost;
+              const wage=2+(w.wageMod||0);
+              const btn=h("div",{class:"contract-btn",
+                style:{opacity:canAfford?1:0.45,cursor:canAfford?"pointer":"not-allowed"},
+                onClick:()=>{if(canAfford)signContract(w.id,opt.months);}});
+              const lbl=L==="cs"?opt.label_cs:opt.label_en;
+              btn.append(
+                h("span",{style:{fontWeight:"600"}},lbl),
+                h("div",{style:{display:"flex",gap:"8px",fontSize:"9px",color:"#8b5e34",marginTop:"1px"}},
+                  h("span",{},`${cost}g záloha`),
+                  h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?"✓ dost grošů":"✗ chybí grošů"),
+                  h("span",{},`+20 loaj.`)
+                )
+              );
+              modal.append(btn);
+            });
           }
         }
 
