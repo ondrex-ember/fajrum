@@ -2052,9 +2052,23 @@ function processRound(){
   // Pec stav (kampaň)
   if(isC&&fA)tL.push(`🌡️ ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
 
-  // Les
+  // Les + suroviny — delta
   const fCut=p.forest-forest;
   if(fCut>0)tL.push(`🌲 ${forest}/${p.forestMax||INIT_FOREST} (-${fCut})`);
+  // Suroviny delta — ukáže co přibylo/ubylo
+  const resDelta=[
+    {icon:"🪵",k:"wood"},{icon:"🏖️",k:"sand"},{icon:"🌿",k:"potash"},
+    {icon:"🪨",k:"limestone"},{icon:"💧",k:"water"},{icon:"🧱",k:"clay"},
+    {icon:"🍞",k:"food"},{icon:"🌳",k:"formy"}
+  ];
+  const resDeltaLines=[];
+  resDelta.forEach(({icon,k})=>{
+    const before=p.res[k]||0;
+    const after=r[k]||0;
+    const d=after-before;
+    if(d!==0) resDeltaLines.push(`${icon}${d>0?"+":""}${d} (${after})`);
+  });
+  if(resDeltaLines.length) tL.push(resDeltaLines.join(" · "));
 
   // Pánve — dozrálé nebo prasklé
   const crackedLog=log.filter(l=>l.includes("💔")).length;
@@ -2066,6 +2080,7 @@ function processRound(){
   const groseDelta=grose-p.grose;
   tL.push(`💰 ${grose}g (${groseDelta>=0?"+":""}${groseDelta}g)`);
   if(wages>0||bCost>0)tL.push(`💸 -${wages+bCost}g (mzdy+pivo${dPay?"+dluh":""})`);
+  if(wagesDeficit>0)tL.push(`⚠️ nezaplaceno ${wagesDeficit}g → dluh`);
 
   // Morálka — jen pokud se výrazně změnila
   const morDelta=mor-p.morale;
@@ -3390,6 +3405,51 @@ function render(){
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.forestMax||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"8px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`));
 
+    // ── CO SE UDÁLO — produkce + těžba ──
+    const prodBox=h("div",{style:{background:"rgba(74,122,58,.06)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #4a7a3a"}});
+    prodBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#4a7a3a",marginBottom:"5px"}},L==="cs"?"⚗️ PRODUKCE KOLA":"⚗️ ROUND PRODUCTION"));
+    // Sklo
+    const newWgS=(p.waldglas?.length||0), newCrS=(p.crystal?.length||0);
+    if(newWgS>0||newCrS>0){
+      prodBox.append(h("div",{style:{fontSize:"11px",marginBottom:"3px",color:"#3a2a14"}},
+        `🔥 ${newWgS}× waldglas${newCrS>0?" · ✨ "+newCrS+"× křišťál":""} ${L==="cs"?"na skladě":"in stock"}`));
+    }
+    // Suroviny delta
+    const resReport=[
+      {icon:"🪵",label:"Dřevo",k:"wood"},{icon:"🏖️",label:"Písek",k:"sand"},
+      {icon:"🌿",label:"Potaš",k:"potash"},{icon:"🪨",label:"Vápenec",k:"limestone"},
+      {icon:"💧",label:"Voda",k:"water"},{icon:"🧱",label:"Jíl",k:"clay"},
+      {icon:"🍞",label:"Jídlo",k:"food"},{icon:"🌳",label:"Formy",k:"formy"},
+      {icon:"🏺",label:"Pánve",k:"pReady"}
+    ];
+    const resGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 8px"}});
+    resReport.forEach(({icon,label,k})=>{
+      const cur=k==="pReady"?p.pReady:(p.res[k]||0);
+      if(cur>0||k==="food"||k==="wood"){
+        resGrid.append(h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+          `${icon} ${label}: ${cur}`));
+      }
+    });
+    prodBox.append(resGrid);
+
+    // Hint co dělat dál
+    const nextHints=[];
+    if(!p.fActive) nextHints.push(L==="cs"?"🔥 Pec chladí — přidej palivo (Dřevo·Pec → Palivo 80%+)":"🔥 Furnace cold — add fuel");
+    if((p.waldglas?.length||0)>2&&p.grose<15) nextHints.push(L==="cs"?`💰 Máš ${p.waldglas.length}× neprodané sklo → jdi na Trh a prodej`:`💰 ${p.waldglas.length}× unsold glass → go to Market`);
+    if(p.pReady<1) nextHints.push(L==="cs"?"🏺 Žádné pánve — přiřaď Káninského na Pánvař":"🏺 No crucibles — assign to Crucible task");
+    if((p.res.wood||0)<8) nextHints.push(L==="cs"?"🪵 Dřevo dochází — nakup u Weisse (Trh) nebo pošli Komára kácet":"🪵 Low wood — buy at market or send logger");
+    if((p.res.potash||0)<3&&p.round>=4) nextHints.push(L==="cs"?"🌿 Potaš dochází — Loužírna potřebuje 6🪵 a dělníka":"🌿 Potash low — Potash station needs 6 wood");
+    if(p.debt>30&&p.grose<5) nextHints.push(L==="cs"?`📜 Dluh ${p.debt}g a prázdná pokladna — prodej sklo nebo půjč od Faktora Weisse`:`📜 Debt ${p.debt}g, empty purse — sell glass or borrow from Factor Weiss`);
+    if(sd.wagesDeficit>0) nextHints.push(L==="cs"?`⚠️ Nezaplaceno ${sd.wagesDeficit}g — dělníci jsou nespokojení. Splaťte z Účtů.`:`⚠️ Unpaid ${sd.wagesDeficit}g — workers unhappy. Pay from Accounts tab.`);
+
+    if(nextHints.length>0){
+      const nhBox=h("div",{style:{background:"rgba(139,94,52,.06)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #8b5e34"}});
+      nhBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"💡 CO DÁL":"💡 NEXT STEPS"));
+      nextHints.slice(0,4).forEach(h2=>nhBox.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",marginBottom:"3px",lineHeight:"1.4"}},h2)));
+      body.append(nhBox);
+    }
+    body.append(prodBox);
+
     // ── ROZPAD EKONOMIKY ──
     const ecoBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #c9952b"}});
     ecoBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"📊 ÚČETNICTVÍ KOLA":"📊 ROUND ACCOUNTS"));
@@ -3786,6 +3846,27 @@ function render(){
   }
   if(p.morale<35) sitRep.push({warn:true, text:`😟 ${L==="cs"?"Nálada kritická":"Morale critical"}: ${p.morale}%`});
 
+  // Blokátory — co brání dělníkům pracovat
+  p.workers.forEach(w=>{
+    if(w.task==="formar"){
+      if(!p.res.formy||p.res.formy<1) sitRep.push({warn:true,
+        text:`🌳 ${w.name.split(" ")[0]}: ${L==="cs"?"Formař nemá formy — vyrobit formy":"Formař has no moulds"}`,
+        action:L==="cs"?"→ Přiřaď jiného dělníka na Formař (vyrobí formy)":"→ Assign worker to Mould task"});
+      if(!p.res.water||p.res.water<1) sitRep.push({warn:true,
+        text:`💧 ${w.name.split(" ")[0]}: ${L==="cs"?"Chybí voda pro formy":"Missing water for moulds"}`});
+    }
+    if(w.task==="panev"&&(!p.res.clay||p.res.clay<4)) sitRep.push({warn:true,
+      text:`🧱 ${w.name.split(" ")[0]}: ${L==="cs"?"Pánvař — málo jílu (${p.res.clay||0}<4)":"Crucible — low clay"}`,
+      action:L==="cs"?"→ Pošli dělníka na Lůmek (těžba jílu)":"→ Send worker to quarry for clay"});
+    if(w.task==="potash"&&(p.res.wood||0)<6) sitRep.push({warn:false,
+      text:`🌿 ${w.name.split(" ")[0]}: ${L==="cs"?"Loužírna — málo dřeva (${p.res.wood||0}<6)":"Potash — low wood"}`});
+  });
+  // Neprodané zboží
+  const unsold=(p.waldglas?.length||0)+(p.crystal?.length||0)+(p.colorGlass?.length||0);
+  if(unsold>3&&p.grose<10) sitRep.push({warn:true,
+    text:`💰 ${L==="cs"?`${unsold}× neprodané sklo — pokladna: ${p.grose}g`:`${unsold}× unsold glass — cash: ${p.grose}g`}`,
+    action:L==="cs"?"→ Jdi na Trh a prodej zásoby":"→ Go to Market and sell stock"});
+
   const sp=h("div",{class:"season-panel",style:{padding:"0"}});
   const spGrid=h("div",{style:{display:"flex",alignItems:"stretch",minHeight:"0"}});
 
@@ -3922,7 +4003,7 @@ function render(){
       text:L==="cs"?`🍞 Jídlo: ${p.res.food} — hrozí únava`:`🍞 Food: ${p.res.food} — fatigue risk`,
       action:L==="cs"?"→ Políčko nebo koupit na trhu":"→ Field task or buy at market"});
 
-    // ── LEVÝ SLOUPEC: attention banner + hint ──
+    // ── LEVÝ SLOUPEC: attention banner + hint (se stránkováním) + pivovar ──
     const leftOverview=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"6px"}});
     if(attItems.length>0){
       const banner=h("div",{class:"attention-banner"});
@@ -3938,28 +4019,45 @@ function render(){
       });
       leftOverview.append(banner);
     }
-    leftOverview.append(h("div",{class:"hint-box",style:{
-      borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34"),
-      padding:"4px 8px",fontSize:"10px",lineHeight:"1.4"}},hs[p.round]||""));
-    topCols.append(leftOverview);
 
-    // ── PRAVÝ SLOUPEC: Pivovar + Dřevo/Pec ──
-    const rightOverview=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"6px"}});
+    // Hint-box se stránkováním šipkami
+    const hints=hs.filter(Boolean);
+    const hintPage=G._hintPage||0;
+    const hintTotal=hints.length;
+    const hintText=hints[hintPage%hintTotal]||"";
+    const hintWrap=h("div",{style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34"),
+      padding:"4px 8px",fontSize:"10px",lineHeight:"1.4",position:"relative"}});
+    hintWrap.append(h("div",{style:{paddingRight:"36px",minHeight:"32px",color:"#3a2a14"}},hintText));
+    if(hintTotal>1){
+      const nav=h("div",{style:{display:"flex",gap:"4px",marginTop:"4px",justifyContent:"flex-end",alignItems:"center"}});
+      nav.append(
+        h("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:"13px",color:"#8b5e34",padding:"0 3px"},
+          onClick:()=>{G._hintPage=((hintPage-1)+hintTotal)%hintTotal;render();}},"←"),
+        h("span",{style:{fontSize:"9px",color:"#8b5e34"}},`${(hintPage%hintTotal)+1}/${hintTotal}`),
+        h("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:"13px",color:"#8b5e34",padding:"0 3px"},
+          onClick:()=>{G._hintPage=(hintPage+1)%hintTotal;render();}},"→"));
+      hintWrap.append(nav);
+    }
+    leftOverview.append(hintWrap);
 
-    // Pivovar
-    rightOverview.append(h("div",{class:"sec-title",style:{margin:"0 0 4px 0"}},
+    // Pivovar — přesunut do levého sloupce
+    leftOverview.append(h("div",{class:"sec-title",style:{margin:"4px 0 3px 0"}},
       "🍺 "+(L==="cs"?"Pivovar":"Brewery")));
     const beerCostR=BEER[p.beer].cost*Math.ceil(p.workers.length/3);
-    rightOverview.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
+    leftOverview.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
       `💰 ${L==="cs"?"Náklad":"Cost"}: ${beerCostR>0?beerCostR+"g/"+(L==="cs"?"kolo":"round"):"zdarma"} · ${L==="cs"?"nálada":"mood"} ${BEER[p.beer].m>=0?"+":""}${BEER[p.beer].m}`));
-    const bRowR=h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap",marginBottom:"8px"}});
+    const bRowR=h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap",marginBottom:"4px"}});
     [L==="cs"?"Žádné":"None",L==="cs"?"1 džbán":"1 mug",L==="cs"?"2 džbány":"2 mugs",L==="cs"?"3+ džb.":"3+ mugs"].forEach((lb,i)=>{
       bRowR.append(h("button",{class:"btn btn-s"+(p.beer===i?" btn-active":""),
         style:{flex:"1 1 auto"},onClick:()=>{G.beer=i;render();}},
         lb+" ",h("span",{style:{fontSize:"9px",color:BEER[i].m>=0?"#4a7a3a":"#a03020"}},
           (BEER[i].m>=0?"+":"")+BEER[i].m)));
     });
-    rightOverview.append(bRowR);
+    leftOverview.append(bRowR);
+    topCols.append(leftOverview);
+
+    // ── PRAVÝ SLOUPEC: Dřevo/Pec (pivovar přesunut doleva) ──
+    const rightOverview=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"6px"}});
 
     // Dřevo + Pec (collapsible)
     const quickRow=h("div",{});
