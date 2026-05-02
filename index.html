@@ -11,7 +11,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sklářská Huť · v4.3</title>
+<title>Sklářská Huť · v7.8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -22,11 +22,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <!-- SEO -->
-<meta name="description" content="Sklářská Huť — historická resource management hra. Arnsdorf, Novoborsko, 1680. Buduj sklárnu od těžby dřeva po luxusní sklo. Zdarma, bez instalace.">
+<meta name="description" content="Sklářská Huť v7.8 — historická resource management hra. Arnsdorf, Novoborsko, 1680. Pec, waldglas, barevné sklo, zakázky, pivovar. Zdarma, bez instalace.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fajrum.cz/">
-<meta property="og:title" content="Sklářská Huť — Středověká sklářská strategie">
-<meta property="og:description" content="Historická browser hra zasazená do Novoborska roku 1680. Zdarma.">
+<meta property="og:title" content="Sklářská Huť v7.8 — Historická sklářská strategie">
+<meta property="og:description" content="Historická resource management hra · Arnsdorf 1680 · pec, sklovina, barevné sklo, kontrakty · v7.8 · zdarma">
 <meta property="og:image" content="https://fajrum.cz/intro.jpg">
 <meta property="og:url" content="https://fajrum.cz/">
 <meta property="og:type" content="website">
@@ -499,6 +499,18 @@ const ADDITIVES={
 // ── RECEPTURY BAREVNÉHO SKLA ─────────────────────────────────
 // Zdroj: Neri 1612, Kunckel 1679
 const COLOR_RECIPES={
+  jantar:{
+    cs:"Jantarové sklo (Waldglas Bernstein)", en:"Amber Glass (Forest Amber)",
+    icon:"🟤", actMin:2,
+    desc_cs:"Přirozené zbarvení draselného skla železem a sírou v redukční atmosféře. Nejstarší záměrná barva lesních hutí.",
+    desc_en:"Natural colouring of potash glass by iron and sulphur in reducing atmosphere. Oldest intentional colour of forest glasshouses.",
+    inputs:{waldglas:2, crocusMartis:1},
+    output:"jantar", quality_bonus:0,
+    furnaceMin:55,
+    unlock_item:null, // dostupné vždy — přirozená barva
+    sell_cs:10, sell_en:10,
+    latin:"Fortuna vitrea est — tum cum splendet, frangitur"
+  },
   modra:{
     cs:"Temná benátská modř", en:"Venetian Dark Blue",
     icon:"🔵", actMin:2,
@@ -935,10 +947,10 @@ const COLOR_MULT={
   modra:3.5, smaragd:3.2, lattimo:4.0, rubin:10.0
 };
 // Ikony barev pro UI
-const COLOR_ICON={waldglas:"🟫",crystal:"✨",modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
+const COLOR_ICON={waldglas:"🟫",crystal:"✨",jantar:"🟤",modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
 // Pravidla: které barvy lze brousit / rytí
-const COLOR_CAN_GRIND={waldglas:false,crystal:true,modra:false,smaragd:false,lattimo:false,rubin:false};
-const COLOR_CAN_ENGRAVE={waldglas:false,crystal:true,modra:true,smaragd:true,lattimo:false,rubin:false};
+const COLOR_CAN_GRIND={waldglas:false,crystal:true,jantar:false,modra:false,smaragd:false,lattimo:false,rubin:false};
+const COLOR_CAN_ENGRAVE={waldglas:false,crystal:true,jantar:false,modra:true,smaragd:true,lattimo:false,rubin:false};
 
 // inputs[] = seznam povolených vstupních surovin/barev (první = výchozí)
 // base = základní cena při waldglas×1.0; skutečná cena = base × COLOR_MULT[color] × quality
@@ -1276,9 +1288,10 @@ function initState(){
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
     // Sklady barevného skla
-    modra:[], smaragd:[], lattimo:[], rubin:[],
+    jantar:[], modra:[], smaragd:[], lattimo:[], rubin:[],
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
-    unlockedRecipes:[],
+    unlockedRecipes:["jantar"], // jantar je dostupný od začátku — přirozená barva lesní huti
+    _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi
     // Baranovský — aktuální nabídka
     baranOffer:null,
     wa:{fuel:50,potash:30,build:20},
@@ -2306,7 +2319,7 @@ function craftColorGlass(recipeKey){
   }
   // Zkontroluj vstupy
   for(const [item,qty] of Object.entries(rec.inputs)){
-    const have=(item==="crystal"?G.crystal.length:G.additives[item])||0;
+    const have=(item==="crystal"?G.crystal.length:item==="waldglas"?G.waldglas.length:(G.additives[item]||0));
     if(have<qty){
       G.log.push(`__EVT__❌ ${G.lang==="cs"?"Chybí":"Missing"}: ${qty}× ${ADDITIVES[item]?.icon||"✨"} ${G.lang==="cs"?ADDITIVES[item]?.cs||item:ADDITIVES[item]?.en||item}`);
       render(); return;
@@ -2315,6 +2328,7 @@ function craftColorGlass(recipeKey){
   // Odečti vstupy
   for(const [item,qty] of Object.entries(rec.inputs)){
     if(item==="crystal") G.crystal.splice(0,qty);
+    else if(item==="waldglas") G.waldglas.splice(0,qty);
     else G.additives[item]-=qty;
   }
   // Kvalita dle pece + bonus receptu
@@ -2439,7 +2453,7 @@ function sellItems(type,n){
   const selling=inv.slice(0,cnt),rest=inv.slice(cnt);
   const hasObchodnik=G.workers.some(w=>w.traits?.includes("obchodnik"));
   // Ceny: základní suroviny + foukané (s color multiplikátorem) + broušené + rytiny
-  const basePrices={waldglas:3.5,crystal:9,modra:14,smaragd:16,lattimo:22,rubin:50};
+  const basePrices={waldglas:3.5,crystal:9,jantar:10,modra:14,smaragd:16,lattimo:22,rubin:50};
   // Foukané — základní (waldglas) a barevné varianty
   Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{
     basePrices[k]=v.base; // waldglas verze
@@ -3076,7 +3090,7 @@ function render(){
         // Obrázek POD citátem
         introImgDiv),
       h("div",{style:{textAlign:"center",padding:"8px",fontSize:"10px",color:"#8b5e34",opacity:.5}},
-        "v4 · Multi-sezóna · Živá pec 🔥 · ",
+        "v7.8 · Multi-sezóna · Živá pec 🔥 · Barevné sklo 🎨 · ",
         h("a",{href:"/about.html",target:"_blank",style:{color:"#c9952b",opacity:.8,textDecoration:"none"}},". . . About")));
     // Leaderboard
     try{
@@ -3919,8 +3933,8 @@ function render(){
   const sep=()=>h("span",{class:"pill-sep"},"│");
   const grpLabel=(txt)=>h("span",{style:{fontSize:"8px",color:"#8b5e34",textTransform:"uppercase",
     letterSpacing:"1px",opacity:.6,flexShrink:0,alignSelf:"center",marginRight:"1px"}},txt);
-  const colorStockKeys=["modra","smaragd","lattimo","rubin"];
-  const colorIcons={modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
+  const colorStockKeys=["jantar","modra","smaragd","lattimo","rubin"];
+  const colorIcons={jantar:"🟤",modra:"🔵",smaragd:"🟢",lattimo:"⚪",rubin:"🔴"};
   const colorStock=colorStockKeys.reduce((s,k)=>{const arr=p[k];return s+(Array.isArray(arr)?arr.length:0);},0);
   const rainbowTip=colorStockKeys.map(k=>{const n=Array.isArray(p[k])?p[k].length:0;return n>0?`${colorIcons[k]}${n}`:"";}).filter(Boolean).join(" ")||"—";
   // Přísady na skladě
@@ -5033,13 +5047,28 @@ function render(){
       const temp=p.fTemp;
       const meltColors=(()=>{
         if(!active||temp<5)  return {c1:"#1a1208",c2:"#2a1a0a",c3:"#0e0906",glow:"none",speed:0};
-        if(temp<20)  return {c1:"#3a1a08",c2:"#1e0e04",c3:"#2a1208",glow:"#4a1a08",speed:8};
-        if(temp<35)  return {c1:"#6a1a08",c2:"#3a0e04",c3:"#8a2010",glow:"#6a1a08",speed:6};
-        if(temp<50)  return {c1:"#a03010",c2:"#6a1808",c3:"#c04018",glow:"#a03010",speed:4.5};
-        if(temp<65)  return {c1:"#c06020",c2:"#a04010",c3:"#e08030",glow:"#c05020",speed:3.2};
-        if(temp<78)  return {c1:"#d49020",c2:"#b07010",c3:"#f0b030",glow:"#d08020",speed:2.2};
-        if(temp<88)  return {c1:"#e8c030",c2:"#c09820",c3:"#fff0a0",glow:"#e8c030",speed:1.5};
-        return           {c1:"#fff8c0",c2:"#ffe080",c3:"#ffffff",glow:"#fffde0",speed:0.9};
+        // Základní teplotní barvy (waldglas/křišťál)
+        const spBase=(()=>{
+          if(temp<20)  return {c1:"#3a1a08",c2:"#1e0e04",c3:"#2a1208",glow:"#4a1a08",speed:8};
+          if(temp<35)  return {c1:"#6a1a08",c2:"#3a0e04",c3:"#8a2010",glow:"#6a1a08",speed:6};
+          if(temp<50)  return {c1:"#a03010",c2:"#6a1808",c3:"#c04018",glow:"#a03010",speed:4.5};
+          if(temp<65)  return {c1:"#c06020",c2:"#a04010",c3:"#e08030",glow:"#c05020",speed:3.2};
+          if(temp<78)  return {c1:"#d49020",c2:"#b07010",c3:"#f0b030",glow:"#d08020",speed:2.2};
+          if(temp<88)  return {c1:"#e8c030",c2:"#c09820",c3:"#fff0a0",glow:"#e8c030",speed:1.5};
+          return       {c1:"#fff8c0",c2:"#ffe080",c3:"#ffffff",glow:"#fffde0",speed:0.9};
+        })();
+        // Přebarvení dle aktivního receptu (jen při dostatečné teplotě)
+        if(temp>=55&&p._activeColorRecipe){
+          const spd=spBase.speed;
+          switch(p._activeColorRecipe){
+            case "jantar":  return {c1:"#8b4a10",c2:"#6b3008",c3:"#c07020",glow:"#a05010",speed:spd};
+            case "modra":   return {c1:"#0a1a5a",c2:"#08103a",c3:"#2040a0",glow:"#1030c0",speed:spd};
+            case "smaragd": return {c1:"#0a4a20",c2:"#083010",c3:"#20a040",glow:"#108030",speed:spd};
+            case "lattimo": return {c1:"#c8c8c8",c2:"#a0a0a0",c3:"#f0f0f0",glow:"#e0e0e0",speed:spd};
+            case "rubin":   return {c1:"#6a0808",c2:"#400404",c3:"#c01010",glow:"#a00808",speed:spd};
+          }
+        }
+        return spBase;
       })();
       const spd=meltColors.speed;
       const svgNS="http://www.w3.org/2000/svg";
@@ -5257,6 +5286,32 @@ function render(){
 
     // Odemčené recepty
     const unlockedColors=Object.entries(COLOR_RECIPES).filter(([k])=>p.unlockedRecipes?.includes(k));
+    // Selector aktivního receptu pro barvu skloviny v pánvi
+    if(unlockedColors.length>0){
+      const atmBox=h("div",{style:{marginBottom:"8px",padding:"6px 8px",background:"rgba(42,26,10,.05)",
+        borderRadius:"4px",border:"1px solid rgba(42,26,10,.12)"}});
+      atmBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},
+        "🔥 "+(L==="cs"?"Barva skloviny v pánvi:":"Melt colour in crucible:")));
+      const atmRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+      // Výchozí (bez barvení)
+      const dfBtn=h("button",{
+        class:"btn btn-s"+((!p._activeColorRecipe)?" btn-active":""),
+        onClick:()=>{G._activeColorRecipe=null;render();}},
+        "🔥 "+(L==="cs"?"Waldglas":"Waldglas"));
+      atmRow.append(dfBtn);
+      unlockedColors.forEach(([key,rec])=>{
+        const active=p._activeColorRecipe===key;
+        atmRow.append(h("button",{
+          class:"btn btn-s"+(active?" btn-active":""),
+          style:{fontSize:"10px"},
+          onClick:()=>{G._activeColorRecipe=active?null:key;render();}},
+          rec.icon+" "+(L==="cs"?rec.cs.split(" ")[0]:rec.en.split(" ")[0])));
+      });
+      atmBox.append(atmRow);
+      atmBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
+        L==="cs"?"Výběr barví pánev — vyrobit sklo pak přes tlačítko receptu níže.":"Select to colour the crucible — craft via recipe button below."));
+      colorSec.append(atmBox);
+    }
     if(unlockedColors.length===0){
       colorSec.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",fontStyle:"italic",padding:"6px 0"}},
         L==="cs"
@@ -6395,36 +6450,36 @@ function render(){
     iSec.append(
       h("div",{class:"sec-title"},L==="cs"?"O hře":"About"),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.8",marginBottom:"8px"}},
-        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v4.3"),h("br",null),
+        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v7.8"),h("br",null),
         h("em",null,"Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680"),h("br",null),
         L==="cs"
           ?"Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách."
           :"A historical resource management game set in the world of 17th century forest glassworks in northern Bohemia."),
-      // Novinky v4.3
+      // Novinky v7.8
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px",marginTop:"8px"}},
-        L==="cs"?"✨ Novinky v4.3:":"✨ What's new in v4.3:"),
+        L==="cs"?"✨ Novinky v7.8:":"✨ What's new in v7.8:"),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9",marginBottom:"10px",
         paddingBottom:"8px",borderBottom:"1px solid rgba(42,26,10,.1)"}},
-        "🗺️ "+(L==="cs"?"Season panel — 2 sloupce · SitRep · furnHud integrován":"Season panel — 2 columns · SitRep · furnHud integrated"),h("br",null),
-        "📦 "+(L==="cs"?"Nový tab Sklad — sklo, přísady, suroviny, ekonomika":"New Storage tab — glass, additives, resources, economy"),h("br",null),
-        "🌡️ "+(L==="cs"?"Reálná teplota pece — temperování, rozžíhání, °C":"Real furnace temps — tempering, firing up, °C"),h("br",null),
-        "🏺 "+(L==="cs"?"Pánev zraje 6 měsíců · forma okamžitá · voda":"Crucible cures 6 months · mould instant · water"),h("br",null),
-        "💊 "+(L==="cs"?"Pills redesign — kategorie, SitRep, 2 řady mobil":"Pills redesign — categories, SitRep, 2 rows mobile"),h("br",null),
-        "🔥 "+(L==="cs"?"SVG sklovina v kruhu — animovaná dle teploty":"SVG glass melt circle — animated by temperature"),h("br",null),
-        "📌 "+(L==="cs"?"Tlačítko Další měsíc — sticky dole":"Next Month button — sticky at bottom")),
-      // Systémy v4.2
+        "🟤 "+(L==="cs"?"Jantarové sklo — první barevná skloviny pro lesní huť, dostupné od začátku":"Amber glass — first coloured glass for forest foundry, available from start"),h("br",null),
+        "🎨 "+(L==="cs"?"Živá barva skloviny v pánvi — mění se dle aktivního receptu":"Live melt colour in crucible — changes by active recipe"),h("br",null),
+        "📜 "+(L==="cs"?"Kontrakty — modal nových zakázek po startu sezóny":"Contracts — new contract modal after season start"),h("br",null),
+        "🛒 "+(L==="cs"?"4 kupci s historickými jmény (Weiss, Hoffmann, Opat, Šlechtic)":"4 named buyers (Weiss, Hoffmann, Abbot, Noble)"),h("br",null),
+        "📊 "+(L==="cs"?"Zakázky v summary · progress bar · odpočítávání termínu":"Contracts in summary · progress bar · deadline countdown"),h("br",null),
+        "🔧 "+(L==="cs"?"Oprava vyplácení kontraktů + waldglas jako vstup receptury":"Contract payout fix + waldglas as recipe input")),
+      // Herní systémy v7.x
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px"}},
-        L==="cs"?"Herní systémy v4.2:":"Game systems v4.2:"),
+        L==="cs"?"Herní systémy:":"Game systems:"),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9"}},
-        "🗓️ "+(L==="cs"?"12 kol · 5 příprava · 7 kampaň":"12 rounds · 5 prep · 7 campaign"),h("br",null),
-        "🔥 "+(L==="cs"?"Dynamická pec — zaběhnutost, šamot, 3 typy":"Dynamic furnace — run-in, shamot, 3 types"),h("br",null),
-        "🌲 "+(L==="cs"?"Hvozd — konečný zdroj, zalesňování":"Forest — finite resource, reforestation"),h("br",null),
-        "🏺 "+(L==="cs"?"Výroba pánví — stárnutí, kvalita":"Crucible system — aging, quality"),h("br",null),
-        "🎨 "+(L==="cs"?"Barevné sklo — 4 receptury (Neri 1612, Kunckel 1679)":"Coloured glass — 4 recipes (Neri 1612, Kunckel 1679)"),h("br",null),
-        "👷 "+(L==="cs"?"7 NPC dělníků · 12 traitů · apprenticeship XP":"7 NPC workers · 12 traits · apprenticeship XP"),h("br",null),
-        "🍺 "+(L==="cs"?"Pivovar · pivo jako naturální mzda · hutní privilegium":"Brewery · beer as wage · foundry privilege"),h("br",null),
-        "📜 "+(L==="cs"?"Kronika · humorné příhody · alchymistické citáty":"Chronicle · humorous events · alchemical quotes"),h("br",null),
-        "🗣️ "+(L==="cs"?"Baranovský — obchodník s přísadami · progression barev":"Baranovský — additives trader · colour progression")),
+        "🗓️ "+(L==="cs"?"12 kol · 5 příprava (březen–červenec) · 7 kampaň (srpen–únor)":"12 rounds · 5 prep (Mar–Jul) · 7 campaign (Aug–Feb)"),h("br",null),
+        "🔥 "+(L==="cs"?"Dynamická pec — zaběhnutost, šamot, 3 typy (primitivní/zděná/mistrovská)":"Dynamic furnace — run-in, shamot, 3 types (primitive/brick/master)"),h("br",null),
+        "🌲 "+(L==="cs"?"Hvozd — konečný zdroj, zalesňování, vyčerpání hvozdu":"Forest — finite resource, reforestation, depletion"),h("br",null),
+        "🏺 "+(L==="cs"?"Výroba pánví — zrání 6 měsíců, kvalita závisí na pánvaři":"Crucible system — 6 month curing, quality by crucible-maker"),h("br",null),
+        "🎨 "+(L==="cs"?"Barevné sklo — 5 receptur (jantar/modrá/smaragd/lattimo/rubín · Neri 1612, Kunckel 1679)":"Coloured glass — 5 recipes (amber/blue/emerald/lattimo/ruby · Neri 1612, Kunckel 1679)"),h("br",null),
+        "👷 "+(L==="cs"?"Dělníci — foukači, formaři, brusiči, rytec · 10 levelů · traity":"Workers — blowers, moulders, grinders, engraver · 10 levels · traits"),h("br",null),
+        "🍺 "+(L==="cs"?"Pivovar · pivo jako naturální mzda · opilost snižuje kvalitu":"Brewery · beer as natural wage · drunkenness lowers quality"),h("br",null),
+        "📜 "+(L==="cs"?"Zakázky — 18 kontraktů, 4 kupci, termíny, progress":"Contracts — 18 contracts, 4 buyers, deadlines, progress"),h("br",null),
+        "🗣️ "+(L==="cs"?"Baranovský — obchodník s přísadami · progression barev":"Baranovský — additives trader · colour progression"),h("br",null),
+        "📖 "+(L==="cs"?"Kronika · historické události · alchymistické citáty (Kunckel, Neri, Baranovský)":"Chronicle · historical events · alchemical quotes (Kunckel, Neri, Baranovský)")),
       // Autorství
       h("div",{style:{marginTop:"10px",paddingTop:"8px",borderTop:"1px solid rgba(42,26,10,.1)",
         fontSize:"11px",color:"#8b5e34",lineHeight:"1.8"}},
@@ -6451,7 +6506,7 @@ function render(){
 		  h("span",null," · 🧩 "),h("a",{href:"https://fractout.com/",style:{color:"#c9952b"}},"Fractout"),
           h("span",null," · 🔮 "),h("a",{href:"https://oracoolio.com",style:{color:"#c9952b"}},"Oracoolio")),
         h("div",{style:{marginTop:"4px",fontSize:"10px",color:"#aaa"}},
-          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v4.3 · ${new Date().getFullYear()}`),
+          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v7.8 · ${new Date().getFullYear()}`),
         h("div",{style:{marginTop:"8px"}},
           h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none",letterSpacing:"0.5px"}},
             "📖 "+(L==="cs"?"O hře — about.html →":"About the game →")))));
@@ -6518,21 +6573,59 @@ function render(){
 
   // Help modal
   if(p.help){
-    const helpText=L==="cs"
-      ?"4 kola přípravy (březen–září): kácej, zásobuj, vyrob pánve. 5 kol kampaně (říjen–únor): pec běží, taví, prodávej. Pec se zaběhává → roste účinnost → lepší sklo. Šamot degraduje → oprav v mezisezóně. Les pomalu dorůstá. Hra nemá konec — buduj sezónu za sezónou."
-      :"4 prep rounds (Mar–Sep): log, stockpile, make crucibles. 5 campaign rounds (Oct–Feb): furnace runs, smelt, sell. Furnace runs in → efficiency grows → better glass. Shamot degrades → repair between seasons. Forest slowly regrows. No end — build season by season.";
     const modal=h("div",{class:"modal-bg",onClick:()=>{G.help=false;render();}},
-      h("div",{class:"modal",onClick:e=>e.stopPropagation()},
-        h("h3",{style:{margin:"0 0 8px",fontSize:"16px"}},L==="cs"?"Nápověda v4":"Help v4"),
-        h("p",{style:{fontSize:"12px",lineHeight:"1.6",marginBottom:"12px"}},helpText),
-        h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},"🔥 Waldglas: 3🏖️ + 2🌿 + 1🪨 + 1💧 + 🏺"),
-        h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},"🏺 Pánev: 2🧱 + 1🍞 (zraje 3 kola, kvalita závisí na pánvaři)"),
-        h("div",{style:{fontSize:"11px",color:"#3a6a9a",marginBottom:"4px"}},"✨ Křišťál: 3✨ + 2🌿r + 1🪨 + 1⚫ (min 65% teplota)"),
-        h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"12px"}},"🔥 Účinnost pece = zaběhnutost + kvalita pánve + stav šamotu"),
-        h("div",{style:{textAlign:"right",marginTop:"8px"}},
+      h("div",{class:"modal",style:{maxWidth:"380px",maxHeight:"85vh",overflowY:"auto"},onClick:e=>e.stopPropagation()},
+        h("h3",{style:{margin:"0 0 10px",fontSize:"15px",borderBottom:"1px solid rgba(42,26,10,.15)",paddingBottom:"8px"}},
+          "📖 "+(L==="cs"?"Nápověda · v7.8":"Help · v7.8")),
+
+        // Rytmus hry
+        h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
+          L==="cs"?"⏱️ Rytmus hry":"⏱️ Game rhythm"),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
+          L==="cs"
+            ?"5 kol přípravy (březen–červenec): kácej dřevo, zásobuj, vyrob pánve, připrav kmen. 7 kol kampaně (srpen–únor): pec hoří, taví se, prodávej. Pak mezisezóna: oprav šamot, objednej přísady, uzavři kontrakty."
+            :"5 prep rounds (Mar–Jul): log wood, stockpile, make crucibles, prepare batch. 7 campaign rounds (Aug–Feb): furnace burns, smelt, sell. Then off-season: repair shamot, order additives, sign contracts."),
+
+        // Výroba skla
+        h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"6px"}},
+          L==="cs"?"🔥 Výrobní recepty":"🔥 Production recipes"),
+        h("div",{style:{fontSize:"11px",color:"#6b3a10",marginBottom:"3px",fontFamily:"monospace",background:"rgba(42,26,10,.06)",padding:"4px 6px",borderRadius:"3px"}},
+          "🟫 Waldglas: 3🏖️ písek + 2🌿 potaš + 1🪨 vápenec + 1💧 voda + 🏺 pánev"),
+        h("div",{style:{fontSize:"11px",color:"#6b3a10",marginBottom:"3px",fontFamily:"monospace",background:"rgba(42,26,10,.06)",padding:"4px 6px",borderRadius:"3px"}},
+          "✨ Křišťál: 3🏖️ + 2🌿raf + 1🪨 + 1⚫ uhlí · min 65% teplota"),
+        h("div",{style:{fontSize:"11px",color:"#6b3a10",marginBottom:"3px",fontFamily:"monospace",background:"rgba(42,26,10,.06)",padding:"4px 6px",borderRadius:"3px"}},
+          "🏺 Pánev: 2🧱 jíl + 1🍞 základ · zraje 6 měsíců"),
+        h("div",{style:{fontSize:"11px",color:"#6b3a10",marginBottom:"8px",fontFamily:"monospace",background:"rgba(42,26,10,.06)",padding:"4px 6px",borderRadius:"3px"}},
+          "🟤 Jantar: 2🟫 waldglas + Crocus Martis · redukční zbarvení"),
+
+        // Pec
+        h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
+          L==="cs"?"🔥 Pec & účinnost":"🔥 Furnace & efficiency"),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
+          L==="cs"
+            ?"Účinnost pece = zaběhnutost + kvalita pánve + stav šamotu. Zaběhnutost roste každou kampaní (max ~58% u primitivní pece). Šamot degraduje — oprav v mezisezóně (jíl + vápenec). Přetopení (>85%) → prasklá pánev → ztráta várky."
+            :"Furnace efficiency = run-in + crucible quality + shamot condition. Run-in grows each campaign (max ~58% for primitive). Shamot degrades — repair off-season (clay + limestone). Overheating (>85%) → cracked crucible → lost batch."),
+
+        // Barevné sklo
+        h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
+          L==="cs"?"🎨 Barevné sklo":"🎨 Coloured glass"),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
+          L==="cs"
+            ?"🟤 Jantar — waldglas + železo (Crocus Martis), dostupné od začátku. 🔵 Modrá — křišťál + šmolka (kobalt ze Saska), odemkne Baranovský. 🟢 Smaragd — křišťál + pálená měď. ⚪ Lattimo — křišťál + cín + olovo. 🔴 Rubín — křišťál + zlatý prach (Kunckel 1679, endgame)."
+            :"🟤 Amber — waldglas + iron (Crocus Martis), available from start. 🔵 Blue — crystal + zaffre (cobalt from Saxony), unlocked by Baranovský. 🟢 Emerald — crystal + burnt copper. ⚪ Lattimo — crystal + tin + lead. 🔴 Ruby — crystal + gold dust (Kunckel 1679, endgame)."),
+
+        // Kontrakty
+        h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
+          L==="cs"?"📜 Zakázky (Trh)":"📜 Contracts (Market)"),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
+          L==="cs"
+            ?"Na začátku každé sezóny přijdou nabídky od kupců — přijmi max 3 aktivní zakázky. Splnění do termínu = bonus groše. Nesplnění = ztráta reputace. Kupci: Weiss (waldglas), Hoffmann (křišťál), Opat z Lemberka (liturgie), Šlechtic von Harrach (luxus)."
+            :"At each season start, buyers make offers — accept max 3 active contracts. Fulfil by deadline = bonus groschen. Failure = reputation loss. Buyers: Weiss (waldglas), Hoffmann (crystal), Abbot of Lemberk (liturgy), Noble von Harrach (luxury)."),
+
+        h("div",{style:{textAlign:"right",marginTop:"10px",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"8px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
           h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none"}},
-            "📖 "+(L==="cs"?"Více o hře →":"More about the game →"))),
-        h("button",{class:"btn btn-p",onClick:()=>{G.help=false;render();}},"OK")));
+            "📖 "+(L==="cs"?"Více o hře →":"More about the game →")),
+          h("button",{class:"btn btn-p",style:{fontSize:"12px"},onClick:()=>{G.help=false;render();}},"OK"))));
     app.append(modal);
   }
 	const _newContent = app.querySelector(".content");
