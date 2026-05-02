@@ -1292,6 +1292,7 @@ function initState(){
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
     unlockedRecipes:["jantar"], // jantar je dostupný od začátku — přirozená barva lesní huti
     _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi
+    _strikeQueue:null, // pending rubín strike — {q, chance, tempAtStrike}
     // Baranovský — aktuální nabídka
     baranOffer:null,
     wa:{fuel:50,potash:30,build:20},
@@ -2333,6 +2334,19 @@ function craftColorGlass(recipeKey){
   }
   // Kvalita dle pece + bonus receptu
   const q=Math.min(5,Math.round(calcFurnaceEff(G.furnace,G.panevQuality)*5)+rec.quality_bonus);
+
+  // ── RUBÍN: Strike glass — výsledek se projeví až při chladnutí ──
+  if(recipeKey==="rubin"){
+    // Šance na strike: závisí na taviči a teplotě pece
+    const masterTavic=G.workers.find(w=>w.role==="tavic"&&w.level>=4);
+    const strikeChance=masterTavic
+      ?(0.55+Math.min(0.30,masterTavic.level*0.06)) // mistr: 61–85%
+      :(0.35+Math.min(0.20,(G.fTemp-75)*0.008));    // tovaryš: ~35–55%
+    G._strikeQueue={q, chance:Math.min(0.92,Math.max(0.20,strikeChance)), tempAtStrike:G.fTemp};
+    render(); return;
+  }
+
+  // Ostatní barvy — okamžitý výsledek
   G[rec.output].push(q);
   // Zapsat do archivu pokud poprvé
   const archKey="arch_"+recipeKey;
@@ -5065,7 +5079,8 @@ function render(){
             case "modra":   return {c1:"#0a1a5a",c2:"#08103a",c3:"#2040a0",glow:"#1030c0",speed:spd};
             case "smaragd": return {c1:"#0a4a20",c2:"#083010",c3:"#20a040",glow:"#108030",speed:spd};
             case "lattimo": return {c1:"#c8c8c8",c2:"#a0a0a0",c3:"#f0f0f0",glow:"#e0e0e0",speed:spd};
-            case "rubin":   return {c1:"#6a0808",c2:"#400404",c3:"#c01010",glow:"#a00808",speed:spd};
+            // Rubín — při tavení ČIRÁ/nažloutlá (strike glass — barva se tvoří až při chladnutí!)
+            case "rubin":   return {c1:"#d4c080",c2:"#b09040",c3:"#fff0c0",glow:"#d4b060",speed:spd};
           }
         }
         return spBase;
@@ -6571,6 +6586,88 @@ function render(){
     app.append(wModal);
   }
 
+  // ── STRIKE MODAL — Rubínové sklo chlazení ──
+  if(p._strikeQueue&&p.phase==="playing"){
+    const sq=p._strikeQueue;
+    const L=p.lang;
+    let strikeResolved=false;
+    let strikeTimer=null;
+
+    const strikeModal=h("div",{class:"modal-bg"},
+      h("div",{class:"modal",style:{maxWidth:"340px",textAlign:"center"},onClick:e=>e.stopPropagation()},
+        // Hlavička
+        h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#3a2a14",marginBottom:"6px"}},
+          L==="cs"?"🔴 Zlatý rubín — chlazení skla":"🔴 Gold Ruby — glass cooling"),
+        h("div",{style:{fontSize:"11px",color:"#8b5e34",fontStyle:"italic",marginBottom:"14px",lineHeight:"1.6"}},
+          L==="cs"
+            ?"Sklovina opouští pec. Barva rubínu se tvoří až při řízeném chladnutí — koloidní zlato krystalizuje. Tavič čeká. Bude to rubín, nebo popel?"
+            :"The melt leaves the furnace. Ruby colour forms only during controlled cooling — colloidal gold crystallises. The master waits. Will it be ruby, or ash?"),
+        // Vizuál — chladnoucí sklo
+        h("div",{style:{margin:"0 auto 14px",width:"80px",height:"80px",position:"relative"}},
+          (()=>{
+            const div=document.createElement("div");
+            div.innerHTML=`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+              <defs>
+                <radialGradient id="strikeGrad" cx="50%" cy="50%" r="50%">
+                  <animate attributeName="fx" values="45%;55%;45%" dur="2s" repeatCount="indefinite"/>
+                  <stop offset="0%" stop-color="#fff0a0" stop-opacity="0.9">
+                    <animate attributeName="stop-color" values="#fff0a0;#e08020;#c04010;#800808;#400404" dur="4s" fill="freeze"/>
+                    <animate attributeName="stop-opacity" values="0.9;0.8;0.7;0.8;0.9" dur="4s" fill="freeze"/>
+                  </stop>
+                  <stop offset="60%" stop-color="#c04010" stop-opacity="0.7">
+                    <animate attributeName="stop-color" values="#c04010;#800808;#600606;#3a0404;#200202" dur="4s" fill="freeze"/>
+                  </stop>
+                  <stop offset="100%" stop-color="#200202" stop-opacity="1"/>
+                </radialGradient>
+              </defs>
+              <circle cx="40" cy="40" r="34" fill="url(#strikeGrad)" stroke="#4a0808" stroke-width="2"/>
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,200,100,0.3)" stroke-width="1">
+                <animate attributeName="r" values="34;30;34" dur="3s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.6;0.0;0.6" dur="3s" repeatCount="indefinite"/>
+              </circle>
+              <text x="40" y="45" text-anchor="middle" font-size="22" fill="rgba(255,240,180,0.6)">
+                🔴<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.5s" repeatCount="indefinite"/>
+              </text>
+            </svg>`;
+            return div.firstChild;
+          })()),
+        // Šance info
+        h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"14px"}},
+          L==="cs"
+            ?`Šance na strike: ${Math.round(sq.chance*100)}% · Teplota při tavení: ${sq.tempAtStrike}%`
+            :`Strike chance: ${Math.round(sq.chance*100)}% · Temp at melt: ${sq.tempAtStrike}%`),
+        // Tlačítko — reveal
+        h("button",{
+          class:"btn btn-p",
+          style:{width:"100%",fontSize:"13px",letterSpacing:"0.5px"},
+          onClick:()=>{
+            if(strikeResolved)return;
+            strikeResolved=true;
+            const success=Math.random()<sq.chance;
+            const archKey="arch_rubin";
+            if(success){
+              G.rubin.push(sq.q);
+              if(!G.unlockedRecipes.includes(archKey)){
+                G.unlockedRecipes.push(archKey);
+                G.log.push(`__EVT__📚 „Donec fiat vitrum pellucidum — zlatý rubín"`);
+              }
+              G.log.push(`__PROD__🔴 ${L==="cs"?"Zlatý rubín (Kunckel)":"Gold Ruby (Kunckel)"} ${["★","★★","★★★","★★★★","★★★★★"][sq.q-1]}`);
+              G.log.push(`__EVT__🔴 ${L==="cs"?"Strike! Rubínová barva se projevila. Kunckelova metoda funguje!":"Strike! The ruby colour has struck. Kunckel's method works!"}`);
+              G.morale=Math.min(100,(G.morale||70)+8);
+            } else {
+              // Selhání — vrátí jedno čiré sklo (znehodnocené)
+              G.crystal.push(1);
+              G.log.push(`__EVT__⚪ ${L==="cs"?"Strike selhal — sklo zůstalo čiré. Zlatý koloid se nevytvořil. Výrobní tajemství Kunckela odolalo.":"Strike failed — glass stayed clear. Gold colloid did not form. Kunckel's secret held."}`);
+              G.morale=Math.min(100,(G.morale||70)-3);
+            }
+            G._strikeQueue=null;
+            render();
+          }},
+          L==="cs"?"🔴 Odhalit — bylo to rubín?":"🔴 Reveal — did it strike?")));
+
+    app.append(strikeModal);
+  }
+
   // Help modal
   if(p.help){
     const modal=h("div",{class:"modal-bg",onClick:()=>{G.help=false;render();}},
@@ -6611,8 +6708,8 @@ function render(){
           L==="cs"?"🎨 Barevné sklo":"🎨 Coloured glass"),
         h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
           L==="cs"
-            ?"🟤 Jantar — waldglas + železo (Crocus Martis), dostupné od začátku. 🔵 Modrá — křišťál + šmolka (kobalt ze Saska), odemkne Baranovský. 🟢 Smaragd — křišťál + pálená měď. ⚪ Lattimo — křišťál + cín + olovo. 🔴 Rubín — křišťál + zlatý prach (Kunckel 1679, endgame)."
-            :"🟤 Amber — waldglas + iron (Crocus Martis), available from start. 🔵 Blue — crystal + zaffre (cobalt from Saxony), unlocked by Baranovský. 🟢 Emerald — crystal + burnt copper. ⚪ Lattimo — crystal + tin + lead. 🔴 Ruby — crystal + gold dust (Kunckel 1679, endgame)."),
+            ?"🟤 Jantar — waldglas + Fe (Crocus Martis), dostupné od začátku. 🔵 Modrá — křišťál + šmolka (kobalt), odemkne Baranovský. 🟢 Smaragd — křišťál + pálená měď. ⚪ Lattimo — křišťál + cín + olovo. 🔴 Rubín — strike glass! Barva se tvoří až při chladnutí koloidního zlata. Při tavení vypadá čiré — nevíš jestli se povedlo, dokud nevychladne."
+            :"🟤 Amber — waldglas + Fe (Crocus Martis), available from start. 🔵 Blue — crystal + zaffre (cobalt), unlocked by Baranovský. 🟢 Emerald — crystal + burnt copper. ⚪ Lattimo — crystal + tin + lead. 🔴 Ruby — strike glass! Colour forms only as colloidal gold crystallises on cooling. Looks clear during melt — you won't know if it worked until it cools."),
 
         // Kontrakty
         h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
