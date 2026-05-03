@@ -1698,31 +1698,33 @@ function processRound(){
         log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"verštat":"workshop"}`);
       }
     }else if(w.task==="cereni"){
-      // ── ČEŘENÍ — waldglas + burel/mangandioxid → crystal ─────────────
+      // ── ČEŘENÍ — waldglas + burel(MnO₂) nebo antimon → crystal ──────
       if(!isC){
         log.push(`__PROD__⛔ ${w.name}: ${L==="cs"?"čeření jen v kampani":"fining only during campaign"}`);
       }else{
         const waldStock=[...(G.waldglas||[])];
         const hasBurel=(G.additives?.burel||0)>=1;
-        const hasMangan=(G.additives?.burel||0)>=1||(G.additives?.burel||0)>=1; // burel = mangandioxid v naší terminologii
-        const finingAgent=hasBurel?"burel":null;
+        const hasAntimon=(G.additives?.antimon||0)>=1; // antimon = alternativní čiřidlo (historicky přesné)
+        const finingAgent=hasBurel?"burel":hasAntimon?"antimon":null;
         if(waldStock.length>=1&&finingAgent){
           const used=waldStock.splice(0,1);
           G.waldglas=waldStock;
-          G.additives.burel=Math.max(0,(G.additives.burel||0)-1);
+          G.additives[finingAgent]=Math.max(0,(G.additives[finingAgent]||0)-1);
           const inQ=used[0];
           const kuncBonus=w.npcId==="npc_kunc"?1:0; // Kunc čeří lépe
-          const outQ=clamp(inQ+1+kuncBonus+(Math.random()>.4?1:0),2,5);
+          // Antimon dává o něco horší výsledek než burel (méně predikovatelný)
+          const antimonPenalty=finingAgent==="antimon"?-1:0;
+          const outQ=clamp(inQ+1+kuncBonus+antimonPenalty+(Math.random()>.4?1:0),2,5);
           if(!G.crystal)G.crystal=[];
           G.crystal.push(outQ);
-          log.push(`__PROD__🫧 ${w.name}: waldglas → ✨ křišťál ${stars(outQ)} (-1 burel)`);
+          const agentLabel=finingAgent==="burel"?"burel (MnO₂)":"antimon";
+          log.push(`__PROD__🫧 ${w.name}: waldglas → ✨ křišťál ${stars(outQ)} (-1 ${agentLabel})`);
         }else if(waldStock.length<1){
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí waldglas":"fining — no waldglas"}`);
         }else{
-          log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí burel (mangandioxid)":"fining — no burel (manganese)"}`);
+          log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí burel nebo antimon":"fining — no burel or antimony"}`);
         }
       }
-      log.push(`__PROD__😴 ${w.name}: ${L==="cs"?"odpočívá":"resting"}`);
     }else{
       log.push(`__PROD__❓ ${w.name}: ${w.task}`);
     }
@@ -1932,6 +1934,50 @@ function processRound(){
   let repContractIncome=0;
   for(let i=repCon.length-1;i>=0;i--){
     const rc=repCon[i];
+
+    // ── ENDGAME zakázka — multi-komponentní vyhodnocení ──
+    if(rc.isEndgame&&rc.components){
+      if(round>rc.due){
+        log.push(`__EVT__⚠️ ${L==="cs"?"ENDGAME zakázka propadla":"ENDGAME contract expired"} (${FAMA_ICON[rc.cat]})`);
+        if(p.fama) p.fama[rc.cat]=Math.max(0,(p.fama[rc.cat]||0)-10);
+        repCon.splice(i,1);
+        continue;
+      }
+      // Zkontroluj jestli jsou všechny komponenty splněné
+      let allDone=true;
+      for(const comp of rc.components){
+        let inv;
+        if(comp.item==="crystal") inv=cr;
+        else if(comp.item==="waldglas") inv=wg;
+        else if(p[comp.item]&&Array.isArray(p[comp.item])) inv=p[comp.item];
+        else inv=[];
+        if(inv.length<comp.qty){allDone=false;break;}
+      }
+      if(allDone){
+        // Odečti všechny komponenty
+        for(const comp of rc.components){
+          let inv;
+          if(comp.item==="crystal") inv=cr;
+          else if(comp.item==="waldglas") inv=wg;
+          else if(p[comp.item]&&Array.isArray(p[comp.item])) inv=p[comp.item];
+          else inv=[];
+          for(let j=0;j<comp.qty;j++) inv.pop();
+        }
+        grose+=rc.reward; contractIncomeTick+=rc.reward; repContractIncome+=rc.reward;
+        // Endgame splněn!
+        if(p.endgame) p.endgame[rc.cat]=true;
+        if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+15);
+        const egDef=ENDGAME_CONTRACTS[rc.cat];
+        const completionMsg=egDef?(L==="cs"?egDef.completionText_cs:egDef.completionText_en):"";
+        log.push(`__EVT__🏆 ${L==="cs"?"ENDGAME SPLNĚN":"ENDGAME COMPLETE"} ${FAMA_ICON[rc.cat]} +${rc.reward}g`);
+        if(completionMsg) log.push(`__EVT__💬 ${completionMsg}`);
+        log.push(`__EVT__📜 ${L==="cs"?"Pravidelné dodávky aktivovány":"Regular deliveries activated"} ${FAMA_ICON[rc.cat]}`);
+        repCon.splice(i,1);
+      }
+      continue;
+    }
+
+    // ── Jednoduchá reputační zakázka ──
     let inv;
     if(rc.item==="crystal") inv=cr;
     else if(rc.item==="waldglas") inv=wg;
@@ -1941,7 +1987,6 @@ function processRound(){
       for(let j=0;j<rc.qty;j++)inv.pop();
       grose+=rc.reward; contractIncomeTick+=rc.reward; repContractIncome+=rc.reward;
       log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${rc.reward}g`);
-      // Větší fama gain za reputační zakázku
       if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+5);
       repCon.splice(i,1);
     } else if(round>rc.due){
@@ -2616,7 +2661,27 @@ function startNewSeason(){
     ...Object.fromEntries(ENGRAVE_INPUTS.map(k=>["rytina_"+k,[...(p["rytina_"+k]||[])]])),
     pAging:[],
     contracts:[], avail:newContracts,
-    repContracts:[...(p.repContracts||[])], // aktivní reputační zakázky přecházejí
+    // Pravidelné dodávky po endgame — generovat pro každou splněnou kategorii
+    repContracts:(()=>{
+      const carried=[...(p.repContracts||[])];
+      const eg=p.endgame||{};
+      ["church","noble","trade"].forEach(cat=>{
+        if(!eg[cat]) return; // endgame nesplněn
+        const deliveries=REGULAR_DELIVERIES[cat]||[];
+        deliveries.forEach(tmpl=>{
+          // Přidej pokud ještě není aktivní
+          if(!carried.some(r=>r.id===tmpl.id)){
+            carried.push({
+              ...tmpl,
+              cat,
+              due: 8, // termín v kolech nové sezóny
+              isRegular: true
+            });
+          }
+        });
+      });
+      return carried;
+    })(),
     fama:{...(p.fama||{church:0,noble:0,trade:0})}, // fama přetrvává
     endgame:{...(p.endgame||{church:false,noble:false,trade:false})},
     shop:genShop(),
