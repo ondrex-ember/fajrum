@@ -1133,6 +1133,22 @@ const BLOWN_ITEMS={
   dzban_forma:{cs:"Džbán (forma)",  en:"Mould jug",      icon:"🫗",
                inputs:["waldglas"],
                qty:2, base:7,  spec:"foukat_formy", specOnly:true},
+  // ── DROBNÉ ZBOŽÍ — rychlá výroba, hromadný odbyt ──
+  banka:      {cs:"Baňka",          en:"Flask",           icon:"🧪",
+               inputs:["waldglas","crystal"],
+               qty:2, base:4,  spec:"foukat_lesni", specOnly:false,
+               bulkNote_cs:"Lékárníci a poutníci berou po tuctech.",
+               bulkNote_en:"Apothecaries and pilgrims buy by the dozen."},
+  spunt:      {cs:"Špunt",          en:"Stopper",         icon:"🔴",
+               inputs:["waldglas"],
+               qty:3, base:2,  spec:"foukat_formy", specOnly:false,
+               bulkNote_cs:"Kramáři berou hromadně — rychlý groš.",
+               bulkNote_en:"Merchants buy in bulk — quick coin."},
+  ozdoba:     {cs:"Ozdoba",         en:"Glass ornament",  icon:"🎄",
+               inputs:["waldglas","modra","smaragd","lattimo"],
+               qty:2, base:6,  spec:"foukat_dekor", specOnly:false,
+               bulkNote_cs:"Vánoční zboží, šlechtické dary, Haida trh.",
+               bulkNote_en:"Christmas goods, noble gifts, Haida market."},
 };
 
 // Všechny foukané typy pro state/sell
@@ -1436,6 +1452,7 @@ function initState(){
     waldglas:[], crystal:[],
     // Foukané — základní (waldglas vstup)
     cise:[], dzban:[], pullitr:[], romer:[], misa:[], dzban_forma:[],
+    banka:[], spunt:[], ozdoba:[],
     // Foukané — crystal vstup
     pohar:[], dekantr:[], romer_krist:[], kalamar:[],
     tezitko:[], vaza_dekor:[],
@@ -1468,6 +1485,9 @@ function initState(){
     shop:genShop(), mBonus:false,
     contracts:[], avail:freshContracts(), done:0,
     fama:{church:0, noble:0, trade:0},
+    debtReputation:0, // 0–100: splácení dluhu zlepšuje podmínky půjček u Weisse
+    totalDebtPaid:0,  // celkem splaceno (tracking)
+    quickSellUsed:false, // rychlý výkup — jednou za sezónu
     endgame:{church:false, noble:false, trade:false},
     repContracts:[], // aktivní reputační zakázky (opravné + endgame dodávky)
     // Multi-sezóna stats
@@ -1894,7 +1914,14 @@ function processRound(){
   workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
   // 6. Splácení dluhu
   let dPay=0;
-  if(debt>0&&grose>5){dPay=Math.min(5,grose-2,debt);grose-=dPay;debt-=dPay;}
+  if(debt>0&&grose>5){
+    dPay=Math.min(5,grose-2,debt);grose-=dPay;debt-=dPay;
+    // Reputace dlužníka roste při splácení
+    if(dPay>0){
+      p.totalDebtPaid=(p.totalDebtPaid||0)+dPay;
+      p.debtReputation=Math.min(100,Math.floor((p.totalDebtPaid||0)/3));
+    }
+  }
   // 7. Zakázky
   let contractIncomeTick=0;
   for(let i=con.length-1;i>=0;i--){
@@ -2687,6 +2714,7 @@ function startNewSeason(){
     shop:genShop(),
     morale:clamp(p.morale+5,30,100),
     fActive:false,
+    quickSellUsed:false, // reset na začátku každé sezóny
     grose:newGrose,
     log:oldLog
   });
@@ -5835,22 +5863,86 @@ function render(){
     bSec.append(grid);
     content.append(bSec);
 
-    // Faktor Weiss — půjčky
+    // ── RYCHLÝ VÝKUP — kramář přijede a vykoupí vše ──
+    const quickSellDone=p.quickSellUsed||false;
+    const allStock=["waldglas","crystal",...BLOWN_TYPES].reduce((s,k)=>{
+      const inv=p[k]||[];
+      return s+(Array.isArray(inv)?inv.length:0);
+    },0);
+    if(allStock>0||!quickSellDone){
+      const qSec=h("div",{class:"sec"});
+      qSec.append(h("div",{class:"sec-title"},"🐴 "+(L==="cs"?"Rychlý výkup — kramář Weiss":"Quick buyout — merchant Weiss")));
+      qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
+        L==="cs"
+          ?"Weiss přijede a vykoupí vše co máš za 80% ceny. Okamžitá hotovost, žádné čekání. Jednou za sezónu."
+          :"Weiss rides out and buys everything at 80% price. Instant cash, no waiting. Once per season."));
+      if(quickSellDone){
+        qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
+          L==="cs"?"✅ Výkup již použit tuto sezónu.":"✅ Buyout already used this season."));
+      } else {
+        // Spočítej co by dostal
+        const basePricesQS={waldglas:3.5,crystal:9};
+        Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{basePricesQS[k]=v.base;});
+        let qsTotal=0, qsCount=0;
+        ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
+          const inv=p[k]||[];
+          if(!Array.isArray(inv)) return;
+          const bp=basePricesQS[k]||3.5;
+          inv.forEach(q=>{qsTotal+=Math.round(q*bp*0.8);qsCount++;});
+        });
+        qSec.append(
+          h("div",{style:{fontSize:"11px",color:"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
+            (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+qsTotal+"g (80%)"),
+          h("button",{
+            class:"btn btn-s"+(qsCount>0?" btn-active":""),
+            style:{opacity:qsCount>0?1:0.4,cursor:qsCount>0?"pointer":"default",width:"100%"},
+            onClick:()=>{
+              if(qsCount===0) return;
+              let earned=0;
+              ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
+                const inv=p[k]||[];
+                if(!Array.isArray(inv)||!inv.length) return;
+                const bp=basePricesQS[k]||3.5;
+                const gain=inv.reduce((s,q)=>s+Math.round(q*bp*0.8),0);
+                earned+=gain;
+                G[k]=[];
+              });
+              G.grose+=earned;
+              G.quickSellUsed=true;
+              G.log.push(`__ECO__🐴 ${L==="cs"?"Kramář Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${earned}g (80%)`);
+              render();
+            }},
+            L==="cs"?"🐴 Prodat vše Weissovi (80%)":"🐴 Sell all to Weiss (80%)")
+        );
+      }
+      content.append(qSec);
+    }
+
+    // Faktor Weiss — půjčky s reputací dlužníka
+    const dr=p.debtReputation||0;
+    const loanRate=dr>=75?0.10:dr>=50?0.15:dr>=25?0.20:0.25;
+    const loanRatePct=Math.round(loanRate*100);
+    const drLabel=dr>=75?(L==="cs"?"🟢 Výborný":"🟢 Excellent"):dr>=50?(L==="cs"?"🟡 Dobrý":"🟡 Good"):dr>=25?(L==="cs"?"🟠 Slušný":"🟠 Fair"):(L==="cs"?"🔴 Nový":"🔴 New");
     const faktorSec=h("div",{class:"sec"});
     faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Weiss — půjčky":"Factor Weiss — loans")));
+    // Reputace dlužníka
+    faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},
+      h("span",{style:{fontSize:"10px",color:"#8b5e34"}},L==="cs"?"Reputace dlužníka:":"Debtor reputation:"),
+      h("span",{style:{fontSize:"10px",fontWeight:"700"}},drLabel+" · "+dr+"/100"),
+      h("span",{style:{fontSize:"10px",color:loanRate<0.25?"#4a7a3a":"#8b5e34",fontWeight:"600"}},L==="cs"?"úrok "+loanRatePct+"%":"rate "+loanRatePct+"%")));
     faktorSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
       L==="cs"
-        ?"Groše vždy najdu, jen se vrátíte s úrokem. Půjčka přidá 25 % k dluhu."
-        :"I always have coin — return with interest. Loan adds 25% to debt."));
+        ?`Groše vždy najdu, jen se vrátíte s úrokem. Aktuálně ${loanRatePct}% — splácejte a podmínky se zlepší.`
+        :`I always have coin — return with interest. Current rate ${loanRatePct}% — repay well and terms improve.`));
     if(p.debt>0)faktorSec.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginBottom:"6px"}},
       (L==="cs"?"Aktuální dluh: ":"Current debt: ")+p.debt+"g"));
     const fLoanRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
     [15,25,40].forEach(amt=>{
-      const totalDebt=amt+Math.round(amt*0.25);
+      const totalDebt=amt+Math.round(amt*loanRate);
       fLoanRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
         onClick:()=>{
           G.grose+=amt; G.debt+=totalDebt;
-          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g)");
+          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g, "+loanRatePct+"%)");
           render();
         }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
     });
@@ -5858,7 +5950,14 @@ function render(){
     if(p.debt>0&&p.grose>=p.debt){
       faktorSec.append(h("div",{style:{marginTop:"6px"}},
         h("button",{class:"btn btn-s btn-p",
-          onClick:()=>{G.grose-=p.debt;G.debt=0;G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));render();}},
+          onClick:()=>{
+            const pay=p.debt;
+            G.grose-=pay; G.debt=0;
+            G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
+            G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
+            G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));
+            render();
+          }},
           (L==="cs"?"✅ Splatit celý dluh (":"✅ Clear all debt (")+p.debt+"g)")));
     }
     content.append(faktorSec);
@@ -6137,6 +6236,8 @@ function render(){
             if(!canPay) return;
             const pay=Math.min(amt,p.debt);
             G.grose-=pay; G.debt=Math.max(0,G.debt-pay);
+            G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
+            G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
             G.log.push("__ECO__📜 "+(L==="cs"?"Splácení dluhu":"Debt payment")+": -"+pay+"g");
             render();
           }},lbl));
@@ -6171,21 +6272,24 @@ function render(){
       });
       rightCol.append(projBox);
     }
-    // Faktor — půjčit
+    // Faktor — půjčit (s reputací dlužníka)
+    const drH=p.debtReputation||0;
+    const loanRateH=drH>=75?0.10:drH>=50?0.15:drH>=25?0.20:0.25;
+    const loanRatePctH=Math.round(loanRateH*100);
     const lichBox=h("div",{style:{padding:"8px 10px",background:"rgba(42,26,10,.06)",borderRadius:"4px",border:"1px dashed rgba(139,94,52,.3)",marginBottom:"4px"}});
     lichBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
       "🪙 "+(L==="cs"?"Faktor Weiss — půjčky a zálohy":"Factor Weiss — loans & advances")));
     lichBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
       L==="cs"
-        ?"Groše vždy najdu, jen se vrátíte s úrokem. Půjčka přidá 25 % k dluhu."
-        :"I always have coin — return with interest. Loan adds 25% to debt."));
+        ?`Groše vždy najdu. Aktuální úrok: ${loanRatePctH}% — splácejte a podmínky se zlepší.`
+        :`I always have coin. Current rate: ${loanRatePctH}% — repay well and terms improve.`));
     const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
     [15,25,40].forEach(amt=>{
-      const totalDebt=amt+Math.round(amt*0.25);
+      const totalDebt=amt+Math.round(amt*loanRateH);
       loanBtns.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
         onClick:()=>{
           G.grose+=amt; G.debt+=totalDebt;
-          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g)");
+          G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g, "+loanRatePctH+"%)");
           render();
         }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
     });
