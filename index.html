@@ -621,6 +621,138 @@ const CONTRACT_POOL=[
   {id:"c16",item:"brus_hrana_cise",qty:1,reward:55,due:8,buyer:"Slechtic",
    cs:"Šlechtic von Harrach: 1× broušená číše — dárek",en:"Noble von Harrach: 1× cut goblet — gift"}];
 
+// ── REPUTACE (Fama) ─────────────────────────────────────────
+// Buyer → kategorie famy
+const BUYER_FAMA={Opat:"church", Slechtic:"noble", Hoffmann:"trade", Weiss:"trade"};
+// Splnění zakázky přidá body famy dle kupce
+const FAMA_CONTRACT_GAIN=3;
+const FAMA_CONTRACT_EXPIRE=-4; // propadlá zakázka
+const FAMA_MAX=100;
+
+// Thresholds pro odemčení reputačních zakázek
+const FAMA_THRESHOLDS={
+  church:[20,40,65,80,90],
+  noble: [20,45,65,80,85],
+  trade: [15,35,60,75,90]
+};
+
+// Ikony kategorií
+const FAMA_ICON={church:"🕊️", noble:"⚔️", trade:"🌍"};
+const FAMA_LABEL_CS={church:"Církev", noble:"Panstvo", trade:"Obchod"};
+const FAMA_LABEL_EN={church:"Church", noble:"Nobility", trade:"Trade"};
+
+// Reputační zakázky — opravné/dílčí (vzácné, 0–2× ročně per kategorie)
+// minFama = minimální fama pro výskyt; chance = šance per kolo (≈2–3× za rok)
+const REP_CONTRACT_POOL=[
+  // ── CÍRKEV ──
+  {id:"rc1", cat:"church", minFama:20, chance:0.04,
+   item:"crystal", qty:1, reward:40, due:5,
+   cs:"Opat z Lemberka: prasklý pohár u oltáře — náhrada do října",
+   en:"Abbot of Lemberk: cracked altar cup — replacement by Oct"},
+  {id:"rc2", cat:"church", minFama:40, chance:0.03,
+   item:"modra", qty:2, reward:65, due:6,
+   cs:"Farář z Haidy: 2× kobaltové panely do kaple — oprava okna",
+   en:"Haida priest: 2× cobalt panels for chapel — window repair"},
+  {id:"rc3", cat:"church", minFama:65, chance:0.025,
+   item:"brus_hrana_panel", qty:1, reward:90, due:7,
+   cs:"Opat: broušený panel do relikviáře — původní prasknul při procesí",
+   en:"Abbot: cut panel for reliquary — original cracked in procession"},
+  // ── PANSTVO ──
+  {id:"rc4", cat:"noble", minFama:20, chance:0.04,
+   item:"pohar", qty:2, reward:50, due:5,
+   cs:"Šlechtic von Harrach: 2× poháry — hos ztratil při banketu",
+   en:"Noble von Harrach: 2× goblets — lost at banquet"},
+  {id:"rc5", cat:"noble", minFama:45, chance:0.03,
+   item:"brus_hrana_cise", qty:1, reward:80, due:6,
+   cs:"Šlechtična Harrach: broušená číše — rozbitá při honech, náhrada ke svátku",
+   en:"Noblewoman Harrach: cut goblet — broken during hunt, needed for feast"},
+  {id:"rc6", cat:"noble", minFama:65, chance:0.025,
+   item:"rubin", qty:1, reward:120, due:8,
+   cs:"Šlechtic von Harrach: rubínové sklo — doplnění sady pro císařskou návštěvu",
+   en:"Noble von Harrach: ruby glass — set completion for imperial visit"},
+  // ── OBCHOD ──
+  {id:"rc7", cat:"trade", minFama:15, chance:0.05,
+   item:"waldglas", qty:4, reward:22, due:4,
+   cs:"Kupec Weiss: rychlá dodávka — zákazník čeká v Haidě",
+   en:"Merchant Weiss: urgent delivery — buyer waiting in Haida"},
+  {id:"rc8", cat:"trade", minFama:35, chance:0.035,
+   item:"crystal", qty:2, reward:55, due:5,
+   cs:"Faktor Hoffmann: doplnění zásilky do Drážďan — 2 kusy chybí",
+   en:"Factor Hoffmann: top-up shipment to Dresden — 2 pieces missing"},
+  {id:"rc9", cat:"trade", minFama:60, chance:0.025,
+   item:"brus_pokal", qty:1, reward:95, due:6,
+   cs:"Hoffmann: broušený pohár pro drážďanský dvůr — speciální objednávka",
+   en:"Hoffmann: cut goblet for Dresden court — special order"}
+];
+
+// Endgame zakázky — dostupné po endgame.X === false a fama >= threshold
+// Po splnění → endgame.X = true → otevře pravidelné dodávky
+const ENDGAME_CONTRACTS={
+  church:{
+    id:"eg_church", minFama:90,
+    cs:"RELIKVIÁŘ — Klášter sv. Vojtěcha: kompletní schránka pro ostatky",
+    en:"RELIQUARY — St. Vojtěch Monastery: complete relic shrine",
+    components:[
+      {item:"crystal",    qty:2, cs:"Křišťálová schránka (2× křišťál)", en:"Crystal case (2× crystal)"},
+      {item:"modra",      qty:2, cs:"Kobaltové výplně (2× modrá)", en:"Cobalt fills (2× blue)"},
+      {item:"brus_hrana_panel", qty:1, cs:"Broušený panel (1×)", en:"Cut panel (1×)"},
+      {item:"rubin",      qty:1, cs:"Rubínový panel víka (1×)", en:"Ruby lid panel (1×)"}
+    ],
+    reward:180, due:10,
+    completionText_cs:"Opat Benedikt praví: \u201eTvé sklo je jako zamrzlé světlo.\u201c Relikviář putuje do kaple.",
+    completionText_en:"Abbot Benedict says: \"Your glass is like frozen light.\" The reliquary joins the chapel."
+  },
+  noble:{
+    id:"eg_noble", minFama:85,
+    cs:"LUSTR — Hrabě Harrach: kompletní lustrová sada pro velký sál",
+    en:"CHANDELIER — Count Harrach: complete chandelier set for great hall",
+    components:[
+      {item:"brus_lustr_dil", qty:4, cs:"Broušené díly lustru (4×)", en:"Cut chandelier parts (4×)"},
+      {item:"pohar_modra",    qty:2, cs:"Kobaltové poháry (2×)", en:"Cobalt goblets (2×)"},
+      {item:"rytina_brus_pokal", qty:1, cs:"Rytý pohál s erbem (1×)", en:"Engraved goblet with crest (1×)"},
+      {item:"brus_koule",     qty:3, cs:"Broušené koule (3×)", en:"Cut spheres (3×)"}
+    ],
+    reward:220, due:12,
+    completionText_cs:"Hrabě Harrach: \u201eArnsdorfské sklo ozdobí sál po generace.\u201c Řemeslo je proslaveno.",
+    completionText_en:"Count Harrach: \"Arnsdorf glass will grace this hall for generations.\" The craft is renowned."
+  },
+  trade:{
+    id:"eg_trade", minFama:90,
+    cs:"EXPORTNÍ SÉRIE — Hoffmann: 20 pohárů pro drážďanský dvůr, konzistentní kvalita",
+    en:"EXPORT SERIES — Hoffmann: 20 goblets for Dresden court, consistent quality",
+    components:[
+      {item:"pohar", qty:10, cs:"Foukané poháry — první várka (10×)", en:"Blown goblets — first batch (10×)"},
+      {item:"crystal", qty:5, cs:"Křišťálový základ (5×)", en:"Crystal base (5×)"},
+      {item:"brus_hrana_cise", qty:5, cs:"Broušené číše (5×)", en:"Cut goblets (5×)"}
+    ],
+    reward:250, due:14,
+    completionText_cs:"Hoffmann: \u201eKonečně někdo z Čech kdo ví co dělá. Podepíšeme smlouvu.\u201c",
+    completionText_en:"Hoffmann: \"Finally someone from Bohemia who knows their craft. We sign a contract.\""
+  }
+};
+
+// Pravidelné dodávky po endgame — generují se každou sezónu
+const REGULAR_DELIVERIES={
+  church:[
+    {id:"rd_church1", item:"crystal", qty:1, reward:38, due:6,
+     cs:"Klášter sv. Vojtěcha: pravidelná dodávka — 1× křišťál", en:"St. Vojtěch: regular delivery — 1× crystal"},
+    {id:"rd_church2", item:"modra", qty:1, reward:50, due:7,
+     cs:"Klášter: kobaltový panel — roční výzdoba", en:"Monastery: cobalt panel — annual decor"}
+  ],
+  noble:[
+    {id:"rd_noble1", item:"brus_hrana_cise", qty:1, reward:70, due:7,
+     cs:"Hrabě Harrach: roční doplnění soupravy", en:"Count Harrach: annual set replenishment"},
+    {id:"rd_noble2", item:"pohar", qty:2, reward:45, due:6,
+     cs:"Harrach: 2× poháry pro letní bankety", en:"Harrach: 2× goblets for summer banquets"}
+  ],
+  trade:[
+    {id:"rd_trade1", item:"pohar", qty:5, reward:60, due:8,
+     cs:"Hoffmann: pravidelná zásilka do Drážďan", en:"Hoffmann: regular Dresden shipment"},
+    {id:"rd_trade2", item:"crystal", qty:2, reward:50, due:7,
+     cs:"Hoffmann: křišťál pro drážďanské faktory", en:"Hoffmann: crystal for Dresden factors"}
+  ]
+};
+
 const HINTS_CS=MONTH_DATA.map(m=>m.priority_cs);
 const HINTS_EN=MONTH_DATA.map(m=>m.priority_en);
 
@@ -1335,6 +1467,9 @@ function initState(){
       // Jirka Formař je v teamu od začátku ale nastupuje aktivně v březnu (kolo 4)
     shop:genShop(), mBonus:false,
     contracts:[], avail:freshContracts(), done:0,
+    fama:{church:0, noble:0, trade:0},
+    endgame:{church:false, noble:false, trade:false},
+    repContracts:[], // aktivní reputační zakázky (opravné + endgame dodávky)
     // Multi-sezóna stats
     totalWaldglas:0, totalCrystal:0, totalGrose:0,
     tW:0, tC:0, tQS:0, tQN:0,
@@ -1774,12 +1909,65 @@ function processRound(){
       grose+=c.reward; done++; contractIncomeTick+=c.reward;
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${c.reward}g`);
+      // Fama gain při splnění zakázky
+      const famaCatDone=BUYER_FAMA[c.buyer];
+      if(famaCatDone&&p.fama){
+        p.fama[famaCatDone]=Math.min(FAMA_MAX,(p.fama[famaCatDone]||0)+FAMA_CONTRACT_GAIN);
+      }
       con.splice(i,1);
     } else if(round>c.due){
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       log.push(`__EVT__📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}${buyerStr}`);
+      // Fama loss při prpadlé zakázce
+      const famaCatExp=BUYER_FAMA[c.buyer];
+      if(famaCatExp&&p.fama){
+        p.fama[famaCatExp]=Math.max(0,(p.fama[famaCatExp]||0)+FAMA_CONTRACT_EXPIRE);
+      }
       con.splice(i,1);
     }
+  }
+
+  // 7b. Reputační zakázky — zpracovat aktivní repContracts
+  const repCon=[...(p.repContracts||[])];
+  let repContractIncome=0;
+  for(let i=repCon.length-1;i>=0;i--){
+    const rc=repCon[i];
+    let inv;
+    if(rc.item==="crystal") inv=cr;
+    else if(rc.item==="waldglas") inv=wg;
+    else if(p[rc.item]&&Array.isArray(p[rc.item])) inv=p[rc.item];
+    else inv=[];
+    if(inv.length>=rc.qty&&round<=rc.due){
+      for(let j=0;j<rc.qty;j++)inv.pop();
+      grose+=rc.reward; contractIncomeTick+=rc.reward; repContractIncome+=rc.reward;
+      log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${rc.reward}g`);
+      // Větší fama gain za reputační zakázku
+      if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+5);
+      repCon.splice(i,1);
+    } else if(round>rc.due){
+      log.push(`__EVT__⭐ ${L==="cs"?"Reputační zakázka propadla":"Rep contract expired"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"})`);
+      if(p.fama) p.fama[rc.cat]=Math.max(0,(p.fama[rc.cat]||0)-6);
+      repCon.splice(i,1);
+    }
+  }
+
+  // 7c. Generovat nové náhodné reputační zakázky (0–2× ročně per kategorie)
+  const newRepCon=[...repCon];
+  if(isC){ // jen během kampaně
+    REP_CONTRACT_POOL.forEach(template=>{
+      // Zkontroluj: fama >= minFama, žádná stejná zakázka není aktivní, náhoda
+      const currentFama=(p.fama||{})[template.cat]||0;
+      const alreadyActive=newRepCon.some(r=>r.id===template.id);
+      // Endgame tohle nepotřebuje — normální reputační zakázky
+      if(currentFama>=template.minFama && !alreadyActive && Math.random()<template.chance){
+        newRepCon.push({
+          ...template,
+          due: round+template.due,
+          instanceId: template.id+"_"+round
+        });
+        log.push(`__EVT__⭐ ${L==="cs"?"Nová zakázka přišla":"New order arrived"}: ${L==="cs"?template.cs:template.en}`);
+      }
+    });
   }
 
   // 8. Náhodné události
@@ -2082,7 +2270,7 @@ function processRound(){
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
     furnace, fTemp:fT, fActive:fA,
     waldglas:wg, crystal:cr, mBonus:mB,
-    tW, tC, tQS, tQN, done, contracts:con, workers:wk, shop:genShop(),
+    tW, tC, tQS, tQN, done, contracts:con, repContracts:newRepCon, workers:wk, shop:genShop(),
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
     formyAging:[], // formy jsou okamžité — queue vždy prázdná
@@ -2428,6 +2616,9 @@ function startNewSeason(){
     ...Object.fromEntries(ENGRAVE_INPUTS.map(k=>["rytina_"+k,[...(p["rytina_"+k]||[])]])),
     pAging:[],
     contracts:[], avail:newContracts,
+    repContracts:[...(p.repContracts||[])], // aktivní reputační zakázky přecházejí
+    fama:{...(p.fama||{church:0,noble:0,trade:0})}, // fama přetrvává
+    endgame:{...(p.endgame||{church:false,noble:false,trade:false})},
     shop:genShop(),
     morale:clamp(p.morale+5,30,100),
     fActive:false,
@@ -4113,7 +4304,39 @@ function render(){
       bar(p.forest,p.forestMax||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
   if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
 
-  colR.append(furnHud,bars);
+  // Reputace mini-widget
+  const fama=p.fama||{church:0,noble:0,trade:0};
+  const repCats=["church","noble","trade"];
+  const famaWidget=h("div",{style:{padding:"3px 10px 4px 10px",borderTop:"1px solid rgba(42,26,10,.08)"}});
+  famaWidget.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontWeight:"600",marginBottom:"3px",letterSpacing:"0.5px"}},
+    (L==="cs"?"+ REPUTACE":"+ REPUTATION")));
+  repCats.forEach(cat=>{
+    const val=fama[cat]||0;
+    const icon=FAMA_ICON[cat];
+    const label=L==="cs"?FAMA_LABEL_CS[cat]:FAMA_LABEL_EN[cat];
+    const color=val>=65?"#4a7a3a":val>=35?"#c9952b":"#8b5e34";
+    // Aktivní reputační zakázka pro tuto kategorii
+    const activeRep=(p.repContracts||[]).find(r=>r.cat===cat);
+    // Endgame zakázka dostupná ale nezačatá?
+    const eg=ENDGAME_CONTRACTS[cat];
+    const egAvail=eg&&val>=eg.minFama&&!(p.endgame||{})[cat]&&!(p.repContracts||[]).find(r=>r.id===eg.id);
+    let hintText="—";
+    if(egAvail) hintText=(L==="cs"?"⚠️ ENDGAME dostupný":"⚠️ ENDGAME available");
+    else if(activeRep) hintText=(L==="cs"?activeRep.cs:activeRep.en).substring(0,28)+"…";
+    const row=h("div",{style:{display:"flex",alignItems:"center",gap:"4px",marginBottom:"2px",fontSize:"9px"}});
+    const barW=54;
+    const filled=Math.round((val/FAMA_MAX)*barW);
+    const barEl=document.createElement("div");
+    barEl.innerHTML=`<div style="width:${barW}px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;flex-shrink:0;display:inline-block;vertical-align:middle"><div style="width:${filled}px;height:4px;background:${color};border-radius:2px"></div></div>`;
+    row.append(
+      h("span",{style:{width:"13px",textAlign:"center",flexShrink:0}},icon),
+      barEl.firstChild,
+      h("span",{style:{color,fontWeight:"600",width:"22px",flexShrink:0}},val+"%"),
+      h("span",{style:{color:"#8b5e34",overflow:"hidden",whiteSpace:"nowrap",maxWidth:"90px",textOverflow:"ellipsis"}},hintText)
+    );
+    famaWidget.append(row);
+  });
+  colR.append(furnHud,bars,famaWidget);
   spGrid.append(colL,colR);
   sp.append(spGrid);
   app.append(sp);
@@ -4136,9 +4359,9 @@ function render(){
     storage:L==="cs"?"Sklad":"Storage",
     furnace:L==="cs"?"Pec":"Furnace",
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
-    accounts:L==="cs"?"Účty":"Accounts",
+    accounts:L==="cs"?"Huť":"Foundry",
     parta:L==="cs"?"Parta":"Crew"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"📒"},{k:"parta",e:"👥"}].forEach(({k,e})=>{
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"}].forEach(({k,e})=>{
     const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
     const isActive=p.tab===k;
     const labelText=tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:"");
@@ -5710,7 +5933,102 @@ function render(){
 
   // ── TAB: ÚČTY ──
   }else if(p.tab==="accounts"){
-    const aSec=h("div",{class:"sec"});
+    // ── Dvousloupcový layout: Zakázky | Účty ──
+    const hutSec=h("div",{class:"sec"});
+    hutSec.append(h("div",{class:"sec-title"},"🏭 "+(L==="cs"?"Huť — Zakázky & Účty":"Foundry — Contracts & Accounts")));
+
+    const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}});
+
+    // ── LEVÝ SLOUPEC: ZAKÁZKY ──
+    const leftCol=h("div",{});
+    leftCol.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"6px",borderBottom:"1px solid rgba(42,26,10,.1)",paddingBottom:"3px"}},
+      "📜 "+(L==="cs"?"Zakázky":"Contracts")));
+
+    // Endgame zakázky — dostupné ale nepřijaté
+    const famaState=p.fama||{church:0,noble:0,trade:0};
+    const egState=p.endgame||{church:false,noble:false,trade:false};
+    let hasEgAvail=false;
+    ["church","noble","trade"].forEach(cat=>{
+      const eg=ENDGAME_CONTRACTS[cat];
+      const egActive=(p.repContracts||[]).find(r=>r.id===eg.id);
+      if(eg&&famaState[cat]>=eg.minFama&&!egState[cat]&&!egActive){
+        hasEgAvail=true;
+        const egBox=h("div",{style:{background:"rgba(201,149,43,.12)",border:"1px solid rgba(201,149,43,.4)",borderRadius:"4px",padding:"7px 9px",marginBottom:"6px"}});
+        egBox.append(
+          h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b3a00",marginBottom:"3px"}},
+            FAMA_ICON[cat]+" "+(L==="cs"?"ENDGAME ZAKÁZKA":"ENDGAME CONTRACT")),
+          h("div",{style:{fontSize:"10px",color:"#5a3a1a",marginBottom:"4px",lineHeight:"1.4"}},
+            L==="cs"?eg.cs:eg.en),
+          h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
+            (L==="cs"?"Odměna: ":"Reward: ")+eg.reward+"g · "+(L==="cs"?"termín ":"due ")+eg.due+(L==="cs"?" kol":" rounds")),
+          h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"5px",fontStyle:"italic"}},
+            (L==="cs"?"Komponenty: ":"Components: ")+eg.components.map(c=>(L==="cs"?c.cs:c.en)).join(", "))
+        );
+        const acceptBtn=h("button",{class:"btn btn-s",style:{fontSize:"10px"},
+          onClick:()=>{
+            G.repContracts=[...(G.repContracts||[]),{
+              ...eg, cat, due:G.round+eg.due,
+              isEndgame:true, instanceId:eg.id
+            }];
+            G.log.push("__EVT__⭐ "+(L==="cs"?"ENDGAME zakázka přijata: ":"ENDGAME contract accepted: ")+(L==="cs"?eg.cs:eg.en));
+            render();
+          }},L==="cs"?"✅ Přijmout zakázku":"✅ Accept contract");
+        egBox.append(acceptBtn);
+        leftCol.append(egBox);
+      }
+    });
+
+    // Aktivní reputační zakázky
+    const activeReps=p.repContracts||[];
+    if(activeReps.length>0){
+      leftCol.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"600",marginBottom:"4px"}},
+        L==="cs"?"Aktivní zakázky:":"Active orders:"));
+      activeReps.forEach(rc=>{
+        const remaining=rc.due-p.round;
+        const isEndgame=rc.isEndgame;
+        const rcBox=h("div",{style:{background:isEndgame?"rgba(201,149,43,.08)":"rgba(0,0,0,.03)",border:"1px solid rgba(42,26,10,.1)",borderRadius:"4px",padding:"6px 8px",marginBottom:"5px"}});
+        // Komponenty endgame zakázky
+        if(isEndgame&&rc.components){
+          rcBox.append(
+            h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b3a00",marginBottom:"3px"}},
+              FAMA_ICON[rc.cat]+" "+(L==="cs"?rc.cs:rc.en).substring(0,40)+"…"),
+            h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"3px",fontStyle:"italic"}},
+              (L==="cs"?"Kol zbývá: ":"Rounds left: ")+Math.max(0,remaining))
+          );
+          rc.components.forEach(comp=>{
+            const inv=p[comp.item]&&Array.isArray(p[comp.item])?p[comp.item].length:
+              comp.item==="crystal"?p.crystal.length:comp.item==="waldglas"?p.waldglas.length:0;
+            const done2=inv>=comp.qty;
+            rcBox.append(h("div",{style:{fontSize:"9px",color:done2?"#4a7a3a":"#a03020",marginBottom:"1px"}},
+              (done2?"✅ ":"⬜ ")+(L==="cs"?comp.cs:comp.en)+" ("+inv+"/"+comp.qty+")"));
+          });
+        } else {
+          // Jednoduchá reputační zakázka
+          const inv=p[rc.item]&&Array.isArray(p[rc.item])?p[rc.item].length:
+            rc.item==="crystal"?p.crystal.length:rc.item==="waldglas"?p.waldglas.length:0;
+          const done2=inv>=rc.qty;
+          rcBox.append(
+            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"2px"}},
+              h("span",{style:{fontSize:"10px",color:"#5a3a1a",lineHeight:"1.3",flex:1}},
+                FAMA_ICON[rc.cat]+" "+(L==="cs"?rc.cs:rc.en)),
+              h("span",{style:{fontSize:"9px",color:remaining<=2?"#a03020":"#8b5e34",whiteSpace:"nowrap",marginLeft:"4px"}},
+                remaining+(L==="cs"?" kol":" rnd"))),
+            h("div",{style:{fontSize:"9px",color:done2?"#4a7a3a":"#8b5e34"}},
+              (done2?"✅ ":"📦 ")+(L==="cs"?"Mám: ":"Have: ")+inv+"/"+rc.qty+" · +"+rc.reward+"g")
+          );
+        }
+        leftCol.append(rcBox);
+      });
+    } else if(!hasEgAvail){
+      leftCol.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginTop:"4px"}},
+        L==="cs"?"Žádné aktivní zakázky. Buduj reputaci splněním objednávek na Trhu.":"No active orders. Build reputation by fulfilling market contracts."));
+    }
+
+    // ── PRAVÝ SLOUPEC: ÚČTY (stávající obsah) ──
+    const rightCol=h("div",{});
+    rightCol.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"6px",borderBottom:"1px solid rgba(42,26,10,.1)",paddingBottom:"3px"}},
+      "📒 "+(L==="cs"?"Účty — Schuldenbuch":"Accounts — Schuldenbuch")));
+
     const wagesNext=p.workers.reduce((s,w)=>s+(2+(w.wageMod||0)),0);
     const beerCostNext=([0,1,2,4][p.beer]||0)*Math.ceil(p.workers.length/3);
     const totalOutNext=wagesNext+beerCostNext;
@@ -5724,7 +6042,7 @@ function render(){
       if(projGrose<totalOutNext) projDebt+=Math.max(0,totalOutNext-projGrose);
       proj.push({debt:Math.round(projDebt),grose:Math.round(projGrose)});
     }
-    aSec.append(h("div",{class:"sec-title"},"📒 "+(L==="cs"?"Účty hutě — Schuldenbuch":"Foundry Accounts — Schuldenbuch")));
+
     // Aktuální stav
     const nowBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #c9952b"}});
     nowBox.append(
@@ -5738,7 +6056,7 @@ function render(){
       p.debt>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
         L==="cs"?"Auto-splátka: až 5g/kolo je-li hotovost nad 5g":"Auto-payment: up to 5g/round when cash above 5g"):h("span",{})
     );
-    aSec.append(nowBox);
+    rightCol.append(nowBox);
     // Ruční splacení
     if(p.debt>0){
       const payBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(160,48,32,.05)",borderRadius:"4px",border:"1px solid rgba(160,48,32,.15)"}});
@@ -5759,7 +6077,7 @@ function render(){
           }},lbl));
       });
       payBox.append(payBtns);
-      aSec.append(payBox);
+      rightCol.append(payBox);
     }
     // Výdaje příští kolo
     const outBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(0,0,0,.03)",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)"}});
@@ -5772,7 +6090,7 @@ function render(){
       h("span",{style:{color:"#8b5e34"}},r.label),h("span",{style:{color:r.c}},r.val))));
     if(debtAutoNext>0)outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#4a7a3a",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
       h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+debtAutoNext+"g")));
-    aSec.append(outBox);
+    rightCol.append(outBox);
     // Projekce dluhu
     if(p.debt>0){
       const projBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(0,0,0,.03)",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)"}});
@@ -5786,7 +6104,7 @@ function render(){
           h("span",{style:{color:"#8b5e34"}},(L==="cs"?"Kolo ":"Round ")+(i+1)),
           h("span",{style:{color:col}},arrow+" "+p2.debt+"g dluh · "+p2.grose+"g pokladna")));
       });
-      aSec.append(projBox);
+      rightCol.append(projBox);
     }
     // Faktor — půjčit
     const lichBox=h("div",{style:{padding:"8px 10px",background:"rgba(42,26,10,.06)",borderRadius:"4px",border:"1px dashed rgba(139,94,52,.3)",marginBottom:"4px"}});
@@ -5807,8 +6125,62 @@ function render(){
         }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
     });
     lichBox.append(loanBtns);
-    aSec.append(lichBox);
-    content.append(aSec);
+    rightCol.append(lichBox);
+
+    twoCol.append(leftCol,rightCol);
+    hutSec.append(twoCol);
+
+    // ── REPUTACE PANEL (pod oběma sloupci) ──
+    const repPanel=h("div",{style:{borderTop:"1px solid rgba(42,26,10,.12)",paddingTop:"10px",marginTop:"4px"}});
+    repPanel.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"8px"}},
+      "⭐ "+(L==="cs"?"Reputace hutě — Fama":"Foundry Reputation — Fama")));
+    const repGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}});
+    ["church","noble","trade"].forEach(cat=>{
+      const val=famaState[cat]||0;
+      const icon=FAMA_ICON[cat];
+      const labelCs=FAMA_LABEL_CS[cat];
+      const labelEn=FAMA_LABEL_EN[cat];
+      const color=val>=65?"#4a7a3a":val>=35?"#c9952b":"#8b5e34";
+      const eg=ENDGAME_CONTRACTS[cat];
+      const nextThresh=FAMA_THRESHOLDS[cat].find(t=>t>val)||FAMA_MAX;
+      const catCard=h("div",{style:{background:"rgba(0,0,0,.03)",borderRadius:"4px",padding:"7px 9px",border:"1px solid rgba(42,26,10,.08)"}});
+      catCard.append(
+        h("div",{style:{display:"flex",alignItems:"center",gap:"4px",marginBottom:"5px"}},
+          h("span",{style:{fontSize:"14px"}},icon),
+          h("span",{style:{fontSize:"11px",fontWeight:"700",color}},(L==="cs"?labelCs:labelEn)),
+          h("span",{style:{fontSize:"12px",fontWeight:"700",color,marginLeft:"auto"}},val+"%")));
+      // Progress bar
+      const barOuter=h("div",{style:{height:"5px",background:"rgba(0,0,0,.1)",borderRadius:"3px",marginBottom:"5px",overflow:"hidden"}});
+      const barInner=h("div",{style:{height:"5px",width:val+"%",background:color,borderRadius:"3px",transition:"width .3s"}});
+      barOuter.append(barInner);
+      catCard.append(barOuter);
+      // Status
+      if(egState[cat]){
+        catCard.append(h("div",{style:{fontSize:"9px",color:"#4a7a3a",fontWeight:"600"}},
+          L==="cs"?"✅ Endgame splněn — pravidelné dodávky aktivní":"✅ Endgame complete — regular deliveries active"));
+      } else if(eg&&val>=eg.minFama){
+        catCard.append(h("div",{style:{fontSize:"9px",color:"#c9952b",fontWeight:"600"}},
+          L==="cs"?"⚠️ Endgame zakázka dostupná!":"⚠️ Endgame contract available!"));
+      } else {
+        catCard.append(h("div",{style:{fontSize:"9px",color:"#8b5e34"}},
+          (L==="cs"?"Další milestone: ":"Next milestone: ")+nextThresh+"%"));
+      }
+      // Thresholds jako malé tečky
+      const dotsRow=h("div",{style:{display:"flex",gap:"3px",marginTop:"4px",flexWrap:"wrap"}});
+      FAMA_THRESHOLDS[cat].forEach(t=>{
+        const reached=val>=t;
+        dotsRow.append(h("div",{style:{
+          width:"8px",height:"8px",borderRadius:"50%",
+          background:reached?color:"rgba(0,0,0,.12)",
+          title:t+"%",cursor:"default"
+        }}));
+      });
+      catCard.append(dotsRow);
+      repGrid.append(catCard);
+    });
+    repPanel.append(repGrid);
+    hutSec.append(repPanel);
+    content.append(hutSec);
 
   // ── TAB: PARTA ──
   }else if(p.tab==="parta"){
