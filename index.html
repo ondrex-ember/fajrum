@@ -442,9 +442,9 @@ const MONTH_DATA=[
 const EFF_BASE=0.35, EFF_RUNIN=0.35, EFF_PANEV=0.20, EFF_SHAMOT=0.10;
 
 const FURNACE_TYPES={
-  primitive:{name:"Primitivní pec",nameEn:"Primitive furnace",maxRunIn:60,maxTemp:87,fuelMult:1.0},
-  stone:    {name:"Zděná pec",    nameEn:"Stone furnace",    maxRunIn:85,maxTemp:92,fuelMult:0.85},
-  master:   {name:"Mistrovská pec",nameEn:"Master furnace",  maxRunIn:100,maxTemp:99,fuelMult:0.70}
+  primitive:{name:"Primitivní pec",nameEn:"Primitive furnace",maxRunIn:60,maxTemp:87,fuelMult:1.0, maxSlots:1},
+  stone:    {name:"Zděná pec",    nameEn:"Stone furnace",    maxRunIn:85,maxTemp:92,fuelMult:0.85, maxSlots:2},
+  master:   {name:"Mistrovská pec",nameEn:"Master furnace",  maxRunIn:100,maxTemp:99,fuelMult:0.70, maxSlots:4}
 };
 const UPGRADE_COST={stone:{wood:20,limestone:8,clay:6,grose:15},master:{wood:30,limestone:12,clay:10,grose:40}};
 
@@ -689,7 +689,7 @@ const REP_CONTRACT_POOL=[
 // Po splnění → endgame.X = true → otevře pravidelné dodávky
 const ENDGAME_CONTRACTS={
   church:{
-    id:"eg_church", minFama:90,
+    id:"eg_church", minFama:90, minFurnace:"master",
     cs:"RELIKVIÁŘ — Klášter sv. Vojtěcha: kompletní schránka pro ostatky",
     en:"RELIQUARY — St. Vojtěch Monastery: complete relic shrine",
     components:[
@@ -703,7 +703,7 @@ const ENDGAME_CONTRACTS={
     completionText_en:"Abbot Benedict says: \"Your glass is like frozen light.\" The reliquary joins the chapel."
   },
   noble:{
-    id:"eg_noble", minFama:85,
+    id:"eg_noble", minFama:85, minFurnace:"stone",
     cs:"LUSTR — Hrabě Harrach: kompletní lustrová sada pro velký sál",
     en:"CHANDELIER — Count Harrach: complete chandelier set for great hall",
     components:[
@@ -717,7 +717,7 @@ const ENDGAME_CONTRACTS={
     completionText_en:"Count Harrach: \"Arnsdorf glass will grace this hall for generations.\" The craft is renowned."
   },
   trade:{
-    id:"eg_trade", minFama:90,
+    id:"eg_trade", minFama:90, minFurnace:"stone",
     cs:"EXPORTNÍ SÉRIE — Hoffmann: 20 pohárů pro drážďanský dvůr, konzistentní kvalita",
     en:"EXPORT SERIES — Hoffmann: 20 goblets for Dresden court, consistent quality",
     components:[
@@ -829,6 +829,7 @@ const NPC_BONDS=[
 const NPC_ROSTER=[
   // ── STARTOVNÍ PARTA (kolo 1) ──────────────────────────────────────────────
   {id:"npc_kunc",   name:"František Kunc",    prof:"tavic",    lv:3, traits:["houzevatny","ucitel"],
+   subtitle_cs:"Tavič / Foukač", subtitle_en:"Smelter / Glassblower",
    quote_cs:"U pece třicet let. Sklo mi zpívá.",
    quote_en:"Thirty years at the furnace. I hear the glass sing.",
    hireCost:18, wageMod:1, portrait:"kunc",     loyalty:90, health:75, mood:70},
@@ -917,6 +918,7 @@ function genCandidates(season, count){
     traits:npc.traits, hireCost:npc.hireCost, wageMod:npc.wageMod,
     portrait:npc.portrait,
     quote_cs:npc.quote_cs, quote_en:npc.quote_en,
+    subtitle_cs:npc.subtitle_cs, subtitle_en:npc.subtitle_en,
     loyalty:npc.loyalty, health:npc.health, mood:npc.mood,
     gender:npc.gender||"m",
     xp:0, fat:0, task:WERKSTAT_PROFS.includes(npc.prof)?"werkstat":"idle",
@@ -1440,6 +1442,7 @@ function initState(){
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
     unlockedRecipes:["jantar"], // jantar je dostupný od začátku — přirozená barva lesní huti
     _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi
+    activeBatches:[], // [{slot:0, type:"waldglas"|"crystal"|"modra"|..., color:meltColorObj}]
     _strikeQueue:null, // pending rubín strike — {q, chance, tempAtStrike}
     // Baranovský — aktuální nabídka
     baranOffer:null,
@@ -1762,6 +1765,7 @@ function processRound(){
   pA=pA.filter(x=>round<x.rdy);
 
   // 3. Kampaň — pec
+  let newActiveBatches=[]; // aktivní várky — deklarujeme vždy, plníme jen v kampani
   if(isC){
     // Šamot degraduje v kampani (zima je náročnější)
     const shamotDeg=round>=6?3:1;
@@ -1804,29 +1808,67 @@ function processRound(){
       log.push(`__EVT__⚠️ ${L==="cs"?"Šamot kriticky opotřeben! Opravit v mezisezóně.":"Shamot critically worn! Repair between seasons."}`);
     }
 
-    // Kolo 1 — Waldglas
+    // Kolo 1 — Waldglas (slot 1 — vždy dostupný)
+    const furnSlots=ft.maxSlots||1;
+    let usedSlots=0;
     if(fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
-      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;
+      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
       const q=qRoll(tAcc(fT),fEff*3,mor,pQ);
       wg.push(q);tW++;tQS+=q;tQN++;
+      newActiveBatches.push({slot:0,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
       log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo":"waldglas"} ${stars(q)} (eff:${Math.round(fEff*100)}%)`);
       if(pU<=0){
         pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;
         mor-=4;
         log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
-        if(pR>0)pQ=Math.max(1,pQ-1); // prasklá → další pánev nižší kvality
+        if(pR>0)pQ=Math.max(1,pQ-1);
       }
     }else if(fA&&fT>=40&&pR<=0){
       log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
     }
 
+    // Slot 2 — druhá waldglas várka (stone+)
+    if(furnSlots>=2&&usedSlots<furnSlots&&fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
+      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
+      const q2=qRoll(tAcc(fT),fEff*3,mor,pQ);
+      wg.push(q2);tW++;tQS+=q2;tQN++;
+      newActiveBatches.push({slot:1,type:"waldglas",colorKey:"waldglas"});
+      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo (slot 2)":"waldglas (slot 2)"} ${stars(q2)}`);
+      if(pU<=0){
+        pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;
+        mor-=4;
+        log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla (slot 2)":"Crucible cracked (slot 2)"} → +1 šamot`);
+        if(pR>0)pQ=Math.max(1,pQ-1);
+      }
+    }
+
     // Kolo 3 — Křišťál
-    if(fA&&fT>=65&&pR>0&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
-      r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;
+    if(usedSlots<furnSlots&&fA&&fT>=65&&pR>0&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
+      r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
       const znalecBonus=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle")?1:0;
       const q=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+znalecBonus,1,5);
       cr.push(q);tC++;tQS+=q;tQN++;
+      newActiveBatches.push({slot:usedSlots-1,type:"crystal",colorKey:"crystal"});
       log.push(`__PROD__✨ → 1× ${L==="cs"?"křišťál":"crystal"} ${stars(q)}`);
+    }else if(fA&&fT>=65&&usedSlots>=furnSlots&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
+      log.push(`__PROD__⛔ ${L==="cs"?"Křišťál čeká — pec plně obsazena ("+furnSlots+" slotů)":"Crystal waiting — furnace full ("+furnSlots+" slots)"}`);
+    }
+    // Sloty 3+4 — master pec
+    if(furnSlots>=3&&usedSlots<furnSlots&&fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
+      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
+      const q3=qRoll(tAcc(fT),fEff*3,mor,pQ);
+      wg.push(q3);tW++;tQS+=q3;tQN++;
+      newActiveBatches.push({slot:2,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
+      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo (slot 3)":"waldglas (slot 3)"} ${stars(q3)}`);
+      if(pU<=0){pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);}
+    }
+    if(furnSlots>=4&&usedSlots<furnSlots&&fA&&fT>=65&&pR>0&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
+      r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
+      const znalecBonus2=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle")?1:0;
+      const q4=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+znalecBonus2,1,5);
+      cr.push(q4);tC++;tQS+=q4;tQN++;
+      newActiveBatches.push({slot:3,type:"crystal",colorKey:"crystal"});
+      log.push(`__PROD__✨ → 1× ${L==="cs"?"křišťál (slot 4)":"crystal (slot 4)"} ${stars(q4)}`);
     }
   }else{
     // Příprava: pec chladne
@@ -2343,6 +2385,7 @@ function processRound(){
     furnace, fTemp:fT, fActive:fA,
     waldglas:wg, crystal:cr, mBonus:mB,
     tW, tC, tQS, tQN, done, contracts:con, repContracts:newRepCon, workers:wk, shop:genShop(),
+    activeBatches:newActiveBatches,
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
     formyAging:[], // formy jsou okamžité — queue vždy prázdná
@@ -3142,35 +3185,52 @@ function buildCandidateCard(c,body,p,L){
 
 // ── MOLTEN CANVAS — kombinace Bézier víření + canvas částice ──
 let _moltenRaf=null;
-function startMoltenCanvas(canvas,temp,mc){
-  if(_moltenRaf){cancelAnimationFrame(_moltenRaf);_moltenRaf=null;}
-  if(!mc||mc.speed===0)return;
+let _moltenRafs=[]; // pole RAF handles pro více pánví
+function startMoltenCanvas(canvas,temp,mc,seed){
+  if(!mc||mc.speed===0)return null;
+  // Seeded pseudo-random — každá pánev jiná bez závislosti na externích lib
+  seed=seed||0;
+  function sr(n){
+    let x=Math.sin(seed*9301+n*49297+seed*n*233)*233280;
+    return x-Math.floor(x);
+  }
   const ctx=canvas.getContext("2d");
   const W=140,H=140;
   canvas.width=W;canvas.height=H;
   const cx=W/2,cy=H/2,R=W/2-3;
-  let t=Math.random()*100;
-  // paleta přímo z mc (hra už má správné barvy)
+  // Per-slot variace — seed ovlivní charakter animace
+  const swirlDir=sr(0)>0.5?1:-1;           // směr vývěrů (CW/CCW)
+  const swirlSpeed=0.28+sr(1)*0.24;         // rychlost rotace (pomalejší/rychlejší)
+  const bubbleRate=temp>60?(0.28+sr(2)*0.24):(0.08+sr(2)*0.12); // hustota bublin
+  const blobScale=0.8+sr(3)*0.5;            // velikost vývěrů
+  const particleSizeMult=0.7+sr(4)*0.7;     // velikost částic
+  const tOffset=sr(5)*100;                  // časový offset (jiná fáze animace)
+  const centerBias=sr(6)>0.5;              // vývěry spíš uprostřed nebo na okraji
+  let t=tOffset;
   const pal={bg:[mc.c1,mc.c2,mc.c3],hot:mc.c3,glow:mc.glow};
   function mkParticle(){
-    const angle=Math.random()*Math.PI*2;
-    const r=Math.random()*R*.75;
-    const speed=(0.2+Math.random()*0.6)*(temp/60);
-    const isBubble=Math.random()<(temp>60?.4:.15);
+    const angle=sr(Math.random()*999)*Math.PI*2;
+    const rBias=centerBias?0.4:0.75;
+    const r=sr(Math.random()*997)*R*rBias;
+    const speed=(0.15+sr(Math.random()*993)*0.65)*(temp/60);
+    const isBubble=sr(Math.random()*991)<bubbleRate;
+    // Směr dle swirlDir — vývěry mají rotační složku
+    const tangentX=swirlDir*Math.sin(angle)*speed*0.3;
+    const tangentY=-swirlDir*Math.cos(angle)*speed*0.3;
     return{
       x:cx+Math.cos(angle)*r,
       y:cy+Math.sin(angle)*r,
-      vx:(Math.random()-.5)*speed*.6,
-      vy:isBubble?-(speed*.8+Math.random()*.4):(Math.random()-.5)*speed,
+      vx:(Math.random()-.5)*speed*.6+tangentX,
+      vy:isBubble?-(speed*.7+Math.random()*.5):(Math.random()-.5)*speed+tangentY,
       life:Math.random(),
-      maxLife:.4+Math.random()*.6,
-      size:isBubble?1.5+Math.random()*3:3+Math.random()*8,
+      maxLife:.35+Math.random()*.65,
+      size:isBubble?(1+sr(Math.random()*989)*3.5)*particleSizeMult:(2.5+Math.random()*8)*particleSizeMult,
       isBubble,
-      wobble:(Math.random()-.5)*.02,
+      wobble:(Math.random()-.5)*.025*swirlDir,
       phase:Math.random()*Math.PI*2
     };
   }
-  const pCount=temp>80?28:temp>60?20:temp>40?13:8;
+  const pCount=Math.round((temp>80?28:temp>60?20:temp>40?13:8)*(0.8+sr(7)*0.4));
   const particles=[];
   for(let i=0;i<pCount;i++) particles.push(mkParticle());
   function drawMolten(){
@@ -3181,39 +3241,38 @@ function startMoltenCanvas(canvas,temp,mc){
     ctx.save();
     ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
     ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-    // slow swirl — 3 radialGradient blobs
     if(temp>15){
       for(let s=0;s<3;s++){
-        const sx=cx+Math.cos(t*(0.4+s*.3)+s*2.1)*R*.35;
-        const sy=cy+Math.sin(t*(0.35+s*.25)+s*1.7)*R*.3;
-        const sr=R*(.3+s*.08);
-        const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,sr);
+        // Každý slot má jiné fáze a rádius blobů
+        const phaseOff=sr(s+8)*Math.PI*2;
+        const rMult=blobScale*(0.28+s*.09);
+        const sx=cx+Math.cos(t*swirlSpeed*(0.4+s*.3)*swirlDir+phaseOff)*R*rMult;
+        const sy=cy+Math.sin(t*swirlSpeed*(0.35+s*.25)*swirlDir+phaseOff+s*1.7)*R*(rMult*.85);
+        const sr2=R*(.25+s*.1)*blobScale;
+        const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,sr2);
         const alpha=Math.min(.18,(temp/100)*.22);
-        // rgba z hex
         function hx(h,a){const r2=parseInt(h.slice(1,3),16),g2=parseInt(h.slice(3,5),16),b2=parseInt(h.slice(5,7),16);return`rgba(${r2},${g2},${b2},${a})`;}
         sg.addColorStop(0,hx(pal.hot,alpha));
         sg.addColorStop(1,"rgba(0,0,0,0)");
-        ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);
+        ctx.beginPath();ctx.arc(sx,sy,sr2,0,Math.PI*2);
         ctx.fillStyle=sg;ctx.fill();
       }
     }
     ctx.restore();
   }
   function frame(){
-    _moltenRaf=requestAnimationFrame(frame);
+    const raf=requestAnimationFrame(frame);
+    canvas._moltenRaf=raf;
     t+=0.016;
     ctx.clearRect(0,0,W,H);
-    // swirl background
     drawMolten();
-    // clip circle for particles
     ctx.save();
     ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
     particles.forEach((p,i)=>{
       p.life+=.006+Math.random()*.004;
-      p.x+=p.vx+Math.sin(t*.9+p.phase)*.3;
+      p.x+=p.vx+Math.sin(t*.9+p.phase)*(.25+sr(i%17)*.2);
       p.y+=p.vy;
       p.vx+=p.wobble;
-      // boundary repel
       const dx=p.x-cx,dy=p.y-cy,dist=Math.sqrt(dx*dx+dy*dy);
       if(dist>R-p.size){p.vx-=(dx/dist)*.15;p.vy-=(dy/dist)*.15;}
       if(p.life>=p.maxLife){particles[i]=mkParticle();return;}
@@ -3221,14 +3280,11 @@ function startMoltenCanvas(canvas,temp,mc){
       const fadeOut=p.life>p.maxLife*.7?1-(p.life-p.maxLife*.7)/(p.maxLife*.3):1;
       const alpha=fadeIn*fadeOut;
       if(p.isBubble){
-        // kruh bubliny
         ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
         ctx.strokeStyle=pal.hot;ctx.globalAlpha=alpha*.5;ctx.lineWidth=.8;ctx.stroke();
-        // odlesk
         ctx.beginPath();ctx.arc(p.x-p.size*.3,p.y-p.size*.3,p.size*.25,0,Math.PI*2);
         ctx.fillStyle="#ffffff";ctx.globalAlpha=alpha*.3;ctx.fill();
-      } else {
-        // lava blob s radialGradient
+      }else{
         ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
         const g=ctx.createRadialGradient(p.x-p.size*.3,p.y-p.size*.3,0,p.x,p.y,p.size);
         g.addColorStop(0,pal.hot);g.addColorStop(1,pal.bg[0]);
@@ -3237,11 +3293,72 @@ function startMoltenCanvas(canvas,temp,mc){
       ctx.globalAlpha=1;
     });
     ctx.restore();
-    // rim
     ctx.beginPath();ctx.arc(cx,cy,R-1,0,Math.PI*2);
     ctx.strokeStyle="#2a1608";ctx.lineWidth=3;ctx.stroke();
   }
   frame();
+  return canvas;
+}
+
+// ── NPC BIOGRAFIE — tab "O něm/ní" ─────────────────────────
+const NPC_BIO={
+  npc_kunc:{
+    cs:`<b>Tavič &amp; Foukač — dva mistři v jednom</b><br><br>
+František Kunc znal tvého otce ještě z dob kdy huť v Arnsdorfu byla jen snem a hromada kamení. Společně tehdy fouknuli první várku waldglasu — Kunc u pece, táta s trubicí. Kunc zůstal. Táta odešel do světa, vrátil se s dluhem a receptem. Teď jsi tady ty.<br><br>
+Kunc je jeden z mála kdo ovládá obě řemesla — taví i fouká. U malé pece to tak bývalo: jeden mistr, všechno. Neučí slovem. Učí přítomností — kdo ho sleduje dost dlouho, začne rozumět peci jako živé věci. Říká se, že pozná správnou teplotu zavřenýma očima. Možná je to pravda.`,
+    en:`<b>Smelter &amp; Glassblower — two masters in one</b><br><br>
+František Kunc knew your father back when the Arnsdorf foundry was just a dream and a pile of stones. Together they blew the first batch of waldglas — Kunc at the furnace, your father at the pipe. Kunc stayed. Your father went out into the world, came back with debt and a recipe. Now you're here.<br><br>
+Kunc is one of the few who masters both crafts — smelting and blowing. At a small furnace it used to be that way: one master, everything. He doesn't teach with words. He teaches with presence — watch him long enough and you'll start to understand the furnace as a living thing.`
+  },
+  npc_komar:{
+    cs:`<b>Dřevorubec — síla bez zbytečných slov</b><br><br>
+Milan Komár přišel z Falknova před třemi lety a od té doby pokácel víc stromů než kdokoliv v kraji. Mluví málo, jí hodně, spí tvrdě. V lese je nenahraditelný — mimo les se orientuje hůř než klacek.<br><br>
+S pilou v ruce je jako jiný člověk. Bez ní je jen velký, trochu zmatenej chlap co neví kam s rukama. Ale huť bez dřeva stojí — a o to se Komár postará.`,
+    en:`<b>Logger — strength without unnecessary words</b><br><br>
+Milan Komár came from Falknov three years ago and has since felled more trees than anyone in the region. He talks little, eats a lot, sleeps hard. In the forest he's irreplaceable — outside it he's lost worse than a stick.<br><br>
+With a saw in hand he's a different person. Without it he's just a large, slightly confused man who doesn't know what to do with his hands. But a foundry without wood stops — and that's Komár's business.`
+  },
+  npc_mana:{
+    cs:`<b>Popelář — vládkyně loužírny</b><br><br>
+Nikdo v Arnsdorfu neví jak se Máňa jmenuje celým jménem. Nikdo se ani neptá. Je tu odjakživa — nebo aspoň tak dlouho, že na to nikdo nepamatuje. Loužírna je její království. Potaš co vyrábí je čistší než z kteréhokoli vedlejšího kraje.<br><br>
+Kunc říká, že dobrá potaš je půlka dobrého skla. Máňa to ví — a proto se nikam nežene. Pracuje pomalu, pečlivě, a výsledek mluví za vše.`,
+    en:`<b>Potasher — mistress of the leaching shed</b><br><br>
+Nobody in Arnsdorf knows Máňa's full name. Nobody asks. She's been here forever — or at least as long as anyone can remember. The leaching shed is her kingdom. The potash she produces is purer than from any neighbouring region.<br><br>
+Kunc says good potash is half of good glass. Máňa knows this — which is why she's never in a hurry. She works slowly, carefully, and the result speaks for itself.`
+  },
+  npc_kanin:{
+    cs:`<b>Pánvař — tajemství žáruvzdorné hlíny</b><br><br>
+Káninský není z Arnsdorfu. Přišel z Posázaví kde prý pracoval pro tři různé hutě — vždy odešel dřív než musel. Nebo tak říká on. O žáruvzdorné hlíně ví víc než většina tavičů co ho kdy zaměstnala.<br><br>
+Jeho pánve drží. Špatná pánev znamená ztracenou várku — a to Káninský ví lépe než kdokoliv. Proto je pedant, proto je přesný, a proto ho huť potřebuje víc než si někdy přizná.`,
+    en:`<b>Crucible-maker — the secret of refractory clay</b><br><br>
+Káninský isn't from Arnsdorf. He came from Posázaví where he reportedly worked for three different foundries — always leaving before he had to. Or so he says. He knows more about refractory clay than most smelters who ever employed him.<br><br>
+His crucibles hold. A bad crucible means a lost batch — and Káninský knows this better than anyone. That's why he's a pedant, that's why he's precise, and that's why the foundry needs him more than it ever admits.`
+  },
+  npc_formar1:{
+    cs:`<b>Formař — rod povolání</b><br><br>
+Jirka Formař — ano, to je opravdu jeho příjmení — pochází z rodu formařů. Děda formař, táta formař, Jirka formař. Nikdo v rodině nepřemýšlel jestli by mohl dělat něco jiného. Jirka taky ne.<br><br>
+Je spolehlivý, přesný, trochu nudný. Formy co dělá jsou vždy rovné, vždy stejné, vždy správné. V řemesle kde záleží na přesnosti je to víc než dost.`,
+    en:`<b>Mould-maker — a family trade</b><br><br>
+Jirka Formař — yes, that really is his surname — comes from a family of mould-makers. Grandfather a mould-maker, father a mould-maker, Jirka a mould-maker. Nobody in the family ever wondered if he could do something else. Neither did Jirka.<br><br>
+He's reliable, precise, a little dull. The moulds he makes are always straight, always consistent, always right. In a craft where precision matters, that's more than enough.`
+  },
+};
+
+// Helper — vrátí bio text pro NPC nebo generický text dle profese
+function getNpcBio(w, lang){
+  const bio=NPC_BIO[w.npcId]||NPC_BIO[w.id]; // npcId primárně (w.id = "w1","w2"...)
+  if(bio) return lang==="cs"?bio.cs:bio.en;
+  // Generický fallback dle profese
+  const profName=(lang==="cs"?PROF_CS:PROF_EN)[w.prof]||w.prof;
+  return lang==="cs"
+    ?`<b>${profName}</b><br><br>O ${w.name} zatím mnoho nevíme. Čas ukáže co přináší hutě.`
+    :`<b>${profName}</b><br><br>Little is known about ${w.name} yet. Time will tell what they bring to the foundry.`;
+}
+
+function getProfLabel(w, lang){
+  if(w.subtitle_cs&&lang==="cs") return w.subtitle_cs;
+  if(w.subtitle_en&&lang==="en") return w.subtitle_en;
+  return (lang==="cs"?PROF_CS:PROF_EN)[w.prof]||w.prof;
 }
 
 function render(){
@@ -3671,7 +3788,7 @@ function render(){
         borderBottom:"1px solid rgba(42,26,10,.07)",fontSize:"11px"}});
       row.append(
         h("span",{style:{flex:1}},
-          `${w.name} ${stars(w.lv)} · ${L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof}`,
+          `${w.name} ${stars(w.lv)} · ${getProfLabel(w,L)}`,
           w.traits?.length?h("span",{style:{marginLeft:"4px",fontSize:"10px",color:"#8b5e34"}},
             w.traits.map(t=>TRAITS[t]?.icon||"").join("")):null),
         h("span",{style:{fontSize:"10px",color:"#8b5e34",minWidth:"40px"}},`XP ${xpPct}%`),
@@ -4614,10 +4731,13 @@ function render(){
         leftCol.append(aRow);
       });
       const rightCol=h("div",{style:{flex:"1",minWidth:0}});
+      const furnSlotsDisplay=ft.maxSlots||1;
+      const slotsColor=furnSlotsDisplay>=4?"#4a7a3a":furnSlotsDisplay>=2?"#c9952b":"#8b5e34";
       const fRows=[
         {label:L==="cs"?"Typ":"Type",val:L==="cs"?ft.name:ft.nameEn,color:"#c9952b"},
         {label:L==="cs"?"Zaběh.":"Run-in",val:p.furnace.runIn+"%",color:"#8b5e34"},
         {label:L==="cs"?"Šamot":"Shamot",val:p.furnace.shamotWear+"%",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"},
+        {label:L==="cs"?"Sloty":"Slots",val:"⬜".repeat(furnSlotsDisplay)+" "+furnSlotsDisplay+"×",color:slotsColor},
         {label:L==="cs"?"Eff.":"Eff.",val:fEff+"%",color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"}
       ];
       fRows.forEach(r=>{
@@ -4730,7 +4850,7 @@ function render(){
             return tw;
           }).filter(Boolean)||[])),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-          L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof));
+          getProfLabel(w,L)));
       [{label:L==="cs"?"Únava":"Fat.",v:fatPct,c:fatColor},
        {label:"XP",v:xpPct,c:"#c9952b"},
        {label:L==="cs"?"Loaj.":"Loy.",v:loyalty,c:loyalty>60?"#4a7a3a":loyalty>35?"#c9952b":"#a03020"},
@@ -4874,7 +4994,7 @@ function render(){
               fontSize:"11px",padding:"3px 0",borderTop:"1px solid rgba(42,26,10,.06)"}});
             wRow.append(
               h("span",{style:{flex:"1",fontWeight:"600"}},`${w.name} ${"★".repeat(w.lv)}`),
-              h("span",{style:{fontSize:"9px",color:"#8b5e34",flexShrink:0}},L==="cs"?PROF_CS[w.prof]:PROF_EN[w.prof]),
+              h("span",{style:{fontSize:"9px",color:"#8b5e34",flexShrink:0}},getProfLabel(w,L)),
               h("div",{style:{width:"50px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
                 h("div",{style:{width:xpPct+"%",height:"100%",background:sp.color,borderRadius:"2px"}})),
               h("span",{style:{fontSize:"9px",color:"#8b5e34",width:"28px",textAlign:"right"}},`${xpPct}%`));
@@ -5411,41 +5531,123 @@ function render(){
       // Levý sloupec — SVG základ + canvas overlay (Bézier víření + fyzikální bubliny)
       const leftWrap=document.createElement("div");
       leftWrap.style.cssText="flex:1;min-width:0;display:flex;justify-content:center;";
-      const sid="fsvg_"+Date.now();
-      const panevWrap=document.createElement("div");
-      panevWrap.style.cssText="position:relative;display:inline-block;width:100%;max-width:180px;";
-      panevWrap.innerHTML=`<svg id="${sid}_svg" width="160" height="160" viewBox="0 0 140 140" xmlns="${svgNS}" style="display:block;width:100%;height:auto;">
-        <defs>
-          <radialGradient id="${sid}_bg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="${meltColors.c1}" stop-opacity="1"/>
-            <stop offset="60%" stop-color="${meltColors.c2}" stop-opacity="1"/>
-            <stop offset="100%" stop-color="${meltColors.c3}" stop-opacity="1"/>
-          </radialGradient>
-          <radialGradient id="${sid}_g2" cx="40%" cy="38%" r="55%">
-            <stop offset="0%" stop-color="${meltColors.c3}" stop-opacity="${active&&temp>15?0.3:0}"/>
-            <stop offset="100%" stop-color="${meltColors.c1}" stop-opacity="0"/>
-          </radialGradient>
-          <clipPath id="${sid}_clip"><circle cx="70" cy="70" r="58"/></clipPath>
-        </defs>
-        <circle cx="70" cy="70" r="62" fill="#0e0806" stroke="#3a2010" stroke-width="1.5"/>
-        <circle cx="70" cy="70" r="58" fill="url(#${sid}_bg)" clip-path="url(#${sid}_clip)"/>
-        <circle cx="70" cy="70" r="58" fill="url(#${sid}_g2)" clip-path="url(#${sid}_clip)"
-          style="animation:${spd>0?`meltPulse ${(spd*1.1).toFixed(1)}s ease-in-out infinite`:"none"}"/>
-        <text x="70" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="9"
-          fill="${active&&temp>10?meltColors.c3:"#5a3a1a"}" letter-spacing="1" opacity="0.9">
-          ${active?(temp>82?"PŘETOPENO":temp>65?"SKLOVINA":"ŽHNUTÍ"):isCooling?"CHLADNE":isTempering?"TEMPERUJE":isC&&p.round===PREP?"ROZŽÍHÁ":"STUDENÁ"}
-        </text>
-        ${active&&temp>60?`<circle cx="70" cy="70" r="62" fill="none" stroke="${meltColors.glow}" stroke-width="2"
-          opacity="0.35" style="animation:meltPulse ${(spd*1.3).toFixed(1)}s ease-in-out infinite"/>`:""}`+
-        `<circle cx="70" cy="70" r="63" fill="none" stroke="#2a1608" stroke-width="2"/>
-      </svg>`;
-      const panevCanvas=document.createElement("canvas");
-      panevCanvas.width=160;panevCanvas.height=160;
-      panevCanvas.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%;";
-      panevWrap.appendChild(panevCanvas);
-      leftWrap.appendChild(panevWrap);
-      startMoltenCanvas(panevCanvas,temp,meltColors);
-      // Pravý sloupec — teplota label + stats (1/2)
+      // ── GRID PÁNVÍ dle slotů pece ────────────────────────────
+      const furnSlots2=ft.maxSlots||1;
+      const activeBatches=p.activeBatches||[];
+
+      // Helper: barvy skloviny dle colorKey
+      function colorKeyToMelt(colorKey,tmp){
+        if(!active||tmp<5) return {c1:"#1a1208",c2:"#2a1a0a",c3:"#0e0906",glow:"none",speed:0};
+        const spBase=(()=>{
+          if(tmp<20) return {c1:"#3a1a08",c2:"#1e0e04",c3:"#2a1208",glow:"#4a1a08",speed:8};
+          if(tmp<35) return {c1:"#6a1a08",c2:"#3a0e04",c3:"#8a2010",glow:"#6a1a08",speed:6};
+          if(tmp<50) return {c1:"#a03010",c2:"#6a1808",c3:"#c04018",glow:"#a03010",speed:4.5};
+          if(tmp<65) return {c1:"#c06020",c2:"#a04010",c3:"#e08030",glow:"#c05020",speed:3.2};
+          if(tmp<78) return {c1:"#d49020",c2:"#b07010",c3:"#f0b030",glow:"#d08020",speed:2.2};
+          if(tmp<88) return {c1:"#e8c030",c2:"#c09820",c3:"#fff0a0",glow:"#e8c030",speed:1.5};
+          return       {c1:"#fff8c0",c2:"#ffe080",c3:"#ffffff",glow:"#fffde0",speed:0.9};
+        })();
+        if(tmp>=55){
+          const spd=spBase.speed;
+          switch(colorKey){
+            case "waldglas": return {c1:"#4a3a08",c2:"#6a5210",c3:"#8a7020",glow:"#7a6018",speed:spd}; // lesní sklo — olivová/jantarová
+            case "jantar":  return {c1:"#8b4a10",c2:"#6b3008",c3:"#c07020",glow:"#a05010",speed:spd};
+            case "modra":   return {c1:"#0a1a5a",c2:"#08103a",c3:"#2040a0",glow:"#1030c0",speed:spd};
+            case "smaragd": return {c1:"#0a4a20",c2:"#083010",c3:"#20a040",glow:"#108030",speed:spd};
+            case "lattimo": return {c1:"#c8c8c8",c2:"#a0a0a0",c3:"#f0f0f0",glow:"#e0e0e0",speed:spd};
+            case "rubin":   return {c1:"#d4c080",c2:"#b09040",c3:"#fff0c0",glow:"#d4b060",speed:spd};
+            case "crystal": return {c1:"#c8d8e8",c2:"#a0b8c8",c3:"#e8f4ff",glow:"#d0e8ff",speed:spd};
+          }
+        }
+        return spBase;
+      }
+
+      // Grid layout dle počtu slotů
+      const isGrid2x2=furnSlots2>=4;
+      const is2col=furnSlots2>=2;
+      // Velikost jedné pánve dle počtu
+      const pSize=furnSlots2>=4?100:furnSlots2>=2?120:160;
+
+      const gridWrap=document.createElement("div");
+      gridWrap.style.cssText=isGrid2x2
+        ?"display:grid;grid-template-columns:1fr 1fr;gap:8px;width:"+(pSize*2+8)+"px;"
+        :is2col?"display:flex;gap:8px;":"display:flex;justify-content:center;";
+
+      for(let si=0;si<furnSlots2;si++){
+        const batch=activeBatches.find(b=>b.slot===si);
+        const colorKey=batch?batch.colorKey:(p._activeColorRecipe||"waldglas");
+        const mc=colorKeyToMelt(colorKey,temp);
+        const hasP=si<(p.pReady||0);
+
+        // Outer wrapper — keramický okraj + pozice
+        const slotDiv=document.createElement("div");
+        slotDiv.style.cssText=`position:relative;width:${pSize}px;height:${pSize}px;flex-shrink:0;`;
+
+        // Keramický okraj pánve — SVG kroužek
+        const rimDiv=document.createElement("div");
+        rimDiv.style.cssText=`position:absolute;inset:0;border-radius:50%;
+          background:radial-gradient(ellipse at 30% 25%, #7a5535 0%, #4a2e18 45%, #2a1608 100%);
+          box-shadow:inset 0 2px 6px rgba(0,0,0,.7), inset 0 -1px 3px rgba(255,180,80,.08),
+          0 2px 8px rgba(0,0,0,.5);`;
+
+        // Vnitřní plocha pánve (o 10px menší ze všech stran)
+        const innerDiv=document.createElement("div");
+        const innerSize=pSize-14;
+        innerDiv.style.cssText=`position:absolute;top:7px;left:7px;width:${innerSize}px;height:${innerSize}px;
+          border-radius:50%;overflow:hidden;
+          box-shadow:inset 0 3px 10px rgba(0,0,0,.8);`;
+
+        if(hasP&&active&&mc.speed>0){
+          // Canvas s animací taveniny — seed = slot index pro unikátní animaci
+          const canvas=document.createElement("canvas");
+          canvas.width=140;canvas.height=140;
+          canvas.style.cssText=`width:${innerSize}px;height:${innerSize}px;display:block;border-radius:50%;`;
+          innerDiv.appendChild(canvas);
+          // Stopnout předchozí RAF pro tento slot pokud existuje
+          if(canvas._moltenRaf) cancelAnimationFrame(canvas._moltenRaf);
+          // Seed: kombinace slotu + herního kola + hash colorKey
+          const seed=(si*137+(p.round||0)*31+colorKey.length*17)%999;
+          startMoltenCanvas(canvas,temp,mc,seed);
+          // Label skloviny
+          const lbl=document.createElement("div");
+          lbl.style.cssText=`position:absolute;bottom:6px;left:0;right:0;text-align:center;
+            font-size:7px;color:${mc.c3};font-family:Georgia,serif;letter-spacing:.5px;
+            text-shadow:0 1px 3px rgba(0,0,0,.8);pointer-events:none;opacity:.8;`;
+          lbl.textContent=batch?(
+            batch.colorKey==="modra"   ?(L==="cs"?"modrá":"blue"):
+            batch.colorKey==="smaragd" ?(L==="cs"?"smaragd":"emerald"):
+            batch.colorKey==="rubin"   ?(L==="cs"?"rubín":"ruby"):
+            batch.colorKey==="lattimo" ?(L==="cs"?"lattimo":"lattimo"):
+            batch.colorKey==="jantar"  ?(L==="cs"?"jantar":"amber"):
+            batch.type==="crystal"     ?(L==="cs"?"křišťál":"crystal"):
+            (L==="cs"?"waldglas":"waldglas")
+          ):(L==="cs"?"žár":"heat");
+          innerDiv.appendChild(lbl);
+        }else if(hasP){
+          // Pánev je ale pec nežhne — tmavá, klidná
+          innerDiv.style.background="radial-gradient(circle, #2a1a0a 0%, #120a04 100%)";
+          const coldLbl=document.createElement("div");
+          coldLbl.style.cssText=`position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-size:8px;color:#5a3a1a;font-family:Georgia,serif;letter-spacing:.5px;`;
+          coldLbl.textContent=L==="cs"?"studená":"cold";
+          innerDiv.appendChild(coldLbl);
+        }else{
+          // Prázdný slot — bez pánve
+          innerDiv.style.background="rgba(0,0,0,.4)";
+          const emptyLbl=document.createElement("div");
+          emptyLbl.style.cssText=`position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+            font-size:18px;opacity:.2;`;
+          emptyLbl.textContent="○";
+          innerDiv.appendChild(emptyLbl);
+        }
+
+        slotDiv.appendChild(rimDiv);
+        slotDiv.appendChild(innerDiv);
+        gridWrap.appendChild(slotDiv);
+      }
+      leftWrap.appendChild(gridWrap);
+
+      // Pravý sloupec — teplota label + stats
       const rightWrap=document.createElement("div");
       rightWrap.style.cssText="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;";
 
@@ -5461,11 +5663,14 @@ function render(){
       rightWrap.append(tempDiv);
 
       // Stats řádky
+      const ftSlots=ft.maxSlots||1;
+      const ftSlotsColor=ftSlots>=4?"#4a7a3a":ftSlots>=2?"#c9952b":"#8b5e34";
       [
         {label:L==="cs"?"Typ pece":"Type",    val:L==="cs"?ft.name:ft.nameEn, color:"#c9952b"},
         {label:"Eff.",                          val:fEff+"%",                   color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"},
         {label:L==="cs"?"Zaběhnutost":"Run-in",val:p.furnace.runIn+"%",        color:"#c9952b"},
         {label:L==="cs"?"Pánev":"Crucible",    val:stars(p.panevQuality),      color:"#f0deb8"},
+        {label:L==="cs"?"Sloty":"Slots",        val:"⬜".repeat(ftSlots)+" "+ftSlots+"×", color:ftSlotsColor},
       ].forEach(r=>{
         const row=document.createElement("div");
         row.style.cssText="display:flex;justify-content:space-between;align-items:center;font-size:11px;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:5px;margin-bottom:2px;";
@@ -6111,33 +6316,48 @@ function render(){
     // Endgame zakázky — dostupné ale nepřijaté
     const famaState=p.fama||{church:0,noble:0,trade:0};
     const egState=p.endgame||{church:false,noble:false,trade:false};
+    const currentFurnType=p.furnace?.type||"primitive";
+    const FURNACE_ORDER=["primitive","stone","master"];
     let hasEgAvail=false;
     ["church","noble","trade"].forEach(cat=>{
       const eg=ENDGAME_CONTRACTS[cat];
       const egActive=(p.repContracts||[]).find(r=>r.id===eg.id);
+      // Kontrola pece
+      const reqFurn=eg.minFurnace||"primitive";
+      const furnOk=FURNACE_ORDER.indexOf(currentFurnType)>=FURNACE_ORDER.indexOf(reqFurn);
       if(eg&&famaState[cat]>=eg.minFama&&!egState[cat]&&!egActive){
         hasEgAvail=true;
-        const egBox=h("div",{style:{background:"rgba(201,149,43,.12)",border:"1px solid rgba(201,149,43,.4)",borderRadius:"4px",padding:"7px 9px",marginBottom:"6px"}});
+        const egBox=h("div",{style:{background:furnOk?"rgba(201,149,43,.12)":"rgba(42,26,10,.06)",border:"1px solid "+(furnOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.2)"),borderRadius:"4px",padding:"7px 9px",marginBottom:"6px",opacity:furnOk?1:0.75}});
         egBox.append(
-          h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b3a00",marginBottom:"3px"}},
+          h("div",{style:{fontSize:"10px",fontWeight:"700",color:furnOk?"#8b3a00":"#8b5e34",marginBottom:"3px"}},
             FAMA_ICON[cat]+" "+(L==="cs"?"ENDGAME ZAKÁZKA":"ENDGAME CONTRACT")),
           h("div",{style:{fontSize:"10px",color:"#5a3a1a",marginBottom:"4px",lineHeight:"1.4"}},
             L==="cs"?eg.cs:eg.en),
           h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
             (L==="cs"?"Odměna: ":"Reward: ")+eg.reward+"g · "+(L==="cs"?"termín ":"due ")+eg.due+(L==="cs"?" kol":" rounds")),
+          h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",fontStyle:"italic"}},
+            (L==="cs"?"Vyžaduje pec: ":"Requires furnace: ")+(FURNACE_TYPES[reqFurn]?(L==="cs"?FURNACE_TYPES[reqFurn].name:FURNACE_TYPES[reqFurn].nameEn):reqFurn)
+            +(furnOk?" ✅":" ❌")),
           h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"5px",fontStyle:"italic"}},
             (L==="cs"?"Komponenty: ":"Components: ")+eg.components.map(c=>(L==="cs"?c.cs:c.en)).join(", "))
         );
-        const acceptBtn=h("button",{class:"btn btn-s",style:{fontSize:"10px"},
-          onClick:()=>{
-            G.repContracts=[...(G.repContracts||[]),{
-              ...eg, cat, due:G.round+eg.due,
-              isEndgame:true, instanceId:eg.id
-            }];
-            G.log.push("__EVT__⭐ "+(L==="cs"?"ENDGAME zakázka přijata: ":"ENDGAME contract accepted: ")+(L==="cs"?eg.cs:eg.en));
-            render();
-          }},L==="cs"?"✅ Přijmout zakázku":"✅ Accept contract");
-        egBox.append(acceptBtn);
+        if(furnOk){
+          const acceptBtn=h("button",{class:"btn btn-s",style:{fontSize:"10px"},
+            onClick:()=>{
+              G.repContracts=[...(G.repContracts||[]),{
+                ...eg, cat, due:G.round+eg.due,
+                isEndgame:true, instanceId:eg.id
+              }];
+              G.log.push("__EVT__⭐ "+(L==="cs"?"ENDGAME zakázka přijata: ":"ENDGAME contract accepted: ")+(L==="cs"?eg.cs:eg.en));
+              render();
+            }},L==="cs"?"✅ Přijmout zakázku":"✅ Accept contract");
+          egBox.append(acceptBtn);
+        }else{
+          const reqFurnName=FURNACE_TYPES[reqFurn]?(L==="cs"?FURNACE_TYPES[reqFurn].name:FURNACE_TYPES[reqFurn].nameEn):reqFurn;
+          egBox.append(h("div",{style:{fontSize:"10px",color:"#a03020",fontStyle:"italic",marginTop:"4px"}},
+            L==="cs"?"🔒 Nejprve postav "+reqFurnName+" ("+FURNACE_TYPES[reqFurn]?.maxSlots+"× sloty)":"🔒 Build "+reqFurnName+" first ("+FURNACE_TYPES[reqFurn]?.maxSlots+"× slots)"));
+        }
+        egBox.append(h("span",{})); // spacer
         leftCol.append(egBox);
       }
     });
@@ -6452,7 +6672,7 @@ function render(){
       const mood=w.mood||60;
       const moodCls=mood>=65?"mood-ok":mood>=40?"mood-warn":"mood-bad";
       const unpaid=w.unpaidDebt||0;
-      const profLabel=(L==="cs"?PROF_CS:PROF_EN)[w.prof]||w.prof;
+      const profLabel=getProfLabel(w,L);
       const tier=workerTier(w.lv);
       const tierLabel=`${tier.cs} · ${tier.de} lv.${w.lv}`;
       const card=h("div",{class:`parta-card ${moodCls}`,onClick:()=>{G._partaDetail=w.id;G._partaSubtab="profil";render();}});
@@ -6521,7 +6741,7 @@ function render(){
       const w=p.workers.find(x=>x.id===G._partaDetail);
       if(w){
         const stab=G._partaSubtab||"profil";
-        const profLabel=(L==="cs"?PROF_CS:PROF_EN)[w.prof]||w.prof;
+        const profLabel=getProfLabel(w,L);
         const unpaid=w.unpaidDebt||0;
         const mood=w.mood||60;
         const fat=w.fatigue||0;
@@ -6564,10 +6784,10 @@ function render(){
 
         // Subtaby
         const stabRow=h("div",{class:"detail-subtabs"});
-        ["profil","rozvoj","vazby","kontrakt","dluh"].forEach(s=>{
+        [["profil","rozvoj","vazby","kontrakt","dluh","onem"]].flat().forEach(s=>{
           const lbl={profil:L==="cs"?"Profil":"Profile",rozvoj:L==="cs"?"Rozvoj":"Skills",
                      vazby:L==="cs"?"Vazby":"Bonds",kontrakt:L==="cs"?"Kontrakt":"Contract",
-                     dluh:L==="cs"?"Dluh":"Debt"}[s];
+                     dluh:L==="cs"?"Dluh":"Debt",onem:L==="cs"?"O něm/ní":"About"}[s];
           const btn=h("button",{class:"detail-subtab"+(stab===s?" active":""),onClick:()=>{G._partaSubtab=s;render();}},lbl);
           stabRow.append(btn);
         });
@@ -6863,6 +7083,20 @@ function render(){
           modal.append(h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",
             borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
             `⏭️ ${L==="cs"?"Příští mzda":"Next wage"}: ${wage}g — ${L==="cs"?"kasa":"cash"}: ${p.grose}g`));
+        }
+        else if(stab==="onem"){
+          const bioDiv=h("div",{style:{padding:"4px 2px",lineHeight:"1.7",fontSize:"11px",color:"#4a2e18"}});
+          bioDiv.innerHTML=getNpcBio(w,L);
+          // Citát nahoře pokud existuje
+          if(w.quote_cs||w.quote){
+            const quoteDiv=h("div",{style:{
+              fontStyle:"italic",color:"#8b5e34",fontSize:"10px",
+              borderLeft:"3px solid rgba(201,149,43,.4)",paddingLeft:"8px",
+              marginBottom:"10px",lineHeight:"1.5"
+            }},`„${L==="cs"?(w.quote_cs||w.quote):(w.quote_en||w.quote_cs||w.quote)}"`);
+            modal.append(quoteDiv);
+          }
+          modal.append(bioDiv);
         }
 
         bg.append(modal);
