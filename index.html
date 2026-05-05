@@ -129,6 +129,28 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .alloc-row strong{width:30px;text-align:right;}
 .log-box{max-height:280px;overflow:auto;font-size:11px;line-height:1.5;
   font-family:'Courier New',monospace;padding:6px;background:rgba(0,0,0,.03);border-radius:4px;}
+/* ── ARCHIV TAB ── */
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px;margin-bottom:14px;}
+.ach-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
+  border-radius:8px;border:1px solid rgba(42,26,10,.15);cursor:default;transition:transform .15s;}
+.ach-card.unlocked{border-color:rgba(201,149,43,.35);background:rgba(42,26,10,.25);}
+.ach-card.locked{opacity:.55;filter:grayscale(.6);}
+.ach-card.future{opacity:.3;filter:grayscale(1);}
+.ach-card:hover.unlocked{transform:scale(1.04);}
+.ach-title{font-size:10px;font-weight:700;text-align:center;color:var(--warm);line-height:1.3;max-width:80px;}
+.ach-card.locked .ach-title{color:#6a4830;}
+.wiki-grid{display:flex;flex-direction:column;gap:6px;}
+.wiki-card{padding:9px 11px;border-radius:7px;border:1px solid rgba(42,26,10,.15);
+  background:rgba(42,26,10,.12);}
+.wiki-card-hdr{display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;}
+.wiki-card-icon{font-size:16px;}
+.wiki-card-title{font-size:12px;font-weight:700;color:var(--warm);}
+.wiki-card-src{font-size:9px;color:#8b6a3a;font-style:italic;margin-top:2px;}
+.wiki-card-body{font-size:11px;color:#5a3a18;line-height:1.6;}
+.wiki-card-latin{font-size:10px;font-style:italic;color:#9a7040;margin-top:4px;}
+.ach-cat-hdr{font-size:11px;font-weight:700;color:#8b5e34;letter-spacing:.6px;
+  text-transform:uppercase;margin:10px 0 6px;padding-bottom:3px;
+  border-bottom:1px solid rgba(139,94,52,.2);}
 /* ── PARTA TAB ── */
 .parta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;}
 #app.desktop .parta-grid{grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 16px;}
@@ -1505,7 +1527,9 @@ function initState(){
     huteName:"", // Jméno hutmistra — zadá uživatel
     audio:{enabled:true,volume:0.7},
     firstVisit:true, // welcome modal po prvním vstupu
-    difficulty:"normal" // "normal" nebo "easy"
+    difficulty:"normal", // "normal" nebo "easy"
+    achievements:[],    // pole splněných achievement ID
+    wikiDiscovered:[]   // pole odemčených wiki témat
   };
 }
 
@@ -2401,6 +2425,7 @@ function processRound(){
     events:evts.slice(1), curEvt:evts[0]||null,
     phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
   });
+  checkAchievements();
 
   // Toast — kompaktní delta přehled kola
   const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
@@ -2817,6 +2842,7 @@ function sellItems(type,n){
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
   G[type]=rest; G.grose+=total;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
+  checkAchievements();
   render();
 }
 function buyItem(k){
@@ -3788,7 +3814,7 @@ function render(){
         borderBottom:"1px solid rgba(42,26,10,.07)",fontSize:"11px"}});
       row.append(
         h("span",{style:{flex:1}},
-          `${w.name} ${stars(w.lv)} · ${getProfLabel(w,L)}`,
+          `${w.name} ${stars(w.lv)} · ${L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof}`,
           w.traits?.length?h("span",{style:{marginLeft:"4px",fontSize:"10px",color:"#8b5e34"}},
             w.traits.map(t=>TRAITS[t]?.icon||"").join("")):null),
         h("span",{style:{fontSize:"10px",color:"#8b5e34",minWidth:"40px"}},`XP ${xpPct}%`),
@@ -4570,8 +4596,9 @@ function render(){
     furnace:L==="cs"?"Pec":"Furnace",
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
     accounts:L==="cs"?"Huť":"Foundry",
-    parta:L==="cs"?"Parta":"Crew"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"}].forEach(({k,e})=>{
+    parta:L==="cs"?"Parta":"Crew",
+    archiv:L==="cs"?"Archiv":"Archive"};
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
     const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
     const isActive=p.tab===k;
     const labelText=tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:"");
@@ -4850,7 +4877,7 @@ function render(){
             return tw;
           }).filter(Boolean)||[])),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-          getProfLabel(w,L)));
+          L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof));
       [{label:L==="cs"?"Únava":"Fat.",v:fatPct,c:fatColor},
        {label:"XP",v:xpPct,c:"#c9952b"},
        {label:L==="cs"?"Loaj.":"Loy.",v:loyalty,c:loyalty>60?"#4a7a3a":loyalty>35?"#c9952b":"#a03020"},
@@ -4994,7 +5021,7 @@ function render(){
               fontSize:"11px",padding:"3px 0",borderTop:"1px solid rgba(42,26,10,.06)"}});
             wRow.append(
               h("span",{style:{flex:"1",fontWeight:"600"}},`${w.name} ${"★".repeat(w.lv)}`),
-              h("span",{style:{fontSize:"9px",color:"#8b5e34",flexShrink:0}},getProfLabel(w,L)),
+              h("span",{style:{fontSize:"9px",color:"#8b5e34",flexShrink:0}},L==="cs"?PROF_CS[w.prof]:PROF_EN[w.prof]),
               h("div",{style:{width:"50px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
                 h("div",{style:{width:xpPct+"%",height:"100%",background:sp.color,borderRadius:"2px"}})),
               h("span",{style:{fontSize:"9px",color:"#8b5e34",width:"28px",textAlign:"right"}},`${xpPct}%`));
@@ -7105,6 +7132,119 @@ function render(){
     }
 
   // ── TAB: NASTAVENÍ ──
+  }else if(p.tab==="archiv"){
+    checkAchievements();
+    const archSec=h("div",{class:"sec"});
+    archSec.append(h("div",{class:"sec-title"},"📖 "+(L==="cs"?"Archiv — wiki a úspěchy":"Archive — wiki & achievements")));
+
+    // ── Endgame items placeholder sekce ──
+    const endgameSec=h("div",{style:{marginBottom:"14px",padding:"10px",borderRadius:"8px",
+      border:"1px solid rgba(201,149,43,.2)",background:"rgba(42,26,10,.15)"}});
+    endgameSec.append(h("div",{class:"ach-cat-hdr"},L==="cs"?"🏆 Vrcholné zakázky":"🏆 Pinnacle Commissions"));
+    const egRow=h("div",{style:{display:"flex",gap:"12px",flexWrap:"wrap",justifyContent:"center",padding:"6px 0"}});
+
+    // 3 endgame placeholders s placeholder obrázky
+    const egItems=[
+      {id:"eg_img_church", icon:"⛪", label:L==="cs"?"Relikviář":"Reliquary",
+       done:p.endgame?.church,
+       desc:L==="cs"?"Klášter sv. Vojtěcha":"St. Vojtěch Monastery"},
+      {id:"eg_img_noble",  icon:"🕯️", label:L==="cs"?"Lustr Harrachů":"Harrach Chandelier",
+       done:p.endgame?.noble,
+       desc:L==="cs"?"Hrabě Harrach":"Count Harrach"},
+      {id:"eg_img_trade",  icon:"🌍", label:L==="cs"?"Export Drážďany":"Dresden Export",
+       done:p.endgame?.trade,
+       desc:L==="cs"?"Hoffmann":"Hoffmann"},
+    ];
+    egItems.forEach(eg=>{
+      const card=h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",
+        opacity:eg.done?1:.5,filter:eg.done?"none":"grayscale(.7)"}});
+      // Placeholder SVG — nahradit <img src="obrazky/endgame_church.png"> až bude obrázek
+      const svg=endgamePlaceholder(eg.id, eg.icon, eg.label);
+      card.append(svg);
+      card.append(h("div",{style:{fontSize:"10px",color:eg.done?"#c9952b":"#6a4830",
+        fontWeight:"700",textAlign:"center"}},eg.label));
+      card.append(h("div",{style:{fontSize:"9px",color:"rgba(90,58,24,.7)",textAlign:"center"}},
+        eg.done?"✓ "+eg.desc:eg.desc));
+      egRow.append(card);
+    });
+    endgameSec.append(egRow);
+    archSec.append(endgameSec);
+
+    // ── Achievements sekce ──
+    archSec.append(h("div",{class:"ach-cat-hdr"},L==="cs"?"⭐ Úspěchy":"⭐ Achievements"));
+
+    const cats=[
+      {id:"production", cs:"Výrobní milestony", en:"Production Milestones"},
+      {id:"tech",       cs:"Technologické přechody", en:"Technological Transitions"},
+      {id:"trade",      cs:"Obchod & sláva", en:"Trade & Renown"},
+      {id:"endgame",    cs:"Endgame", en:"Endgame"},
+    ];
+    cats.forEach(cat=>{
+      const catAchs=ACHIEVEMENTS.filter(a=>a.cat===cat.id);
+      if(!catAchs.length)return;
+      archSec.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",
+        letterSpacing:".5px",textTransform:"uppercase",margin:"8px 0 4px",
+        paddingBottom:"2px",borderBottom:"1px solid rgba(139,94,52,.15)"}},
+        L==="cs"?cat.cs:cat.en));
+      const grid=h("div",{class:"ach-grid"});
+      catAchs.forEach(a=>{
+        const unlocked=(p.achievements||[]).includes(a.id);
+        const isFuture=!a.available;
+        let cls="ach-card"+(unlocked?" unlocked":isFuture?" future":" locked");
+        const card=h("div",{class:cls,
+          title:unlocked?(L==="cs"?a.desc_cs:a.desc_en)
+            :isFuture?(L==="cs"?(a.future_cs||"Přijde"):(a.future_en||"Coming soon"))
+            :(L==="cs"?"🔒 "+a.hint_cs:"🔒 "+a.hint_en)});
+        // Placeholder SVG obrázek — nahradit za <img id="${a.img_id}" src="..."> až budou obrázky
+        card.append(achPlaceholder(a.img_id, a.icon, L==="cs"?a.cs:a.en, unlocked));
+        card.append(h("div",{class:"ach-title"},L==="cs"?a.cs:a.en));
+        if(unlocked&&a.latin){
+          card.append(h("div",{style:{fontSize:"8px",fontStyle:"italic",color:"rgba(201,149,43,.7)",
+            textAlign:"center"}},a.latin));
+        }
+        if(isFuture){
+          card.append(h("div",{style:{fontSize:"8px",color:"rgba(90,58,24,.5)",textAlign:"center"}},
+            L==="cs"?"v příštích verzích":"next versions"));
+        }
+        grid.append(card);
+      });
+      archSec.append(grid);
+    });
+
+    // ── Wiki sekce ──
+    const unlockedWiki=Object.entries(WIKI_ENTRIES).filter(([k])=>
+      (p.wikiDiscovered||[]).includes(k));
+    if(unlockedWiki.length>0){
+      archSec.append(h("div",{class:"ach-cat-hdr",style:{marginTop:"16px"}},
+        "📜 "+(L==="cs"?"Pergamen — historické záznamy":"Parchment — historical records")));
+      archSec.append(h("div",{style:{fontSize:"10px",color:"#8b6a3a",fontStyle:"italic",
+        marginBottom:"8px"}},
+        L==="cs"?"Záznamy se odemykají při výrobě a obchodu. Zdroje: Kunckel 1679, Valentová 2019, Vepřeková 2015, Sedláčková 2015."
+               :"Entries unlock through production and trade. Sources: Kunckel 1679, Valentová 2019, Vepřeková 2015, Sedláčková 2015."));
+      const wikiDiv=h("div",{class:"wiki-grid"});
+      unlockedWiki.forEach(([k,entry])=>{
+        const card=h("div",{class:"wiki-card"});
+        const hdr=h("div",{class:"wiki-card-hdr"});
+        hdr.append(h("span",{class:"wiki-card-icon"},entry.icon));
+        hdr.append(h("span",{class:"wiki-card-title"},L==="cs"?entry.cs:entry.en));
+        card.append(hdr);
+        card.append(h("div",{class:"wiki-card-body"},L==="cs"?entry.body_cs:entry.body_en));
+        if(entry.src_cs||entry.src_en){
+          card.append(h("div",{class:"wiki-card-src"},
+            "📚 "+(L==="cs"?entry.src_cs:entry.src_en)));
+        }
+        wikiDiv.append(card);
+      });
+      archSec.append(wikiDiv);
+    }else{
+      archSec.append(h("div",{style:{fontSize:"11px",color:"#8b6a3a",fontStyle:"italic",
+        marginTop:"12px",padding:"10px",borderRadius:"6px",
+        border:"1px solid rgba(42,26,10,.1)",textAlign:"center"}},
+        L==="cs"?"📜 Začni vyrábět — záznamy se odemknou samy.":"📜 Start producing — records will unlock on their own."));
+    }
+
+    content.append(archSec);
+
   }else if(p.tab==="settings"){
     // ── ULOŽENÍ HRY ──
     const saveSec=h("div",{class:"sec"});
@@ -7502,6 +7642,382 @@ function render(){
   }
 	const _newContent = app.querySelector(".content");
 	if (_newContent && _scrollTop) _newContent.scrollTop = _scrollTop;
+}
+
+
+
+// ═══════════════════════════════════════════════════════
+// ACHIEVEMENTS & WIKI DATA
+// ═══════════════════════════════════════════════════════
+
+const ACHIEVEMENTS=[
+  // ── Výrobní milestony ──
+  {id:"ignis_mutat_res", icon:"🔥", cat:"production",
+   cs:"Ignis mutat res", en:"Ignis mutat res",
+   desc_cs:"První úspěšná várka skla. Oheň mění věci — a tebe s nimi.",
+   desc_en:"First successful glass batch. Fire changes things — and you with them.",
+   latin:"Ignis mutat res",
+   hint_cs:"Uvar první várku waldglas nebo křišťálu.",
+   hint_en:"Complete your first batch of waldglas or crystal.",
+   img_id:"ach_ignis_mutat_res", available:true},
+
+  {id:"tercikár", icon:"🪟", cat:"production",
+   cs:"Terčíkář", en:"Window-Disc Maker",
+   desc_cs:"Okenní terčíky Ø8–10 cm. Nejmasovější sortiment každé hutě v Čechách. Nepodařené kusy se neházely — specialista je přímo na místě přetvaroval na výplňové tvary.",
+   desc_en:"Window discs Ø8–10 cm. The most mass-produced item of every Bohemian foundry. Rejects weren't discarded — a specialist reshaped them as filler pieces on site.",
+   latin:"Vitrum fenestrale",
+   src_cs:"Vepřeková, Pražský hrad 2015",
+   src_en:"Vepřeková, Prague Castle 2015",
+   hint_cs:"Prodej okenní terčíky (kristal/waldglas panel).",
+   hint_en:"Sell window disc panels.",
+   img_id:"ach_tercikár", available:false,
+   future_cs:"Terčíky jako produkt — přijde v další verzi",
+   future_en:"Window discs as product — coming in next version"},
+
+  {id:"speculum", icon:"🪞", cat:"production",
+   cs:"Speculum", en:"Speculum",
+   desc_cs:"Zrcadlo — luxus, který si málokdo mohl dovolit. Zadní strana: amalgám rtuti a cínu. Rtuť bylo nutné dovézt — bez kupce žádné zrcadlo.",
+   desc_en:"A mirror — a luxury few could afford. Rear side: mercury-tin amalgam. Mercury had to be imported — no merchant, no mirror.",
+   latin:"Speculum — fortuna vitrea est",
+   src_cs:"Vepřeková, CP_13II2015",
+   src_en:"Vepřeková, CP_13II2015",
+   hint_cs:"Vyžaduje rtuť od kupce a čiré sklo.",
+   hint_en:"Requires mercury from merchant and clear glass.",
+   img_id:"ach_speculum", available:false,
+   future_cs:"Zrcadla jako produkt — přijde v další verzi",
+   future_en:"Mirrors as product — coming in next version"},
+
+  {id:"kunckel", icon:"💎", cat:"production",
+   cs:"Kunkelovo tajemství", en:"Kunckel's Secret",
+   desc_cs:"Zlatý rubín — barva se tvoří až při řízeném chladnutí. Koloidní nanočástice zlata krystalizují v tavenině. Kunckel popsal postup v Ars Vitraria Experimentalis (1679). Zlato musí být přesně dávkováno — jinak rubín nevznikne.",
+   desc_en:"Gold ruby — the colour forms only during controlled cooling. Colloidal gold nanoparticles crystallise in the melt. Kunckel described the process in Ars Vitraria Experimentalis (1679). Gold must be precisely dosed — otherwise no ruby.",
+   latin:"Donec fiat vitrum pellucidum",
+   src_cs:"Kunckel 1679, Babořák 2023",
+   src_en:"Kunckel 1679, Babořák 2023",
+   hint_cs:"Uspěj s rubínovým sklem (strike glass).",
+   hint_en:"Successfully produce ruby glass (strike glass).",
+   img_id:"ach_kunckel", available:true},
+
+  {id:"reticello", icon:"🕸️", cat:"production",
+   cs:"Vetro a reticello", en:"Vetro a reticello",
+   desc_cs:"Nejsložitější filigránové sklo — dvě zkřížené vrstvy kroucených nitek vytvářejí síťový vzor. Tyčinky musí být přesně seřazeny a nataveny. V Čechách od přelomu 17. stol. — novinka roku 1680.",
+   desc_en:"The most complex filigree glass — two crossed layers of twisted threads form a net pattern. Canes must be precisely aligned and fused. In Bohemia from the turn of the 17th century — a novelty in 1680.",
+   latin:"Vetro a reticello — Murano",
+   src_cs:"Whitty, Istituto Veneto 2015",
+   src_en:"Whitty, Istituto Veneto 2015",
+   hint_cs:"Filigrán — přijde v další verzi.",
+   hint_en:"Filigree glass — coming in next version.",
+   img_id:"ach_reticello", available:false,
+   future_cs:"Filigránové sklo — přijde v další verzi",
+   future_en:"Filigree glass — coming in next version"},
+
+  // ── Technologické přechody ──
+  {id:"barokni_prelom", icon:"⚗️", cat:"tech",
+   cs:"Barokní přelom", en:"Baroque Turning Point",
+   desc_cs:"Kolem roku 1680 přešly čechy od renesanční technologie (draselno-vápenatá s bukovým popelem) na barokní sklo bez popela — čistý křišťál vhodný pro broušení a rytí. Přelom dvou epoch v jedné dílně.",
+   desc_en:"Around 1680 Bohemia shifted from Renaissance technology (potash-lime with beech ash) to Baroque glass without ash — pure crystal suitable for cutting and engraving. The turning point of two epochs in one workshop.",
+   latin:"In igne probatur",
+   src_cs:"Sedláčková & Rohanová, Istituto Veneto 2015",
+   src_en:"Sedláčková & Rohanová, Istituto Veneto 2015",
+   hint_cs:"Přijde v další verzi — technologie barokního skla.",
+   hint_en:"Coming in next version — Baroque glass technology.",
+   img_id:"ach_barokni_prelom", available:false,
+   future_cs:"Barokní technologie — přijde v další verzi",
+   future_en:"Baroque technology — coming in next version"},
+
+  {id:"ceska_pec", icon:"🏗️", cat:"tech",
+   cs:"Česká pec", en:"Bohemian Furnace",
+   desc_cs:"Centrální rošt po celé délce tavicí pece umožňuje spalování velkých polen — spotřeba dřeva klesá o 50 %. Konec 17. stol. — technologická revoluce. V roce 1680 ještě novinka.",
+   desc_en:"A central grate along the full length of the melting furnace enables burning of large logs — wood consumption drops by 50%. End of 17th century — a technological revolution. In 1680 still a novelty.",
+   latin:"Clarior e tenebris",
+   src_cs:"Valentová 2019, Kunckel 1689",
+   src_en:"Valentová 2019, Kunckel 1689",
+   hint_cs:"Přijde v další verzi — upgrade stavebního stromu.",
+   hint_en:"Coming in next version — building tree upgrade.",
+   img_id:"ach_ceska_pec", available:false,
+   future_cs:"Česká pec — přijde v další verzi",
+   future_en:"Bohemian furnace — coming in next version"},
+
+  {id:"cerenic_arsenem", icon:"🧪", cat:"tech",
+   cs:"Čeřič arsenem", en:"Arsenic Finer",
+   desc_cs:"Arsenový oxid (As₂O₃) — nejúčinnější čeřidlo, 0,1–1 % hmotnosti. Odstraňuje bubliny a dekoloruje zbytkové železo. V Čechách od cca 1680. Vzácný, jedovatý, nepostradatelný pro křišťál.",
+   desc_en:"Arsenic oxide (As₂O₃) — the most effective fining agent, 0.1–1% by weight. Removes bubbles and decolours residual iron. In Bohemia from ca. 1680. Rare, toxic, indispensable for crystal.",
+   latin:"Solve et coagula",
+   src_cs:"Hujová & Vernerová 2017, Sedláčková 2015",
+   src_en:"Hujová & Vernerová 2017, Sedláčková 2015",
+   hint_cs:"Přijde v další verzi — čeřidlo arsen.",
+   hint_en:"Coming in next version — arsenic fining agent.",
+   img_id:"ach_cerenic_arsenem", available:false,
+   future_cs:"Čeření arsenem — přijde v další verzi",
+   future_en:"Arsenic fining — coming in next version"},
+
+  // ── Obchodní a sociální ──
+  {id:"vilkum", icon:"🏰", cat:"trade",
+   cs:"Vilkum", en:"Vilkum",
+   desc_cs:"Vítací pohár — reprezentativní sklo s erbem, datem a nápisem. Pohár nesměl chybět u žádného důležitého aktu stvrzeného přípitkem. Symbol rodu, výzva pro skláře.",
+   desc_en:"Welcome goblet — representational glass with coat of arms, date and inscription. No important occasion sealed with a toast was complete without a goblet. Symbol of the house, a challenge for the glassmaker.",
+   latin:"Vivas multis annis",
+   src_cs:"Vepřeková, CP_13II2015",
+   src_en:"Vepřeková, CP_13II2015",
+   hint_cs:"Splň šlechtickou zakázku na rytý pohár s erbem.",
+   hint_en:"Fulfil a noble contract for an engraved goblet with crest.",
+   img_id:"ach_vilkum", available:true},
+
+  {id:"kobaltova_serie", icon:"💙", cat:"trade",
+   cs:"Kobaltová série", en:"Cobalt Series",
+   desc_cs:"Sériová výroba kobaltového skla — historicky doložena. Novokřtěnci ve Strachotíně měli sérii 15+ kobaltových džbánků. Kobalt ze Saska — dálkový obchod jako základ průmyslu.",
+   desc_en:"Serial production of cobalt glass — historically documented. Anabaptists at Strachotín had a series of 15+ cobalt jugs. Cobalt from Saxony — long-distance trade as the basis of industry.",
+   latin:"Corpus fit vitrum",
+   src_cs:"Sedláčková, CP_13II2015",
+   src_en:"Sedláčková, CP_13II2015",
+   hint_cs:"Prodej celkem 15 nebo více kusů kobaltového skla.",
+   hint_en:"Sell a total of 15 or more pieces of cobalt glass.",
+   img_id:"ach_kobaltova_serie", available:true},
+
+  {id:"faccon_de_venise", icon:"👑", cat:"trade",
+   cs:"À la façon de Venise", en:"À la façon de Venise",
+   desc_cs:"Sklo v benátském stylu — na celé Evropě se kopírovala benátská produkce. Čeští skláři pracovali s 'krátkým' draselno-vápenatým sklem místo sody, přesto zvládli napodobit benátské tvary.",
+   desc_en:"Glass in the Venetian style — Venetian production was copied across all of Europe. Bohemian glassmakers worked with 'short' potash-lime glass instead of soda, yet managed to imitate Venetian forms.",
+   latin:"Omnia in vitrum transeunt",
+   src_cs:"Vepřeková, CP_13II2015; Valentová 2019",
+   src_en:"Vepřeková, CP_13II2015; Valentová 2019",
+   hint_cs:"Splň obchodní endgame zakázku (Hoffmann/export).",
+   hint_en:"Complete the trade endgame contract (Hoffmann/export).",
+   img_id:"ach_faccon_de_venise", available:true},
+
+  // ── Speciální / meta ──
+  {id:"relikvar", icon:"⛪", cat:"endgame",
+   cs:"Relikviář", en:"Reliquary",
+   desc_cs:"Kompletní skleněná schránka pro ostatky — kobalt, křišťál, rubínový panel. Klášterní zakázka nejvyšší třídy.",
+   desc_en:"Complete glass relic shrine — cobalt, crystal, ruby panel. Monastery commission of the highest order.",
+   latin:"Pie zeses",
+   hint_cs:"Splň klášterní endgame zakázku.",
+   hint_en:"Complete the monastery endgame contract.",
+   img_id:"ach_relikvar", available:true},
+
+  {id:"lustr", icon:"🕯️", cat:"endgame",
+   cs:"Lustr Harrachů", en:"Harrach Chandelier",
+   desc_cs:"Kompletní lustrová sada pro velký sál — broušené díly, kobaltové poháry, rytý pohár s erbem. Arnsdorfské sklo ozdobí sál po generace.",
+   desc_en:"Complete chandelier set for the great hall — cut parts, cobalt goblets, engraved goblet with crest. Arnsdorf glass will grace this hall for generations.",
+   latin:"Fortuna vitrea est; tum cum splendet, frangitur",
+   hint_cs:"Splň šlechtickou endgame zakázku.",
+   hint_en:"Complete the noble endgame contract.",
+   img_id:"ach_lustr", available:true},
+
+  {id:"export_drezdany", icon:"🌍", cat:"endgame",
+   cs:"Export — Drážďany", en:"Export — Dresden",
+   desc_cs:"Konzistentní kvalita na zahraničním trhu. Hoffmann potvrdil: české křišťálové sklo konkuruje Benátkám.",
+   desc_en:"Consistent quality on the foreign market. Hoffmann confirmed: Bohemian crystal glass rivals Venice.",
+   latin:"Clarior e tenebris",
+   hint_cs:"Splň exportní endgame zakázku.",
+   hint_en:"Complete the export endgame contract.",
+   img_id:"ach_export_drezdany", available:true},
+];
+
+// ── WIKI ENTRIES ──────────────────────────────────────────────────────────────
+const WIKI_ENTRIES={
+  waldglas:{
+    icon:"🟫", cs:"Lesní sklo (Waldglas)", en:"Forest Glass (Waldglas)",
+    body_cs:"Základní produkt každé lesní hutě. Draselno-vápenatá sklovina s bukovým popelem — přirozeně nazelenalá kvůli obsahu oxidu železitého v písku. Bez čeřidla. Levné, rychlé, dostupné.",
+    body_en:"The basic product of every forest foundry. Potash-lime glass with beech ash — naturally greenish due to iron oxide in the sand. No fining agent. Cheap, fast, available.",
+    src_cs:"Valentová 2019, Sedláčková 2015",
+    src_en:"Valentová 2019, Sedláčková 2015",
+    trigger:"first_waldglas"},
+
+  crystal:{
+    icon:"✨", cs:"Křišťál", en:"Crystal",
+    body_cs:"Čisté průhledné sklo — dosáhne se pouze čeřením (burel MnO₂ nebo antimon). Čistší písek (pureSand), rafinovaná potaš. Základ pro broušení, rytí a luxusní výrobky. V roce 1680 přechod na technologii bez popela.",
+    body_en:"Pure transparent glass — achieved only through fining (burel MnO₂ or antimony). Cleaner sand (pureSand), refined potash. Base for cutting, engraving and luxury products. In 1680 the shift to ash-free technology begins.",
+    src_cs:"Valentová 2019, Kunckel 1689",
+    src_en:"Valentová 2019, Kunckel 1689",
+    trigger:"first_crystal"},
+
+  modra:{
+    icon:"🔵", cs:"Kobaltová modrá", en:"Cobalt Blue",
+    body_cs:"Šmolka (kobaltová ruda CoO) ze Saska. 0,1–0,3 % propůjčuje sklu sytou modř. Historicky doložena sériová výroba 15+ ks (novokřtěnci Strachotín). Dálkový obchod se surovinou.",
+    body_en:"Zaffre (cobalt ore CoO) from Saxony. 0.1–0.3% gives glass a rich blue. Series production of 15+ pieces historically documented (Anabaptists, Strachotín). Long-distance trade in the raw material.",
+    src_cs:"Sedláčková, CP_13II2015",
+    src_en:"Sedláčková, CP_13II2015",
+    trigger:"first_modra"},
+
+  smaragd:{
+    icon:"🟢", cs:"Smaragdová zeleň", en:"Emerald Green",
+    body_cs:"Pálená měď (aes ustum). Čeští skláři ji znali jako 'zelenou měď'. Stabilní, sytá barva. V kombinaci s CoO dává akvamarínový nádech.",
+    body_en:"Burnt copper (aes ustum). Bohemian glassmakers knew it as 'green copper'. Stable, rich colour. In combination with CoO gives an aquamarine hue.",
+    src_cs:"Valentová 2019",
+    src_en:"Valentová 2019",
+    trigger:"first_smaragd"},
+
+  lattimo:{
+    icon:"⚪", cs:"Lattimo — mléčné sklo", en:"Lattimo — Milk Glass",
+    body_cs:"Neprůhledné bílé sklo z cínu a olova. Základ benátských tyčinek pro filigrán. Název z italského 'latte' (mléko). Luxusní, vzácné, žádané pro napodobeniny porcelánu.",
+    body_en:"Opaque white glass from tin and lead. The base of Venetian canes for filigree. Name from Italian 'latte' (milk). Luxury, rare, sought-after for porcelain imitation.",
+    src_cs:"Whitty, Istituto Veneto 2015",
+    src_en:"Whitty, Istituto Veneto 2015",
+    trigger:"first_lattimo"},
+
+  rubin:{
+    icon:"🔴", cs:"Zlatý rubín (Kunckel)", en:"Gold Ruby (Kunckel)",
+    body_cs:"Koloidní zlato — nanočástice krystalizují při řízeném chladnutí. 0,02 % Au dává rubínový odstín. Při tavení vypadá čiré — nevíš, zda se povedlo, dokud nevychladne. Kunckel popsal postup v Ars Vitraria Experimentalis 1679.",
+    body_en:"Colloidal gold — nanoparticles crystallise during controlled cooling. 0.02% Au gives ruby shade. Looks clear during melting — you won't know if it worked until it cools. Kunckel described the process in Ars Vitraria Experimentalis 1679.",
+    src_cs:"Kunckel 1679, Babořák 2023",
+    src_en:"Kunckel 1679, Babořák 2023",
+    trigger:"first_rubin"},
+
+  jantar:{
+    icon:"🟤", cs:"Jantar — železná zeleň/hnědá", en:"Amber — iron green/brown",
+    body_cs:"Crocus Martis (oxid železitý Fe₂O₃) v lesním skle. Přirozená barva díky nečistotám v písku — nebo záměrně přidaná. Oxidační atmosféra pece = hnědá, redukční = zelená.",
+    body_en:"Crocus Martis (iron oxide Fe₂O₃) in forest glass. Natural colour from sand impurities — or deliberately added. Oxidising furnace atmosphere = brown, reducing = green.",
+    src_cs:"Valentová 2019, Hujová 2017",
+    src_en:"Valentová 2019, Hujová 2017",
+    trigger:"first_jantar"},
+
+  potash:{
+    icon:"🌿", cs:"Potaš (K₂CO₃)", en:"Potash (K₂CO₃)",
+    body_cs:"Základní tavidlo české hutě — loužení bukového popela. Tři kvality: černá (surová) → modrá (obyčejné sklo) → bílá (vícenásobné loužení, křišťál). 10 tun dřeva → 100 kg popela → 3 kg potaše.",
+    body_en:"The primary flux of the Bohemian foundry — leaching of beech ash. Three qualities: black (raw) → blue (ordinary glass) → white (multiple leeching, crystal). 10 tonnes of wood → 100 kg ash → 3 kg potash.",
+    src_cs:"Valentová 2019, otcovy poznámky",
+    src_en:"Valentová 2019, father's notes",
+    trigger:"res_potash"},
+
+  panev:{
+    icon:"🏺", cs:"Sklářská pánev", en:"Glass Crucible",
+    body_cs:"Šamotová nádoba pro tavení skla. Zrání trvá 6 měsíců — pánev se musí pomalu vypalovat a 'učit' pracovat s žárem. V kampani vydrží 2–3 měsíce při kontinuálním provozu. Praskne-li voda při procesu — katastrofa.",
+    body_en:"Refractory crucible for glass melting. Ageing takes 6 months — the crucible must be slowly fired and 'taught' to work with heat. In the campaign it lasts 2–3 months of continuous operation. Water added during the process — catastrophe.",
+    src_cs:"Valentová 2019, otcovy poznámky",
+    src_en:"Valentová 2019, father's notes",
+    trigger:"first_panev"},
+
+  endgame_church:{
+    icon:"⛪", cs:"Relikviář — klášterní zakázka", en:"Reliquary — Monastery Commission",
+    body_cs:"Skleněná schránka pro ostatky — kombinace křišťálu, kobaltu a rubínu. Klášterní liturgické sklo bylo z nejprestižnějších objednávek. Sklo jako 'zamrzlé světlo'.",
+    body_en:"Glass relic shrine — combination of crystal, cobalt and ruby. Monastery liturgical glass was among the most prestigious commissions. Glass as 'frozen light'.",
+    src_cs:"Vepřeková, CP_13II2015",
+    src_en:"Vepřeková, CP_13II2015",
+    trigger:"endgame_church"},
+
+  endgame_noble:{
+    icon:"⚔️", cs:"Lustr — šlechtická zakázka", en:"Chandelier — Noble Commission",
+    body_cs:"Lustrové díly, kobaltové poháry, rytý pohár s erbem. Pohár na hodovní tabuli panovníka — symbol rodu po generace. Rytina diamantem = novinka roku 1680.",
+    body_en:"Chandelier parts, cobalt goblets, engraved goblet with crest. Goblet on the ruler's banqueting table — a symbol of the house for generations. Diamond engraving = a novelty of 1680.",
+    src_cs:"Vepřeková, CP_13II2015",
+    src_en:"Vepřeková, CP_13II2015",
+    trigger:"endgame_noble"},
+
+  endgame_trade:{
+    icon:"🌍", cs:"Export — drážďanský dvůr", en:"Export — Dresden Court",
+    body_cs:"Konzistentní série pro zahraniční trh. České křišťálové sklo 17. stol. konkurovalo Benátkám — tvrdší, vhodné pro broušení, 'krátké' ale mistrovské.",
+    body_en:"Consistent series for the foreign market. Bohemian crystal glass of the 17th century rivalled Venice — harder, suitable for cutting, 'short' but masterly.",
+    src_cs:"Sedláčková 2015, Valentová 2019",
+    src_en:"Sedláčková 2015, Valentová 2019",
+    trigger:"endgame_trade"},
+
+  pec_primitive:{
+    icon:"🔥", cs:"Primitivní pec", en:"Primitive Furnace",
+    body_cs:"Střední Evropa 15.–16. stol. — oválný tvar, topný kanál ze kamenů, klenba z hlíny. Sklovina se tavila dvofázově (frita → dotavení). Závislá na větru pro tah. Max. teplota cca 1200 °C.",
+    body_en:"Central Europe 15th–16th c. — oval shape, stone firing channel, clay vault. Glass was melted in two phases (frit → final melt). Wind-dependent for draught. Max temperature ca. 1200°C.",
+    src_cs:"Valentová 2019",
+    src_en:"Valentová 2019",
+    trigger:"have_furnace"},
+
+  baranovsky:{
+    icon:"🧪", cs:"Baranovský — tajný rádce", en:"Baranovský — Secret Adviser",
+    body_cs:"Potulný znalec skla. Přináší recepty od Benátek po Saska. Kobalt, smaragd, lattimo, antimon — vše přes obchod a znalosti. Historický typ: putující sklář-podomní obchodník.",
+    body_en:"Itinerant glass expert. Brings recipes from Venice to Saxony. Cobalt, emerald, lattimo, antimony — all through trade and knowledge. Historical type: travelling glassmaker-pedlar.",
+    src_cs:"Kunckel 1679",
+    src_en:"Kunckel 1679",
+    trigger:"met_baranovsky"},
+};
+
+// ── ACHIEVEMENT CHECKER ──────────────────────────────────────────────────────
+function checkAchievements(){
+  const ach=G.achievements||[];
+  const wiki=G.wikiDiscovered||[];
+  const add=(id)=>{ if(!ach.includes(id)){ach.push(id);G.log.push(`__EVT__🏆 ${G.lang==="cs"?"Splněno:":"Achieved:"} ${ACHIEVEMENTS.find(a=>a.id===id)?.[G.lang==="cs"?"cs":"en"]||id}`);} };
+  const addW=(id)=>{ if(!wiki.includes(id)) wiki.push(id); };
+
+  // Wikis — automaticky podle stavu
+  if(G.waldglas?.length>0||G.tW>0){ addW("waldglas"); }
+  if(G.crystal?.length>0||G.tC>0){ addW("crystal"); }
+  if(G.modra?.length>0){ addW("modra"); }
+  if(G.smaragd?.length>0){ addW("smaragd"); }
+  if(G.lattimo?.length>0){ addW("lattimo"); }
+  if(G.rubin?.length>0){ addW("rubin"); }
+  if(G.jantar?.length>0){ addW("jantar"); }
+  if((G.res?.potash||0)>0||G.tW>0){ addW("potash"); }
+  if(G.pReady>0||G.pAging?.length>0){ addW("panev"); }
+  if(G.furnace){ addW("pec_primitive"); addW("have_furnace"); }
+  if(G.baranOffer!==undefined){ addW("baranovsky"); }
+  if(G.endgame?.church){ addW("endgame_church"); }
+  if(G.endgame?.noble){ addW("endgame_noble"); }
+  if(G.endgame?.trade){ addW("endgame_trade"); }
+
+  // Achievements — triggery na stav
+  // Ignis mutat res — první várka
+  if((G.tW>0||G.tC>0)&&!ach.includes("ignis_mutat_res")) add("ignis_mutat_res");
+
+  // Kunckel — první rubín
+  if(G.rubin?.length>0&&!ach.includes("kunckel")) add("kunckel");
+
+  // Vilkum — rytý pohár (rytina_brus_pokal prodán nebo v zásobě)
+  const hasVilkum=(G.rytina_brus_pokal?.length>0||
+    G.log?.some(l=>l.includes("rytina_brus_pokal")||l.includes("Rytý poh")));
+  if(hasVilkum&&!ach.includes("vilkum")) add("vilkum");
+
+  // Kobaltová série — celkem ≥15 kobaltových kusů
+  const kobaltTotal=(G.modra?.length||0)+(G.cise_modra?.length||0)
+    +(G.dzban_modra?.length||0)+(G.pohar_modra?.length||0)+(G.dekantr_modra?.length||0)
+    +(G.log?.filter(l=>l.includes("modra")||l.includes("kobalt")).length||0);
+  if(kobaltTotal>=15&&!ach.includes("kobaltova_serie")) add("kobaltova_serie");
+
+  // À la façon de Venise — endgame trade splněn
+  if(G.endgame?.trade&&!ach.includes("faccon_de_venise")) add("faccon_de_venise");
+
+  // Relikviář
+  if(G.endgame?.church&&!ach.includes("relikvar")) add("relikvar");
+
+  // Lustr
+  if(G.endgame?.noble&&!ach.includes("lustr")) add("lustr");
+
+  // Export Drážďany
+  if(G.endgame?.trade&&!ach.includes("export_drezdany")) add("export_drezdany");
+
+  G.achievements=ach;
+  G.wikiDiscovered=wiki;
+}
+
+// ── INLINE SVG PLACEHOLDER ───────────────────────────────────────────────────
+function achPlaceholder(imgId, icon, label, unlocked){
+  // Vrací SVG placeholder — nahradit za <img src="..."> až budou obrázky
+  const bg=unlocked?"#2a1a08":"#1a1208";
+  const border=unlocked?"#c9952b":"#4a3020";
+  const textCol=unlocked?"#f0deb8":"#6a4830";
+  const glowCol=unlocked?"rgba(201,149,43,.25)":"transparent";
+  const el=document.createElement("div");
+  el.innerHTML=`<svg id="${imgId}" width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"
+    style="border-radius:8px;display:block;filter:${unlocked?"drop-shadow(0 0 6px "+glowCol+")":"grayscale(1) opacity(0.4)"}">
+    <rect width="80" height="80" rx="8" fill="${bg}" stroke="${border}" stroke-width="1.5"/>
+    <text x="40" y="36" text-anchor="middle" font-size="28" dominant-baseline="middle">${icon}</text>
+    <text x="40" y="62" text-anchor="middle" font-size="8" fill="${textCol}" font-family="Georgia,serif"
+      style="letter-spacing:.3px">${label.substring(0,14)}</text>
+    ${unlocked?`<circle cx="68" cy="12" r="7" fill="#c9952b"/><text x="68" y="12" text-anchor="middle" dominant-baseline="middle" font-size="9">✓</text>`:""}
+  </svg>`;
+  return el.firstElementChild;
+}
+
+// ── ENDGAME ITEM PLACEHOLDER ─────────────────────────────────────────────────
+function endgamePlaceholder(imgId, icon, label){
+  const el=document.createElement("div");
+  el.innerHTML=`<svg id="${imgId}" width="120" height="100" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"
+    style="border-radius:8px;display:block;filter:drop-shadow(0 2px 8px rgba(201,149,43,.3))">
+    <rect width="120" height="100" rx="8" fill="#1e1006" stroke="#c9952b" stroke-width="1.5"/>
+    <text x="60" y="42" text-anchor="middle" font-size="36" dominant-baseline="middle">${icon}</text>
+    <text x="60" y="76" text-anchor="middle" font-size="9" fill="#c9952b" font-family="Georgia,serif"
+      letter-spacing=".5">${label}</text>
+    <text x="60" y="88" text-anchor="middle" font-size="7" fill="rgba(240,222,184,.3)"
+      font-family="Georgia,serif">[ placeholder ]</text>
+  </svg>`;
+  return el.firstElementChild;
 }
 
 // ── INIT ──
