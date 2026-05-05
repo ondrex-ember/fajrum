@@ -1880,10 +1880,6 @@ function processRound(){
         cr.push(qc);tC++;tQS+=qc;tQN++;
         newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal"});
         log.push(`__PROD__✨ → slot ${si+1}: ${L==="cs"?"křišťál":"crystal"} ${stars(qc)}`);
-        if(pU<=0){
-          pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
-          log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
-        }
       }else{
         // waldglas (výchozí)
         if(fT<40){
@@ -1904,11 +1900,12 @@ function processRound(){
         wg.push(qw);tW++;tQS+=qw;tQN++;
         newActiveBatches.push({slot:si,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
         log.push(`__PROD__🔥 → slot ${si+1}: ${L==="cs"?"lesní sklo":"waldglas"} ${stars(qw)}`+(si===0?` (eff:${Math.round(fEff*100)}%)`:""));
-        if(pU<=0){
-          pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
-          log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
-        }
       }
+    }
+    // Crack check — jednou za kolo po všech slotech (ne per-slot)
+    if(fA&&pR>0&&pU<=0){
+      pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
+      log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
     }
   }else{
     // Příprava: pec chladne
