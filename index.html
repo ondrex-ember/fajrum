@@ -5604,7 +5604,7 @@ function render(){
             case "smaragd": return {c1:"#0a4a20",c2:"#083010",c3:"#20a040",glow:"#108030",speed:spd};
             case "lattimo": return {c1:"#c8c8c8",c2:"#a0a0a0",c3:"#f0f0f0",glow:"#e0e0e0",speed:spd};
             case "rubin":   return {c1:"#d4c080",c2:"#b09040",c3:"#fff0c0",glow:"#d4b060",speed:spd};
-            case "crystal": return {c1:"#c8d8e8",c2:"#a0b8c8",c3:"#e8f4ff",glow:"#d0e8ff",speed:spd};
+            case "crystal": return {c1:"#f0a030",c2:"#d07818",c3:"#ffd060",glow:"#f09020",speed:spd}; // křišťál — oranžovozlatá tavenina
           }
         }
         return spBase;
@@ -5623,7 +5623,8 @@ function render(){
 
       for(let si=0;si<furnSlots2;si++){
         const batch=activeBatches.find(b=>b.slot===si);
-        const colorKey=batch?batch.colorKey:(p._activeColorRecipe||"waldglas");
+        const slotTypeCfg=(p.furnSlotConfig&&p.furnSlotConfig[si])||"waldglas";
+        const colorKey=batch?batch.colorKey:(slotTypeCfg==="crystal"?"crystal":(p._activeColorRecipe||"waldglas"));
         const mc=colorKeyToMelt(colorKey,temp);
         const hasP=si<(p.pReady||0);
 
