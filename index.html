@@ -801,7 +801,8 @@ const TRAITS={
   obchodnik:{cs:"Obchodník",en:"Trader",      desc_cs:"Prodejní cena +10%",            desc_en:"Sell price +10%",             icon:"🗣️"},
   kovak:    {cs:"Kovák",    en:"Smith",       desc_cs:"Pánev kvalita +1",              desc_en:"Crucible quality +1",         icon:"🔨"},
   mlady:    {cs:"Mladík",   en:"Young",       desc_cs:"Levný, pomalý růst",            desc_en:"Cheap hire, slow growth",     icon:"🌱"},
-  houzevatny:{cs:"Houževnatý",en:"Stubborn",  desc_cs:"Nikdy neodejde, nelze propustit",desc_en:"Never leaves, can't fire",  icon:"⚓"}
+  houzevatny:{cs:"Houževnatý",en:"Stubborn",  desc_cs:"Nikdy neodejde, nelze propustit",desc_en:"Never leaves, can't fire",  icon:"⚓"},
+  filigranar: {cs:"Filigrán",   en:"Filigree",  desc_cs:"Umí pracovat s nitěmi a lattimem",desc_en:"Skilled with lattimo threads and filigree", icon:"🕸️"}
 };
 
 // ── NPC ROSTER — pevné postavy ──────────────────────────────
@@ -905,6 +906,14 @@ const NPC_ROSTER=[
    quote_cs:"Ženy foukají od pradávna. Jen se to neříká.",
    quote_en:"Women have always blown glass. It's just not spoken of.",
    hireCost:14, wageMod:0, portrait:"foukac4",  loyalty:85, health:88, mood:80, availRound:5, availSeason:1, gender:"f"},
+  {id:"npc_foukac5",name:"Elias Böhm",           prof:"foukat_kristal", lv:2, traits:["znalec","houzevatny"],
+   quote_cs:"Křišťál nesnáší spěch. Já taky ne.",
+   quote_en:"Crystal does not tolerate haste. Neither do I.",
+   hireCost:28, wageMod:2, portrait:"foukac2",  loyalty:70, health:85, mood:55, availRound:7, availSeason:2},
+  {id:"npc_foukac6",name:"Marie Wagnerová",      prof:"foukat_kristal", lv:1, traits:["ucitel","filigranar"],
+   quote_cs:"Benátská niť se neutrhne — pokud víte jak ji vést.",
+   quote_en:"The Venetian thread won't break — if you know how to guide it.",
+   hireCost:24, wageMod:1, portrait:"foukac4",  loyalty:75, health:90, mood:70, availRound:9, availSeason:2, gender:"f"},
   // ── BRUSIČI + RYTEC (od kola 7, sezóna 2) ─────────────────────────────────
   {id:"npc_hrana1", name:"Ignác Hranař",         prof:"brusic_hrana",   lv:1, traits:["pedant","znalec"],
    quote_cs:"Jeden špatný tah a střep je na odpis. Rychlost není ctnost.",
@@ -1463,7 +1472,9 @@ function initState(){
     jantar:[], modra:[], smaragd:[], lattimo:[], rubin:[],
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
     unlockedRecipes:["jantar"], // jantar je dostupný od začátku — přirozená barva lesní huti
-    _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi
+    furnSlotConfig:["waldglas","waldglas","waldglas","waldglas"], // hráč volí typ pro každý slot
+    _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi (co JE v pánvi)
+    _nextColorRecipe:null,   // příští várka — co hráč vybral (změní se při prázdné pánvi)
     activeBatches:[], // [{slot:0, type:"waldglas"|"crystal"|"modra"|..., color:meltColorObj}]
     _strikeQueue:null, // pending rubín strike — {q, chance, tempAtStrike}
     // Baranovský — aktuální nabídka
@@ -1790,6 +1801,10 @@ function processRound(){
 
   // 3. Kampaň — pec
   let newActiveBatches=[]; // aktivní várky — deklarujeme vždy, plníme jen v kampani
+  // Přepni barvu skloviny: _next → _active pouze když pec začíná prázdnou pánev
+  if(isC && (!p.activeBatches || p.activeBatches.length===0)){
+    p._activeColorRecipe = p._nextColorRecipe || null;
+  }
   if(isC){
     // Šamot degraduje v kampani (zima je náročnější)
     const shamotDeg=round>=6?3:1;
@@ -1832,67 +1847,68 @@ function processRound(){
       log.push(`__EVT__⚠️ ${L==="cs"?"Šamot kriticky opotřeben! Opravit v mezisezóně.":"Shamot critically worn! Repair between seasons."}`);
     }
 
-    // Kolo 1 — Waldglas (slot 1 — vždy dostupný)
+    // Slot loop — hráč volí typ každého slotu přes furnSlotConfig
     const furnSlots=ft.maxSlots||1;
+    if(!p.furnSlotConfig||p.furnSlotConfig.length!==furnSlots){
+      p.furnSlotConfig=Array(furnSlots).fill("waldglas");
+    }
+    const slotCfg=p.furnSlotConfig;
+    const znalecPresent=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle");
     let usedSlots=0;
-    if(fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
-      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
-      const q=qRoll(tAcc(fT),fEff*3,mor,pQ);
-      wg.push(q);tW++;tQS+=q;tQN++;
-      newActiveBatches.push({slot:0,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
-      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo":"waldglas"} ${stars(q)} (eff:${Math.round(fEff*100)}%)`);
-      if(pU<=0){
-        pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;
-        mor-=4;
-        log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
-        if(pR>0)pQ=Math.max(1,pQ-1);
-      }
-    }else if(fA&&fT>=40&&pR<=0){
-      log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
-    }
+    let noMoreCrucibles=false;
 
-    // Slot 2 — druhá waldglas várka (stone+)
-    if(furnSlots>=2&&usedSlots<furnSlots&&fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
-      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
-      const q2=qRoll(tAcc(fT),fEff*3,mor,pQ);
-      wg.push(q2);tW++;tQS+=q2;tQN++;
-      newActiveBatches.push({slot:1,type:"waldglas",colorKey:"waldglas"});
-      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo (slot 2)":"waldglas (slot 2)"} ${stars(q2)}`);
-      if(pU<=0){
-        pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;
-        mor-=4;
-        log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla (slot 2)":"Crucible cracked (slot 2)"} → +1 šamot`);
-        if(pR>0)pQ=Math.max(1,pQ-1);
+    for(let si=0;si<furnSlots;si++){
+      if(!fA)break;
+      const sType=slotCfg[si]||"waldglas";
+      if(sType==="crystal"){
+        if(fT<65){
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": křišťál — min 65% teplota ("+fT+"%)":"Slot "+(si+1)+": crystal — min 65% temp ("+fT+"%)"}`);
+          newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal",blocked:true});
+          usedSlots++;continue;
+        }
+        if(!r.pureSand||r.pureSand<3||!r.refinedPotash||r.refinedPotash<2||r.limestone<1||r.charcoal<1){
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": křišťál — chybí suroviny (pureSand/refinedPotash/charcoal)":"Slot "+(si+1)+": crystal — missing materials"}`);
+          newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal",blocked:true});
+          usedSlots++;continue;
+        }
+        if(pR<=0){
+          if(!noMoreCrucibles)log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
+          noMoreCrucibles=true;break;
+        }
+        r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;pU--;usedSlots++;
+        const qc=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+(znalecPresent?1:0),1,5);
+        cr.push(qc);tC++;tQS+=qc;tQN++;
+        newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal"});
+        log.push(`__PROD__✨ → slot ${si+1}: ${L==="cs"?"křišťál":"crystal"} ${stars(qc)}`);
+        if(pU<=0){
+          pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
+          log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
+        }
+      }else{
+        // waldglas (výchozí)
+        if(fT<40){
+          newActiveBatches.push({slot:si,type:"waldglas",colorKey:"waldglas",blocked:true});
+          usedSlots++;continue;
+        }
+        if(r.sand<3||r.potash<2||r.limestone<1||r.water<1){
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": waldglas — chybí suroviny":"Slot "+(si+1)+": waldglas — missing materials"}`);
+          newActiveBatches.push({slot:si,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas",blocked:true});
+          usedSlots++;continue;
+        }
+        if(pR<=0){
+          if(!noMoreCrucibles)log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
+          noMoreCrucibles=true;break;
+        }
+        r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
+        const qw=qRoll(tAcc(fT),fEff*3,mor,pQ);
+        wg.push(qw);tW++;tQS+=qw;tQN++;
+        newActiveBatches.push({slot:si,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
+        log.push(`__PROD__🔥 → slot ${si+1}: ${L==="cs"?"lesní sklo":"waldglas"} ${stars(qw)}`+(si===0?` (eff:${Math.round(fEff*100)}%)`:""));
+        if(pU<=0){
+          pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
+          log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
+        }
       }
-    }
-
-    // Kolo 3 — Křišťál
-    if(usedSlots<furnSlots&&fA&&fT>=65&&pR>0&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
-      r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
-      const znalecBonus=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle")?1:0;
-      const q=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+znalecBonus,1,5);
-      cr.push(q);tC++;tQS+=q;tQN++;
-      newActiveBatches.push({slot:usedSlots-1,type:"crystal",colorKey:"crystal"});
-      log.push(`__PROD__✨ → 1× ${L==="cs"?"křišťál":"crystal"} ${stars(q)}`);
-    }else if(fA&&fT>=65&&usedSlots>=furnSlots&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
-      log.push(`__PROD__⛔ ${L==="cs"?"Křišťál čeká — pec plně obsazena ("+furnSlots+" slotů)":"Crystal waiting — furnace full ("+furnSlots+" slots)"}`);
-    }
-    // Sloty 3+4 — master pec
-    if(furnSlots>=3&&usedSlots<furnSlots&&fA&&fT>=40&&pR>0&&r.sand>=3&&r.potash>=2&&r.limestone>=1&&r.water>=1){
-      r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
-      const q3=qRoll(tAcc(fT),fEff*3,mor,pQ);
-      wg.push(q3);tW++;tQS+=q3;tQN++;
-      newActiveBatches.push({slot:2,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
-      log.push(`__PROD__🔥 → 1× ${L==="cs"?"lesní sklo (slot 3)":"waldglas (slot 3)"} ${stars(q3)}`);
-      if(pU<=0){pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);}
-    }
-    if(furnSlots>=4&&usedSlots<furnSlots&&fA&&fT>=65&&pR>0&&r.pureSand>=3&&r.refinedPotash>=2&&r.limestone>=1&&r.charcoal>=1){
-      r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
-      const znalecBonus2=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle")?1:0;
-      const q4=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+znalecBonus2,1,5);
-      cr.push(q4);tC++;tQS+=q4;tQN++;
-      newActiveBatches.push({slot:3,type:"crystal",colorKey:"crystal"});
-      log.push(`__PROD__✨ → 1× ${L==="cs"?"křišťál (slot 4)":"crystal (slot 4)"} ${stars(q4)}`);
     }
   }else{
     // Příprava: pec chladne
@@ -2410,6 +2426,7 @@ function processRound(){
     waldglas:wg, crystal:cr, mBonus:mB,
     tW, tC, tQS, tQN, done, contracts:con, repContracts:newRepCon, workers:wk, shop:genShop(),
     activeBatches:newActiveBatches,
+    furnSlotConfig:p.furnSlotConfig,
     reforestWorkers:(G.reforestWorkers||0)+reforestCount,
     unlockedRecipes:unl,
     formyAging:[], // formy jsou okamžité — queue vždy prázdná
@@ -2533,6 +2550,8 @@ function workerAssessment(w,L){
     npc_foukac2: {cs:"Glaser je precizní. Saský způsob — tvrdší, ale čistší.", en:"Glaser is precise. Saxon method — harder, but cleaner."},
     npc_foukac3: {cs:"Sklenář roste rychle. Chybuje, ale nikdy dvakrát stejně.",en:"Sklenář grows fast. Makes mistakes, never the same one twice."},
     npc_foukac4: {cs:"Sklenářová prodá víc než ostatní dohromady. A ví to.",  en:"Sklenářová sells more than the rest combined. She knows it."},
+    npc_foukac5: {cs:"Böhm na houby nechodí. Böhm na houby nechodí ani omylem.",      en:"Böhm doesn't wander. He has never done anything by accident."},
+    npc_foukac6: {cs:"Wagnerová odemkla recept, který si Benátčané střežili sto let.", en:"Wagnerová unlocked a recipe Venetians guarded for a century."},
     npc_hrana1:  {cs:"Hranař brousí s modlitbou. Jeden špatný tah ho bolí.",  en:"Hranař grinds like prayer. One bad stroke hurts him."},
     npc_kulic1:  {cs:"Kuličková je vytrvalá. Nikdy si nestěžuje, nikdy nepřestane.",en:"Kuličková is relentless. Never complains, never stops."},
     npc_rytec1:  {cs:"Rytíř rytím žije. Všechno ostatní je jen čekání.",      en:"Rytíř lives for engraving. Everything else is just waiting."},
@@ -5542,6 +5561,8 @@ function render(){
             case "modra":   return {c1:"#0a1a5a",c2:"#08103a",c3:"#2040a0",glow:"#1030c0",speed:spd};
             case "smaragd": return {c1:"#0a4a20",c2:"#083010",c3:"#20a040",glow:"#108030",speed:spd};
             case "lattimo": return {c1:"#c8c8c8",c2:"#a0a0a0",c3:"#f0f0f0",glow:"#e0e0e0",speed:spd};
+            // Křišťál — čirá oranžovozlatá tavenina (draselné sklo bez Fe nečistot)
+            case "crystal": return {c1:"#f0a030",c2:"#d07818",c3:"#ffd060",glow:"#f09020",speed:spd};
             // Rubín — při tavení ČIRÁ/nažloutlá (strike glass — barva se tvoří až při chladnutí!)
             case "rubin":   return {c1:"#d4c080",c2:"#b09040",c3:"#fff0c0",glow:"#d4b060",speed:spd};
           }
@@ -5670,6 +5691,8 @@ function render(){
 
         slotDiv.appendChild(rimDiv);
         slotDiv.appendChild(innerDiv);
+
+
         gridWrap.appendChild(slotDiv);
       }
       leftWrap.appendChild(gridWrap);
@@ -5849,6 +5872,53 @@ function render(){
 
     // Odemčené recepty
     const unlockedColors=Object.entries(COLOR_RECIPES).filter(([k])=>p.unlockedRecipes?.includes(k));
+    // Typ skloviny per-slot — kompaktní 2×2 grid (varianta B)
+    const furnSlotsN=ft.maxSlots||1;
+    if(!p.furnSlotConfig||p.furnSlotConfig.length!==furnSlotsN){
+      p.furnSlotConfig=Array(furnSlotsN).fill("waldglas");
+    }
+    const canCrystalUI=p.workers.some(w=>(w.prof==="foukat_kristal"||w.prof==="tavic")&&w.task!=="idle");
+    const slotTypeBox=h("div",{style:{marginBottom:"8px",padding:"6px 8px",background:"rgba(42,26,10,.05)",
+      borderRadius:"4px",border:"1px solid rgba(42,26,10,.12)"}});
+    slotTypeBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
+      "🏺 "+(L==="cs"?"Typ skloviny v pánvi:":"Glass type per crucible:")));
+    const slotGrid=h("div",{style:{
+      display:"grid",
+      gridTemplateColumns:furnSlotsN>=2?"1fr 1fr":"1fr",
+      gap:"4px"
+    }});
+    for(let sj=0;sj<furnSlotsN;sj++){
+      const sType=p.furnSlotConfig[sj]||"waldglas";
+      const row=h("div",{style:{display:"flex",alignItems:"center",gap:"3px"}});
+      row.append(h("span",{style:{fontSize:"9px",color:"#8b5e34",minWidth:"20px"}},"🏺"+(sj+1)));
+      const bWald=h("button",{
+        class:"btn btn-s"+(sType==="waldglas"?" btn-active":""),
+        style:{fontSize:"9px",padding:"2px 6px"},
+        onClick:()=>{
+          if(!G.furnSlotConfig)G.furnSlotConfig=Array(furnSlotsN).fill("waldglas");
+          G.furnSlotConfig[sj]="waldglas";autoSave();render();
+        }},"🔥 Wald");
+      const bKris=h("button",{
+        class:"btn btn-s"+(sType==="crystal"?" btn-active":""),
+        style:{fontSize:"9px",padding:"2px 6px",opacity:canCrystalUI?1:0.4},
+        title:canCrystalUI
+          ?(L==="cs"?"Křišťál: čistý písek + čistá potaš + uhlí":"Crystal: pureSand + refinedPotash + charcoal")
+          :(L==="cs"?"Vyžaduje foukače křišťálu (Trh)":"Requires crystal blower (Market)"),
+        onClick:()=>{
+          if(!canCrystalUI)return;
+          if(!G.furnSlotConfig)G.furnSlotConfig=Array(furnSlotsN).fill("waldglas");
+          G.furnSlotConfig[sj]="crystal";autoSave();render();
+        }},"✨ Kris");
+      row.append(bWald,bKris);
+      slotGrid.append(row);
+    }
+    slotTypeBox.append(slotGrid);
+    if(!canCrystalUI){
+      slotTypeBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",marginTop:"4px"}},
+        L==="cs"?"✨ Křišťál: najmout foukače křišťálu na Trhu":"✨ Crystal: hire crystal blower at Market"));
+    }
+    colorSec.append(slotTypeBox);
+
     // Selector aktivního receptu pro barvu skloviny v pánvi
     if(unlockedColors.length>0){
       const atmBox=h("div",{style:{marginBottom:"8px",padding:"6px 8px",background:"rgba(42,26,10,.05)",
@@ -5858,21 +5928,30 @@ function render(){
       const atmRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
       // Výchozí (bez barvení)
       const dfBtn=h("button",{
-        class:"btn btn-s"+((!p._activeColorRecipe)?" btn-active":""),
-        onClick:()=>{G._activeColorRecipe=null;render();}},
+        class:"btn btn-s"+((!p._nextColorRecipe&&!p._activeColorRecipe)?" btn-active":""),
+        onClick:()=>{G._nextColorRecipe=null;if(!G.activeBatches?.length){G._activeColorRecipe=null;}render();}},
         "🔥 "+(L==="cs"?"Waldglas":"Waldglas"));
       atmRow.append(dfBtn);
       unlockedColors.forEach(([key,rec])=>{
-        const active=p._activeColorRecipe===key;
+        const active=p._nextColorRecipe===key||(p._activeColorRecipe===key&&!p._nextColorRecipe);
+        const isBusy=!!(G.activeBatches?.length>0);
         atmRow.append(h("button",{
           class:"btn btn-s"+(active?" btn-active":""),
           style:{fontSize:"10px"},
-          onClick:()=>{G._activeColorRecipe=active?null:key;render();}},
+          onClick:()=>{G._nextColorRecipe=active?null:key;if(!isBusy){G._activeColorRecipe=G._nextColorRecipe;}render();}},
           rec.icon+" "+(L==="cs"?rec.cs.split(" ")[0]:rec.en.split(" ")[0])));
       });
       atmBox.append(atmRow);
-      atmBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
-        L==="cs"?"Výběr barví pánev — vyrobit sklo pak přes tlačítko receptu níže.":"Select to colour the crucible — craft via recipe button below."));
+      // Indikátor příští várky (jen pokud pec taví a byl vybrán jiný recept)
+      const isBusyHint=!!(p.activeBatches?.length>0);
+      if(isBusyHint&&p._nextColorRecipe&&p._nextColorRecipe!==p._activeColorRecipe){
+        const nextRec=COLOR_RECIPES[p._nextColorRecipe];
+        atmBox.append(h("div",{style:{fontSize:"9px",color:"#7a6030",marginTop:"4px",fontStyle:"italic"}},
+          "🕐 "+(L==="cs"?"Příští várka: ":"Next batch: ")+(nextRec?(L==="cs"?nextRec.cs:nextRec.en):"–")));
+      }else{
+        atmBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic"}},
+          L==="cs"?"Výběr barví pánev — vyrobit sklo pak přes tlačítko receptu níže.":"Select to colour the crucible — craft via recipe button below."));
+      }
       colorSec.append(atmBox);
     }
     if(unlockedColors.length===0){
