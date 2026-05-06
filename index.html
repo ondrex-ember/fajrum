@@ -11,7 +11,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sklářská Huť · v7.8</title>
+<title>Sklářská Huť · v7.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1191,6 +1191,27 @@ const BLOWN_ITEMS={
                qty:2, base:6,  spec:"foukat_dekor", specOnly:false,
                bulkNote_cs:"Vánoční zboží, šlechtické dary, Haida trh.",
                bulkNote_en:"Christmas goods, noble gifts, Haida market."},
+  // ── NOVÉ VÝROBKY v7.9 ──
+  holba:      {cs:"Holba",          en:"Stein mug",       icon:"🍻",
+               inputs:["waldglas"],
+               qty:1, base:12, spec:"foukat_lesni", specOnly:false,
+               bulkNote_cs:"Válcová nádoba s uchem — šenky a hostince. Od pol. 17. stol. standard.",
+               bulkNote_en:"Cylindrical mug with handle — taverns and inns. Standard from mid-17th c."},
+  kutrolf:    {cs:"Kutrolf",        en:"Kuttrolf",        icon:"🫗",
+               inputs:["crystal","waldglas"],
+               qty:1, base:28, spec:"foukat_kristal", specOnly:true,
+               bulkNote_cs:"Lahev se zkrouceným hrdlem — zpomaluje výtok. Doložen v Brně i Bratislavě.",
+               bulkNote_en:"Bottle with twisted neck — slows pouring. Documented in Brno and Bratislava."},
+  stangenglas:{cs:"Stangenglas",    en:"Stangenglas",     icon:"🥂",
+               inputs:["crystal"],
+               qty:1, base:22, spec:"foukat_kristal", specOnly:true,
+               bulkNote_cs:"Vysoký štíhlý pohár s nálepy — oblíbený v kostelech a na šlechtických dvorech.",
+               bulkNote_en:"Tall slender prunted beaker — popular in churches and noble courts."},
+  pateriky:   {cs:"Páteříky",       en:"Glass beads",     icon:"📿",
+               inputs:["waldglas","modra","smaragd","lattimo"],
+               qty:5, base:2,  spec:"foukat_dekor", specOnly:false,
+               bulkNote_cs:"Skleněné korálky — kramáři, poutníci, obchodní trasy. Hromadný odbyt.",
+               bulkNote_en:"Glass beads — merchants, pilgrims, trade routes. Bulk product."},
 };
 
 // Všechny foukané typy pro state/sell
@@ -1248,10 +1269,13 @@ function craftBlown(itemKey, inputColor){
   const tercikBase= itemKey==="tercik"?(isSpec?3:2):null;
   const actualCount= tercikBase!==null ? tercikBase : (isSpec?Math.min(3,1+Math.floor(Math.random()*2.5+0.5)):1);
   for(let i=0;i<actualCount;i++){
-    // Terčíky: quality ≤2 → výplně místo standardních terčíků
+    // Terčíky: quality ≤2 → výplně, quality ≥4 → žebrový terčík (prémiový)
     if(itemKey==="tercik"&&outQ<=2){
       if(!G.tercik_vyplne)G.tercik_vyplne=[];
       G.tercik_vyplne.push(outQ);
+    }else if(itemKey==="tercik"&&outQ>=4){
+      if(!G.tercik_zebrovy)G.tercik_zebrovy=[];
+      G.tercik_zebrovy.push(outQ);
     }else{
       G[stateKey].push(outQ);
     }
@@ -1368,10 +1392,23 @@ const SPECIAL_ITEMS={
     latin:"Speculum — fortuna vitrea est",
     src_cs:"Vepřeková, CP_13II2015",
     inputs:{crystal:2, rtut:1, cin:1},
-    workers:["brusic_hrana"], // brusič leští přední stranu
+    workers:["brusic_hrana"],
     minSeason:3,
-    base:65, // základní prodejní cena
+    base:65,
     sell_cs:65, sell_en:65
+  },
+  alembik:{
+    cs:"Alembik",       en:"Alembic",
+    icon:"⚗️",
+    desc_cs:"Destilační helma pro alchymisty a lékárníky — křišťálové sklo tvarované do přilby. Nejstarší z celé střední Evropy nalezen v klášteře klarisek v Bratislavě (~1290). Vzácná zakázka.",
+    desc_en:"Distillation helm for alchemists and apothecaries — crystal glass shaped into a dome. Oldest from Central Europe found in a Poor Clares convent in Bratislava (~1290). Rare commission.",
+    latin:"In igne probatur — per aquam purificatur",
+    src_cs:"Sedláčková, Bratislava 2021",
+    inputs:{crystal:2, arsen:1},
+    workers:["foukat_kristal"],
+    minSeason:2,
+    base:55,
+    sell_cs:55, sell_en:55
   }
 };
 
@@ -1580,14 +1617,18 @@ function initState(){
     wa:{fuel:50,potash:30,build:20},
     // Pánve s kvalitou
     pReady:2, pAging:[], pUses:PANEV_DUR, panevQuality:2,
+    furnSlotPanev:null, // per-slot pánve: [{uses,quality}|null,...] inicializuje se při kampani
     formyAging:[], // legacy — formy jsou nyní okamžité
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
     waldglas:[], crystal:[],
     // Foukané — okenní sklo
-    tercik:[], tercik_vyplne:[],
+    tercik:[], tercik_vyplne:[], tercik_zebrovy:[],
     // Speciální výrobky
-    zrcadlo:[],
+    zrcadlo:[], alembik:[],
+    // Nové v7.9
+    holba:[], kutrolf:[], kutrolf_waldglas:[], stangenglas:[],
+    pateriky:[], pateriky_modra:[], pateriky_smaragd:[], pateriky_lattimo:[],
     // Foukané — základní (waldglas vstup)
     cise:[], dzban:[], pullitr:[], romer:[], misa:[], dzban_forma:[],
     banka:[], spunt:[], ozdoba:[],
@@ -1653,9 +1694,13 @@ function processRound(){
   let mor=p.morale, forest=p.forest, grose=p.grose, debt=p.debt;
   let pR=p.pReady, pA=[...p.pAging], pU=p.pUses, pQ=p.panevQuality;
   let fT=p.fTemp, fA=p.fActive;
+  // Per-slot pánve — inicializujeme/kopírujeme
+  // furnSlotPanev = [{uses:N, quality:Q} | null, ...] délka = furnSlots
+  let slotPanev = p.furnSlotPanev ? [...p.furnSlotPanev.map(s=>s?{...s}:null)] : null;
   let furnace={...p.furnace};
   const wg=[...p.waldglas], cr=[...p.crystal];
   let tW=p.tW, tC=p.tC, tQS=p.tQS, tQN=p.tQN, done=p.done, mB=false;
+  const evts=[]; // deklarujeme brzy — crack handler ho potřebuje před sekci "Náhodné události"
   const con=[...p.contracts];
   const log=[...p.log];
 
@@ -1936,6 +1981,10 @@ function processRound(){
       fA=true;
       // Zaběhávání pece — každá kampaňová várka trochu pomáhá
       furnace.runIn=Math.min(ft.maxRunIn, furnace.runIn+2);
+      // Pokud pec právě nastartovala (byla off) — resetuj slotPanev aby se doplnily z pReady
+      if(!p.fActive && fA){
+        slotPanev=Array(ft.maxSlots||1).fill(null);
+      }
       log.push(`__PROD__🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
     }else{
       r.wood=Math.max(0,r.wood-fuelUsed);
@@ -1959,6 +2008,20 @@ function processRound(){
     let usedSlots=0;
     let noMoreCrucibles=false;
 
+    // ── Per-slot pánve: inicializace nebo doplnění prázdných slotů ──
+    // Při prvním kole kampaně nebo po prasknutí — doplnit z pR
+    if(!slotPanev||slotPanev.length!==furnSlots){
+      slotPanev=Array(furnSlots).fill(null);
+    }
+    // Doplnit prázdné sloty z dostupných pánví (pR)
+    for(let si=0;si<furnSlots;si++){
+      if(slotPanev[si]===null&&pR>0){
+        slotPanev[si]={uses:PANEV_DUR, quality:pQ};
+        pR--;
+        log.push(`__PROD__🏺 ${L==="cs"?"Slot "+(si+1)+": nová pánev vsazena ("+stars(pQ)+")":"Slot "+(si+1)+": new crucible loaded ("+stars(pQ)+")"}`);
+      }
+    }
+
     for(let si=0;si<furnSlots;si++){
       if(!fA)break;
       const sType=slotCfg[si]||"waldglas";
@@ -1973,13 +2036,22 @@ function processRound(){
           newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal",blocked:true});
           usedSlots++;continue;
         }
-        if(pR<=0){
-          if(!noMoreCrucibles)log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
-          noMoreCrucibles=true;break;
+        if(!slotPanev[si]){
+          // Slot bez pánve — přeskočit, neprodukuje
+          newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal",blocked:true});
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": bez pánve":"Slot "+(si+1)+": no crucible"}`);
+          usedSlots++;continue;
         }
-        r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;pU--;usedSlots++;
-        const qc=clamp(qRoll(tAcc(fT),fEff*3,mor,pQ+1)+(znalecPresent?1:0),1,5);
+        r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
+        const slotPQ_c=slotPanev[si].quality;
+        const qc=clamp(qRoll(tAcc(fT),fEff*3,mor,slotPQ_c+1)+(znalecPresent?1:0),1,5);
         cr.push(qc);tC++;tQS+=qc;tQN++;
+        // Opotřebení pánve v tomto slotu
+        slotPanev[si].uses--;
+        if(slotPanev[si].uses<=0){
+          // Pánev dosloužila — praskne na konci kola (označíme)
+          slotPanev[si].exhausted=true;
+        }
         newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal"});
         log.push(`__PROD__✨ → slot ${si+1}: ${L==="cs"?"křišťál":"crystal"} ${stars(qc)}`);
       }else{
@@ -1993,21 +2065,78 @@ function processRound(){
           newActiveBatches.push({slot:si,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas",blocked:true});
           usedSlots++;continue;
         }
-        if(pR<=0){
-          if(!noMoreCrucibles)log.push(`__EVT__🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Smelting halted."}`);
-          noMoreCrucibles=true;break;
+        if(!slotPanev[si]){
+          // Slot bez pánve — přeskočit, neprodukuje
+          newActiveBatches.push({slot:si,type:"waldglas",colorKey:"waldglas",blocked:true});
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": bez pánve":"Slot "+(si+1)+": no crucible"}`);
+          usedSlots++;continue;
         }
-        r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;pU--;usedSlots++;
-        const qw=qRoll(tAcc(fT),fEff*3,mor,pQ);
+        r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;usedSlots++;
+        const slotPQ_w=slotPanev[si].quality;
+        const qw=qRoll(tAcc(fT),fEff*3,mor,slotPQ_w);
         wg.push(qw);tW++;tQS+=qw;tQN++;
+        // Opotřebení pánve v tomto slotu
+        slotPanev[si].uses--;
+        if(slotPanev[si].uses<=0){
+          slotPanev[si].exhausted=true;
+        }
         newActiveBatches.push({slot:si,type:"waldglas",colorKey:p._activeColorRecipe||"waldglas"});
         log.push(`__PROD__🔥 → slot ${si+1}: ${L==="cs"?"lesní sklo":"waldglas"} ${stars(qw)}`+(si===0?` (eff:${Math.round(fEff*100)}%)`:""));
       }
     }
-    // Crack check — jednou za kolo po všech slotech (ne per-slot)
-    if(fA&&pR>0&&pU<=0){
-      pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;mor-=4;if(pR>0)pQ=Math.max(1,pQ-1);
-      log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} → +1 šamot (${pR} ${L==="cs"?"zbývá":"left"})`);
+    // ── Per-slot crack/exhaustion handling ──
+    // Po skončení slot loopu: vyřídíme všechny exhausted sloty + náhodné cracky
+    let crackedSlots=[]; // indexy slotů kde praskla
+    for(let si=0;si<furnSlots;si++){
+      if(!slotPanev[si])continue;
+      const sp=slotPanev[si];
+      // Normální opotřebení: uses <= 0
+      if(sp.exhausted){
+        crackedSlots.push({si,reason:"age"});
+        slotPanev[si]=null;
+        r.shamot++;
+        continue;
+      }
+      // Náhodný crack: přetopení (fT>=90) nebo náhoda
+      const isEasyLocal=G.difficulty==="easy";
+      const crackHeat=fT>=90&&Math.random()<(isEasyLocal?0.12:0.20);
+      const crackChance=Math.random()<(isEasyLocal?0.01:0.015);
+      if(crackHeat||crackChance){
+        crackedSlots.push({si,reason:crackHeat?"heat":"chance"});
+        slotPanev[si]=null;
+        r.shamot++;
+      }
+    }
+    // Zpracovat prasklé sloty
+    if(crackedSlots.length>0){
+      const firstCrack=crackedSlots[0];
+      // Teplota mírně klesne (ne zhasnutí!) — za každou prasklou pánev -8%
+      fT=Math.max(30, fT - crackedSlots.length*8);
+      // fA zůstává true — ostatní sloty jedou dál
+      mor -= crackedSlots.length * 8;
+      // Ztráty skla: jen z prasklých slotů (1 kus)
+      const lostWg=[],lostCr=[];
+      if(wg.length>0&&Math.random()<0.5){
+        const q=wg.pop();lostWg.push(q);
+      }
+      if(cr.length>0&&Math.random()<0.3){
+        const q=cr.pop();lostCr.push(q);
+      }
+      // Modal data
+      G._crackLoss={
+        reason:firstCrack.reason,
+        wg:lostWg, cr:lostCr,
+        slotsAffected:crackedSlots.length,
+        slotIndexes:crackedSlots.map(c=>c.si+1)
+      };
+      evts.push("crack");
+      const lossStr=[lostWg.length?lostWg.length+"× waldglas":"",lostCr.length?lostCr.length+"× křišťál":""].filter(Boolean).join(", ");
+      log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla (slot "+crackedSlots.map(c=>c.si+1).join(",")+")":"Crucible cracked (slot "+crackedSlots.map(c=>c.si+1).join(",")+")"} · ${lossStr||"—"} · ${L==="cs"?"teplota -"+(crackedSlots.length*8)+"%":"temp -"+(crackedSlots.length*8)+"%"}`);
+    }
+    // Sync pQ = průměrná kvalita aktivních slotů (pro calcFurnaceEff)
+    const activeSlotPanve=slotPanev?slotPanev.filter(s=>s!==null):[];
+    if(activeSlotPanve.length>0){
+      pQ=Math.round(activeSlotPanve.reduce((s,sp)=>s+sp.quality,0)/activeSlotPanve.length);
     }
   }else{
     // Příprava: pec chladne
@@ -2224,47 +2353,9 @@ function processRound(){
   }
 
   // 8. Náhodné události
-  const evts=[];
+  // evts[] již deklarováno nahoře (crack handler ho potřebuje dříve)
 
-  // ── CRACK EVENT — prasklá pánev ──
-  // Triggers: přetopení (fT>=90), stará pánev (pU<=2), náhoda 4%
-  const isEasy=G.difficulty==="easy";
-  const crackByHeat=isC&&fA&&fT>=90&&Math.random()<(isEasy?0.35:0.55);
-  const crackByAge=isC&&fA&&pR>0&&pU<=1&&Math.random()<(isEasy?0.20:0.30);
-  const crackByChance=isC&&fA&&pR>0&&Math.random()<(isEasy?0.02:0.03);
-  if(!evts.includes("crack")&&(crackByHeat||crackByAge||crackByChance)){
-    // Důvod praskliny
-    const crackReason=crackByHeat?"heat":crackByAge?"age":"chance";
-    // Varianta C: ztráta várky + 1–2 kusy ze skladu
-    const lostWg=[];
-    const lostCr=[];
-    // Ztráta ze skladu — 1–2 nejkvalitnější kusy (horko je zničilo)
-    if(wg.length>0){
-      const sorted=[...wg].sort((a,b)=>b-a);
-      const nLost=Math.min(wg.length, 1+Math.floor(Math.random()*2));
-      for(let i=0;i<nLost;i++)lostWg.push(sorted[i]);
-      // Odeber z wg
-      lostWg.forEach(q=>{const idx=wg.indexOf(q);if(idx>=0)wg.splice(idx,1);});
-    }
-    if(cr.length>0&&Math.random()<0.5){
-      const sorted=[...cr].sort((a,b)=>b-a);
-      const nLost=Math.min(cr.length,1);
-      for(let i=0;i<nLost;i++)lostCr.push(sorted[i]);
-      lostCr.forEach(q=>{const idx=cr.indexOf(q);if(idx>=0)cr.splice(idx,1);});
-    }
-    // Várka kola = 0 (wg/cr přírůstek se nepřidá — tW/tC nepočítáme)
-    // Pec zchladne, zastaví se
-    fT=Math.max(0,fT-25); fA=false;
-    // Pánev se spotřebuje
-    if(pR>0){pR--;r.shamot++;pU=pR>0?PANEV_DUR:0;pQ=Math.max(1,pQ-1);}
-    mor-=15;
-    // Uložit ztráty pro modal
-    G._crackLoss={reason:crackReason,wg:lostWg,cr:lostCr};
-    evts.push("crack");
-    // Kronika
-    const lossStr=[lostWg.length?`${lostWg.length}× waldglas`:"",lostCr.length?`${lostCr.length}× křišťál`:""].filter(Boolean).join(", ");
-    log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla":"Crucible cracked"} · ${lossStr||L==="cs"?"várka zničena":"batch lost"} · ${L==="cs"?"pec zhasíná":"furnace down"}`);
-  }
+  // Crack event je nyní řešen per-slot v slot loopu (viz výše)
 
   if(isC&&fA&&mor>65&&(wg.length>p.waldglas.length||cr.length>p.crystal.length)&&Math.random()<.15)evts.push("good");
   if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
@@ -2521,6 +2612,7 @@ function processRound(){
   Object.assign(G,{
     round:nr, res:r, log:[...log,...logAdditions], morale:mor, forest, grose, debt,
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
+    furnSlotPanev:slotPanev,
     furnace, fTemp:fT, fActive:fA,
     waldglas:wg, crystal:cr, mBonus:mB,
     tW, tC, tQS, tQN, done, contracts:con, repContracts:newRepCon, workers:wk, shop:genShop(),
@@ -2958,7 +3050,17 @@ function sellItems(type,n){
   // Okenní sklo a speciální výrobky
   basePrices["tercik"]=6;
   basePrices["tercik_vyplne"]=2;
+  basePrices["tercik_zebrovy"]=9;
   basePrices["zrcadlo"]=65;
+  basePrices["alembik"]=55;
+  basePrices["holba"]=12;
+  basePrices["kutrolf"]=28;
+  basePrices["kutrolf_waldglas"]=18;
+  basePrices["stangenglas"]=22;
+  basePrices["pateriky"]=2;
+  basePrices["pateriky_modra"]=4;
+  basePrices["pateriky_smaragd"]=5;
+  basePrices["pateriky_lattimo"]=6;
   const bp=basePrices[type]||3.5;
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
@@ -3685,7 +3787,8 @@ function render(){
       const lostLines=[];
       if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× lesní sklo ${cl.wg.map(q=>"★".repeat(q)).join(", ")}`);
       if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× křišťál ${cl.cr.map(q=>"★".repeat(q)).join(", ")}`);
-      lostLines.push(L==="cs"?"💔 Várka kola — zničena":"💔 This round's batch — destroyed");
+      if(!cl.wg?.length&&!cl.cr?.length) lostLines.push(L==="cs"?"✅ Sklo zachováno — jen pánev odepsána":"✅ Glass preserved — crucible lost");
+      lostLines.push(L==="cs"?"🔥 Ostatní sloty pokračují":"🔥 Other slots continue");
 
       // CSS shake animace
       const styleId="crack-shake-style";
@@ -3728,9 +3831,16 @@ function render(){
         lossBox.appendChild(d);
       });
 
+      const slotsAff=cl.slotsAffected||1;
+      const tempDrop=slotsAff*8;
       const statsRow=document.createElement("div");
       statsRow.style.cssText="display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;";
-      [{icon:"🌡️",label:L==="cs"?"-25% teplota":"-25% temp"},{icon:"🏺",label:L==="cs"?"pánev odepsána":"crucible lost"},{icon:"😞",label:L==="cs"?"-15 nálada":"-15 morale"}].forEach(s=>{
+      [
+        {icon:"🌡️",label:(L==="cs"?"-"+tempDrop+"% teplota":"-"+tempDrop+"% temp")},
+        {icon:"🏺",label:(L==="cs"?"slot "+(cl.slotIndexes||[1]).join(",")+" prázdný":"slot "+(cl.slotIndexes||[1]).join(",")+" empty")},
+        {icon:"🔥",label:(L==="cs"?"ostatní sloty jedou dál":"other slots continue")},
+        {icon:"😞",label:(L==="cs"?"-"+(slotsAff*8)+" nálada":"-"+(slotsAff*8)+" morale")}
+      ].forEach(s=>{
         const chip=document.createElement("div");
         chip.style.cssText="background:rgba(160,0,0,.2);border:1px solid #6b1a1a;border-radius:4px;padding:3px 8px;font-size:10px;color:#ff8888;";
         chip.textContent=s.icon+" "+s.label;
@@ -5474,12 +5584,48 @@ function render(){
           :(L==="cs"?"Podmínky nesplněny":"Requirements not met")));
     wSpec.append(zrCard);
 
+    // Alembik — craft sekce
+    const alIt=SPECIAL_ITEMS.alembik;
+    const hasFoukacKrist=!!p.workers.find(w=>w.prof==="foukat_kristal");
+    const hasCrystal2al=(p.crystal||[]).length>=2;
+    const hasArsen=(p.additives?.arsen||0)>=1;
+    const alOk=isC&&p.fActive&&hasCrystal2al&&hasArsen&&hasFoukacKrist&&p.season>=2;
+    const alStock=p.alembik?.length||0;
+
+    const alCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+      border:`1px solid ${alOk?"rgba(122,74,154,.4)":"rgba(42,26,10,.1)"}`,
+      background:alOk?"rgba(122,74,154,.05)":"rgba(0,0,0,.02)",
+      marginBottom:"6px"}});
+    alCard.append(
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"12px",fontWeight:"700"}},`⚗️ ${L==="cs"?alIt.cs:alIt.en}`),
+        h("span",{style:{fontSize:"11px",color:"#7a4a9a",fontWeight:"700"}},`~${alIt.sell_cs}g`)),
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
+        `✨ 2× crystal  🧪 1× ${L==="cs"?"arsen (As₂O₃)":"arsenic (As₂O₃)"}`),
+      h("div",{style:{fontSize:"9px",color:hasFoukacKrist?"#4a7a3a":"#a03020",marginBottom:"3px"}},
+        hasFoukacKrist?`💨 ${p.workers.find(w=>w.prof==="foukat_kristal").name}`
+          :(L==="cs"?"⛔ Chybí foukač křišťálu":"⛔ Missing crystal blower")),
+      !hasCrystal2al?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Nedostatek křišťálu (2×)":"⛔ Not enough crystal (2×)"):null,
+      !hasArsen?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Chybí arsen — čeřidlo/dekolorant (As₂O₃)":"⛔ Missing arsenic — fining agent (As₂O₃)"):null,
+      p.season<2?h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"3px",fontStyle:"italic"}},
+        L==="cs"?"Dostupné od sezóny 2":"Available from season 2"):null,
+      alStock>0?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
+        `${L==="cs"?"Sklad":"Stock"}: ${alStock}×`):null,
+      h("button",{class:"btn btn-s"+(alOk?" btn-p":""),
+        style:{width:"100%",fontSize:"10px",opacity:alOk?1:.45},
+        onClick:()=>{if(alOk)craftSpecial("alembik");}},
+        alOk?(L==="cs"?"Vyrobit alembik →":"Make alembic →")
+          :(L==="cs"?"Podmínky nesplněny":"Requirements not met")));
+    wSpec.append(alCard);
+
     // Info note
     wSpec.append(h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic",lineHeight:"1.5",
       borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
       L==="cs"
-        ?"🪟 Terčíky = foukané jako základní výrobek, quality≤2 → výplně. 🪞 Rtuť jen od Baranovského (sez.3+)."
-        :"🪟 Window discs = blown as basic item, quality≤2 → fillers. 🪞 Mercury only from Baranovský (season 3+)."));
+        ?"🪟 Terčíky = foukané jako základní výrobek, quality≤2 → výplně, ≥4 → žebrový. 🪞 Rtuť jen od Baranovského (sez.3+). ⚗️ Alembik = zakázka alchymisty/lékárníka."
+        :"🪟 Window discs = blown as basic item, quality≤2 → fillers, ≥4 → ribbed. 🪞 Mercury only from Baranovský (season 3+). ⚗️ Alembic = alchemist/apothecary commission."));
 
     content.append(wSpec);
   }else if(p.tab==="storage"){
@@ -5788,7 +5934,8 @@ function render(){
         const slotTypeCfg=(p.furnSlotConfig&&p.furnSlotConfig[si])||"waldglas";
         const colorKey=batch?batch.colorKey:(slotTypeCfg==="crystal"?"crystal":(p._activeColorRecipe||"waldglas"));
         const mc=colorKeyToMelt(colorKey,temp);
-        const hasP=si<(p.pReady||0);
+        // Per-slot: má pánev? Čteme z furnSlotPanev pro přesný stav
+        const hasP=p.furnSlotPanev ? (p.furnSlotPanev[si]!==null&&p.furnSlotPanev[si]!==undefined) : si<(p.pReady||0);
 
         // Outer wrapper — keramický okraj + pozice
         const slotDiv=document.createElement("div");
@@ -5838,9 +5985,17 @@ function render(){
           // Pánev je ale pec nežhne — tmavá, klidná
           innerDiv.style.background="radial-gradient(circle, #2a1a0a 0%, #120a04 100%)";
           const coldLbl=document.createElement("div");
-          coldLbl.style.cssText=`position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+          coldLbl.style.cssText=`position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;
             font-size:8px;color:#5a3a1a;font-family:Georgia,serif;letter-spacing:.5px;`;
           coldLbl.textContent=L==="cs"?"studená":"cold";
+          // Zobrazit zbývající uses
+          const sp=p.furnSlotPanev?.[si];
+          if(sp){
+            const usesLbl=document.createElement("div");
+            usesLbl.style.cssText="font-size:7px;color:#4a2e18;";
+            usesLbl.textContent=`${sp.uses}/${PANEV_DUR}`;
+            coldLbl.appendChild(usesLbl);
+          }
           innerDiv.appendChild(coldLbl);
         }else{
           // Prázdný slot — bez pánve
@@ -6290,7 +6445,7 @@ function render(){
         });
       }
       // Terčíky a zrcadla na trhu
-      const hasTercikSell=(p.tercik?.length||0)>0||(p.tercik_vyplne?.length||0)>0||(p.zrcadlo?.length||0)>0;
+      const hasTercikSell=(p.tercik?.length||0)>0||(p.tercik_vyplne?.length||0)>0||(p.tercik_zebrovy?.length||0)>0||(p.zrcadlo?.length||0)>0||(p.alembik?.length||0)>0;
       if(hasTercikSell){
         sSec2.append(h("div",{style:{fontSize:"10px",color:"#6a7a3a",fontWeight:"700",
           margin:"6px 0 3px",borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
@@ -6309,12 +6464,26 @@ function render(){
               h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik_vyplne",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik_vyplne",999)},L==="cs"?"Vše":"All"))));
         }
+        if((p.tercik_zebrovy||[]).length>0){
+          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",color:"#5a7a4a"}},`🪟✨ ${L==="cs"?"Terčík žebrový (prémiový)":"Ribbed disc (premium)"} (${p.tercik_zebrovy.length}×) · ~9g/★`),
+            h("div",{style:{display:"flex",gap:"3px"}},
+              h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik_zebrovy",1)},"1×"),
+              h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik_zebrovy",999)},L==="cs"?"Vše":"All"))));
+        }
         if((p.zrcadlo||[]).length>0){
           sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#c9952b"}},`🪞 ${L==="cs"?"Zrcadlo (luxus)":"Mirror (luxury)"} (${p.zrcadlo.length}×) · ~65g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("zrcadlo",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("zrcadlo",999)},L==="cs"?"Vše":"All"))));
+        }
+        if((p.alembik||[]).length>0){
+          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",color:"#7a4a9a"}},`⚗️ ${L==="cs"?"Alembik (zakázka)":"Alembic (commission)"} (${p.alembik.length}×) · ~55g/★`),
+            h("div",{style:{display:"flex",gap:"3px"}},
+              h("button",{class:"btn btn-s",onClick:()=>sellItems("alembik",1)},"1×"),
+              h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("alembik",999)},L==="cs"?"Vše":"All"))));
         }
       }
     }
@@ -7650,7 +7819,7 @@ function render(){
     iSec.append(
       h("div",{class:"sec-title"},L==="cs"?"O hře":"About"),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.8",marginBottom:"8px"}},
-        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v7.8"),h("br",null),
+        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v7.9"),h("br",null),
         h("em",null,"Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680"),h("br",null),
         L==="cs"
           ?"Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách."
