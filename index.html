@@ -512,7 +512,9 @@ const ADDITIVES={
   antimon:  {cs:"Antimon (Sb)",     en:"Antimony (Sb)",       icon:"🔘", base:14, rare:true,
              desc_cs:"Stabilizátor pro rubínové sklo (Kunckel).", desc_en:"Stabilizer for ruby glass (Kunckel)."},
   zlato:    {cs:"Zlatý prach (Au)", en:"Gold dust (Au)",      icon:"🟡", base:40, rare:true,
-             desc_cs:"Cassiusův purpur — základ rubínového skla.", desc_en:"Purple of Cassius — base of ruby glass."}
+             desc_cs:"Cassiusův purpur — základ rubínového skla.", desc_en:"Purple of Cassius — base of ruby glass."},
+  rtut:     {cs:"Rtuť (Hg)",        en:"Mercury (Hg)",        icon:"🩶", base:20, rare:true,
+             desc_cs:"Amalgám rtuti a cínu — zadní strana zrcadla. Nutný import, nelze vyrobit na místě.", desc_en:"Mercury-tin amalgam — rear of mirror. Must be imported, cannot be produced locally."}
 };
 
 // Sklady barevného skla
@@ -595,6 +597,7 @@ const BARAN_OFFERS=[
   // Sezóna 3: exkluzivní
   {season:3, item:"olovo",     qty:2, price:12, cs:"Olovo z Krumlova. První třídy.", en:"Lead from Krumlov. First class."},
   {season:3, item:"antimon",   qty:1, price:18, cs:"Antimon — vzácné. Kunckelova věc.", en:"Antimony — rare. Kunckel's thing."},
+  {season:3, item:"rtut",      qty:1, price:22, cs:"Rtuť z Idrie. Drahá, ale bez ní zrcadlo neuděláte.", en:"Mercury from Idrija. Costly, but no mirror without it."},
   // Sezóna 4: zlatý prach
   {season:4, item:"zlato",     qty:1, price:45, cs:"Zlatý prach. Za tuhle cenu vám ho nikdo jiný nedá.", en:"Gold dust. Nobody else will give it this cheap."}
 ];
@@ -1166,6 +1169,12 @@ const BLOWN_ITEMS={
   dzban_forma:{cs:"Džbán (forma)",  en:"Mould jug",      icon:"🫗",
                inputs:["waldglas"],
                qty:2, base:7,  spec:"foukat_formy", specOnly:true},
+  // ── OKENNÍ SKLO — hromadný odbyt ──
+  tercik:     {cs:"Okenní terčík",  en:"Window disc",    icon:"🪟",
+               inputs:["waldglas"],
+               qty:2, base:3, spec:"foukat_lesni", specOnly:false,
+               bulkNote_cs:"Ø8–10 cm, vsazují se do olova. Kláštery, měšťanské domy, Haida trh. Nepodařené kusy → výplně.",
+               bulkNote_en:"Ø8–10 cm, set in lead cames. Monasteries, town houses, Haida market. Rejects → filler pieces."},
   // ── DROBNÉ ZBOŽÍ — rychlá výroba, hromadný odbyt ──
   banka:      {cs:"Baňka",          en:"Flask",           icon:"🧪",
                inputs:["waldglas","crystal"],
@@ -1235,9 +1244,28 @@ function craftBlown(itemKey, inputColor){
   // State klíč: itemKey + color suffix (jen pokud není waldglas = default)
   const stateKey=color==="waldglas"?itemKey:itemKey+"_"+color;
   if(!G[stateKey])G[stateKey]=[];
-  for(let i=0;i<outCount;i++)G[stateKey].push(outQ);
+  // Terčíky: specialista → 3ks, jinak 2ks (qty=2 je výstup, ne vstup)
+  const tercikBase= itemKey==="tercik"?(isSpec?3:2):null;
+  const actualCount= tercikBase!==null ? tercikBase : (isSpec?Math.min(3,1+Math.floor(Math.random()*2.5+0.5)):1);
+  for(let i=0;i<actualCount;i++){
+    // Terčíky: quality ≤2 → výplně místo standardních terčíků
+    if(itemKey==="tercik"&&outQ<=2){
+      if(!G.tercik_vyplne)G.tercik_vyplne=[];
+      G.tercik_vyplne.push(outQ);
+    }else{
+      G[stateKey].push(outQ);
+    }
+  }
   const colorLabel=color!=="waldglas"?` (${COLOR_ICON[color]||color})`:"";
-  G.log.push(`__PROD__${it.icon} ${outCount}× ${L==="cs"?it.cs:it.en}${colorLabel} ${stars(outQ)}${isSpec?" (spec ×"+outCount+")":""}`);
+  // Log — terčíky ukáží kolik šlo do výplní
+  if(itemKey==="tercik"){
+    const goodCount=G[stateKey].length-(G[stateKey].length-actualCount+(outQ<=2?actualCount:0));
+    const fillCount=outQ<=2?actualCount:0;
+    const goodActual=actualCount-fillCount;
+    G.log.push(`__PROD__🪟 ${goodActual>0?goodActual+"× terčík "+stars(outQ):""}${fillCount>0?(goodActual>0?" + ":"")+fillCount+"× výplň ★★":""}${isSpec?" (spec)":""}`);
+  }else{
+    G.log.push(`__PROD__${it.icon} ${actualCount}× ${L==="cs"?it.cs:it.en}${colorLabel} ${stars(outQ)}${isSpec?" (spec ×"+actualCount+")":""}`);
+  }
   render();
 }
 
@@ -1328,7 +1356,77 @@ function craftEngrave(inputKey){
   render();
 }
 
-// Literární texty pro kroniku
+// ── SPECIÁLNÍ VÝROBKY (SPECIAL_ITEMS) ───────────────────────
+// Výrobky které nelze zařadit do blown/ground workflow
+// craft: { inputs:{surovina:qty,...}, workers:[profese,...], minSeason }
+const SPECIAL_ITEMS={
+  zrcadlo:{
+    cs:"Zrcadlo",       en:"Mirror",
+    icon:"🪞",
+    desc_cs:"Luxusní zrcadlo — sklovina litím, přední strana leštěna, zadní strana amalgámem rtuti a cínu. Rtuť z Idrie. Vzácné — málokdo si je mohl dovolit.",
+    desc_en:"Luxury mirror — cast glass, front polished, rear coated with mercury-tin amalgam. Mercury from Idrija. Rare — few could afford them.",
+    latin:"Speculum — fortuna vitrea est",
+    src_cs:"Vepřeková, CP_13II2015",
+    inputs:{crystal:2, rtut:1, cin:1},
+    workers:["brusic_hrana"], // brusič leští přední stranu
+    minSeason:3,
+    base:65, // základní prodejní cena
+    sell_cs:65, sell_en:65
+  }
+};
+
+function craftSpecial(itemKey){
+  const it=SPECIAL_ITEMS[itemKey];
+  if(!it) return;
+  const p=G, L=p.lang;
+  if(p.round<PREP||!p.fActive){
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet (kampaň)":"Furnace must be running (campaign)"}`);
+    render(); return;
+  }
+  if(p.season<it.minSeason){
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Dostupné od sezóny "+it.minSeason:"Available from season "+it.minSeason}`);
+    render(); return;
+  }
+  // Zkontroluj dělníky
+  for(const prof of it.workers){
+    if(!p.workers.find(w=>w.prof===prof)){
+      G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí":"Missing"}: ${(L==="cs"?PROF_CS:PROF_EN)[prof]||prof}`);
+      render(); return;
+    }
+  }
+  // Zkontroluj suroviny
+  for(const [key,qty] of Object.entries(it.inputs)){
+    // crystal je pole, additives jsou v G.additives
+    const isAdditive= key in (p.additives||{}) || ["cin","rtut","olovo","antimon","zlato","smolka","burel","aesUstum","crocusMartis"].includes(key);
+    const have= key==="crystal"?(p[key]||[]).length
+                : isAdditive ? (p.additives?.[key]||0)
+                : (p[key]||[]).length;
+    if(have<qty){
+      G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek":"Not enough"}: ${ADDITIVES[key]?.cs||key} (${have}/${qty})`);
+      render(); return;
+    }
+  }
+  // Odeber suroviny
+  for(const [key,qty] of Object.entries(it.inputs)){
+    const isAdditive= key in (p.additives||{}) || ["cin","rtut","olovo","antimon","zlato","smolka","burel","aesUstum","crocusMartis"].includes(key);
+    if(key==="crystal"){
+      const arr=[...p.crystal].sort((a,b)=>b-a);
+      G.crystal=arr.slice(qty);
+    } else if(isAdditive){
+      G.additives[key]=(G.additives[key]||0)-qty;
+    } else {
+      G.res[key]=(G.res[key]||0)-qty;
+    }
+  }
+  // Výstup
+  const worker=p.workers.find(w=>it.workers.includes(w.prof));
+  const qBonus=worker?Math.round(worker.lv*0.6):0;
+  const outQ=clamp(3+qBonus+(Math.random()>.5?1:0),1,5);
+  if(!G[itemKey])G[itemKey]=[];
+  G[itemKey].push(outQ);
+  G.log.push(`__PROD__${it.icon} 1× ${L==="cs"?it.cs:it.en} ${stars(outQ)}`);
+  render();
+}
 const CHRON_PREP_CS=["Ruce se chystají na práci. Les čeká tichý a tmavý.","Přípravy jsou v plném proudu. Každý ví, co dělat.","Zásoby rostou pomalu, ale jistě. Les dává, co může.","Poslední přípravy před kampaní. Vzduch páchne pryskyřicí a popelem."];
 const CHRON_CAMP_CS=["Pec hřeje. Dělníci se tísní u žáru, tváře červené jako střep.","Noc a den splývají. Jen pec nikdy nespí.","Zima se dere dovnitř. Pec ji drží za dveřmi — zatím.","Zásoby dřeva povážlivě ubývají. Každá polena se počítá.","Kampaň doznívá. Pec chladne. Sklo čeká na kramáře."];
 const CHRON_PREP_EN=["Hands ready for work. The forest waits, dark and silent.","Preparations in full swing. Everyone knows their task.","Supplies grow slowly but surely. The forest gives what it can.","Final preparations before the campaign. The air smells of resin and ash."];
@@ -1467,7 +1565,7 @@ function initState(){
     forest:INIT_FOREST, forestMax:INIT_FOREST,
     res:{wood:45,sand:15,limestone:12,potash:6,water:10,clay:8,shamot:8,food:8,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
-    additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0},
+    additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0,rtut:0},
     // Sklady barevného skla
     jantar:[], modra:[], smaragd:[], lattimo:[], rubin:[],
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
@@ -1486,6 +1584,10 @@ function initState(){
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
     waldglas:[], crystal:[],
+    // Foukané — okenní sklo
+    tercik:[], tercik_vyplne:[],
+    // Speciální výrobky
+    zrcadlo:[],
     // Foukané — základní (waldglas vstup)
     cise:[], dzban:[], pullitr:[], romer:[], misa:[], dzban_forma:[],
     banka:[], spunt:[], ozdoba:[],
@@ -2853,6 +2955,10 @@ function sellItems(type,n){
     const srcBase=GROUND_ITEMS[k]?.base||basePrices[k]||10;
     basePrices["rytina_"+k]=Math.round(srcBase*ENGRAVE_BONUS);
   });
+  // Okenní sklo a speciální výrobky
+  basePrices["tercik"]=6;
+  basePrices["tercik_vyplne"]=2;
+  basePrices["zrcadlo"]=65;
   const bp=basePrices[type]||3.5;
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
@@ -5316,7 +5422,66 @@ function render(){
     }
     content.append(wRyt);
 
-  // ── TAB: SKLAD ──
+    // ── SPECIÁLNÍ VÝROBKY ──
+    const wSpec=h("div",{class:"sec"});
+    wSpec.append(h("div",{class:"sec-title"},"🪟 "+(L==="cs"?"Okenní sklo & Speciální výrobky":"Window Glass & Special Items")));
+
+    // Terčíky — přehled skladu
+    const tercikStock=p.tercik?.length||0;
+    const vyplneStock=p.tercik_vyplne?.length||0;
+    if(tercikStock>0||vyplneStock>0){
+      wSpec.append(h("div",{style:{fontSize:"10px",color:"#4a7a3a",marginBottom:"4px"}},
+        `🪟 ${L==="cs"?"Terčíky na skladě":"Window discs in stock"}: ${tercikStock}× ` +
+        (vyplneStock>0?`+ ${vyplneStock}× ${L==="cs"?"výplně":"fillers"}`:"")));
+    }
+
+    // Zrcadlo — craft sekce
+    const zrIt=SPECIAL_ITEMS.zrcadlo;
+    const hasBrusic=!!p.workers.find(w=>w.prof==="brusic_hrana");
+    const hasCrystal2=(p.crystal||[]).length>=2;
+    const hasRtut=(p.additives?.rtut||0)>=1;
+    const hasCin=(p.additives?.cin||0)>=1;
+    const zrOk=isC&&p.fActive&&hasCrystal2&&hasRtut&&hasCin&&hasBrusic&&p.season>=3;
+    const zrStock=p.zrcadlo?.length||0;
+
+    const zrCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+      border:`1px solid ${zrOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.1)"}`,
+      background:zrOk?"rgba(201,149,43,.06)":"rgba(0,0,0,.02)",
+      marginBottom:"6px"}});
+    zrCard.append(
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"12px",fontWeight:"700"}},`🪞 ${L==="cs"?zrIt.cs:zrIt.en}`),
+        h("span",{style:{fontSize:"11px",color:"#c9952b",fontWeight:"700"}},`~${zrIt.sell_cs}g`)),
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
+        `✨ 2× crystal  🩶 1× ${L==="cs"?"rtuť":"mercury"}  ⚪ 1× ${L==="cs"?"cín":"tin"}`),
+      h("div",{style:{fontSize:"9px",color:hasBrusic?"#4a7a3a":"#a03020",marginBottom:"3px"}},
+        hasBrusic?`💎 ${p.workers.find(w=>w.prof==="brusic_hrana").name}`
+          :(L==="cs"?"⛔ Chybí hranař":"⛔ Missing edge-cutter")),
+      !hasCrystal2?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Nedostatek křišťálu (2×)":"⛔ Not enough crystal (2×)"):null,
+      !hasRtut?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Chybí rtuť — kup od Baranovského (sez. 3+)":"⛔ Missing mercury — buy from Baranovský (season 3+)"):null,
+      !hasCin?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Chybí cín":"⛔ Missing tin"):null,
+      p.season<3?h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"3px",fontStyle:"italic"}},
+        L==="cs"?"Dostupné od sezóny 3":"Available from season 3"):null,
+      zrStock>0?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
+        `${L==="cs"?"Sklad":"Stock"}: ${zrStock}× ${stars(Math.round((p.zrcadlo||[]).reduce((a,b)=>a+b,0)/zrStock))||""}`):null,
+      h("button",{class:"btn btn-s"+(zrOk?" btn-p":""),
+        style:{width:"100%",fontSize:"10px",opacity:zrOk?1:.45},
+        onClick:()=>{if(zrOk)craftSpecial("zrcadlo");}},
+        zrOk?(L==="cs"?"Vyrobit zrcadlo →":"Make mirror →")
+          :(L==="cs"?"Podmínky nesplněny":"Requirements not met")));
+    wSpec.append(zrCard);
+
+    // Info note
+    wSpec.append(h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic",lineHeight:"1.5",
+      borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
+      L==="cs"
+        ?"🪟 Terčíky = foukané jako základní výrobek, quality≤2 → výplně. 🪞 Rtuť jen od Baranovského (sez.3+)."
+        :"🪟 Window discs = blown as basic item, quality≤2 → fillers. 🪞 Mercury only from Baranovský (season 3+)."));
+
+    content.append(wSpec);
   }else if(p.tab==="storage"){
 
     // ── SEKCE 1: Sklo na skladě ──
@@ -6123,6 +6288,34 @@ function render(){
               h("button",{class:"btn btn-s",onClick:()=>sellItems(rKey,1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems(rKey,999)},L==="cs"?"Vše":"All"))));
         });
+      }
+      // Terčíky a zrcadla na trhu
+      const hasTercikSell=(p.tercik?.length||0)>0||(p.tercik_vyplne?.length||0)>0||(p.zrcadlo?.length||0)>0;
+      if(hasTercikSell){
+        sSec2.append(h("div",{style:{fontSize:"10px",color:"#6a7a3a",fontWeight:"700",
+          margin:"6px 0 3px",borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
+          "🪟 "+(L==="cs"?"Okenní sklo & Speciální:":"Window glass & Special:")));
+        if((p.tercik||[]).length>0){
+          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",color:"#5a6a2a"}},`🪟 ${L==="cs"?"Okenní terčík":"Window disc"} (${p.tercik.length}×) · ~6g/★`),
+            h("div",{style:{display:"flex",gap:"3px"}},
+              h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik",1)},"1×"),
+              h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik",999)},L==="cs"?"Vše":"All"))));
+        }
+        if((p.tercik_vyplne||[]).length>0){
+          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",color:"#7a6a2a"}},`🟫 ${L==="cs"?"Výplňové terče (nepodařené)":"Filler discs (rejects)"} (${p.tercik_vyplne.length}×) · ~2g/★`),
+            h("div",{style:{display:"flex",gap:"3px"}},
+              h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik_vyplne",1)},"1×"),
+              h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik_vyplne",999)},L==="cs"?"Vše":"All"))));
+        }
+        if((p.zrcadlo||[]).length>0){
+          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",color:"#c9952b"}},`🪞 ${L==="cs"?"Zrcadlo (luxus)":"Mirror (luxury)"} (${p.zrcadlo.length}×) · ~65g/★`),
+            h("div",{style:{display:"flex",gap:"3px"}},
+              h("button",{class:"btn btn-s",onClick:()=>sellItems("zrcadlo",1)},"1×"),
+              h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("zrcadlo",999)},L==="cs"?"Vše":"All"))));
+        }
       }
     }
     trhStatus.append(sSec2);
@@ -7747,9 +7940,7 @@ const ACHIEVEMENTS=[
    src_en:"Vepřeková, Prague Castle 2015",
    hint_cs:"Prodej okenní terčíky (kristal/waldglas panel).",
    hint_en:"Sell window disc panels.",
-   img_id:"ach_tercikár", available:false,
-   future_cs:"Terčíky jako produkt — přijde v další verzi",
-   future_en:"Window discs as product — coming in next version"},
+   img_id:"ach_tercikár", available:true},
 
   {id:"speculum", icon:"🪞", cat:"production",
    cs:"Speculum", en:"Speculum",
@@ -7760,9 +7951,7 @@ const ACHIEVEMENTS=[
    src_en:"Vepřeková, CP_13II2015",
    hint_cs:"Vyžaduje rtuť od kupce a čiré sklo.",
    hint_en:"Requires mercury from merchant and clear glass.",
-   img_id:"ach_speculum", available:false,
-   future_cs:"Zrcadla jako produkt — přijde v další verzi",
-   future_en:"Mirrors as product — coming in next version"},
+   img_id:"ach_speculum", available:true},
 
   {id:"kunckel", icon:"💎", cat:"production",
    cs:"Kunkelovo tajemství", en:"Kunckel's Secret",
@@ -8032,6 +8221,15 @@ function checkAchievements(){
   // Achievements — triggery na stav
   // Ignis mutat res — první várka
   if((G.tW>0||G.tC>0)&&!ach.includes("ignis_mutat_res")) add("ignis_mutat_res");
+
+  // Terčíkář — první terčík ve skladu nebo prodán
+  const hasTercik=(G.tercik?.length>0||G.tercik_vyplne?.length>0||
+    G.log?.some(l=>l.includes("terčík")||l.includes("tercik")));
+  if(hasTercik&&!ach.includes("tercikár")) add("tercikár");
+
+  // Speculum — první zrcadlo
+  const hasZrcadlo=(G.zrcadlo?.length>0||G.log?.some(l=>l.includes("Zrcadlo")||l.includes("zrcadlo")));
+  if(hasZrcadlo&&!ach.includes("speculum")) add("speculum");
 
   // Kunckel — první rubín
   if(G.rubin?.length>0&&!ach.includes("kunckel")) add("kunckel");
