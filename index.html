@@ -5109,7 +5109,7 @@ function render(){
             return tw;
           }).filter(Boolean)||[])),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-          L==="cs"?PROF_CS[w.prof]||w.prof:PROF_EN[w.prof]||w.prof));
+          getProfLabel(w,L)));
       [{label:L==="cs"?"Únava":"Fat.",v:fatPct,c:fatColor},
        {label:"XP",v:xpPct,c:"#c9952b"},
        {label:L==="cs"?"Loaj.":"Loy.",v:loyalty,c:loyalty>60?"#4a7a3a":loyalty>35?"#c9952b":"#a03020"},
@@ -5145,7 +5145,8 @@ function render(){
       });
       if(isWerkstatProf){
         const fatigue=w.fat||0;
-        col1.append(makeTaskBtn("werkstat",undefined,fatigue>=0.25));
+        const werkstatFatLimit=w.prof==="tavic"?0.5:0.75;
+        col1.append(makeTaskBtn("werkstat",undefined,fatigue>=werkstatFatLimit));
       }
 
       // Sloupec 3+4 — výrobní + příroda tasky, rovnoměrně rozdělené
@@ -6195,7 +6196,7 @@ function render(){
     if(!p.furnSlotConfig||p.furnSlotConfig.length!==furnSlotsN){
       p.furnSlotConfig=Array(furnSlotsN).fill("waldglas");
     }
-    const canCrystalUI=p.workers.some(w=>(w.prof==="foukat_kristal"||w.prof==="tavic")&&w.task!=="idle");
+    const canCrystalUI=p.workers.some(w=>w.prof==="foukat_kristal"||w.prof==="tavic");
     const slotTypeBox=h("div",{style:{marginBottom:"8px",padding:"6px 8px",background:"rgba(42,26,10,.05)",
       borderRadius:"4px",border:"1px solid rgba(42,26,10,.12)"}});
     slotTypeBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
@@ -6221,7 +6222,7 @@ function render(){
         style:{fontSize:"9px",padding:"2px 6px",opacity:canCrystalUI?1:0.4},
         title:canCrystalUI
           ?(L==="cs"?"Křišťál: čistý písek + čistá potaš + uhlí":"Crystal: pureSand + refinedPotash + charcoal")
-          :(L==="cs"?"Vyžaduje foukače křišťálu (Trh)":"Requires crystal blower (Market)"),
+          :(L==="cs"?"Vyžaduje foukače křišťálu v party":"Requires crystal blower in party"),
         onClick:()=>{
           if(!canCrystalUI)return;
           if(!G.furnSlotConfig)G.furnSlotConfig=Array(furnSlotsN).fill("waldglas");
@@ -6233,7 +6234,7 @@ function render(){
     slotTypeBox.append(slotGrid);
     if(!canCrystalUI){
       slotTypeBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",marginTop:"4px"}},
-        L==="cs"?"✨ Křišťál: najmout foukače křišťálu na Trhu":"✨ Crystal: hire crystal blower at Market"));
+        L==="cs"?"✨ Křišťál: pošli foukače křišťálu na Verštat":"✨ Crystal: send crystal blower to Workshop"));
     }
     colorSec.append(slotTypeBox);
 
