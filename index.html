@@ -68,6 +68,8 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
   font-size:10px;font-weight:700;background:rgba(139,94,52,.1);border:1px solid rgba(139,94,52,.15);}
 .pill.warn{background:rgba(160,48,32,.15);color:var(--danger);border-color:rgba(160,48,32,.2);}
 .pill.ok{background:rgba(74,122,58,.15);color:var(--ok);border-color:rgba(74,122,58,.2);}
+/* Klíčové metriky — vizuálně větší */
+.pill.key{padding:2px 7px;font-size:11px;background:rgba(139,94,52,.15);border-color:rgba(139,94,52,.25);}
 /* Ember glow — kritické metriky */
 @keyframes emberPulse{
   0%,100%{box-shadow:0 0 4px 1px rgba(200,80,20,.55),0 0 0 0 rgba(200,80,20,.0);background:rgba(180,50,10,.22);}
@@ -1212,6 +1214,17 @@ const BLOWN_ITEMS={
                qty:5, base:2,  spec:"foukat_dekor", specOnly:false,
                bulkNote_cs:"Skleněné korálky — kramáři, poutníci, obchodní trasy. Hromadný odbyt.",
                bulkNote_en:"Glass beads — merchants, pilgrims, trade routes. Bulk product."},
+  // ── NOVÉ VÝROBKY v8 ──
+  mucholapka: {cs:"Mucholapka",      en:"Flycatcher",      icon:"🫧",
+               inputs:["waldglas"],
+               qty:1, base:5,  spec:"foukat_lesni", specOnly:false,
+               bulkNote_cs:"Hygienické sklo — nádobka s úzkým otvorem, lapá mouchy. Sériová výroba od 16. stol. Odbytiště: lékárníci, ranhojiči, domácnosti.",
+               bulkNote_en:"Hygienic glass — narrow-necked vessel trapping flies. Mass-produced since 16th c. Market: apothecaries, barber-surgeons, households."},
+  konvice:    {cs:"Konvice",         en:"Pitcher",         icon:"🫖",
+               inputs:["waldglas","modra","smaragd"],
+               qty:1, base:9,  spec:"foukat_lesni", specOnly:false,
+               bulkNote_cs:"Baňaté tělo, zúžené hrdlo, hubička — na vodu, víno, olej. Doložena z Rejdic i Brna. Výroba z nazelenalé skloviny s optickým dekorem žeber. Sedláčková 2003.",
+               bulkNote_en:"Bulbous body, narrow neck, spout — water, wine, oil. Documented from Rejdice and Brno. Greenish glass with ribbed optical decor. Sedláčková 2003."},
 };
 
 // Všechny foukané typy pro state/sell
@@ -1243,7 +1256,7 @@ function craftBlown(itemKey, inputColor){
     render(); return;
   }
   const specialists=p.workers.filter(w=>w.prof===it.spec);
-  const anyBlower=p.workers.filter(w=>["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy"].includes(w.prof));
+  const anyBlower=p.workers.filter(w=>["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","tavic"].includes(w.prof));
   if(it.specOnly&&specialists.length===0){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje specializovaného foukače":"Requires specialist glassblower"}: ${PROF_CS[it.spec]}`);
     render(); return;
@@ -1629,6 +1642,8 @@ function initState(){
     // Nové v7.9
     holba:[], kutrolf:[], kutrolf_waldglas:[], stangenglas:[],
     pateriky:[], pateriky_modra:[], pateriky_smaragd:[], pateriky_lattimo:[],
+    // Nové v8
+    mucholapka:[], konvice:[], konvice_modra:[], konvice_smaragd:[],
     // Foukané — základní (waldglas vstup)
     cise:[], dzban:[], pullitr:[], romer:[], misa:[], dzban_forma:[],
     banka:[], spunt:[], ozdoba:[],
@@ -1672,6 +1687,8 @@ function initState(){
     // Multi-sezóna stats
     totalWaldglas:0, totalCrystal:0, totalGrose:0,
     tW:0, tC:0, tQS:0, tQN:0,
+    // Hráčské statistiky (Deník)
+    totalBatches:0, totalSold:0, totalCracks:0,
     log:[`__SEASON__1·1680`], events:[], curEvt:null, summary:null, interseason:null,
     trhuNPC:[],
     tab:"overview", help:false, showUpgrade:false,
@@ -2130,6 +2147,7 @@ function processRound(){
         slotIndexes:crackedSlots.map(c=>c.si+1)
       };
       evts.push("crack");
+      G.totalCracks=(G.totalCracks||0)+crackedSlots.length;
       const lossStr=[lostWg.length?lostWg.length+"× waldglas":"",lostCr.length?lostCr.length+"× křišťál":""].filter(Boolean).join(", ");
       log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla (slot "+crackedSlots.map(c=>c.si+1).join(",")+")":"Crucible cracked (slot "+crackedSlots.map(c=>c.si+1).join(",")+")"} · ${lossStr||"—"} · ${L==="cs"?"teplota -"+(crackedSlots.length*8)+"%":"temp -"+(crackedSlots.length*8)+"%"}`);
     }
@@ -2643,6 +2661,7 @@ function processRound(){
   const newWg=wg.length-p.waldglas.length, newCr=cr.length-p.crystal.length;
   if(newWg>0)tL.push(`🔥 +${newWg}× waldglas`);
   if(newCr>0)tL.push(`✨ +${newCr}× křišťál`);
+  if(newWg>0||newCr>0)G.totalBatches=(G.totalBatches||0)+1;
   // Pec stav (kampaň)
   if(isC&&fA)tL.push(`🌡️ ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
 
@@ -3065,6 +3084,7 @@ function sellItems(type,n){
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
   G[type]=rest; G.grose+=total;
+  G.totalSold=(G.totalSold||0)+cnt;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
   checkAchievements();
   render();
@@ -4164,21 +4184,40 @@ function render(){
     });
     prodBox.append(resGrid);
 
-    // Hint co dělat dál
+    // Hint co dělat dál — pouze pokud není vypnuté v settings
+    const showHints=p.showHints!==false; // default: zapnuto
     const nextHints=[];
-    if(!p.fActive) nextHints.push(L==="cs"?"🔥 Pec chladí — přidej palivo (Dřevo·Pec → Palivo 80%+)":"🔥 Furnace cold — add fuel");
-    if((p.waldglas?.length||0)>2&&p.grose<15) nextHints.push(L==="cs"?`💰 Máš ${p.waldglas.length}× neprodané sklo → jdi na Trh a prodej`:`💰 ${p.waldglas.length}× unsold glass → go to Market`);
-    if(p.pReady<1) nextHints.push(L==="cs"?"🏺 Žádné pánve — přiřaď Káninského na Pánvař":"🏺 No crucibles — assign to Crucible task");
-    if((p.res.wood||0)<8) nextHints.push(L==="cs"?"🪵 Dřevo dochází — nakup u Weisse (Trh) nebo pošli Komára kácet":"🪵 Low wood — buy at market or send logger");
-    if((p.res.potash||0)<3&&p.round>=4) nextHints.push(L==="cs"?"🌿 Potaš dochází — Loužírna potřebuje 6🪵 a dělníka":"🌿 Potash low — Potash station needs 6 wood");
-    if(p.debt>30&&p.grose<5) nextHints.push(L==="cs"?`📜 Dluh ${p.debt}g a prázdná pokladna — prodej sklo nebo půjč od Faktora Weisse`:`📜 Debt ${p.debt}g, empty purse — sell glass or borrow from Factor Weiss`);
-    if(sd.wagesDeficit>0) nextHints.push(L==="cs"?`⚠️ Nezaplaceno ${sd.wagesDeficit}g — dělníci jsou nespokojení. Splaťte z Účtů.`:`⚠️ Unpaid ${sd.wagesDeficit}g — workers unhappy. Pay from Accounts tab.`);
+    if(showHints){
+      if(!p.fActive&&p.round>=PREP) nextHints.push(L==="cs"?"🔥 Pec chladí — přidej palivo (Dřevo·Pec → Palivo 80%+)":"🔥 Furnace cold — add fuel");
+      if((p.waldglas?.length||0)>2&&p.grose<15) nextHints.push(L==="cs"?`💰 Máš ${p.waldglas.length}× neprodané sklo → jdi na Trh a prodej`:`💰 ${p.waldglas.length}× unsold glass → go to Market`);
+      if(p.pReady<1) nextHints.push(L==="cs"?"🏺 Žádné pánve — přiřaď Káninského na Pánvař":"🏺 No crucibles — assign to Crucible task");
+      if((p.res.wood||0)<8) nextHints.push(L==="cs"?"🪵 Dřevo dochází — nakup u Weisse (Trh) nebo pošli Komára kácet":"🪵 Low wood — buy at market or send logger");
+      if((p.res.potash||0)<3&&p.round>=4) nextHints.push(L==="cs"?"🌿 Potaš dochází — Loužírna potřebuje 6🪵 a dělníka":"🌿 Potash low — Potash station needs 6 wood");
+      if(p.debt>30&&p.grose<5) nextHints.push(L==="cs"?`📜 Dluh ${p.debt}g a prázdná pokladna — prodej sklo nebo půjč od Faktora Weisse`:`📜 Debt ${p.debt}g, empty purse — sell glass or borrow from Factor Weiss`);
+      if(sd.wagesDeficit>0) nextHints.push(L==="cs"?`⚠️ Nezaplaceno ${sd.wagesDeficit}g — dělníci jsou nespokojení. Splaťte z Účtů.`:`⚠️ Unpaid ${sd.wagesDeficit}g — workers unhappy. Pay from Accounts tab.`);
+      // Nové hinty v8
+      if(p.round>=PREP&&p.waldglas.length===0&&p.crystal.length===0) nextHints.push(L==="cs"?"🫥 Prázdná sklárna — zkontroluj pánve a palivo v tabu Pec":"🫥 Empty foundry — check crucibles and fuel in Furnace tab");
+      if((p.tercik?.length||0)===0&&p.round>=PREP) nextHints.push(L==="cs"?"🪟 Terčíky = rychlé groše — jdi na Výroba → Okenní sklo":"🪟 Window discs = quick coin — go to Production → Window glass");
+      if(p.morale<40) nextHints.push(L==="cs"?"😟 Nálada klesla — dej lidem pivo nebo zaplaď mzdy (Huť → Účty)":"😟 Morale low — give beer or pay wages (Foundry → Accounts)");
+      if((p.res.sand||0)<3&&p.round<PREP) nextHints.push(L==="cs"?"🏖️ Dochází písek — pošli horníka nebo nakup u Weisse":"🏖️ Low sand — send miner or buy from Weiss");
+    }
 
     if(nextHints.length>0){
       const nhBox=h("div",{style:{background:"rgba(139,94,52,.06)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #8b5e34"}});
-      nhBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"💡 CO DÁL":"💡 NEXT STEPS"));
+      const nhHdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}});
+      nhHdr.append(
+        h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34"}},L==="cs"?"💡 CO DÁL":"💡 NEXT STEPS"),
+        h("button",{class:"btn btn-s",style:{fontSize:"8px",padding:"1px 5px",opacity:.6},
+          onClick:()=>{G.showHints=false;render();}},L==="cs"?"skrýt":"hide"));
+      nhBox.append(nhHdr);
       nextHints.slice(0,4).forEach(h2=>nhBox.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",marginBottom:"3px",lineHeight:"1.4"}},h2)));
       body.append(nhBox);
+    }else if(!showHints){
+      // Skryté hinty — malý odkaz pro obnovení
+      const restoreDiv=h("div",{style:{fontSize:"9px",color:"rgba(139,94,52,.5)",textAlign:"right",
+        marginBottom:"4px",cursor:"pointer"},onClick:()=>{G.showHints=true;render();}},
+        L==="cs"?"💡 zobrazit tipy":"💡 show tips");
+      body.append(restoreDiv);
     }
     body.append(prodBox);
 
@@ -4581,7 +4620,7 @@ function render(){
     h("div",{style:{display:"flex",gap:"8px",fontSize:"11px",alignItems:"center"}},
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Groše: ":"Groats: "),
-        h("strong",{style:{color:"#3a2a14"}},"💰 "+p.grose+"g")),
+        h("strong",{style:{color:p.grose<20?"#a03020":"#3a2a14",fontSize:"13px"}},"💰 "+p.grose+"g")),
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Dluhy: ":"Debts: "),
         h("strong",{style:{color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?"📜 "+p.debt+"g":"✓")))));
@@ -4618,24 +4657,24 @@ function render(){
     resBar.append(
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
-      pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"key",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`),
       sep(),
       grpLabel(L==="cs"?"Suro.":"Mats"),
       pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
       pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
-      pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`),
+      pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"key",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`),
       pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
       pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
       pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
       sep(),
       grpLabel(L==="cs"?"Výr.":"Prod."),
-      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing`),
+      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"key",L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing`),
       pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`),
       ...(additivesTotal>0?[pillTip("🧪",additivesTotal,"",L==="cs"?`Přísady: ${additivesTip}`:`Additives: ${additivesTip}`)]:[]),
       ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barevné sklo: ${rainbowTip}`:`Coloured glass: ${rainbowTip}`)]:[]),
       sep(),
       grpLabel(L==="cs"?"Huť":"Hut"),
-      pillTip("😊",p.morale+"%",p.morale<40?"warn":"",L==="cs"?`Nálada: ${p.morale}%`:`Morale: ${p.morale}%`));
+      pillTip("😊",p.morale+"%",p.morale<40?"warn":"key",L==="cs"?`Nálada: ${p.morale}%`:`Morale: ${p.morale}%`));
   }else{
     const row1=h("div",{class:"pill-row pill-primary"});
     row1.append(
@@ -4829,8 +4868,9 @@ function render(){
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
     accounts:L==="cs"?"Huť":"Foundry",
     parta:L==="cs"?"Parta":"Crew",
+    hrac:L==="cs"?"Deník":"Journal",
     archiv:L==="cs"?"Archiv":"Archive"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
     const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
     const isActive=p.tab===k;
     const labelText=tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:"");
@@ -5537,9 +5577,42 @@ function render(){
     const wSpec=h("div",{class:"sec"});
     wSpec.append(h("div",{class:"sec-title"},"🪟 "+(L==="cs"?"Okenní sklo & Speciální výrobky":"Window Glass & Special Items")));
 
-    // Terčíky — přehled skladu
+    // Terčíky — craft karta (viditelná od začátku)
     const tercikStock=p.tercik?.length||0;
     const vyplneStock=p.tercik_vyplne?.length||0;
+    const tercikIt=BLOWN_ITEMS.tercik;
+    const hasTercikInput=(p.waldglas||[]).length>=2;
+    const hasFoukacLesni=!!p.workers.find(w=>w.prof==="foukat_lesni"||w.prof==="tavic");
+    const tercikOk=isC&&p.fActive&&hasTercikInput&&hasFoukacLesni;
+    const tercikCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+      border:`1px solid ${tercikOk?"rgba(74,122,58,.4)":"rgba(42,26,10,.1)"}`,
+      background:tercikOk?"rgba(74,122,58,.06)":"rgba(0,0,0,.02)",
+      marginBottom:"6px"}});
+    [
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+        h("span",{style:{fontSize:"12px",fontWeight:"700"}},"🪟 "+(L==="cs"?"Okenní terčíky":"Window discs")),
+        h("span",{style:{fontSize:"11px",color:"#4a7a3a",fontWeight:"700"}},"~3–9g/ks")),
+      h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
+        L==="cs"
+          ?"🟫 2× waldglas → 2–3× terčík Ø8–10 cm. Nepodařené (kval.≤2) → výplně (2g). Prémiové (kval.≥4) → žebrové (9g)."
+          :"🟫 2× waldglas → 2–3× window disc Ø8–10 cm. Rejects (qual.≤2) → fillers (2g). Premium (qual.≥4) → ribbed (9g)."),
+      !hasFoukacLesni?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Foukač nastupuje v dubnu (Sv. Jiří)":"⛔ Blower joins in April (St. George's Day)"):null,
+      !hasTercikInput&&hasFoukacLesni?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
+        L==="cs"?"⛔ Nedostatek waldglasu (2×)":"⛔ Not enough waldglas (2×)"):null,
+      tercikStock>0||vyplneStock>0?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
+        `${L==="cs"?"Sklad":"Stock"}: ${tercikStock}× ${L==="cs"?"terčík":"disc"}`+(vyplneStock>0?` + ${vyplneStock}× ${L==="cs"?"výplň":"filler"}`:"")+(p.tercik_zebrovy?.length>0?` + ${p.tercik_zebrovy.length}× ${L==="cs"?"žebrový":"ribbed"}`:"")):null,
+      h("button",{class:"btn btn-s"+(tercikOk?" btn-p":""),
+        style:{width:"100%",fontSize:"10px",opacity:tercikOk?1:.45},
+        onClick:()=>{if(tercikOk)craftBlown("tercik","waldglas");}},
+        tercikOk?(L==="cs"?"Foukat terčíky →":"Blow window discs →")
+          :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
+          :!hasFoukacLesni?(L==="cs"?"Čeká na foukače (duben)":"Waiting for blower (April)")
+          :(L==="cs"?"Podmínky nesplněny":"Requirements not met"))
+    ].filter(Boolean).forEach(n=>tercikCard.append(n));
+    wSpec.append(tercikCard);
+
+    // Terčíky — přehled skladu
     if(tercikStock>0||vyplneStock>0){
       wSpec.append(h("div",{style:{fontSize:"10px",color:"#4a7a3a",marginBottom:"4px"}},
         `🪟 ${L==="cs"?"Terčíky na skladě":"Window discs in stock"}: ${tercikStock}× ` +
@@ -5559,7 +5632,7 @@ function render(){
       border:`1px solid ${zrOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.1)"}`,
       background:zrOk?"rgba(201,149,43,.06)":"rgba(0,0,0,.02)",
       marginBottom:"6px"}});
-    zrCard.append(
+    [
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
         h("span",{style:{fontSize:"12px",fontWeight:"700"}},`🪞 ${L==="cs"?zrIt.cs:zrIt.en}`),
         h("span",{style:{fontSize:"11px",color:"#c9952b",fontWeight:"700"}},`~${zrIt.sell_cs}g`)),
@@ -5582,7 +5655,8 @@ function render(){
         style:{width:"100%",fontSize:"10px",opacity:zrOk?1:.45},
         onClick:()=>{if(zrOk)craftSpecial("zrcadlo");}},
         zrOk?(L==="cs"?"Vyrobit zrcadlo →":"Make mirror →")
-          :(L==="cs"?"Podmínky nesplněny":"Requirements not met")));
+          :(L==="cs"?"Podmínky nesplněny":"Requirements not met"))
+    ].filter(Boolean).forEach(n=>zrCard.append(n));
     wSpec.append(zrCard);
 
     // Alembik — craft sekce
@@ -5597,7 +5671,7 @@ function render(){
       border:`1px solid ${alOk?"rgba(122,74,154,.4)":"rgba(42,26,10,.1)"}`,
       background:alOk?"rgba(122,74,154,.05)":"rgba(0,0,0,.02)",
       marginBottom:"6px"}});
-    alCard.append(
+    [
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
         h("span",{style:{fontSize:"12px",fontWeight:"700"}},`⚗️ ${L==="cs"?alIt.cs:alIt.en}`),
         h("span",{style:{fontSize:"11px",color:"#7a4a9a",fontWeight:"700"}},`~${alIt.sell_cs}g`)),
@@ -5618,7 +5692,8 @@ function render(){
         style:{width:"100%",fontSize:"10px",opacity:alOk?1:.45},
         onClick:()=>{if(alOk)craftSpecial("alembik");}},
         alOk?(L==="cs"?"Vyrobit alembik →":"Make alembic →")
-          :(L==="cs"?"Podmínky nesplněny":"Requirements not met")));
+          :(L==="cs"?"Podmínky nesplněny":"Requirements not met"))
+    ].filter(Boolean).forEach(n=>alCard.append(n));
     wSpec.append(alCard);
 
     // Info note
@@ -7571,12 +7646,189 @@ function render(){
       }
     }
 
+  // ── TAB: DENÍK HRÁČE (Tomislav Břeťánek) ──
+  }else if(p.tab==="hrac"){
+    const hracSec=h("div",{class:"sec"});
+    hracSec.append(h("div",{class:"sec-title"},"📓 "+(L==="cs"?"Deník — Tomislav Břeťánek":"Journal — Tomislav Břeťánek")));
+
+    // ── Rank system ──
+    const HRAC_RANKS=[
+      {id:"pomocnik",  cs:"Pomocník",    en:"Helper",       minSeason:0,  minGrose:0,    icon:"🪓",
+       desc_cs:"Přišel jsem do hutě s prázdnýma rukama. Kunc mi dá šanci — ale jen jednu.",
+       desc_en:"I came to the foundry empty-handed. Kunc gives me a chance — but only one."},
+      {id:"ucen",      cs:"Učeň",        en:"Apprentice",   minSeason:1,  minGrose:50,   icon:"🔥",
+       desc_cs:"Začínám rozumět ohni. Pánev praská méně. Kunc mě přestává hlídat každý krok.",
+       desc_en:"I'm starting to understand the fire. Crucibles crack less. Kunc stops watching every step."},
+      {id:"tovarys",   cs:"Tovaryš",     en:"Journeyman",   minSeason:2,  minGrose:200,  icon:"💨",
+       desc_cs:"Umím foukat základní tvary. Lidé v huti mi říkají Tomáš, ne 'ten nový'.",
+       desc_en:"I can blow basic shapes. People in the foundry call me Tomáš, not 'the new one'."},
+      {id:"mistr",     cs:"Mistr hutě",  en:"Foundry Master",minSeason:4, minGrose:600,  icon:"⚗️",
+       desc_cs:"Huť je moje. Křišťál teče z pece jako voda. Baranovský mi nabízí zakázku pro Harrache.",
+       desc_en:"The foundry is mine. Crystal flows from the furnace like water. Baranovský offers a Harrach commission."},
+      {id:"velmistr",  cs:"Velmistr",    en:"Glasmaster",   minSeason:8,  minGrose:2000, icon:"💎",
+       desc_cs:"Jméno Břeťánek zní po celém Novoborsku. Rubín, filigrán, zrcadla — vše.",
+       desc_en:"The name Břeťánek rings across all of Novoborsko. Ruby, filigree, mirrors — all of it."},
+    ];
+
+    // Určení aktuálního ranku
+    const hracGrose=p.grose||0;
+    const hracSeason=p.season||1;
+    let currentRankIdx=0;
+    HRAC_RANKS.forEach((r,i)=>{
+      if(hracSeason>=r.minSeason&&hracGrose>=r.minGrose)currentRankIdx=i;
+    });
+    const currentRank=HRAC_RANKS[currentRankIdx];
+    const nextRank=HRAC_RANKS[currentRankIdx+1]||null;
+
+    // ── Identita karta ──
+    const idCard=h("div",{style:{padding:"12px",borderRadius:"8px",
+      border:"1px solid rgba(201,149,43,.3)",background:"rgba(201,149,43,.05)",
+      marginBottom:"12px",display:"flex",gap:"12px",alignItems:"flex-start"}});
+
+    // Placeholder portrét (SVG monogram)
+    const portrait=h("div",{style:{width:"60px",height:"60px",flexShrink:"0",
+      borderRadius:"6px",background:"rgba(42,26,10,.15)",border:"1px solid rgba(139,94,52,.3)",
+      display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px"}});
+    portrait.textContent=currentRank.icon;
+    idCard.append(portrait);
+
+    const idInfo=h("div",{style:{flex:1}});
+    idInfo.append(
+      h("div",{style:{fontSize:"15px",fontWeight:"700",color:"#3a2a14",marginBottom:"2px"}},
+        "Tomislav Břeťánek"),
+      h("div",{style:{fontSize:"12px",color:"#c9952b",fontWeight:"700",marginBottom:"4px"}},
+        L==="cs"?currentRank.cs:currentRank.en),
+      h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",lineHeight:"1.4"}},
+        L==="cs"?currentRank.desc_cs:currentRank.desc_en));
+    idCard.append(idInfo);
+    hracSec.append(idCard);
+
+    // ── Progress k dalšímu ranku ──
+    if(nextRank){
+      const progDiv=h("div",{style:{marginBottom:"12px",padding:"8px",borderRadius:"6px",
+        background:"rgba(42,26,10,.04)",border:"1px solid rgba(42,26,10,.08)"}});
+      progDiv.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
+        L==="cs"?"📈 Postup k dalšímu ranku:":"📈 Progress to next rank:"));
+
+      // Sezóna progress
+      const seaDone=hracSeason>=nextRank.minSeason;
+      const seaBar=Math.min(1,hracSeason/nextRank.minSeason);
+      progDiv.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"9px",
+        color:seaDone?"#4a7a3a":"#8b5e34",marginBottom:"2px"}},
+        L==="cs"?`${seaDone?"✅":"⏳"} Sezóna: ${hracSeason}/${nextRank.minSeason}`
+                 :`${seaDone?"✅":"⏳"} Season: ${hracSeason}/${nextRank.minSeason}`,
+        seaDone?(L==="cs"?"splněno":"done"):""));
+      const seaBarDiv=h("div",{style:{height:"4px",borderRadius:"2px",background:"rgba(42,26,10,.1)",marginBottom:"6px"}});
+      seaBarDiv.append(h("div",{style:{height:"100%",borderRadius:"2px",width:`${Math.round(seaBar*100)}%`,
+        background:seaDone?"#4a7a3a":"#c9952b",transition:"width .3s"}}));
+      progDiv.append(seaBarDiv);
+
+      // Groše progress
+      const groDone=hracGrose>=nextRank.minGrose;
+      const groBar=Math.min(1,hracGrose/nextRank.minGrose);
+      progDiv.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"9px",
+        color:groDone?"#4a7a3a":"#8b5e34",marginBottom:"2px"}},
+        L==="cs"?`${groDone?"✅":"💰"} Groše: ${hracGrose}/${nextRank.minGrose}g`
+                 :`${groDone?"✅":"💰"} Groschen: ${hracGrose}/${nextRank.minGrose}g`,
+        groDone?(L==="cs"?"splněno":"done"):""));
+      const groBarDiv=h("div",{style:{height:"4px",borderRadius:"2px",background:"rgba(42,26,10,.1)"}});
+      groBarDiv.append(h("div",{style:{height:"100%",borderRadius:"2px",width:`${Math.round(groBar*100)}%`,
+        background:groDone?"#4a7a3a":"#c9952b",transition:"width .3s"}}));
+      progDiv.append(groBarDiv);
+
+      if(seaDone&&groDone){
+        progDiv.append(h("div",{style:{marginTop:"6px",fontSize:"10px",color:"#4a7a3a",fontWeight:"700",
+          textAlign:"center"}},
+          `🎉 ${L==="cs"?"Postup na "+((L==="cs"?nextRank.cs:nextRank.en))+" odemčen!":"Rank up to "+(nextRank.en)+" unlocked!"}`));
+      }
+
+      hracSec.append(progDiv);
+    }else{
+      hracSec.append(h("div",{style:{padding:"8px",borderRadius:"6px",
+        background:"rgba(201,149,43,.08)",border:"1px solid rgba(201,149,43,.2)",
+        fontSize:"11px",color:"#c9952b",fontWeight:"700",textAlign:"center",marginBottom:"12px"}},
+        L==="cs"?"🏆 Velmistr — nejvyšší dosažitelný rank. Jméno Břeťánek žije v legendě.":"🏆 Glasmaster — the highest achievable rank. The Břeťánek name lives in legend."));
+    }
+
+    // ── Ranky timeline ──
+    const timelineDiv=h("div",{style:{marginBottom:"12px"}});
+    timelineDiv.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",
+      marginBottom:"6px",borderBottom:"1px solid rgba(139,94,52,.15)",paddingBottom:"3px"}},
+      L==="cs"?"🗺️ Cesta Tomislava Břeťánka:":"🗺️ Tomislav Břeťánek's path:"));
+    HRAC_RANKS.forEach((r,i)=>{
+      const done=i<=currentRankIdx;
+      const isCurrent=i===currentRankIdx;
+      const row=h("div",{style:{display:"flex",gap:"8px",alignItems:"flex-start",
+        padding:"5px 6px",borderRadius:"4px",marginBottom:"2px",
+        background:isCurrent?"rgba(201,149,43,.08)":"transparent",
+        border:isCurrent?"1px solid rgba(201,149,43,.2)":"1px solid transparent",
+        opacity:done?1:.45}});
+      row.append(h("span",{style:{fontSize:"13px",flexShrink:"0"}},r.icon));
+      const rTxt=h("div",{style:{flex:1}});
+      rTxt.append(
+        h("div",{style:{fontSize:"10px",fontWeight:"700",color:isCurrent?"#c9952b":"#3a2a14"}},
+          (done&&!isCurrent?"✓ ":"")+(L==="cs"?r.cs:r.en)+
+          (isCurrent?(L==="cs"?" ← aktuálně":" ← current"):""),
+        ),
+        h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic"}},
+          L==="cs"?r.desc_cs:r.desc_en),
+        h("div",{style:{fontSize:"9px",color:"rgba(139,94,52,.6)",marginTop:"1px"}},
+          `${L==="cs"?"od sez.":"from s."}${r.minSeason} · ${r.minGrose}g`));
+      row.append(rTxt);
+      timelineDiv.append(row);
+    });
+    hracSec.append(timelineDiv);
+
+    // ── Statistiky ──
+    const statDiv=h("div",{style:{padding:"8px",borderRadius:"6px",
+      background:"rgba(42,26,10,.04)",border:"1px solid rgba(42,26,10,.08)"}});
+    statDiv.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
+      L==="cs"?"📊 Statistiky hutě:":"📊 Foundry statistics:"));
+    const stats=[
+      {icon:"💰",label_cs:"Celkové groše",label_en:"Total groschen",val:`${hracGrose}g`},
+      {icon:"🗓️",label_cs:"Sezóna",label_en:"Season",val:hracSeason},
+      {icon:"🔥",label_cs:"Várky odtaveny",label_en:"Batches smelted",val:p.totalBatches||0},
+      {icon:"📦",label_cs:"Výrobků prodáno",label_en:"Items sold",val:p.totalSold||0},
+      {icon:"💀",label_cs:"Prasknuté pánve",label_en:"Cracked crucibles",val:p.totalCracks||0},
+      {icon:"🌲",label_cs:"Parcely lesa",label_en:"Forest parcels",val:`${p.forest||0}/200`},
+    ];
+    const statGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px"}});
+    stats.forEach(s=>{
+      statGrid.append(h("div",{style:{display:"flex",gap:"4px",alignItems:"center",
+        padding:"3px 5px",background:"rgba(255,255,255,.04)",borderRadius:"3px"}},
+        h("span",{style:{fontSize:"11px"}},s.icon),
+        h("div",null,
+          h("div",{style:{fontSize:"8px",color:"#8b6a3a"}},L==="cs"?s.label_cs:s.label_en),
+          h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14"}},s.val))));
+    });
+    statDiv.append(statGrid);
+    hracSec.append(statDiv);
+
+    content.append(hracSec);
+
   // ── TAB: NASTAVENÍ ──
   }else if(p.tab==="archiv"){
     checkAchievements();
     const archSec=h("div",{class:"sec"});
     archSec.append(h("div",{class:"sec-title"},"📖 "+(L==="cs"?"Archiv — wiki a úspěchy":"Archive — wiki & achievements")));
 
+    // ── Subtabs ──
+    if(!G._archivSubtab)G._archivSubtab="achievements";
+    const archSubtabs=[
+      {id:"achievements", cs:"⭐ Úspěchy",   en:"⭐ Achievements"},
+      {id:"codex",        cs:"📋 Codex",      en:"📋 Codex"},
+      {id:"wiki",         cs:"📜 Pergamen",   en:"📜 Parchment"},
+    ];
+    const stabRow=h("div",{class:"detail-subtabs",style:{marginBottom:"10px"}});
+    archSubtabs.forEach(s=>{
+      const btn=h("button",{class:"detail-subtab"+(G._archivSubtab===s.id?" active":""),
+        onClick:()=>{G._archivSubtab=s.id;render();}},
+        L==="cs"?s.cs:s.en);
+      stabRow.append(btn);
+    });
+    archSec.append(stabRow);
+
+    if(G._archivSubtab==="achievements"){
     // ── Endgame items placeholder sekce ──
     const endgameSec=h("div",{style:{marginBottom:"14px",padding:"10px",borderRadius:"8px",
       border:"1px solid rgba(201,149,43,.2)",background:"rgba(42,26,10,.15)"}});
@@ -7651,6 +7903,148 @@ function render(){
       archSec.append(grid);
     });
 
+    } // end achievements subtab
+
+    // ── CODEX subtab ──
+    if(G._archivSubtab==="codex"){
+      archSec.append(h("div",{style:{fontSize:"11px",color:"#8b6a3a",fontStyle:"italic",
+        marginBottom:"10px",lineHeight:"1.5"}},
+        L==="cs"
+          ?"📋 Codex — přehled všeho co lze v huti vyrobit a prodat. Ceny jsou orientační (závisí na kvalitě a sezóně)."
+          :"📋 Codex — overview of everything you can produce and sell. Prices are indicative (depends on quality and season)."));
+
+      const csGlassMap={waldglas:"lesní sklo",crystal:"křišťál",modra:"tmavá modř",
+        smaragd:"smaragd",lattimo:"lattimo",rubin:"rubín",jantar:"jantar"};
+
+      const codexSections=[
+        {
+          title_cs:"🔥 Sklovina — surové sklo", title_en:"🔥 Glass melt — raw glass",
+          items:[
+            {icon:"🟫",cs:"Lesní sklo (Waldglas)",en:"Forest glass (Waldglas)",price:"~3.5g/★",
+             recipe_cs:"3× písek + 2× potaš + 1× vápenec → pánev → tavení",
+             recipe_en:"3× sand + 2× potash + 1× limestone → crucible → smelting",
+             note_cs:"Základní surovina. Nazelenalá barva od Fe a S. Potaš černá/modrá postačí.",
+             note_en:"Base material. Greenish colour from Fe and S. Black/blue potash sufficient."},
+            {icon:"✨",cs:"Křišťál (čiré sklo)",en:"Crystal (clear glass)",price:"~9g/★",
+             recipe_cs:"Waldglas + bílá potaš + čeřidlo (As₂O₃/NaCl/MnO₂) → 65%+ fTemp",
+             recipe_en:"Waldglas + white potash + fining agent (As₂O₃/NaCl/MnO₂) → 65%+ fTemp",
+             note_cs:"Vyžaduje bílou potaš a čeřidlo. Technologický přelom ~1680.",
+             note_en:"Requires white potash and fining agent. Tech turning point ~1680."},
+          ]
+        },
+        {
+          title_cs:"💨 Foukané — základní (všichni foukači)", title_en:"💨 Blown — basic (all blowers)",
+          items: Object.entries(BLOWN_ITEMS).filter(([,v])=>!v.specOnly).map(([k,v])=>({
+            icon:v.icon, cs:v.cs, en:v.en,
+            price:`~${v.base}g${v.inputs.length>1?" (waldglas)":""}`,
+            recipe_cs:`${v.qty}× ${v.inputs.map(i=>csGlassMap[i]||i).join(" / ")} → foukání`,
+            recipe_en:`${v.qty}× ${v.inputs.join(" / ")} → blowing`,
+            note_cs:v.bulkNote_cs||"", note_en:v.bulkNote_en||"",
+          }))
+        },
+        {
+          title_cs:"💨 Foukané — specializované", title_en:"💨 Blown — specialist",
+          items: Object.entries(BLOWN_ITEMS).filter(([,v])=>v.specOnly).map(([k,v])=>{
+            const specLabel={foukat_kristal:"foukač křišťálu",foukat_dekor:"foukač dekor",foukat_formy:"formař"};
+            const specLabelEn={foukat_kristal:"crystal blower",foukat_dekor:"decor blower",foukat_formy:"mould-blower"};
+            return {
+              icon:v.icon,
+              cs:`${v.cs} (${specLabel[v.spec]||v.spec})`,
+              en:`${v.en} (${specLabelEn[v.spec]||v.spec})`,
+              price:`~${v.base}g`,
+              recipe_cs:`${v.qty}× ${v.inputs.map(i=>csGlassMap[i]||i).join(" / ")} → foukání`,
+              recipe_en:`${v.qty}× ${v.inputs.join(" / ")} → blowing`,
+              note_cs:v.bulkNote_cs||"", note_en:v.bulkNote_en||"",
+            };
+          })
+        },
+        {
+          title_cs:"💎 Broušené (hranař / kulič)", title_en:"💎 Ground wares (edge-cutter / sphere-grinder)",
+          items: Object.entries(GROUND_ITEMS).map(([k,v])=>{
+            const sL={brusic_hrana:"hranař",brusic_kulic:"kulič"};
+            const sE={brusic_hrana:"edge-cutter",brusic_kulic:"sphere-grinder"};
+            return {
+              icon:v.icon,
+              cs:`${v.cs} (${sL[v.spec]||v.spec})`,
+              en:`${v.en} (${sE[v.spec]||v.spec})`,
+              price:`~${v.base}g`,
+              recipe_cs:"1× křišťál → broušení",
+              recipe_en:"1× crystal → grinding",
+              note_cs:"", note_en:"",
+            };
+          })
+        },
+        {
+          title_cs:"✂️ Rytiny (rytec, červen+)", title_en:"✂️ Engravings (engraver, June+)",
+          items: ENGRAVE_INPUTS.map(k=>{
+            const it=GROUND_ITEMS[k]||BLOWN_ITEMS[k];
+            const nm=it?(L==="cs"?it.cs:it.en):k;
+            return {
+              icon:"✂️",
+              cs:`Rytina: ${nm}`,
+              en:`Engraving: ${nm}`,
+              price:`~${it?Math.round(it.base*ENGRAVE_BONUS):0}g`,
+              recipe_cs:`1× ${nm} → rytí diamantem`,
+              recipe_en:`1× ${nm} → diamond engraving`,
+              note_cs:"Rytina diamantem masová v Čechách až od posl. čtvrtiny 17. stol. Rok 1680 = novinka.",
+              note_en:"Diamond engraving mass-market in Bohemia only from last quarter 17th c. 1680 = novelty.",
+            };
+          })
+        },
+        {
+          title_cs:"🪟 Okenní sklo & speciální výrobky", title_en:"🪟 Window glass & special items",
+          items:[
+            {icon:"🪟",cs:"Okenní terčík",en:"Window disc",
+             price:"6g/★ · výplně 2g · žebrové 9g",
+             recipe_cs:"2× lesní sklo → foukání → Ø8–10 cm. Kval.≤2 → výplně, kval.≥4 → žebrové.",
+             recipe_en:"2× waldglas → blowing → Ø8–10 cm. Qual.≤2 → fillers, qual.≥4 → ribbed.",
+             note_cs:"Hromadný odbyt každé hutě. Kláštery, měšťanské domy, Haida trh. (CP_13II2015)",
+             note_en:"Bulk product of every foundry. Monasteries, townhouses, Haida market. (CP_13II2015)"},
+            {icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
+             price:"~65g",
+             recipe_cs:"2× křišťál + 1× rtuť + 1× cín + hranař",
+             recipe_en:"2× crystal + 1× mercury + 1× tin + edge-cutter",
+             note_cs:"Amalgám rtuti+cínu na zadní stranu. Rtuť z Idrie = import. Vzácný luxus pro šlechtu.",
+             note_en:"Mercury-tin amalgam on reverse. Mercury from Idrija = import. Rare noble luxury."},
+            {icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
+             price:"~55g",
+             recipe_cs:"2× křišťál + 1× arsen (As₂O₃) + foukač křišťálu",
+             recipe_en:"2× crystal + 1× arsenic (As₂O₃) + crystal blower",
+             note_cs:"Destilační helma. Nejstarší nález stř. Evropy: klarisy Bratislava ~1290. (Sedláčková 2021)",
+             note_en:"Distillation helmet. Oldest Central European find: Poor Clares Bratislava ~1290. (Sedláčková 2021)"},
+          ]
+        },
+      ];
+
+      codexSections.forEach(sec=>{
+        const secDiv=h("div",{style:{marginBottom:"14px"}});
+        secDiv.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#8b5e34",
+          borderBottom:"1px solid rgba(139,94,52,.2)",paddingBottom:"4px",marginBottom:"6px"}},
+          L==="cs"?sec.title_cs:sec.title_en));
+        sec.items.forEach(it=>{
+          const row=h("div",{style:{display:"flex",gap:"6px",alignItems:"flex-start",
+            padding:"5px 6px",borderRadius:"4px",marginBottom:"3px",
+            background:"rgba(42,26,10,.03)",border:"1px solid rgba(42,26,10,.06)"}});
+          row.append(h("span",{style:{fontSize:"14px",flexShrink:"0",lineHeight:"1.3"}},it.icon));
+          const txt=h("div",{style:{flex:1,minWidth:0}});
+          const topRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"4px",flexWrap:"wrap"}});
+          topRow.append(
+            h("span",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14"}},L==="cs"?it.cs:it.en),
+            h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700",flexShrink:"0"}},it.price));
+          txt.append(topRow);
+          txt.append(h("div",{style:{fontSize:"9px",color:"#6a4830",marginTop:"1px"}},
+            L==="cs"?it.recipe_cs:it.recipe_en));
+          const note=L==="cs"?it.note_cs:it.note_en;
+          if(note)txt.append(h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic",marginTop:"1px"}},note));
+          row.append(txt);
+          secDiv.append(row);
+        });
+        archSec.append(secDiv);
+      });
+    } // end codex subtab
+
+    // ── WIKI subtab ──
+    if(G._archivSubtab==="wiki"){
     // ── Wiki sekce ──
     const unlockedWiki=Object.entries(WIKI_ENTRIES).filter(([k])=>
       (p.wikiDiscovered||[]).includes(k));
@@ -7682,6 +8076,7 @@ function render(){
         border:"1px solid rgba(42,26,10,.1)",textAlign:"center"}},
         L==="cs"?"📜 Začni vyrábět — záznamy se odemknou samy.":"📜 Start producing — records will unlock on their own."));
     }
+    } // end wiki subtab
 
     content.append(archSec);
 
