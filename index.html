@@ -10,7 +10,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <!-- End Google Tag Manager -->
 	
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Sklářská Huť · v7.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
@@ -106,8 +106,13 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 .tab.active{color:var(--light);background:var(--warm);}
 .tab.active .tab-label{max-width:80px;opacity:1;}
 .content{flex:1;overflow-y:auto;min-height:0;}
+/* Mobil: content-shell drží content + button dole */
+.mobile-shell{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}
+.mobile-shell .content{flex:1;overflow-y:auto;min-height:0;}
+.mobile-shell .action-bar{flex-shrink:0;}
 .action-bar{padding:10px 14px;border-top:2px solid rgba(42,26,10,.2);flex-shrink:0;
   background:linear-gradient(135deg,var(--card),var(--card2));
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
   position:sticky;bottom:0;z-index:10;}
 .round-bar{display:flex;flex-direction:column;padding:4px 14px;
   background:rgba(0,0,0,.03);border-bottom:1px solid rgba(42,26,10,.13);flex-shrink:0;}
@@ -1517,7 +1522,7 @@ const CHRON_HUMOR_GOOD=[
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const zone=t=>ZONES.find(z=>t<=z.max)||ZONES[7];
-const stars=q=>"★".repeat(q)+"☆".repeat(5-q);
+const stars=q=>{const n=Math.max(0,Math.min(5,Math.round(q||0)));return"★".repeat(n)+"☆".repeat(5-n);};
 const tAcc=t=>{const d=Math.abs(t-76);return Math.max(0,1-d/40);};
 const qRoll=(ta,wl,mor,pq)=>clamp(Math.round(ta*2+wl*.6+(mor/100)+pq*.4+(Math.random()-.3)*1.5),1,5);
 
@@ -3805,8 +3810,8 @@ function render(){
         chance:{cs:"Nikdo neví proč. Tak to prostě je.",en:"No one knows why. That's how it goes."}
       }[cl.reason]||{cs:"",en:""};
       const lostLines=[];
-      if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× lesní sklo ${cl.wg.map(q=>"★".repeat(q)).join(", ")}`);
-      if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× křišťál ${cl.cr.map(q=>"★".repeat(q)).join(", ")}`);
+      if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× lesní sklo ${cl.wg.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
+      if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× křišťál ${cl.cr.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
       if(!cl.wg?.length&&!cl.cr?.length) lostLines.push(L==="cs"?"✅ Sklo zachováno — jen pánev odepsána":"✅ Glass preserved — crucible lost");
       lostLines.push(L==="cs"?"🔥 Ostatní sloty pokračují":"🔥 Other slots continue");
 
@@ -4251,7 +4256,7 @@ function render(){
         fontSize:"10px",marginBottom:"3px",padding:"2px 0",
         borderBottom:"1px solid rgba(42,26,10,.06)"}});
       row.append(
-        h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(w.lv)),
+        h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
         h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
           h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+wage+"g"):("✗ "+wage+"g → dluh")),
           unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},"celk. dluh: "+unpaid+"g"):h("span",{},"")
@@ -4350,7 +4355,7 @@ function render(){
         box.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
           padding:"4px 8px",marginBottom:"3px",background:"rgba(160,0,0,.07)",borderRadius:"3px",
           fontSize:"11px",border:"1px solid rgba(160,0,0,.15)"}},
-          h("span",{style:{fontWeight:"700",color:"#3a2a14"}},w.name+" "+"★".repeat(w.lv)),
+          h("span",{style:{fontWeight:"700",color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
           h("span",{style:{color:"#a03020"}},(L==="cs"?"dluh: ":"owes: ")+(w.unpaidDebt||0)+"g")));
       });
       const totalUnpaid=debtedWorkers.reduce((s,w)=>s+(w.unpaidDebt||0),0);
@@ -5139,7 +5144,7 @@ function render(){
       const colInfo=h("div",{style:{flex:"1",minWidth:0}});
       colInfo.append(
         h("div",{style:{display:"flex",alignItems:"center",gap:"5px",flexWrap:"wrap",marginBottom:"1px"}},
-          h("div",{style:{fontWeight:"700",fontSize:"11px",color:"#3a2a14"}},w.name+" "+"★".repeat(w.lv)),
+          h("div",{style:{fontWeight:"700",fontSize:"11px",color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
           ...(w.traits?.map(t=>{
             const td=TRAITS[t];if(!td)return null;
             const tw=h("span",{class:"tip-wrap"});
@@ -5293,7 +5298,7 @@ function render(){
             const wRow=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",
               fontSize:"11px",padding:"3px 0",borderTop:"1px solid rgba(42,26,10,.06)"}});
             wRow.append(
-              h("span",{style:{flex:"1",fontWeight:"600"}},`${w.name} ${"★".repeat(w.lv)}`),
+              h("span",{style:{flex:"1",fontWeight:"600"}},`${w.name} ${"★".repeat(Math.max(0,w.lv||0))}`),
               h("span",{style:{fontSize:"9px",color:"#8b5e34",flexShrink:0}},L==="cs"?PROF_CS[w.prof]:PROF_EN[w.prof]),
               h("div",{style:{width:"50px",height:"4px",background:"rgba(0,0,0,.1)",borderRadius:"2px",flexShrink:0}},
                 h("div",{style:{width:xpPct+"%",height:"100%",background:sp.color,borderRadius:"2px"}})),
@@ -6848,6 +6853,91 @@ function render(){
     const hutSec=h("div",{class:"sec"});
     hutSec.append(h("div",{class:"sec-title"},"🏭 "+(L==="cs"?"Huť — Zakázky & Účty":"Foundry — Contracts & Accounts")));
 
+    // ── TRŽNÍ ZAKÁZKY — seznam nahoře ──
+    const availContracts=p.avail||[];
+    const activeContracts=p.contracts||[];
+    const hasTrhContracts=availContracts.length>0||activeContracts.length>0;
+    if(hasTrhContracts){
+      const trhZak=h("div",{style:{marginBottom:"10px",padding:"8px 10px",borderRadius:"6px",
+        border:"1px solid rgba(201,149,43,.3)",background:"rgba(201,149,43,.05)"}});
+      trhZak.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",
+        marginBottom:"6px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        "📜 "+(L==="cs"?"Tržní zakázky":"Market contracts"),
+        h("button",{class:"btn btn-s",style:{fontSize:"9px"},
+          onClick:()=>{G.tab="market";render();}},
+          L==="cs"?"→ Trh":"→ Market")));
+
+      // Aktivní (přijaté) zakázky
+      if(activeContracts.length>0){
+        trhZak.append(h("div",{style:{fontSize:"9px",color:"#4a7a3a",fontWeight:"700",
+          marginBottom:"4px",textTransform:"uppercase",letterSpacing:".5px"}},
+          L==="cs"?"✅ Přijaté":"✅ Active"));
+        activeContracts.forEach(c=>{
+          const remaining=c.due-p.round;
+          const urgent=remaining<=2;
+          const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"4px 7px",borderRadius:"4px",marginBottom:"3px",
+            background:urgent?"rgba(160,48,32,.08)":"rgba(74,122,58,.06)",
+            border:"1px solid "+(urgent?"rgba(160,48,32,.2)":"rgba(74,122,58,.2)")}});
+          const buyerIcon=c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
+          row.append(
+            h("div",{style:{flex:1,minWidth:0}},
+              h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#3a2a14",
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},
+                buyerIcon+" "+(L==="cs"?c.cs:c.en)),
+              h("div",{style:{fontSize:"9px",color:urgent?"#a03020":"#4a7a3a"}},
+                `+${c.reward}g · ${L==="cs"?"zbývá":"left"}: ${remaining} ${L==="cs"?"kol":"rounds"}`+(urgent?" ⚠️":""))),
+            h("div",{style:{flexShrink:0,marginLeft:"6px"}},
+              h("span",{style:{fontSize:"9px",fontStyle:"italic",color:"#8b5e34"}},
+                (L==="cs"?"do kola ":"due r.")+c.due)));
+          trhZak.append(row);
+        });
+      }
+
+      // Dostupné (nepřijaté) zakázky
+      if(availContracts.length>0){
+        if(activeContracts.length>0)trhZak.append(h("div",{style:{height:"6px"}}));
+        trhZak.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontWeight:"700",
+          marginBottom:"4px",textTransform:"uppercase",letterSpacing:".5px"}},
+          L==="cs"?"⏳ Nabídky na trhu":"⏳ Available"));
+        const canAcceptMore=activeContracts.length<3;
+        availContracts.slice(0,3).forEach(c=>{
+          const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"4px 7px",borderRadius:"4px",marginBottom:"3px",
+            background:"rgba(42,26,10,.04)",border:"1px solid rgba(42,26,10,.1)"}});
+          const buyerIcon=c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
+          row.append(
+            h("div",{style:{flex:1,minWidth:0}},
+              h("div",{style:{fontSize:"10px",color:"#3a2a14",
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},
+                buyerIcon+" "+(L==="cs"?c.cs:c.en)),
+              h("div",{style:{fontSize:"9px",color:"#8b5e34"}},`+${c.reward}g`)),
+            h("button",{class:"btn btn-s"+(canAcceptMore?" btn-p":""),
+              style:{fontSize:"9px",flexShrink:0,marginLeft:"6px",
+                opacity:canAcceptMore?1:0.45,cursor:canAcceptMore?"pointer":"not-allowed"},
+              onClick:()=>{
+                if(!canAcceptMore)return;
+                G.contracts.push({...c});
+                G.avail=G.avail.filter(x=>x.id!==c.id);
+                G.log.push("__ECO__📜 "+(L==="cs"?"Zakázka přijata: ":"Contract accepted: ")+(L==="cs"?c.cs:c.en)+" (+"+c.reward+"g)");
+                render();
+              }},L==="cs"?"Přijmout":"Accept"));
+          trhZak.append(row);
+        });
+        if(availContracts.length>3){
+          trhZak.append(h("div",{style:{fontSize:"9px",color:"rgba(139,94,52,.6)",
+            textAlign:"center",marginTop:"3px",cursor:"pointer"},
+            onClick:()=>{G.tab="market";render();}},
+            `+${availContracts.length-3} ${L==="cs"?"dalších na Trhu →":"more on Market →"}`));
+        }
+        if(!canAcceptMore){
+          trhZak.append(h("div",{style:{fontSize:"9px",color:"#a03020",fontStyle:"italic",marginTop:"4px"}},
+            L==="cs"?"⚠️ Plno zakázek (max 3)":"⚠️ Contract slots full (max 3)"));
+        }
+      }
+      hutSec.append(trhZak);
+    }
+
     const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}});
 
     // ── LEVÝ SLOUPEC: ZAKÁZKY ──
@@ -8301,7 +8391,9 @@ function render(){
     app.append(shell);
   }else{
     app.classList.remove("desktop");
-    app.append(tabBar,content,actionBar);
+    const contentShell=h("div",{class:"content-shell mobile-shell"});
+    contentShell.append(content,actionBar);
+    app.append(tabBar,contentShell);
   }
 
   // Welcome modal — jednorázový po prvním vstupu
