@@ -3,6 +3,3 @@ Allow: /
 
 # Sitemap
 Sitemap: https://fajrum.cz/sitemap.xml
-
-# Crawl-delay (volitelné, pro slušné boty)
-Crawl-delay: 10
