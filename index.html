@@ -1770,7 +1770,7 @@ function processRound(){
       const silakMult=w.traits?.includes("silak")?1.5:1;
       const winterMult=WINTER_LOG_MULT[round]||1;
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
-      forest-=cut; r.wood+=cut*3;
+      forest-=cut; r.wood+=cut*4;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
     }else if(w.task==="reforest"&&isP){
@@ -2828,8 +2828,9 @@ function autoSave(){
 function startInterseason(){
   const p=G;
   // Regenerace lesa: základní + bonus za výsadbu
-  const reforestBonus=Math.min(p.reforestWorkers||0, 4)*2; // max +8 za sezónu výsadby
-  const naturalRegen=p.forest>0?FOREST_REGEN_BASE:1; // vyčerpaný les roste pomaleji
+  const isEasy=p.difficulty==="easy";
+  const reforestBonus=Math.min(p.reforestWorkers||0, 4)*(isEasy?3:2); // Lehká: +3/dělník, Normální: +2
+  const naturalRegen=p.forest>0?(isEasy?4:FOREST_REGEN_BASE):1; // vyčerpaný les roste pomaleji
   const totalRegen=naturalRegen+reforestBonus;
   const forestCap=p.forestMax||INIT_FOREST;
   const newForest=Math.min(forestCap, p.forest+totalRegen);
