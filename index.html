@@ -888,7 +888,7 @@ const NPC_BONDS=[
 
 const NPC_ROSTER=[
   // ── STARTOVNÍ PARTA (kolo 1) ──────────────────────────────────────────────
-  {id:"npc_kunc",   name:"František Kunc",    prof:"tavic",    lv:3, traits:["houzevatny","ucitel"],
+  {id:"npc_kunc",   name:"František Kunc",    prof:"tavic",    lv:6, traits:["houzevatny","ucitel"],
    subtitle_cs:"Tavič / Foukač", subtitle_en:"Smelter / Glassblower",
    quote_cs:"U pece třicet let. Sklo mi zpívá.",
    quote_en:"Thirty years at the furnace. I hear the glass sing.",
@@ -2551,9 +2551,15 @@ function processRound(){
       newLoyalty=Math.max(0,newLoyalty-loyPenalty);
       // Lakomec reaguje 1.5× silněji
       if(w.traits?.includes("lakomec")) newLoyalty=Math.max(0,newLoyalty-Math.ceil(loyPenalty*0.5));
+      // Nesplnený slib — horší než žádný slib
+      if(w.promisedDebt){
+        newLoyalty=Math.max(0,newLoyalty-12);
+        G.log.push("__EVT__💔 "+(L==="cs"?w.name+" — slib nebyl splněn. Důvěra padá.":w.name+" — broken promise. Trust drops."));
+      }
     } else {
       // Zaplaceno → pomalu odpouštět dluh paměti (odpustit 1g/kolo)
       // newUnpaid zůstane 0
+      if(w.promisedDebt) w.promisedDebt=false; // slib splněn — reset
     }
     // Kontrakt tick — snížit roundsLeft, chránit loajalitu
     let newContract=w.contract?{...w.contract}:null;
@@ -4401,7 +4407,7 @@ function render(){
       btnRow.append(h("button",{class:"btn",style:{width:"100%",fontSize:"11px"},
         onClick:()=>{
           // Slíbit — loajalita mírně roste ale dluh zůstává
-          G.workers.forEach(w=>{if(w.unpaidDebt>0) w.loyalty=Math.min(100,w.loyalty+5);});
+          G.workers.forEach(w=>{if(w.unpaidDebt>0){w.loyalty=Math.min(100,w.loyalty+5);w.promisedDebt=true;}});
           G.log.push("__EVT__🤝 "+(L==="cs"?"Hutmistr slíbil doplatit — dělníci váhají":"Foundry master promised payment — workers hesitate"));
           G._loyaltyModalPending=false;
           render();
