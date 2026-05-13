@@ -64,7 +64,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          // Nový SW aktivován → tiché přenačtení (save je v localStorage, přežije)
+          if(nw.state === 'activated') window.location.reload();
+        });
+      });
+    }).catch(()=>{});
   });
 }
 </script>
