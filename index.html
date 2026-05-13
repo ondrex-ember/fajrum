@@ -11,7 +11,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Fajrum · Sklářská Huť · v7.9</title>
+<title>Sklářská Huť | Historická sklářská strategie zdarma | fajrum.cz</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -41,7 +41,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       "@type": "VideoGame",
       "@id": "https://fajrum.cz/#game",
       "name": "Fajrum",
-      "author": { "@id": "https://fajrum.cz/#studio" },
+      "author": { "@id": "https://ember-pa.cz" },
       "description": "Historická sklářská strategie Fajrum z období roku 1680.",
       "genre": ["Strategy", "Simulation"],
       "gamePlatform": "Web Browser",
@@ -53,10 +53,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 }
 </script>
 	
-<meta name="description" content="Sklářská Huť Fajrum v7.8 — historická resource management hra. Arnsdorf, Novoborsko, 1680. Pec, waldglas, barevné sklo, zakázky, pivovar. Zdarma, bez instalace.">
+<meta name="description" content="Sklářská Huť Fajrum v7.9 — historická resource management hra. Arnsdorf, Novoborsko, 1680. Pec, waldglas, barevné sklo, zakázky, pivovar. Zdarma, bez instalace.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fajrum.cz/">
-<meta property="og:title" content="Sklářská Huť Fajrum v7.8 — Historická sklářská strategie">
+<meta property="og:title" content="Sklářská Huť | Historická sklářská strategie zdarma | fajrum.cz">
 <meta property="og:description" content="Historická resource management hra Fajrum · Arnsdorf 1680 · pec, sklovina, barevné sklo, kontrakty · v7.8 · zdarma">
 <meta property="og:image" content="https://fajrum.cz/intro.jpg">
 <meta property="og:url" content="https://fajrum.cz/">
@@ -379,18 +379,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <div id="app"></div>
 <script>
-// ════════════════════════════════════════════════════════════
-// SKLÁŘSKÁ HUŤ v4 — Multi-Season Engine
-// Změny oproti v3:
-//   • Dynamická účinnost pece (furnaceEff) místo hardcoded 0.4
-//   • Pec si pamatuje zaběhnutost mezi sezónami (runIn)
-//   • Degradace šamotu — nutné opravy v mezisezóně
-//   • Pánev má kvalitu (závisí na level pánvaře)
-//   • Multi-sezóna s mezisezónní fází
-//   • Les se pomalu regeneruje
-//   • Balancing fix: více startovního dřeva, surovin, grošů
-// ════════════════════════════════════════════════════════════
-
 const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=5, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
 const INIT_FOREST=50, FOREST_REGEN_BASE=2;
 const FOREST_WARN=4;
