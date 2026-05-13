@@ -1,7 +1,8 @@
 // Sklářská Huť — Service Worker
-// Cache-first strategie pro offline fungování
+// Network-first pro HTML, cache-first pro assets
 
-const CACHE = 'sklarska-hut-v1';
+// ⚠️ Zvedni verzi při každém releasu → vynutí nový cache
+const CACHE = 'sklarska-hut-v79';
 const ASSETS = [
   '/',
   '/index.html',
@@ -28,9 +29,24 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch — cache-first, network fallback
+// Fetch — network-first pro HTML navigace, cache-first pro ostatní assets
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  // HTML navigace vždy nejdřív ze sítě → uživatel dostane novou verzi okamžitě
+  // Fallback na cache pouze při offline
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Assets (JS, CSS, obrázky) — cache-first, network fallback
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
