@@ -818,11 +818,35 @@ const HINTS_EN=MONTH_DATA.map(m=>m.priority_en);
 const STORAGE_COST_PER_ITEM=1;
 const MAX_WORKERS=6;
 const XP_PER_LEVEL=[6,10,15,22,32,45,60,80,110,999]; // kola prace pro lv1->2 ... lv9->10; index = lv-1
+
+// Task affinity: profese → primární task. Na primárním tasku 1.5× XP, na cizím 0.5×.
+// Werkstat profese (foukači, brusiči, rytec, tavič) mají jako "primární" werkstat.
+const TASK_AFFINITY={
+  drvorubc:"logging", popelar:"potash", panvar:"panev", formar:"formar", hornik:"quarry",
+  tavic:"werkstat", foukat_lesni:"werkstat", foukat_kristal:"werkstat",
+  foukat_dekor:"werkstat", foukat_formy:"werkstat",
+  brusic_hrana:"werkstat", brusic_kulic:"werkstat", rytec:"werkstat",
+  obchodnik:null // Baranovský — bez afinity
+};
 function workerTier(lv){
   if(lv>=10) return {cs:"Velmistr",de:"Glasmeister"};
   if(lv>=7)  return {cs:"Mistr",   de:"Meister"};
   if(lv>=4)  return {cs:"Tovarys", de:"Geselle"};
   return              {cs:"Ucen",   de:"Lehrling"};
+}
+
+// Tomislavův rank — globálně dostupná funkce, stejná logika jako v UI Deníku
+function getTomislavRank(p){
+  const mins=[
+    {id:"pomocnik", s:0, g:0},
+    {id:"ucen",     s:1, g:50},
+    {id:"tovarys",  s:2, g:200},
+    {id:"mistr",    s:4, g:600},
+    {id:"velmistr", s:8, g:2000},
+  ];
+  let idx=0;
+  mins.forEach((m,i)=>{if((p.season||1)>=m.s&&(p.grose||0)>=m.g)idx=i;});
+  return mins[idx].id;
 }
 
 // Traity dělníků
@@ -1794,8 +1818,9 @@ function processRound(){
         if(r.shamot>0)r.shamot--;
         const panvarLv=w.prof==="panvar"?w.lv:1;
         const kovakBonus=w.traits?.includes("kovak")?1:0;
+        const pedantBonus=w.traits?.includes("pedant")?1:0;
         const winterBonus=WINTER_PANEV_BONUS[round]||0;
-        const pNewQ=clamp(panvarLv+kovakBonus+winterBonus+Math.floor(Math.random()*2),1,5);
+        const pNewQ=clamp(panvarLv+kovakBonus+pedantBonus+winterBonus+Math.floor(Math.random()*2),1,5);
         pA.push({cr:round,rdy:round+PANEV_AGE,q:pNewQ});
         const winterNote=winterBonus>0?` ❄️ (mráz čistí jíl +1)`:"";
         log.push(`__PROD__🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
@@ -1831,10 +1856,30 @@ function processRound(){
     }else if(w.task==="field"){
       // Políčko — zpracováno v samostatné smyčce níže, jen přeskočit
     }else if(w.task==="werkstat"){
+      // ── OPILEC + BEER ACCIDENT — jen při dvojitém/trojitém přídělu ──
+      const isOpilec=w.traits?.includes("opilec");
+      const beerAcc=BEER[p.beer]?.acc||0;
+      const accTriggered=isOpilec&&p.beer>=2&&beerAcc>0&&Math.random()<beerAcc;
+      if(accTriggered){
+        // Najdi první dostupný výstupní kus workera a odstraň ho (rozbil ho)
+        const accKeys=["waldglas","crystal","jantar","modra","smaragd","lattimo","rubin"];
+        const accKey=accKeys.find(k=>(G[k]||[]).length>0);
+        if(accKey){
+          const accStock=[...(G[accKey]||[])];
+          accStock.splice(0,1);
+          G[accKey]=accStock;
+          log.push(`__EVT__🍺 ${w.name}: ${L==="cs"?"rozjařený — rozbil kus "+accKey+"!":"too merry — smashed a "+accKey+"!"}`);
+        } else {
+          // Žádný kus k rozbití — jen log
+          log.push(`__EVT__🍺 ${w.name}: ${L==="cs"?"rozjařený — naštěstí nic nerozbil.":"too merry — luckily nothing to break."}`);
+        }
+      }
       // ── VERŠTAT — automatická výroba dle profese ──────────────────
       const wProf=w.prof;
       const wLv=w.lv||1;
-      const qLvBonus=Math.round(wLv*0.6);
+      // pedant: +1 quality bonus na výstupu, 5% šance zachránit jinak zničený kus
+      const isPedant=w.traits?.includes("pedant");
+      const qLvBonus=Math.round(wLv*0.6)+(isPedant?1:0);
 
       if(wProf==="tavic"||wProf==="foukat_lesni"){
         // Tavič/Foukač lesní — fouká waldglas nádoby
@@ -2470,6 +2515,16 @@ function processRound(){
       ?"Pánvař Káninský zkusil pálit měď v pomocné peci. Výsledek: smaragdová zeleň! Recept zapsán."
       :"Káninský tried burning copper in the auxiliary furnace. Result: emerald green! Recipe recorded."}`);
   }
+  // Filigranar trait → lattimo dřív (Wagnerová na werkstatu od sezóny 2)
+  const hasFiligranar=p.workers.some(w=>w.traits?.includes("filigranar")&&w.task==="werkstat");
+  if(hasFiligranar&&p.season>=2&&!unl.includes("lattimo")){
+    p.additives.cin=(p.additives.cin||0)+1;
+    p.additives.olovo=(p.additives.olovo||0)+1;
+    unl.push("lattimo");
+    log.push(`__EVT__⚪ 🕸️ ${L==="cs"
+      ?"Wagnerová zná benátské nitě. Lattimo odemčeno — sezóna dřív!"
+      :"Wagnerová knows Venetian threads. Lattimo unlocked — one season early!"}`);
+  }
   // Sezóna 3, kolo 5 → lattimo suroviny
   if(p.season>=3&&round===5&&!unl.includes("lattimo")){
     p.additives.cin=(p.additives.cin||0)+1;
@@ -2521,6 +2576,12 @@ function processRound(){
   p.unlockedRecipes=unl;
 
   mor=clamp(mor,0,100); grose=Math.max(0,grose);
+  // Tomislavův rank — pasivní efekty
+  const tomRank=getTomislavRank(p);
+  if(tomRank==="ucen"||tomRank==="tovarys"||tomRank==="mistr"||tomRank==="velmistr"){
+    // Učeň+: Tomislav aktivně pomáhá → +2 morale/kolo
+    mor=Math.min(100,mor+2);
+  }
   // Aktualizuj dělníky: únava, XP, level-up
   const hasUcitel=p.workers.some(w=>w.traits?.includes("ucitel")&&w.task!=="idle");
   const wk=p.workers.map(w=>{
@@ -2529,7 +2590,8 @@ function processRound(){
     // Foukač/brusič na Verštatu se unaví na ≥75% → automaticky přepnout na Odpočinek
     const autoIdle=isWerkstat&&(w.fat||0)>=0.75;
     const effectiveIdle=isIdle||isWerkstat; // werkstat = nulová únava
-    const newFat=effectiveIdle?Math.max(0,w.fat-0.5):Math.min(1,w.fat+(w.traits?.includes("vytrvalec")?0.07:0.1));
+    const fatBase=w.traits?.includes("vytrvalec")?0.07:w.traits?.includes("mlady")?0.115:w.traits?.includes("pedant")?0.08:0.1;
+    const newFat=effectiveIdle?Math.max(0,w.fat-0.5):Math.min(1,w.fat+fatBase);
     const newTask=autoIdle?"idle":w.task;
     // Zdraví — klesá při dlouhé únavě, roste při odpočinku a jídle
     const hasFood=r.food>0;
@@ -2590,15 +2652,57 @@ function processRound(){
     const hasKate =p.workers.some(x=>x.npcId==="npc_foukac4"&&x.task!=="idle");
     const affinityXpBonus=(w.npcId==="npc_foukac3"&&hasKate)?1:0; // Josef leveluje 2x rychleji
     const mentorBonus=(w.mentorId&&p.workers.some(x=>x.npcId===w.mentorId&&x.task!=="idle"))?0.15:0;
-    const xpGain=isIdle?0:((hasUcitel&&!w.traits?.includes("ucitel")?1.5:1)+affinityXpBonus)*(1+mentorBonus);
+    // Task affinity XP multiplikátor: na primárním tasku 1.5×, na cizím 0.5×
+    const primaryTask=TASK_AFFINITY[w.prof]??null;
+    const taskAffinityMult=isIdle?1:
+      primaryTask===null?1:                   // obchodnik / bez afinity — neutrální
+      primaryTask===w.task?1.5:               // primární task → bonus
+      0.5;                                    // cizí task → malus
+    // mlady trait: +0.5× XP (učí se rychleji, ale unaví se víc)
+    const mladyMult=w.traits?.includes("mlady")?1.5:1;
+    const xpGain=isIdle?0:((hasUcitel&&!w.traits?.includes("ucitel")?1.5:1)+affinityXpBonus)*(1+mentorBonus)*taskAffinityMult*mladyMult;
     const newXp=(w.xp||0)+xpGain;
     // Level-up?
     let newLv=w.lv;
     const xpNeeded=XP_PER_LEVEL[w.lv-1]||999;
+    let newTraits=[...(w.traits||[])];
     if(newLv<10&&newXp>=xpNeeded){
       newLv=Math.min(10,w.lv+1);
       const tier=workerTier(newLv);
       log.push(`__EVT__⭐ ${w.name} ${L==="cs"?"postoupil na":"leveled up to"} ${tier.cs} (${tier.de}) lv.${newLv}!`);
+      // Trait unlock na milnících lv3, lv6, lv9 — dle profese
+      const LEVEL_TRAITS={
+        drvorubc:      {3:"silak",     6:"vytrvalec", 9:"znalec"},
+        popelar:       {3:"vytrvalec", 6:"houzevatny",9:"znalec"},
+        panvar:        {3:"kovak",     6:"pedant",     9:"znalec"},
+        formar:        {3:"kovak",     6:"vytrvalec",  9:"pedant"},
+        hornik:        {3:"silak",     6:"vytrvalec",  9:"znalec"},
+        tavic:         {3:"znalec",    6:"pedant",     9:"houzevatny"},
+        foukat_lesni:  {3:"vytrvalec", 6:"znalec",     9:"pedant"},
+        foukat_kristal:{3:"znalec",    6:"pedant",     9:"houzevatny"},
+        foukat_dekor:  {3:"znalec",    6:"filigranar", 9:"pedant"},
+        foukat_formy:  {3:"kovak",     6:"znalec",     9:"pedant"},
+        brusic_hrana:  {3:"pedant",    6:"znalec",     9:"houzevatny"},
+        brusic_kulic:  {3:"pedant",    6:"znalec",     9:"houzevatny"},
+        rytec:         {3:"pedant",    6:"znalec",     9:"houzevatny"},
+      };
+      const unlockTrait=(LEVEL_TRAITS[w.prof]||{})[newLv];
+      if(unlockTrait&&!newTraits.includes(unlockTrait)){
+        newTraits.push(unlockTrait);
+        const traitLabel=TRAITS[unlockTrait]?.[L==="cs"?"cs":"en"]||unlockTrait;
+        const flavors={
+          cs:{silak:"Roky těžké práce se projevily.",vytrvalec:"Naučil se vydržet.",
+              znalec:"Léta praxe dala cit pro materiál.",pedant:"Chyby ho naučily přesnosti.",
+              kovak:"Ruce poznaly hlínu zevnitř.",houzevatny:"Teď ho nedostanete pryč.",
+              filigranar:"Nitě mu poslouchají jako živé."},
+          en:{silak:"Years of hard work show.",vytrvalec:"Learned to endure.",
+              znalec:"Years of practice gave feel for material.",pedant:"Mistakes taught precision.",
+              kovak:"Hands learned clay from within.",houzevatny:"You won't move him now.",
+              filigranar:"The threads obey like living things."}
+        };
+        const flavor=(flavors[L]||flavors.cs)[unlockTrait]||"";
+        log.push(`__EVT__🌟 ${w.name}: +${traitLabel} — ${flavor}`);
+      }
     }
     // ── MENTOR SYSTÉM ──
     // Kunc může mentorovat taviče, Máňa popelář/formař, Hranař brusiče
@@ -2648,6 +2752,7 @@ function processRound(){
     }
     const healthPenalty=newHealth<50?0.15:newHealth<30?0.3:0;
     return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,
+      traits:newTraits,
       health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
       unpaidDebt:newUnpaid,mentorId:newMentorId,mentorRounds:newMentorRounds,
       contract:newContract,seasonsInFoundry:newSeasonsInFoundry};
@@ -3120,7 +3225,8 @@ function sellItems(type,n){
   basePrices["pateriky_smaragd"]=5;
   basePrices["pateriky_lattimo"]=6;
   const bp=basePrices[type]||3.5;
-  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1);
+  const isVelmistr=getTomislavRank(G)==="velmistr";
+  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1);
   const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
   G[type]=rest; G.grose+=total;
   G.totalSold=(G.totalSold||0)+cnt;
@@ -7826,6 +7932,24 @@ function render(){
         L==="cs"?currentRank.desc_cs:currentRank.desc_en));
     idCard.append(idInfo);
     hracSec.append(idCard);
+
+    // ── Aktivní schopnosti ranku ──
+    const RANK_ABILITIES={
+      pomocnik:{cs:"Ještě žádné schopnosti. Přežij první sezónu.",en:"No abilities yet. Survive the first season."},
+      ucen:    {cs:"⚡ Morale +2/kolo — Tomislav aktivně pomáhá v huti.",en:"⚡ Morale +2/round — Tomislav actively helps in the foundry."},
+      tovarys: {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign a mentor to any worker."},
+      mistr:   {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.\n🎯 Boost — brzy: jednou za kolo posílit výstup jednoho dělníka.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign mentor.\n🎯 Boost — soon: once per round boost one worker's output."},
+      velmistr:{cs:"⚡ Morale +2/kolo\n💰 Prodejní ceny +5% — jméno Břeťánek otevírá dveře.\n📖 Mentor & 🎯 Boost odemčeny.",en:"⚡ Morale +2/round\n💰 Sell prices +5% — the Břeťánek name opens doors.\n📖 Mentor & 🎯 Boost unlocked."},
+    };
+    const abilText=RANK_ABILITIES[currentRank.id]?.[L]||"";
+    const abilDiv=h("div",{style:{marginBottom:"12px",padding:"8px 10px",borderRadius:"6px",
+      background:"rgba(74,122,58,.06)",border:"1px solid rgba(74,122,58,.18)"}});
+    abilDiv.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#4a7a3a",marginBottom:"5px"}},
+      L==="cs"?"⚙️ Aktivní schopnosti:":"⚙️ Active abilities:"));
+    abilText.split("\n").forEach(line=>{
+      abilDiv.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.5"}},line));
+    });
+    hracSec.append(abilDiv);
 
     // ── Progress k dalšímu ranku ──
     if(nextRank){
