@@ -4502,26 +4502,28 @@ const GlassHutMusic=(()=>{
 
     _sf(idx){return this.scale[Math.max(0,Math.min(idx,this.scale.length-1))];}
 
-    _sitar(freq,at,dur,vel=0.22){
+    _sitar(freq,at,dur,vel=0.19){
       if(!freq||this._polyCount>=this.POLY_CAP)return;
       const c=this.ctx;
-      const osc=c.createOscillator(); const g=c.createGain();
-      osc.type='sawtooth'; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(vel,at+0.008);
-      g.gain.exponentialRampToValueAtTime(vel*0.3,at+0.12); g.gain.exponentialRampToValueAtTime(0.001,at+dur);
-      osc.connect(g); g.connect(this.master);
+      const osc=c.createOscillator(); const lp=c.createBiquadFilter(); const g=c.createGain();
+      osc.type='triangle'; osc.frequency.value=freq;
+      lp.type='lowpass'; lp.frequency.value=1800; lp.Q.value=0.6;
+      g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(vel,at+0.015);
+      g.gain.exponentialRampToValueAtTime(vel*0.3,at+0.14); g.gain.exponentialRampToValueAtTime(0.001,at+dur);
+      osc.connect(lp); lp.connect(g); g.connect(this.master);
       osc.start(at); osc.stop(at+dur+0.05); this._polyCount++;
       setTimeout(()=>this._polyCount=Math.max(0,this._polyCount-1),(dur+0.1)*1000);
     }
 
-    _viola(freq,at,dur,vel=0.28){
+    _viola(freq,at,dur,vel=0.24){
       if(!freq||this._polyCount>=this.POLY_CAP)return;
       const c=this.ctx;
-      const osc=c.createOscillator(); const g=c.createGain();
-      osc.type='sawtooth'; osc.frequency.value=freq;
-      g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(vel,at+0.18);
-      g.gain.setValueAtTime(vel*0.8,at+dur-0.1); g.gain.linearRampToValueAtTime(0,at+dur);
-      osc.connect(g); g.connect(this.master);
+      const osc=c.createOscillator(); const lp=c.createBiquadFilter(); const g=c.createGain();
+      osc.type='triangle'; osc.frequency.value=freq;
+      lp.type='lowpass'; lp.frequency.value=780; lp.Q.value=0.5;
+      g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(vel,at+0.35);
+      g.gain.setValueAtTime(vel*0.75,at+dur-0.12); g.gain.linearRampToValueAtTime(0,at+dur);
+      osc.connect(lp); lp.connect(g); g.connect(this.master);
       osc.start(at); osc.stop(at+dur+0.05); this._polyCount++;
       setTimeout(()=>this._polyCount=Math.max(0,this._polyCount-1),(dur+0.1)*1000);
     }
