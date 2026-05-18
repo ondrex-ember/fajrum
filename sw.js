@@ -2,7 +2,7 @@
 // Network-first pro HTML, cache-first pro assets
 
 // ⚠️ Zvedni verzi při každém releasu → vynutí nový cache
-const CACHE = 'sklarska-hut-v791';
+const CACHE = 'sklarska-hut-v792';
 const ASSETS = [
   '/',
   '/index.html',
