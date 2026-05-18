@@ -388,7 +388,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div id="app"></div>
 <script>
 const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=5, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
-const INIT_FOREST=50, FOREST_REGEN_BASE=2;
+const INIT_FOREST=80, FOREST_REGEN_BASE=3;
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
 
@@ -2935,7 +2935,7 @@ function startInterseason(){
   // Regenerace lesa: základní + bonus za výsadbu
   const isEasy=p.difficulty==="easy";
   const reforestBonus=Math.min(p.reforestWorkers||0, 4)*(isEasy?3:2); // Lehká: +3/dělník, Normální: +2
-  const naturalRegen=p.forest>0?(isEasy?4:FOREST_REGEN_BASE):1; // vyčerpaný les roste pomaleji
+  const naturalRegen=p.forest>0?(isEasy?6:FOREST_REGEN_BASE):2; // vyčerpaný les roste pomaleji
   const totalRegen=naturalRegen+reforestBonus;
   const forestCap=p.forestMax||INIT_FOREST;
   const newForest=Math.min(forestCap, p.forest+totalRegen);
