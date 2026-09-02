@@ -797,6 +797,94 @@ const FURNACE_TYPES={
 };
 const UPGRADE_COST={stone:{wood:20,limestone:8,clay:6,grose:15},master:{wood:30,limestone:12,clay:10,grose:40}};
 
+// ── ROZŠÍŘENÍ SEZÓNY A STAVEBNÍ TIERS ─────────────────────────
+const SEASON_TIERS={
+  0:{
+    tier:0,
+    name_cs:"Tradiční lesní kampaň",
+    name_en:"Traditional Forest Season",
+    desc_cs:"Tavení pouze od sv. Jiří (duben) do sv. Havla/Martina (říjen). 7 měsíců tavby, 5 měsíců zimního klidu.",
+    desc_en:"Smelting only from St. George (April) to St. Gall/Martin (October). 7 months melting, 5 months winter prep.",
+    months_cs:"Duben – Říjen (7 měsíců)",
+    months_en:"April – October (7 months)",
+    badge:"Tier 0",
+    icon:"🪵",
+    reqFurnace:"primitive",
+    cost:{},
+    benefit_cs:"Základní provoz huti dle starých cechovních zvyklostí.",
+    benefit_en:"Basic foundry schedule under traditional customs."
+  },
+  1:{
+    tier:1,
+    name_cs:"Zastřešená huť & Podzimní kampaň (Listopad)",
+    name_en:"Roofed Foundry & Autumn Campaign (November)",
+    desc_cs:"Krytá sušárna bukového dříví a kamenná podezdívka prodlužují tavbu přes celý Listopad (+1 měsíc). Umožňuje splnit předvánoční jarmarky a prodat zboží před příchodem závějí.",
+    desc_en:"Covered hardwood drying shed and stone foundation extend melting through November (+1 month). Fulfill lucrative pre-Christmas orders.",
+    months_cs:"Duben – Listopad (8 měsíců)",
+    months_en:"April – November (8 months)",
+    badge:"Tier 1",
+    icon:"🪨",
+    reqFurnace:"stone",
+    cost:{stone:15,wood:20,clay:8,grose:25},
+    benefit_cs:"+1 měsíc tavby (Listopad) · Prodej před zimou · Těžba lomového kamene v Lůmku",
+    benefit_en:"+1 month smelting (November) · Pre-winter sales · Quarry stone mining"
+  },
+  2:{
+    tier:2,
+    name_cs:"Panské privilegium & Jarní předtápění (Březen)",
+    name_en:"Noble Privilege & Early Spring Smelting (March)",
+    desc_cs:"Vrchnostenský glejt od hejtmana/opata a temperační pec na suché dříví umožňují roztopit huť již v Březnu (+1 měsíc). Huť má náskok před veškerou konkurencí v celém kraji.",
+    desc_en:"Noble charter from the governor/abbot and dry-wood tempering kiln allow lighting as early as March (+1 month). Edge over regional rivals.",
+    months_cs:"Březen – Listopad (9 měsíců)",
+    months_en:"March – November (9 months)",
+    badge:"Tier 2",
+    icon:"📜",
+    reqFurnace:"stone",
+    reqTier:1,
+    reqFama:40,
+    cost:{stone:20,dryWood:12,grose:45},
+    benefit_cs:"Kampaň začíná již v Březnu (9 měsíců tavby) · Prémiové jarní zakázky · Možnost sušit buková polena",
+    benefit_en:"Campaign begins in March (9 months smelting) · Premium spring contracts · Hardwood curing"
+  },
+  3:{
+    tier:3,
+    name_cs:"Celoroční císařská huť & Zimní tavba (12 měsíců)",
+    name_en:"All-Year Imperial Glasshouse & Winter Smelting (12 Months)",
+    desc_cs:"Zastřešený vodní náhon, šamotové žáruvzdorné kvádry a smůlová izolace. Pec hoří nepřetržitě všech 12 měsíců! Zima přináší boj se zámrzem stoup a prémiové dvorské zakázky.",
+    desc_en:"Covered water flumes, refractory firebrick vaults, and pitch weatherproofing. Continuous 12-month operation with frost challenges & royal profits.",
+    months_cs:"Celoroční provoz (12 měsíců)",
+    months_en:"All-year continuous (12 months)",
+    badge:"Tier 3",
+    icon:"👑",
+    reqFurnace:"master",
+    reqTier:2,
+    reqFama:60,
+    cost:{stone:30,firebrick:10,dryWood:15,pitch:8,grose:85},
+    benefit_cs:"12 měsíců nepřetržité tavby · Žádná ztráta zaběhnutí pece v mezisezóně · +25% prémie za zimní dodávky",
+    benefit_en:"12 months continuous smelting · 100% furnace run-in retention · +25% winter contract bonus"
+  }
+};
+
+function isPrepMonth(round, tier=0){
+  if(tier>=3) return false;
+  if(tier===2) return round>=1 && round<=3; // Prosinec, Leden, Únor
+  if(tier===1) return round>=1 && round<=4; // Prosinec, Leden, Únor, Březen
+  return round>=0 && round<=4; // Listopad..Březen
+}
+function isCampaignMonth(round, tier=0){
+  return !isPrepMonth(round, tier);
+}
+function isTemperingMonth(round, tier=0){
+  if(tier>=3) return false;
+  if(tier===2) return round===3; // Únor temperování
+  return round===4; // Březen temperování
+}
+function getLightingMonth(tier=0){
+  if(tier>=3) return null;
+  if(tier===2) return 4; // Březen rozžehnutí
+  return 5; // Duben rozžehnutí
+}
+
 const ZONES=[
   {max:10,l:"🟤",c:"#3a2a14"},{max:25,l:"🔴",c:"#8b2020"},{max:40,l:"🔴",c:"#cc3322"},
   {max:55,l:"🟠",c:"#dd6600"},{max:70,l:"🟡",c:"#ddaa00"},{max:82,l:"🟡",c:"#eebb22"},
@@ -804,7 +892,7 @@ const ZONES=[
 const BEER=[{m:-10,cost:0,acc:0},{m:5,cost:1,acc:0},{m:10,cost:2,acc:.1},{m:-8,cost:4,acc:.25}];
 const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🟩"},clay:{b:2,e:"🧱"},pureSand:{b:5,e:"✨"},
   refinedPotash:{b:4,e:"🌿"},charcoal:{b:3,e:"⚫"},wood:{b:WOOD_EMERGENCY_PRICE,e:"🌲"},water:{b:1,e:"💧"},
-  food:{b:2,e:"🍞"}};
+  food:{b:2,e:"🍞"},stone:{b:2,e:"🪨"},dryWood:{b:3,e:"🔥"},firebrick:{b:4,e:"🧱"},pitch:{b:3,e:"🌲"}};
 
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
@@ -1782,7 +1870,7 @@ function craftBlown(itemKey, inputColor){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Tento vstup není povolen pro tento výrobek":"Input not allowed for this item"}`);
     render(); return;
   }
-  if(p.round<PREP||!p.fActive){
+  if(!isCampaignMonth(p.round,p.seasonTier||0)||!p.fActive){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet (kampaň)":"Furnace must be running (campaign)"}`);
     render(); return;
   }
@@ -1885,7 +1973,7 @@ function craftGround(itemKey){
   const it=GROUND_ITEMS[itemKey];
   if(!it)return;
   const p=G, L=p.lang;
-  if(p.round<PREP){
+  if(!isCampaignMonth(p.round,p.seasonTier||0)){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Broušení jen v kampani":"Grinding only during campaign"}`);
     render(); return;
   }
@@ -1918,7 +2006,7 @@ function craftEngrave(inputKey){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Rytec není v huti":"No engraver in foundry"}`);
     render(); return;
   }
-  if(p.round<PREP){
+  if(!isCampaignMonth(p.round,p.seasonTier||0)){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Rytí jen v kampani":"Engraving only during campaign"}`);
     render(); return;
   }
@@ -1974,7 +2062,7 @@ function craftSpecial(itemKey){
   const it=SPECIAL_ITEMS[itemKey];
   if(!it) return;
   const p=G, L=p.lang;
-  if(p.round<PREP||!p.fActive){
+  if(!isCampaignMonth(p.round,p.seasonTier||0)||!p.fActive){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet (kampaň)":"Furnace must be running (campaign)"}`);
     render(); return;
   }
@@ -2159,7 +2247,8 @@ function initState(){
     grose:65, debt:40, morale:65, beer:1,
     debtMoratorium:0, totalDone:0, failureReason:null, failureStats:null,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
-    res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
+    seasonTier:0, noblePrivilege:false,
+    res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0,stone:0,dryWood:0,firebrick:0,pitch:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0,rtut:0},
     // Sklady barevného skla
@@ -2253,7 +2342,7 @@ function initState(){
 // ── HERNÍ LOGIKA ────────────────────────────────────────────
 function processRound(){
   FajrumSfx.play('bell', 0.45);
-  const p=G, r=p.res, round=p.round, isP=round<PREP, isC=round>=PREP;
+  const p=G, r=p.res, round=p.round, isP=isPrepMonth(round, p.seasonTier||0), isC=isCampaignMonth(round, p.seasonTier||0);
   const L=p.lang, ms=L==="cs"?MONTHS_CS:MONTHS_EN;
   let mor=p.morale, forest=p.forest, grose=p.grose, debt=p.debt;
   let pR=p.pReady, pA=[...p.pAging], pU=p.pUses, pQ=p.panevQuality;
@@ -2288,13 +2377,17 @@ function processRound(){
       forest-=cut; r.wood+=cut*4;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
+      if(Math.random()<0.35){
+        r.pitch=(r.pitch||0)+1;
+        log.push(`__PROD__🌲 ${w.name}: +1🌲 ${L==="cs"?"smůla a pryskyřice z hvozdu":"pitch & resin gathered"}`);
+      }
     }else if(w.task==="reforest"&&isP){
       reforestCount++;
       log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
     }else if(w.task==="quarry"){
-      const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2);
-      r.sand+=sa; r.limestone+=li;
-      log.push(`__PROD__⛏️ ${w.name}: +${sa} 🏖️, +${li} 🪨`);
+      const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2), st=clamp(Math.round(1.5*eff),1,3);
+      r.sand+=sa; r.limestone+=li; r.stone=(r.stone||0)+st;
+      log.push(`__PROD__⛏️ ${w.name}: +${sa} 🏖️, +${li} 🟩, +${st} 🪨`);
     }else if(w.task==="potash"){
       // Potaš: přímo spotřebuje dřevo z alokace, ne přes koeficient
       const woodForPotash=Math.floor(r.wood*(p.wa.potash/100));
@@ -2344,6 +2437,10 @@ function processRound(){
     }else if(w.task==="clay"){
       const cl=clamp(Math.round(2*eff),1,3);r.clay+=cl;
       log.push(`__PROD__🧱 ${w.name}: +${cl}`);
+      if((r.stone||0)>=1 && r.clay>=3 && Math.random()<0.45){
+        r.stone-=1; r.clay-=2; r.firebrick=(r.firebrick||0)+1;
+        log.push(`__PROD__🧱 ${w.name}: +1🧱 ${L==="cs"?"vypálen žáruvzdorný šamotový kvádr":"firebrick molded & fired"}`);
+      }
     }else if(w.task==="field"){
       // Políčko — zpracováno v samostatné smyčce níže, jen přeskočit
     }else if(w.task==="werkstat"){
@@ -2551,12 +2648,13 @@ function processRound(){
       r.wood-=fuelUsed;
       // Teplota závisí na peci a palivu
       let tgt;
-      if(round===PREP){
-        // Duben — přímý skok na 72–78% (1100°C+)
+      const lightM=getLightingMonth(p.seasonTier||0);
+      if(lightM!==null && round===lightM){
+        // Jarní rozžehnutí pece — přímý skok na 72–78% (1100°C+)
         tgt=clamp(72+Math.round(Math.random()*6), 72, ft.maxTemp);
         fT=tgt;
-      }else if(round===PREP+1){
-        // Květen — ideální teplota
+      }else if(lightM!==null && round===lightM+1){
+        // Druhý měsíc kampaně — stabilizace teploty
         tgt=clamp(ft.maxTemp*(0.85+(fuelUsed-fuelNeed)*0.04)+Math.random()*4,75,ft.maxTemp);
         fT=Math.round(fT*.15+tgt*.85);
       }else{
@@ -2571,6 +2669,10 @@ function processRound(){
         slotPanev=Array(ft.maxSlots||1).fill(null);
       }
       log.push(`__PROD__🔥 ${L==="cs"?"Palivo":"Fuel"}: ${fuelUsed}🪵 → ${zone(fT).l} ${fT}% · eff ${Math.round(fEff*100)}%`);
+      if((p.seasonTier||0)>=1 && r.wood>=12 && Math.random()<0.65){
+        r.dryWood=(r.dryWood||0)+1;
+        log.push(`__PROD__🔥 ${L==="cs"?"Krytá sušárna: vyzrálé suché dříví +1🔥":"Drying shed: cured dry hardwood +1🔥"}`);
+      }
     }else{
       r.wood=Math.max(0,r.wood-fuelUsed);
       fT=Math.max(0,fT-25);
@@ -2726,8 +2828,8 @@ function processRound(){
     }
   }else{
     // Příprava: pec chladne
-    if(round===PREP-1){
-      // Březen — temperování: zahřívá na 300-500°C ekvivalent (30-40% fTemp), 50% paliva
+    if(isTemperingMonth(round, p.seasonTier||0)){
+      // Temperování: zahřívá na 300-500°C ekvivalent (30-40% fTemp), 50% paliva
       const fuelNeedTemp=Math.ceil(FUEL_BASE*ft.fuelMult/2);
       const fuelAllocTemp=Math.floor(r.wood*(p.wa.fuel/100));
       const fuelUsedTemp=Math.min(fuelAllocTemp,fuelNeedTemp);
@@ -2735,14 +2837,47 @@ function processRound(){
       fT=clamp(30+Math.round(Math.random()*10), 30, 40); // 30-40%
       fA=false;
       log.push(`__PROD__🌡️ ${L==="cs"?"Temperování pece":"Furnace tempering"} · -${fuelUsedTemp}🪵 → ${fT}% (~${Math.round(fT*14)}°C)`);
-    }else if(round<=1){
-      // Listopad (0) a Prosinec (1) — rychlé chladnutí, max 15%
+    }else if(round<=1 && (p.seasonTier||0)<3){
+      // Listopad/Prosinec — chladnutí
       fT=Math.min(15, Math.max(0, fT-20));
       if(fT<10)fA=false;
-    }else{
-      // Leden (2) a dál — studená
+    }else if((p.seasonTier||0)<3){
+      // Zima — studená pec
       fT=0; fA=false;
     }
+  }
+
+  // ── TIER 3: ZIMNÍ PROVOZ & ZIMNÍ VÝZVY (Prosinec, Leden, Únor) ──
+  if((p.seasonTier||0)>=3 && (round===1||round===2||round===3)){
+    const winterWoodNeed=(r.dryWood&&r.dryWood>=1)?0:2;
+    if(winterWoodNeed>0){
+      if(r.wood>=winterWoodNeed){
+        r.wood-=winterWoodNeed;
+        log.push(`__EVT__❄️ ${L==="cs"?"Krutý mráz: pec v zimě spálila +2🪵 syrového dříví navíc.":"Severe frost: furnace burned +2🪵 raw wood extra."}`);
+      }else{
+        fT=Math.max(25, fT-15);
+        log.push(`__EVT__❄️ ${L==="cs"?"Zimní mráz ochlazuje pec pro nedostatek paliva!":"Winter freeze cools furnace due to wood shortage!"}`);
+      }
+    }else if(r.dryWood&&r.dryWood>=1){
+      r.dryWood-=1;
+      log.push(`__PROD__🔥 ${L==="cs"?"Suché bukové dříví udrželo dokonalý žár v mrazu (-1🔥).":"Dry cured hardwood maintained perfect heat in the freeze (-1🔥)."}`);
+    }
+
+    if(Math.random()<0.30){
+      if(r.pitch&&r.pitch>=1){
+        log.push(`__EVT__🌲 ${L==="cs"?"Smůlová izolace spolehlivě ochránila vodní náhon stoupy před ledem.":"Pitch coating reliably protected the water flume from ice."}`);
+      }else if(r.wood>=1){
+        r.wood-=1;
+        log.push(`__EVT__🧊 ${L==="cs"?"Tovaryši roztopili oheň pod zamrzlým náhonem stoupy (-1🪵).":"Journeymen lit a thaw fire under the frozen flume (-1🪵)."}`);
+      }else{
+        log.push(`__EVT__🧊 ${L==="cs"?"Náhon stoupy zamrzl! Tovaryši museli sekat led (+únava).":"Water flume froze! Workers had to chop ice with axes (+fatigue)."}`);
+        p.workers.forEach(w=>{if(w.task==="quarry")w.fat=Math.min(10,(w.fat||0)+1);});
+      }
+    }
+
+    const winterCashBonus=15;
+    grose+=winterCashBonus;
+    log.push(`__ECO__👑 ${L==="cs"?`Zimní dodávky: Šlechta a Faktor Weiss vyplatili prémii +${winterCashBonus}g za vzácné zimní sklo!`:`Winter delivery: Nobility and Weiss paid a +${winterCashBonus}g bonus for winter glassware!`}`);
   }
 
   // 4. Pivo
@@ -3472,13 +3607,17 @@ function startInterseason(){
   const totalRegen=naturalRegen+reforestBonus;
   const forestCap=p.forestMax||INIT_FOREST;
   const newForest=Math.min(forestCap, p.forest+totalRegen);
-  // Pec chladne, drží 65% zaběhnutosti
-  const newRunIn=Math.round(p.furnace.runIn*0.65);
+  // Pec chladne, drží zaběhnutost dle tieru (Tier 1: 75%, Tier 2: 85%, Tier 3: 100%!)
+  const runInRatio=p.seasonTier>=3?1.0:(p.seasonTier===2?0.85:(p.seasonTier===1?0.75:0.65));
+  const newRunIn=Math.round(p.furnace.runIn*runInRatio);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
 
   G.forest=newForest;
   G.furnace=furnace;
   G.reforestWorkers=0;
+  if((p.seasonTier||0)>=3){
+    G.fActive=true;
+  }
 
   // Baranovský — přiveze nabídku dle sezóny (i bez něj v huti — pošle vzkaz)
   const baran=G.workers.find(w=>w.npcId==="npc_baran");
@@ -3621,6 +3760,267 @@ function upgradeFurnace(type){
   render();
 }
 
+function upgradeSeasonTier(targetTier){
+  const p=G, L=p.lang;
+  const info=SEASON_TIERS[targetTier];
+  if(!info) return;
+  const curTier=p.seasonTier||0;
+  if(targetTier!==curTier+1) return;
+
+  const furn=p.furnace.type;
+  if(info.reqFurnace==="stone" && furn==="primitive"){
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje zděnou pec!":"Requires stone furnace!"}`);
+    render(); return;
+  }
+  if(info.reqFurnace==="master" && furn!=="master"){
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje mistrovskou pec!":"Requires master furnace!"}`);
+    render(); return;
+  }
+  if(info.reqFama){
+    const curMaxFama=Math.max(p.fama?.church||0, p.fama?.noble||0, p.fama?.trade||0);
+    if(curMaxFama<info.reqFama){
+      G.log.push(`__EVT__⛔ ${L==="cs"?`Vyžaduje Fama reputaci alespoň ${info.reqFama}%!`:`Requires Fama reputation of at least ${info.reqFama}%!`}`);
+      render(); return;
+    }
+  }
+
+  // Kontrola a odečet surovin
+  for(const [resKey, needed] of Object.entries(info.cost)){
+    const have=resKey==="grose"?p.grose:(p.res[resKey]||0);
+    if(have<needed){
+      G.log.push(`__EVT__⛔ ${L==="cs"?`Nedostatek ${resKey} (chybí ${needed-have})`:`Not enough ${resKey}`}`);
+      render(); return;
+    }
+  }
+
+  for(const [resKey, needed] of Object.entries(info.cost)){
+    if(resKey==="grose") G.grose-=needed;
+    else G.res[resKey]-=needed;
+  }
+
+  G.seasonTier=targetTier;
+  if(targetTier>=2) G.noblePrivilege=true;
+  if(targetTier>=3){
+    G.fActive=true;
+    G.fTemp=Math.max(72, G.fTemp||75);
+  }
+
+  FajrumSfx.play('bell', 0.6);
+  G.log.push(`__ECO__🏛️ ${L==="cs"?`STAVEBNÍ ROZVOJ: ${info.name_cs} dokončeno!`:`BUILDING UPGRADE: ${info.name_en} completed!`}`);
+  G.log.push(`__EVT__⭐ ${L==="cs"?info.benefit_cs:info.benefit_en}`);
+  render();
+}
+
+function renderSeasonUpgrades(container, isInterseason=false){
+  const p=G, L=p.lang;
+  const curTier=p.seasonTier||0;
+  const curInfo=SEASON_TIERS[curTier];
+
+  const panel=h("div",{
+    class:"sec",
+    style:{
+      marginTop:"14px",
+      background:"linear-gradient(135deg, rgba(201,149,43,.06) 0%, rgba(139,94,52,.04) 100%)",
+      border:"1px solid rgba(201,149,43,.25)",
+      borderRadius:"6px",
+      padding:"12px"
+    }
+  });
+
+  // Title & Header
+  const hdr=h("div",{
+    style:{
+      display:"flex",
+      justifyContent:"space-between",
+      alignItems:"flex-start",
+      borderBottom:"1px solid rgba(201,149,43,.2)",
+      paddingBottom:"8px",
+      marginBottom:"10px",
+      flexWrap:"wrap",
+      gap:"6px"
+    }
+  });
+  
+  const titleBox=h("div",null,
+    h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#8b5e34",display:"flex",alignItems:"center",gap:"6px"}},
+      "🏛️ "+(L==="cs"?"Stavební rozvoj & Rozšíření sezóny":"Building Expansion & Season Tiers")),
+    h("div",{style:{fontSize:"11px",color:"#543714",marginTop:"2px"}},
+      (L==="cs"?"Aktuální kampaň: ":"Current schedule: ")+
+      `<strong style="color:#8b5e34;">${curInfo.badge} — ${L==="cs"?curInfo.name_cs:curInfo.name_en}</strong> `+
+      `<span style="color:#4a7a3a;font-weight:600;">(${L==="cs"?curInfo.months_cs:curInfo.months_en})</span>`
+    )
+  );
+
+  const badge=h("span",{
+    style:{
+      background:curTier>=3?"#8a1a1a":curTier>=1?"#4a7a3a":"#8b5e34",
+      color:"#fff",
+      fontSize:"10px",
+      fontWeight:"700",
+      padding:"3px 9px",
+      borderRadius:"10px",
+      whiteSpace:"nowrap"
+    }
+  }, `Tier ${curTier}/3`);
+
+  hdr.append(titleBox, badge);
+  panel.append(hdr);
+
+  // Motivational Info Box
+  panel.append(h("div",{
+    style:{
+      fontSize:"10px",
+      color:"#8b5e34",
+      fontStyle:"italic",
+      background:"rgba(255,255,255,.5)",
+      padding:"6px 8px",
+      borderRadius:"4px",
+      marginBottom:"10px",
+      border:"1px solid rgba(201,149,43,.15)",
+      lineHeight:"1.4"
+    }
+  }, L==="cs"
+    ? "💡 Rozšiřování provozu huti umožňuje vyrábět a prodávat sklo i mimo tradiční letní měsíce. Každý nový Tier přináší nové stavební suroviny (lomový kámen, suché dříví, šamotové kvádry, smůlu), vyšší tržby a udržuje zaběhnutost pece."
+    : "💡 Extending the foundry season unlocks production and sales outside traditional summer months. Each Tier introduces new building materials (quarry stone, dry wood, firebricks, pitch), higher profits, and better furnace retention."));
+
+  // Tiers Grid
+  const tiersList=h("div",{style:{display:"flex",flexDirection:"column",gap:"8px"}});
+
+  [1, 2, 3].forEach(tNum=>{
+    const info=SEASON_TIERS[tNum];
+    const isCurrentOrPast=curTier>=tNum;
+    const isNext=curTier===(tNum-1);
+    const isLocked=curTier<(tNum-1);
+
+    const tCard=h("div",{
+      style:{
+        background:isCurrentOrPast?"rgba(74,122,58,.06)":isNext?"rgba(255,255,255,.7)":"rgba(0,0,0,.02)",
+        border:`1px solid ${isCurrentOrPast?"rgba(74,122,58,.3)":isNext?"rgba(201,149,43,.4)":"rgba(0,0,0,.08)"}`,
+        borderRadius:"5px",
+        padding:"9px 11px",
+        opacity:isLocked?0.55:1
+      }
+    });
+
+    // Card Header
+    const tHeader=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}});
+    tHeader.append(
+      h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}},
+        h("span",{style:{fontSize:"15px"}},info.icon),
+        h("strong",{style:{fontSize:"11px",color:isCurrentOrPast?"#4a7a3a":"#3a2a14"}},
+          `Tier ${tNum}: ${L==="cs"?info.name_cs:info.name_en}`
+        )
+      ),
+      h("span",{
+        style:{
+          fontSize:"9px",
+          fontWeight:"700",
+          color:isCurrentOrPast?"#4a7a3a":isNext?"#c9952b":"#888"
+        }
+      }, isCurrentOrPast?(L==="cs"?"✓ DOKONČENO":"✓ ACTIVE"):isNext?(L==="cs"?"🔓 PŘIPRAVENO":"🔓 AVAILABLE"):(L==="cs"?"🔒 UZAMČENO":"🔒 LOCKED"))
+    );
+    tCard.append(tHeader);
+
+    // Description & Months
+    tCard.append(h("div",{style:{fontSize:"10px",color:"#543714",marginBottom:"4px",lineHeight:"1.35"}},
+      L==="cs"?info.desc_cs:info.desc_en
+    ));
+
+    // Benefits Highlight
+    tCard.append(h("div",{
+      style:{
+        fontSize:"9px",
+        color:"#4a7a3a",
+        fontWeight:"600",
+        background:"rgba(74,122,58,.08)",
+        padding:"4px 7px",
+        borderRadius:"3px",
+        marginBottom:"6px"
+      }
+    }, "⭐ "+(L==="cs"?info.benefit_cs:info.benefit_en)));
+
+    if(!isCurrentOrPast){
+      // Requirements & Costs
+      const missing=[];
+      const furn=p.furnace.type;
+      if(info.reqFurnace==="stone" && furn==="primitive"){
+        missing.push(L==="cs"?"Zděná pec (v Peci)":"Stone furnace");
+      }
+      if(info.reqFurnace==="master" && furn!=="master"){
+        missing.push(L==="cs"?"Mistrovská pec (v Peci)":"Master furnace");
+      }
+      if(info.reqFama){
+        const curMaxFama=Math.max(p.fama?.church||0, p.fama?.noble||0, p.fama?.trade||0);
+        if(curMaxFama<info.reqFama){
+          missing.push(L==="cs"?`Fama ≥ ${info.reqFama}% (${curMaxFama}%)`:`Fama ≥ ${info.reqFama}% (${curMaxFama}%)`);
+        }
+      }
+
+      const costLabels={
+        stone: {cs:"Lomový kámen", en:"Stone", icon:"🪨"},
+        wood: {cs:"Dřevo", en:"Wood", icon:"🪵"},
+        clay: {cs:"Jíl", en:"Clay", icon:"🧱"},
+        dryWood: {cs:"Suché dříví", en:"Dry hardwood", icon:"🔥"},
+        firebrick: {cs:"Šamotové kvádry", en:"Firebrick", icon:"🧱"},
+        pitch: {cs:"Smůla", en:"Pitch", icon:"🌲"},
+        grose: {cs:"Groše", en:"Groats", icon:"💰"}
+      };
+
+      const costChips=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
+      let canAfford=isNext && missing.length===0;
+
+      for(const [resKey, needed] of Object.entries(info.cost)){
+        const have=resKey==="grose"?p.grose:(p.res[resKey]||0);
+        const ok=have>=needed;
+        if(!ok){
+          canAfford=false;
+          missing.push(`${needed-have}× ${costLabels[resKey]?costLabels[resKey].icon:""}`);
+        }
+        costChips.append(h("span",{
+          style:{
+            fontSize:"9px",
+            padding:"2px 6px",
+            borderRadius:"3px",
+            background:ok?"rgba(74,122,58,.1)":"rgba(160,48,32,.08)",
+            color:ok?"#4a7a3a":"#a03020",
+            border:`1px solid ${ok?"rgba(74,122,58,.2)":"rgba(160,48,32,.2)"}`
+          }
+        }, `${costLabels[resKey]?costLabels[resKey].icon:""} ${have}/${needed} ${L==="cs"?(costLabels[resKey]?.cs||resKey):(costLabels[resKey]?.en||resKey)}`));
+      }
+      tCard.append(costChips);
+
+      // Upgrade Action Button
+      if(isNext){
+        const btn=h("button",{
+          class:"btn btn-s"+(canAfford?" btn-p":""),
+          style:{
+            width:"100%",
+            opacity:canAfford?1:0.6,
+            cursor:canAfford?"pointer":"not-allowed",
+            fontWeight:"700",
+            fontSize:"10px",
+            padding:"6px 8px"
+          },
+          onClick:()=>{
+            if(canAfford) upgradeSeasonTier(tNum);
+          }
+        }, canAfford
+          ? (tNum===1?(L==="cs"?"🔨 Postavit zastřešení a sušárnu (Tier 1)":"🔨 Build Roofed Foundry (Tier 1)")
+            :tNum===2?(L==="cs"?"📜 Získat panské privilegium (Tier 2)":"📜 Concession Charter (Tier 2)")
+            :(L==="cs"?"👑 Povýšit na celoroční huť (Tier 3)":"👑 Upgrade to All-Year Glasshouse (Tier 3)"))
+          : (L==="cs"?`⚠️ Chybí požadavky (${missing.slice(0,2).join(", ")})`:`⚠️ Missing requirements`)
+        );
+        tCard.append(btn);
+      }
+    }
+
+    tiersList.append(tCard);
+  });
+
+  panel.append(tiersList);
+  container.append(panel);
+}
+
 function startNewSeason(){
   const p=G;
   const newSeason=p.season+1;
@@ -3687,7 +4087,8 @@ function startNewSeason(){
     endgame:{...(p.endgame||{church:false,noble:false,trade:false})},
     shop:genShop(),
     morale:clamp(p.morale+5,30,100),
-    fActive:false,
+    fActive:(p.seasonTier||0)>=3,
+    fTemp:(p.seasonTier||0)>=3 ? Math.max(72, p.fTemp||75) : 0,
     quickSellUsed:false, // reset na začátku každé sezóny
     grose:newGrose,
     log:oldLog
@@ -6242,6 +6643,9 @@ function render(){
         L==="cs"?"Huť je plná (6/6). Propusť někoho pro nábor.":"Foundry full (6/6). Fire someone to hire."));
     }
 
+    // Rozšíření provozu huti a sezónní tiery
+    renderSeasonUpgrades(body, true);
+
     // Tlačítko nová sezóna
     body.append(h("button",{
       class:"btn btn-p",
@@ -7027,9 +7431,12 @@ function render(){
   const ABBR_EN=["Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"];
   const abbr=L==="cs"?ABBR_CS:ABBR_EN;
   const rb=h("div",{class:"round-bar"});
+  const tierBadgeText=p.seasonTier>=3?(L==="cs"?"👑 Celoroční provoz":"👑 All-Year"):p.seasonTier===2?(L==="cs"?"📜 Březen–Listopad":"📜 Mar–Nov"):p.seasonTier===1?(L==="cs"?"🔨 Duben–Listopad":"🔨 Apr–Nov"):(L==="cs"?"Tradiční sezóna":"Traditional");
   rb.append(h("div",{class:"round-bar-top"},
-    h("span",{style:{color:isP?"#4a7a3a":"#8b5e34",fontWeight:"700",fontSize:"12px"}},
-      ms[p.round]+(isP?" · "+(L==="cs"?"Příprava":"Prep"):" · "+(L==="cs"?"Kampaň":"Campaign"))),
+    h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}},
+      h("span",{style:{color:isP?"#4a7a3a":"#8b5e34",fontWeight:"700",fontSize:"12px"}},
+        ms[p.round]+(isP?" · "+(L==="cs"?"Příprava":"Prep"):" · "+(L==="cs"?"Kampaň":"Campaign"))),
+      h("span",{style:{fontSize:"10px",padding:"1px 6px",borderRadius:"6px",background:"rgba(201,149,43,.15)",color:"#8b5e34",fontWeight:"600"}},tierBadgeText)),
     h("div",{style:{display:"flex",gap:"8px",fontSize:"11px",alignItems:"center"}},
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Groše: ":"Groats: "),
@@ -7039,13 +7446,15 @@ function render(){
         h("strong",{style:{color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?"📜 "+p.debt+"g":"✓")))));
   const pips=h("div",{style:{display:"flex",gap:"2px",width:"100%"}});
   for(let i=0;i<ROUNDS;i++){
-    const cur=i===p.round, done2=i<p.round, prep=i<PREP;
+    const cur=i===p.round, done2=i<p.round;
+    const prep=isPrepMonth(i, p.seasonTier||0);
+    const camp=isCampaignMonth(i, p.seasonTier||0);
     pips.append(h("div",{class:"round-pip",style:{
       flex:"1",
-      background:cur?(prep?"#4a7a3a":"#8b5e34"):done2?(prep?"rgba(74,122,58,.25)":"rgba(139,94,52,.25)"):"rgba(0,0,0,.04)",
-      color:cur?"#f0deb8":done2?(prep?"#4a7a3a":"#8b5e34"):"#aaa",
+      background:cur?(camp?"#c9952b":"#4a7a3a"):done2?(camp?"rgba(201,149,43,.35)":"rgba(74,122,58,.25)"):"rgba(0,0,0,.04)",
+      color:cur?"#f0deb8":done2?(camp?"#8b5e34":"#4a7a3a"):"#aaa",
       fontWeight:cur?"700":"400",
-      borderTop:prep?"2px solid rgba(74,122,58,.3)":"2px solid rgba(139,94,52,.3)"}},
+      borderTop:camp?"2px solid rgba(201,149,43,.6)":"2px solid rgba(74,122,58,.3)"}},
       abbr[i]));
   }
   rb.append(pips);
@@ -7066,11 +7475,20 @@ function render(){
   const additives=p.additives||{};
   const additivesTotal=Object.values(additives).reduce((s,v)=>s+(v||0),0);
   const additivesTip=Object.entries(ADDITIVES).map(([k,ad])=>{const n=additives[k]||0;return n>0?`${ad.icon}${n}`:""}).filter(Boolean).join(" ")||"—";
+  
+  // Tier materiály
+  const hasStone=(p.res.stone||0)>0;
+  const hasDryWood=(p.res.dryWood||0)>0;
+  const hasFirebrick=(p.res.firebrick||0)>0;
+  const hasPitch=(p.res.pitch||0)>0;
+
   if(isDesktop){
     resBar.append(
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
       pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"key",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`),
+      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché dříví: ${p.res.dryWood||0} · vysušené tvrdé dřevo pro zimní žár`:`Dry wood: ${p.res.dryWood||0}`)]:[]),
+      ...(hasPitch?[pillTip("🌲",p.res.pitch||0,"",L==="cs"?`Smůla: ${p.res.pitch||0} · izolace a těsnění`:`Pitch: ${p.res.pitch||0}`)]:[]),
       sep(),
       grpLabel(L==="cs"?"Suro.":"Mats"),
       pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
@@ -7078,6 +7496,8 @@ function render(){
       pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"key",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`),
       pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
       pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
+      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Lomový kámen: ${p.res.stone||0} · stavba huti a pecí`:`Quarry stone: ${p.res.stone||0}`)]:[]),
+      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamotové kvádry: ${p.res.firebrick||0} · žáruvzdorné cihly`:`Firebricks: ${p.res.firebrick||0}`)]:[]),
       pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
       sep(),
       grpLabel(L==="cs"?"Výr.":"Prod."),
@@ -7094,6 +7514,7 @@ function render(){
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
       pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`),
+      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché: ${p.res.dryWood||0}`:`Dry: ${p.res.dryWood||0}`)]:[]),
       sep(),
       pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`),
       pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
@@ -7106,6 +7527,8 @@ function render(){
       pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
       pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
       pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
+      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Kámen: ${p.res.stone||0}`:`Stone: ${p.res.stone||0}`)]:[]),
+      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamot: ${p.res.firebrick||0}`:`Brick: ${p.res.firebrick||0}`)]:[]),
       sep(),
       grpLabel(L==="cs"?"Výr.":"Pr."),
       pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready`),
@@ -8859,6 +9282,7 @@ function render(){
     }else{
       content.append(effSec,chemSec,colorSec);
     }
+    renderSeasonUpgrades(content);
 
   // ── TAB: TRH ──
   }else if(p.tab==="market"){
@@ -9689,6 +10113,7 @@ function render(){
     });
     repPanel.append(repGrid);
     hutSec.append(repPanel);
+    renderSeasonUpgrades(hutSec);
     content.append(hutSec);
 
   // ── TAB: PARTA ──
