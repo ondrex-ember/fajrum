@@ -11,7 +11,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 	
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Sklářská Huť Fajrum | Historická sklářská strategie zdarma | fajrum.cz</title>
+<title>Sklářská Huť Fajrum | Historická sklářská strategie | fajrum.cz</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a2510">
 <meta name="mobile-web-app-capable" content="yes">
@@ -53,11 +53,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 }
 </script>
 	
-<meta name="description" content="Sklářská Huť Fajrum v7.9 — historická resource management hra. Arnsdorf, Novoborsko, 1680. Pec, waldglas, barevné sklo, zakázky, pivovar. Zdarma, bez instalace.">
+<meta name="description" content="Historická sklářská strategie z roku 1680 (Novoborsko / Arnsdorf). Správa hutě, pec, sklovina, foukání, zakázky a vylepšení.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://fajrum.cz/">
-<meta property="og:title" content="Sklářská Huť | Historická sklářská strategie zdarma | fajrum.cz">
-<meta property="og:description" content="Historická resource management hra Fajrum · Arnsdorf 1680 · pec, sklovina, barevné sklo, kontrakty · v7.8 · zdarma">
+<meta property="og:title" content="Sklářská Huť Fajrum">
+<meta property="og:description" content="Historická sklářská strategie z roku 1680 (Novoborsko / Arnsdorf). Správa hutě, pec, sklovina, foukání, zakázky a vylepšení.">
 <meta property="og:image" content="https://fajrum.cz/intro.jpg">
 <meta property="og:url" content="https://fajrum.cz/">
 <meta property="og:type" content="website">
@@ -378,6 +378,299 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 }
 .task-pill.pos{background:rgba(74,122,58,.9);}
 .task-pill.neg{background:rgba(160,48,32,.9);}
+
+/* ════════════════════════════════════════════════════════════
+   FAJRUM FLUID ANIMATIONS & GRAPHICAL IMPROVEMENTS
+════════════════════════════════════════════════════════════ */
+@keyframes tabFadeSlide {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.tab-enter {
+  animation: tabFadeSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Micro-physics for buttons & tactile feedback */
+.btn {
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease, box-shadow 0.15s ease !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active {
+  transform: scale(0.95) translateY(1px) !important;
+  filter: brightness(0.92) !important;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+/* Stepper buttons for responsive allocations */
+.stepper-btn {
+  padding: 2px 7px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  border-radius: 3px !important;
+  background: rgba(139, 94, 52, 0.14) !important;
+  border: 1px solid rgba(139, 94, 52, 0.35) !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.stepper-btn:hover {
+  background: rgba(139, 94, 52, 0.28) !important;
+  border-color: var(--warm) !important;
+}
+
+/* Batch craft buttons */
+.batch-btn-row {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+.batch-btn {
+  flex: 1;
+  padding: 3px 4px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  border-radius: 3px !important;
+  line-height: 1.2;
+}
+
+/* Hotkey hint badges */
+.hotkey-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-family: monospace;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(42, 26, 10, 0.15);
+  border: 1px solid rgba(42, 26, 10, 0.3);
+  color: #6a4520;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(42, 26, 10, 0.06);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 94, 52, 0.35);
+  border-radius: 3px;
+  border: 1px solid rgba(42, 26, 10, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 94, 52, 0.6);
+}
+
+/* Glassware sheen highlight */
+@keyframes glassShine {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
+}
+.glass-shine-wrap {
+  position: relative;
+  overflow: hidden;
+}
+.glass-shine-wrap:hover::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
+  animation: glassShine 0.75s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Floating resource pill animation */
+@keyframes floatPillAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.85);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.08);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-28px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-56px) scale(0.9);
+  }
+}
+.float-pill {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  animation: floatPillAnim 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  font-family: 'Palatino Linotype', Georgia, serif;
+}
+.float-pill.pos {
+  background: linear-gradient(135deg, #38761d, #274e13);
+  color: #f7edd4;
+  border: 1px solid #6aa84f;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.float-pill.neg {
+  background: linear-gradient(135deg, #a03020, #661810);
+  color: #fff;
+  border: 1px solid #e06666;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.float-pill.gold {
+  background: linear-gradient(135deg, #c9952b, #8a6212);
+  color: #fffef0;
+  border: 1px solid #ffd966;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.float-pill.fire {
+  background: linear-gradient(135deg, #e65100, #b71c1c);
+  color: #fff8e1;
+  border: 1px solid #ff9800;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Heat shimmer overlay for furnace */
+@keyframes heatDistort {
+  0%, 100% { transform: scaleY(1) skewX(0deg); opacity: 0.25; }
+  50% { transform: scaleY(1.04) skewX(1deg); opacity: 0.45; }
+}
+.heat-shimmer-box {
+  position: relative;
+}
+.heat-shimmer-box::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 100%, rgba(255, 120, 20, 0.18), transparent 70%);
+  animation: heatDistort 2.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Polished Tab animations */
+.tab {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.tab:active {
+  transform: scale(0.96);
+}
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 1px;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   GLASS CHEMICAL SUBSTANCE ANIMATED LOGO & HEADER NETWORK
+════════════════════════════════════════════════════════════ */
+@keyframes chemPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(201,149,43,0.3)); }
+  50% { transform: scale(1.03); filter: drop-shadow(0 0 8px rgba(255,215,0,0.65)); }
+}
+
+@keyframes electronOrbit {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes glassPrismGleam {
+  0% { transform: translateX(-120%) rotate(35deg); opacity: 0; }
+  25% { opacity: 0.6; }
+  50% { transform: translateX(120%) rotate(35deg); opacity: 0; }
+  100% { transform: translateX(120%) rotate(35deg); opacity: 0; }
+}
+
+@keyframes siloxaneGlow {
+  0%, 100% { stroke: #c9952b; stroke-opacity: 0.75; stroke-width: 1.1; }
+  50% { stroke: #ffe082; stroke-opacity: 1; stroke-width: 1.5; }
+}
+
+@keyframes formulaBadgePulse {
+  0%, 100% { border-color: rgba(201,149,43,0.35); background: rgba(201,149,43,0.08); }
+  50% { border-color: rgba(255,215,0,0.7); background: rgba(201,149,43,0.22); }
+}
+
+.glass-chemical-logo {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+  user-select: none;
+}
+.glass-chemical-logo:hover {
+  transform: scale(1.08) rotate(2deg);
+  filter: drop-shadow(0 4px 14px rgba(255,190,40,0.55)) !important;
+}
+.glass-chemical-logo:active {
+  transform: scale(0.96);
+}
+
+.chem-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Palatino Linotype', Georgia, serif;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(201,149,43,0.4);
+  background: rgba(42,22,8,0.65);
+  color: #f7edd4;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: formulaBadgePulse 4s infinite ease-in-out;
+  margin-top: 2px;
+  width: fit-content;
+}
+.chem-badge-pill:hover {
+  border-color: #ffd54f;
+  background: rgba(201,149,43,0.3);
+  color: #fffde7;
+  transform: translateY(-1px);
+}
+
+.chem-network-wrap {
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  display: flex;
+  align-items: center;
+}
+.chem-network-wrap:hover {
+  opacity: 1 !important;
+  transform: scale(1.04);
+}
+.chem-network-wrap svg {
+  filter: drop-shadow(0 0 4px rgba(201,149,43,0.4));
+}
+
 </style>
 </head>
 <body>
@@ -1088,6 +1381,199 @@ const TASK_PILLS={
   werkstat: [{l:"⚒️",t:"neu"}],
   cereni:   [{l:"🫧",t:"pos"},{l:"-burel",t:"neg"},{l:"→✨",t:"pos"}],
 };
+
+// ════════════════════════════════════════════════════════════
+// FAJRUM PROCEDURAL SOUND SYNTHESIZER (Web Audio API)
+// ════════════════════════════════════════════════════════════
+const FajrumSfx = (() => {
+  let _sfxCtx = null;
+  function _getCtx() {
+    if (!_sfxCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) _sfxCtx = new AC();
+    }
+    if (_sfxCtx && _sfxCtx.state === 'suspended') {
+      _sfxCtx.resume().catch(() => {});
+    }
+    return _sfxCtx;
+  }
+
+  function play(type, vol = 0.5) {
+    if (typeof G !== 'undefined' && G.audio && G.audio.muted) return;
+    const ctx = _getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const masterGain = ctx.createGain();
+    const userVol = (typeof G !== 'undefined' && G.audio && typeof G.audio.volume === 'number') ? G.audio.volume : 0.7;
+    masterGain.gain.setValueAtTime(Math.max(0, Math.min(1, vol * userVol)), now);
+    masterGain.connect(ctx.destination);
+
+    try {
+      if (type === 'glass' || type === 'craft') {
+        // Sparkling crystal glass chime
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        const gain2 = ctx.createGain();
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+        osc1.frequency.setValueAtTime(1760, now);
+        osc1.frequency.exponentialRampToValueAtTime(3520, now + 0.08);
+        osc2.frequency.setValueAtTime(2637, now);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        gain2.gain.setValueAtTime(0.2, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc1.connect(gain1); gain1.connect(masterGain);
+        osc2.connect(gain2); gain2.connect(masterGain);
+        osc1.start(now); osc1.stop(now + 0.6);
+        osc2.start(now); osc2.stop(now + 0.4);
+      } else if (type === 'coin') {
+        // Crisp silver groschen coin jingle
+        [2400, 3150, 4200].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.04);
+          g.gain.setValueAtTime(0.28, now + i * 0.04);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.3);
+          osc.connect(g); g.connect(masterGain);
+          osc.start(now + i * 0.04); osc.stop(now + i * 0.04 + 0.35);
+        });
+      } else if (type === 'wood' || type === 'fuel') {
+        // Deep resonant wood thud
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(340, now);
+        g.gain.setValueAtTime(0.55, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.connect(filter); filter.connect(g); g.connect(masterGain);
+        osc.start(now); osc.stop(now + 0.22);
+      } else if (type === 'hammer' || type === 'stone') {
+        // Forge / stone / shamot impact
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.14);
+        g.gain.setValueAtTime(0.45, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.connect(g); g.connect(masterGain);
+        osc.start(now); osc.stop(now + 0.28);
+      } else if (type === 'page' || type === 'tab') {
+        // Gentle parchment page rustle
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(380, now);
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(750, now);
+        filter.frequency.exponentialRampToValueAtTime(280, now + 0.07);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(filter); filter.connect(g); g.connect(masterGain);
+        osc.start(now); osc.stop(now + 0.11);
+      } else if (type === 'bell' || type === 'season') {
+        // Harmonic foundry bell toll
+        [440, 880, 1320, 1760].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          g.gain.setValueAtTime(0.35 / (i + 1), now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 1.1 + i * 0.15);
+          osc.connect(g); g.connect(masterGain);
+          osc.start(now); osc.stop(now + 1.4);
+        });
+      } else if (type === 'alert') {
+        [880, 660].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.1);
+          g.gain.setValueAtTime(0.25, now + i * 0.1);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.22);
+          osc.connect(g); g.connect(masterGain);
+          osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.28);
+        });
+      }
+    } catch(e) {}
+  }
+
+  return { play, getCtx: _getCtx };
+})();
+
+// Floating animated text feedback
+function spawnFloatText(text, targetOrEvt, type = 'pos') {
+  const el = document.createElement("div");
+  el.className = "float-pill " + type;
+  el.textContent = text;
+  let cx = window.innerWidth / 2;
+  let cy = window.innerHeight / 2;
+  if (targetOrEvt) {
+    if (targetOrEvt.target && targetOrEvt.target.getBoundingClientRect) {
+      const rect = targetOrEvt.target.getBoundingClientRect();
+      cx = rect.left + rect.width / 2;
+      cy = rect.top;
+    } else if (targetOrEvt.getBoundingClientRect) {
+      const rect = targetOrEvt.getBoundingClientRect();
+      cx = rect.left + rect.width / 2;
+      cy = rect.top;
+    } else if (typeof targetOrEvt.clientX === 'number') {
+      cx = targetOrEvt.clientX;
+      cy = targetOrEvt.clientY;
+    }
+  }
+  el.style.left = Math.max(10, Math.min(window.innerWidth - 80, cx - 25)) + "px";
+  el.style.top = Math.max(10, cy - 10) + "px";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+// Global Keyboard Navigation
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+    if (typeof G === 'undefined' || !G || G.phase !== 'playing') return;
+
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      processRound();
+      FajrumSfx.play('season', 0.6);
+    } else if (e.key >= '1' && e.key <= '9') {
+      const tabKeys = ['overview', 'furnace', 'production', 'storage', 'market', 'accounts', 'parta', 'log', 'archiv'];
+      const idx = parseInt(e.key) - 1;
+      if (idx < tabKeys.length) {
+        G.tab = tabKeys[idx];
+        FajrumSfx.play('page', 0.4);
+        render();
+      }
+    } else if (e.key.toLowerCase() === 'm') {
+      G.audio.muted = !G.audio.muted;
+      if (G.audio.muted) {
+        FurnaceAudio.stop();
+        GlassHutMusic.stop();
+      } else {
+        FurnaceAudio.setPhase(G.round < PREP ? 'prep' : 'campaign');
+        if (G.audio.music) GlassHutMusic.start();
+      }
+      showToast(G.lang === 'cs' ? (G.audio.muted ? '🔇 Zvuk ztlumen' : '🔊 Zvuk zapnut') : (G.audio.muted ? '🔇 Sound muted' : '🔊 Sound enabled'), []);
+      render();
+    } else if (e.key === 'Escape') {
+      if (G._activeModal) {
+        G._activeModal = null;
+        render();
+      }
+    }
+  });
+}
+
 function spawnPills(evt, task){
   const pills=TASK_PILLS[task]||[];
   const rect=evt.target.getBoundingClientRect();
@@ -1356,9 +1842,12 @@ function craftBlown(itemKey, inputColor){
     const fillCount=outQ<=2?actualCount:0;
     const goodActual=actualCount-fillCount;
     G.log.push(`__PROD__🪟 ${goodActual>0?goodActual+"× terčík "+stars(outQ):""}${fillCount>0?(goodActual>0?" + ":"")+fillCount+"× výplň ★★":""}${isSpec?" (spec)":""}`);
+    spawnFloatText(`+${goodActual} 🪟 ${stars(outQ)}`, null, "pos");
   }else{
     G.log.push(`__PROD__${it.icon} ${actualCount}× ${L==="cs"?it.cs:it.en}${colorLabel} ${stars(outQ)}${isSpec?" (spec ×"+actualCount+")":""}`);
+    spawnFloatText(`+${actualCount} ${it.icon} ${stars(outQ)}`, null, "pos");
   }
+  FajrumSfx.play("glass", 0.6);
   render();
 }
 
@@ -1667,9 +2156,10 @@ function initState(){
   return{
     phase:"intro", lang:"cs",
     season:1, round:0,
-    grose:40, debt:50, morale:60, beer:1,
+    grose:65, debt:40, morale:65, beer:1,
+    debtMoratorium:0, totalDone:0, failureReason:null, failureStats:null,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
-    res:{wood:45,sand:15,limestone:12,potash:6,water:10,clay:8,shamot:8,food:8,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
+    res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
     additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0,rtut:0},
     // Sklady barevného skla
@@ -1762,6 +2252,7 @@ function initState(){
 
 // ── HERNÍ LOGIKA ────────────────────────────────────────────
 function processRound(){
+  FajrumSfx.play('bell', 0.45);
   const p=G, r=p.res, round=p.round, isP=round<PREP, isC=round>=PREP;
   const L=p.lang, ms=L==="cs"?MONTHS_CS:MONTHS_EN;
   let mor=p.morale, forest=p.forest, grose=p.grose, debt=p.debt;
@@ -2300,10 +2791,12 @@ function processRound(){
       else log.push(`__PROD__🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
     }
   }
-  // 5. Mzdy — individuální dle wageMod, penalizace za neplacení
+  // 5. Mzdy — individuální dle wageMod, zimní příprava a lehká obtížnost
+  const isEasyDiff = p.difficulty === "easy";
+  const baseWageRate = isP ? (isEasyDiff ? 1 : 1.5) : (isEasyDiff ? 1.5 : 2);
   let wages=0;
   const workerWages=p.workers.map(w=>{
-    const ww=w.task==="idle"?0:(2+(w.wageMod||0)); // odpočinek = 0g mzda
+    const ww=w.task==="idle"?0:Math.max(1, Math.round(baseWageRate + (w.wageMod||0))); // odpočinek = 0g mzda
     wages+=ww;
     return{id:w.id,wage:ww};
   });
@@ -2317,14 +2810,23 @@ function processRound(){
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
   workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
-  // 6. Splácení dluhu
+
+  // 6. Splácení dluhu u Faktora Weisse (standardní auto-splátka, pokud není aktivní odklad)
   let dPay=0;
-  if(debt>0&&grose>5){
-    dPay=Math.min(5,grose-2,debt);grose-=dPay;debt-=dPay;
+  if(debt>0 && grose>5 && !p.debtMoratorium){
+    dPay=Math.min(5, grose-2, debt);
+    grose-=dPay;
+    debt-=dPay;
     // Reputace dlužníka roste při splácení
     if(dPay>0){
       p.totalDebtPaid=(p.totalDebtPaid||0)+dPay;
-      p.debtReputation=Math.min(100,Math.floor((p.totalDebtPaid||0)/3));
+      p.debtReputation=Math.min(100,Math.floor((p.totalDebtPaid||0)/(isEasyDiff?2:3)));
+    }
+  }
+  if(p.debtMoratorium && p.debtMoratorium>0){
+    p.debtMoratorium--;
+    if(p.debtMoratorium===0){
+      log.push(`__ECO__📜 ${L==="cs"?"Odklad splátek u Faktora Weisse vypršel — obnoveno běžné splácení.":"Debt moratorium with Factor Weiss has expired — regular repayment resumed."}`);
     }
   }
   // 7. Zakázky
@@ -2340,9 +2842,12 @@ function processRound(){
     // Splnění: máme dost kusů A ještě jsme v termínu (round <= due)
     if(inv.length>=c.qty&&round<=c.due){
       for(let j=0;j<c.qty;j++)inv.pop();
-      grose+=c.reward; done++; contractIncomeTick+=c.reward;
+      const diffRewardBonus = p.difficulty === "easy" ? Math.round(c.reward * 0.25) : 0;
+      const actualReward = c.reward + diffRewardBonus;
+      grose+=actualReward; done++; contractIncomeTick+=actualReward;
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
-      log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${c.reward}g`);
+      const bonusStr = diffRewardBonus > 0 ? ` (+${diffRewardBonus}g bonus)` : "";
+      log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${actualReward}g${bonusStr}`);
       // Fama gain při splnění zakázky
       const famaCatDone=BUYER_FAMA[c.buyer];
       if(famaCatDone&&p.fama){
@@ -2637,9 +3142,13 @@ function processRound(){
     const newSeasonsInFoundry=(w.seasonsInFoundry||0);
 
     // Odchod při nízké loajalitě — BLOKOVÁNO pokud má kontrakt
-    const leaveThreshold=w.traits?.includes("houzevatny")?5:20;
-    const leaveChance=newLoyalty<leaveThreshold?(w.traits?.includes("houzevatny")?0:0.35):
-                      newLoyalty<35?0.12:0;
+    const isHouzevatny=w.traits?.includes("houzevatny");
+    const isKunc=w.npcId==="npc_kunc";
+    // Houževnatí dělníci (Kunc, Máňa) mají pevnou věrnost huti, ale při totálním zanedbání (loyalty <= 0 a hlad/dluhy) nakonec také odejdou
+    const leaveThreshold=isHouzevatny?0:20;
+    const leaveChance=isHouzevatny
+      ?(newLoyalty<=0&&(newUnpaid>=8||newHealth<35||mor<=10)?(isKunc?0.45:0.6):0)
+      :(newLoyalty<leaveThreshold?0.35:newLoyalty<35?0.12:0);
     // At-risk warning: loajalita klesla pod 40 → přidat do retention queue (nezávisle na willLeave)
     if(newLoyalty<40&&!contractActive&&!(G._retentionPending||[]).includes(w.id)){
       if(!G._retentionPending) G._retentionPending=[];
@@ -2744,9 +3253,20 @@ function processRound(){
     }
     // Mentor bonus: +15% XP aplikován přes mentorBonus výše
     if(willLeave){
-      const reason=newUnpaid>0
-        ?(L==="cs"?`odešel — ${newUnpaid}g dluhu mu huť nikdy nesplatila.`:`left — foundry owed him ${newUnpaid}g.`)
-        :(L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low.");
+      let reason="";
+      if(w.npcId==="npc_kunc"){
+        reason=L==="cs"
+          ?"s těžkým srdcem uhasil pec a opustil huť — ani mistr Kunc nemohl tavit bez mezd, jídla a naděje."
+          :"with a heavy heart extinguished the furnace and left — even master Kunc could not melt glass without food or pay.";
+      }else if(w.traits?.includes("houzevatny")){
+        reason=L==="cs"
+          ?"si sbalila ranec a odešla z huti — z prázdných hrnců a nezaplacené práce se žít nedá."
+          :"packed up and left the foundry — one cannot live on empty pots and unpaid labor.";
+      }else if(newUnpaid>0){
+        reason=L==="cs"?`odešel — ${newUnpaid}g dluhu mu huť nikdy nesplatila.`:`left — foundry owed him ${newUnpaid}g.`;
+      }else{
+        reason=L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low.";
+      }
       log.push(`__EVT__👋 ${w.name} ${reason}`);
       return null;
     }
@@ -2792,7 +3312,20 @@ function processRound(){
       contractIncome:contractIncomeTick
     },
     events:evts.slice(1), curEvt:evts[0]||null,
-    phase:evts[0]?"event":(isLastRound?"interseasonPhase":"summary")
+    debtMoratorium:p.debtMoratorium||0,
+    totalDone:(G.totalDone||0)+done,
+    failureReason:wk.length===0?"abandoned":((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8?"ruined":null)),
+    failureStats:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))?{
+      season:p.season, round:nr,
+      batches:(G.totalBatches||0)+(wg.length>p.waldglas.length||cr.length>p.crystal.length?1:0),
+      sold:(G.totalSold||0),
+      contracts:(G.totalDone||0)+done,
+      debtPaid:(G.totalDebtPaid||0)+dPay,
+      maxFama:Math.max(p.fama?.church||0, p.fama?.noble||0, p.fama?.trade||0)
+    }:null,
+    phase:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))
+      ?"game_over"
+      :(evts[0]?"event":(isLastRound?"interseasonPhase":"summary"))
   });
   checkAchievements();
 
@@ -3226,8 +3759,9 @@ function sellItems(type,n){
   basePrices["pateriky_lattimo"]=6;
   const bp=basePrices[type]||3.5;
   const isVelmistr=getTomislavRank(G)==="velmistr";
-  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1);
-  const total=selling.reduce((s,q)=>s+Math.round(q*bp*mul),0);
+  const easyPriceMult = G.difficulty === "easy" ? 1.20 : 1.0;
+  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
+  const total=selling.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*mul)),0);
   G[type]=rest; G.grose+=total;
   G.totalSold=(G.totalSold||0)+cnt;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
@@ -3238,6 +3772,8 @@ function buyItem(k){
   const it=G.shop[k];if(!it||it.stock<=0||G.grose<it.price)return;
   it.stock--; G.grose-=it.price; G.res[k]=(G.res[k]||0)+1;
   G.log.push(`__ECO__🛒 ${k} → -${it.price}g`);
+  FajrumSfx.play("coin", 0.5);
+  spawnFloatText(`-${it.price}g 🛒`, null, "neg");
   render();
 }
 function acceptContract(id){
@@ -4982,18 +5518,31 @@ function render(){
       G.difficulty=diff;
       G.firstVisit=true;
       if(diff==="easy"){
-        G.furnace.runIn=35;
+        G.furnace.runIn=45;
         G.panevQuality=3;
         G.pReady=4;
         G.formy=2;
-        G.grose=100;
-        G.debt=60;
-        G.res.wood=55;
-        G.res.sand=30;
-        G.res.limestone=20;
-        G.res.potash=10;
-        G.res.water=20;
-        G.res.clay=12;
+        G.grose=140;
+        G.debt=30;
+        G.morale=75;
+        G.res.wood=70;
+        G.res.sand=35;
+        G.res.limestone=25;
+        G.res.potash=14;
+        G.res.water=25;
+        G.res.clay=15;
+        G.res.shamot=14;
+        G.res.food=20;
+      } else {
+        G.grose=65;
+        G.debt=40;
+        G.morale=65;
+        G.res.wood=50;
+        G.res.sand=20;
+        G.res.limestone=15;
+        G.res.potash=8;
+        G.res.water=15;
+        G.res.clay=10;
         G.res.shamot=10;
         G.res.food=12;
       }
@@ -5006,8 +5555,149 @@ function render(){
       ?"Rok 1680. Otec ti zanechal recept, dluh a starou pec v Arnsdorfu. Kolem šumí hvozd — tvůj poklad i prokletí. Každý strom, co pokácíš, ti dá dřevo. Ale les pomalu dorůstá zpět."
       :"Year 1680. Your father left you a recipe, a debt, and an old furnace in Arnsdorf. The forest is your treasure and your curse. Every tree gives wood — and it slowly grows back.";
     const introLogoDiv=document.createElement("div");
-    introLogoDiv.style.cssText="margin:8px auto 16px;display:block;width:280px;";
-    introLogoDiv.innerHTML=`<svg viewBox="0 0 320 108" xmlns="http://www.w3.org/2000/svg" style="width:100%"><rect width="320" height="108" rx="8" fill="#f4e4c1"/><defs><clipPath id="crcI2"><circle cx="62" cy="54" r="48"/></clipPath></defs><circle cx="62" cy="54" r="48" fill="#2a1608"/><g clip-path="url(#crcI2)"><g stroke="#c9952b" stroke-width="1.2" fill="none"><line x1="28" y1="22" x2="44" y2="35"/><line x1="44" y1="35" x2="62" y2="24"/><line x1="62" y1="24" x2="80" y2="35"/><line x1="44" y1="35" x2="36" y2="52"/><line x1="36" y1="52" x2="22" y2="60"/><line x1="36" y1="52" x2="52" y2="62"/><line x1="52" y1="62" x2="66" y2="52"/><line x1="66" y1="52" x2="80" y2="60"/><line x1="66" y1="52" x2="80" y2="35"/><line x1="52" y1="62" x2="46" y2="76"/><line x1="46" y1="76" x2="62" y2="82"/><line x1="62" y1="82" x2="76" y2="74"/><line x1="76" y1="74" x2="80" y2="60"/><line x1="22" y1="60" x2="24" y2="76"/><line x1="24" y1="76" x2="38" y2="84"/><line x1="38" y1="84" x2="46" y2="76"/></g><g fill="#f0deb8" stroke="#1a0e06" stroke-width="0.9"><circle cx="28" cy="22" r="6.5"/><circle cx="62" cy="24" r="6.5"/><circle cx="36" cy="52" r="6.5"/><circle cx="22" cy="60" r="6.5"/><circle cx="52" cy="62" r="6.5"/><circle cx="80" cy="60" r="6.5"/><circle cx="46" cy="76" r="6.5"/><circle cx="62" cy="82" r="6.5"/><circle cx="76" cy="74" r="6.5"/><circle cx="24" cy="76" r="6.5"/><circle cx="38" cy="84" r="6.5"/></g><g fill="#c9952b"><circle cx="44" cy="35" r="4.5"/><circle cx="80" cy="35" r="4.5"/><circle cx="66" cy="52" r="4.5"/><circle cx="62" cy="82" r="4.5"/></g></g><circle cx="62" cy="54" r="48" fill="none" stroke="#8b5e34" stroke-width="1.5"/><text x="124" y="38" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Skl\u00e1\u0159sk\u00e1</text><text x="124" y="66" font-family="Georgia,'Book Antiqua',serif" font-size="26" fill="#3a2a14" letter-spacing="0.5">Hu\u0165</text><line x1="124" y1="73" x2="308" y2="73" stroke="#8b5e34" stroke-width="0.8"/><text x="124" y="84" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">HAIDA, ARNSDORF, BLOTTENDORF \u00b7 NOVOBORSKO</text><text x="124" y="96" font-family="Georgia,'Book Antiqua',serif" font-size="8" fill="#8b5e34" letter-spacing="2">Anno Domini 1680</text></svg>`;
+    introLogoDiv.style.cssText="margin:10px auto 18px;display:block;width:320px;max-width:100%;cursor:pointer;";
+    introLogoDiv.onclick=(e)=>{
+      FajrumSfx.play("glass", 0.7);
+      spawnFloatText("✨ Vitrum Siliceum: SiO₂ · K₂O · CaO", e, "gold");
+    };
+    introLogoDiv.innerHTML=`<svg viewBox="0 0 320 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,0.4));">
+      <defs>
+        <radialGradient id="introCrucibleGrad" cx="45%" cy="38%" r="62%">
+          <stop offset="0%" stop-color="#3d1e08"/>
+          <stop offset="60%" stop-color="#221004"/>
+          <stop offset="100%" stop-color="#120802"/>
+        </radialGradient>
+        <radialGradient id="introSiNode" cx="35%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="35%" stop-color="#fcd34d"/>
+          <stop offset="75%" stop-color="#d97706"/>
+          <stop offset="100%" stop-color="#78350f"/>
+        </radialGradient>
+        <radialGradient id="introONode" cx="35%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="45%" stop-color="#fef3c7"/>
+          <stop offset="85%" stop-color="#d4af37"/>
+          <stop offset="100%" stop-color="#543714"/>
+        </radialGradient>
+        <clipPath id="introLogoClip">
+          <circle cx="56" cy="56" r="46"/>
+        </clipPath>
+        <linearGradient id="introGleam" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+          <stop offset="48%" stop-color="#ffffff" stop-opacity="0.04"/>
+          <stop offset="50%" stop-color="#fff8db" stop-opacity="0.4"/>
+          <stop offset="52%" stop-color="#ffffff" stop-opacity="0.04"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Card Parchment Frame -->
+      <rect width="320" height="112" rx="10" fill="#f4e4c1" stroke="#8b5e34" stroke-width="1.2"/>
+      <rect x="3" y="3" width="314" height="106" rx="8" fill="none" stroke="rgba(139,94,52,0.25)" stroke-width="0.8"/>
+
+      <!-- Circular Crucible Medallion -->
+      <circle cx="56" cy="56" r="48" fill="#180b03" stroke="#c9952b" stroke-width="2"/>
+      <circle cx="56" cy="56" r="46" fill="url(#introCrucibleGrad)"/>
+
+      <!-- Clipped Vitreous Silicate Matrix -->
+      <g clip-path="url(#introLogoClip)">
+        <circle cx="56" cy="56" r="36" fill="none" stroke="rgba(217,119,6,0.22)" stroke-width="8">
+          <animate attributeName="r" values="32;38;32" dur="4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.2;0.5;0.2" dur="4s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- Siloxane Bonds (Si-O-Si) -->
+        <g stroke="#c9952b" stroke-width="1.6" stroke-linecap="round" opacity="0.85">
+          <line x1="26" y1="24" x2="42" y2="36"/>
+          <line x1="42" y1="36" x2="64" y2="28"/>
+          <line x1="64" y1="28" x2="82" y2="40"/>
+          <line x1="42" y1="36" x2="34" y2="58"/>
+          <line x1="34" y1="58" x2="18" y2="68"/>
+          <line x1="34" y1="58" x2="54" y2="66"/>
+          <line x1="54" y1="66" x2="72" y2="56"/>
+          <line x1="72" y1="56" x2="88" y2="66"/>
+          <line x1="72" y1="56" x2="82" y2="40"/>
+          <line x1="64" y1="28" x2="72" y2="56"/>
+          <line x1="54" y1="66" x2="46" y2="84"/>
+          <line x1="46" y1="84" x2="66" y2="90"/>
+          <line x1="66" y1="90" x2="82" y2="80"/>
+          <line x1="82" y1="80" x2="88" y2="66"/>
+          <line x1="18" y1="68" x2="24" y2="86"/>
+          <line x1="24" y1="86" x2="46" y2="84"/>
+        </g>
+
+        <!-- Energy Pulses -->
+        <g stroke="#fffbeb" stroke-width="1.8" opacity="0.85" fill="none" stroke-linecap="round" stroke-dasharray="4 16">
+          <line x1="26" y1="24" x2="42" y2="36"><animate attributeName="stroke-dashoffset" values="0;-20" dur="2.2s" repeatCount="indefinite"/></line>
+          <line x1="42" y1="36" x2="64" y2="28"><animate attributeName="stroke-dashoffset" values="0;-20" dur="1.9s" repeatCount="indefinite"/></line>
+          <line x1="64" y1="28" x2="82" y2="40"><animate attributeName="stroke-dashoffset" values="0;-20" dur="2.4s" repeatCount="indefinite"/></line>
+          <line x1="34" y1="58" x2="54" y2="66"><animate attributeName="stroke-dashoffset" values="0;-20" dur="2.0s" repeatCount="indefinite"/></line>
+          <line x1="54" y1="66" x2="72" y2="56"><animate attributeName="stroke-dashoffset" values="0;-20" dur="1.8s" repeatCount="indefinite"/></line>
+          <line x1="54" y1="66" x2="46" y2="84"><animate attributeName="stroke-dashoffset" values="0;-20" dur="2.1s" repeatCount="indefinite"/></line>
+        </g>
+
+        <!-- Oxygen (O) Atoms -->
+        <g fill="url(#introONode)" stroke="#2a1608" stroke-width="0.9">
+          <circle cx="26" cy="24" r="6"/>
+          <circle cx="64" cy="28" r="6"/>
+          <circle cx="34" cy="58" r="6"/>
+          <circle cx="18" cy="68" r="5.5"/>
+          <circle cx="88" cy="66" r="6"/>
+          <circle cx="46" cy="84" r="6"/>
+          <circle cx="82" cy="80" r="6"/>
+          <circle cx="24" cy="86" r="5.5"/>
+          <circle cx="66" cy="90" r="6"/>
+        </g>
+
+        <!-- Modifier Ions K+ & Ca2+ -->
+        <g>
+          <circle cx="50" cy="46" r="3.6" fill="#4ade80" stroke="#15803d" stroke-width="0.7">
+            <animate attributeName="r" values="3.2;4.0;3.2" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="68" cy="74" r="3.2" fill="#ea580c" stroke="#fed7aa" stroke-width="0.7">
+            <animate attributeName="opacity" values="0.7;1;0.7" dur="2.4s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+
+        <!-- Silicon (Si) Tetrahedral Centers -->
+        <g fill="url(#introSiNode)" stroke="#fef08a" stroke-width="1.2">
+          <circle cx="42" cy="36" r="7.5"><animate attributeName="r" values="7.2;8.0;7.2" dur="3s" repeatCount="indefinite"/></circle>
+          <circle cx="82" cy="40" r="7"/>
+          <circle cx="72" cy="56" r="8"><animate attributeName="r" values="7.6;8.4;7.6" dur="2.6s" repeatCount="indefinite"/></circle>
+          <circle cx="54" cy="66" r="7.5"/>
+        </g>
+
+        <!-- Center SiO2 Formula Badge -->
+        <g>
+          <rect x="39" y="47" width="34" height="15" rx="4" fill="rgba(18,7,2,0.82)" stroke="#d97706" stroke-width="1"/>
+          <text x="56" y="58" text-anchor="middle" font-family="'Palatino Linotype',Georgia,serif" font-size="10.5" font-weight="bold" fill="#fffbeb" letter-spacing="0.6">
+            SiO<tspan font-size="7.5" dy="2.4">2</tspan>
+          </text>
+        </g>
+
+        <!-- Caustic Gleam -->
+        <rect x="-40" y="-40" width="200" height="200" fill="url(#introGleam)" pointer-events="none">
+          <animateTransform attributeName="transform" type="rotate" from="0 56 56" to="360 56 56" dur="9s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+
+      <!-- Outer Medallion Border -->
+      <circle cx="56" cy="56" r="46" fill="none" stroke="#e5b85c" stroke-width="1.8"/>
+
+      <!-- Title & Chemical Typography on Right -->
+      <g transform="translate(114, 22)">
+        <text x="0" y="24" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#2a1608" letter-spacing="0.5">Sklářská Huť</text>
+        <text x="0" y="42" font-family="Georgia,serif" font-size="11" font-weight="bold" fill="#8b5e34" letter-spacing="1">FAJRUM · ANNO DOMINI 1680</text>
+        <text x="0" y="58" font-family="'Palatino Linotype',Georgia,serif" font-size="9.5" fill="#6a4520" font-style="italic">Haida · Arnsdorf · Novoborsko</text>
+        
+        <!-- Chemical Formula Ribbon -->
+        <g transform="translate(0, 66)">
+          <rect x="0" y="0" width="192" height="18" rx="4" fill="rgba(42,22,8,0.08)" stroke="rgba(139,94,52,0.4)" stroke-width="0.8"/>
+          <text x="8" y="12.5" font-family="'Palatino Linotype',Georgia,serif" font-size="8.5" font-weight="bold" fill="#543714">
+            ⚗️ Vitrum Siliceum: <tspan fill="#8b5e34">SiO₂</tspan> · <tspan fill="#2e7d32">K₂O</tspan> · <tspan fill="#c2410c">CaO</tspan>
+          </text>
+        </g>
+      </g>
+    </svg>`;
 
     // Obrázek pod tlačítky — 702×1175, schová se pokud chybí
     const introImgDiv=document.createElement("div");
@@ -5058,11 +5748,11 @@ function render(){
             padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"3px",borderLeft:"2px solid #8b5e34"}},
             G.difficulty==="easy"
               ?(L==="cs"
-                ?"🕯️ Otcova pec zaběhnutá, pánev kvalitní, zásoby plné. Začínáš s 80 groši a dluhem 50g. Čas na učení."
-                :"🕯️ Father's furnace is run-in, crucible quality, stores full. Start with 80 coins and 50g debt.")
+                ?"🕯️ Štědré dědictví: pec zaběhnutá, 140 grošů v pokladně, nízký dluh 30g, plná spižírna i sklad. Zlevněné zimní mzdy, vyšší výkupní ceny (+20%) a zakázkový bonus (+25%). Klidný čas na učení sklářského umění."
+                :"🕯️ Generous inheritance: run-in furnace, 140 coins in treasury, low debt 30g, full pantry and store. Discounted winter wages, higher selling prices (+20%), and contract bonuses (+25%). Relaxed time to master glassmaking.")
               :(L==="cs"
-                ?"⚔️ Studená pec, prázdný sklad, 40 grošů a dluh 50g. Každý groš se počítá."
-                :"⚔️ Cold furnace, empty store, 40 coins and 50g debt. Every coin counts."))),
+                ?"⚔️ Vyvážený start: otcova stará huť, 65 grošů na rozběh, dluh 40g, skromné zásoby na zimu. Vhodné pro strategickou správu lesa a pece."
+                :"⚔️ Balanced start: father's old foundry, 65 coins to start, 40g debt, modest winter stores. Ideal for strategic management of woods and furnace."))),
         h("div",{style:{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}},
           h("button",{class:"btn btn-p",onClick:()=>{startGame(G.difficulty||"normal");}},
             L==="cs"?"Vstoupit do hutě →":"Enter the Foundry →"),
@@ -5227,6 +5917,125 @@ function render(){
         h("p",{style:{fontSize:"13px",color:"#8b5e34",marginBottom:"20px",lineHeight:"1.5"}},L==="cs"?ev.dcs:ev.den),
         h("button",{class:"btn btn-p",onClick:dismissEvt},L==="cs"?"Rozumím":"OK")));
     app.append(evModal);
+    return;
+  }
+
+  // ── KRONIKA SKLÁŘSKÉHO RODU — ZÁNIK HUTĚ (GAME OVER) ──
+  if(p.phase==="game_over"){
+    FurnaceAudio.stop();
+    const fReason = p.failureReason || "abandoned";
+    const st = p.failureStats || {
+      season: p.season || 1, round: p.round || 1,
+      batches: G.totalBatches || 0, sold: G.totalSold || 0,
+      contracts: G.totalDone || 0, debtPaid: G.totalDebtPaid || 0,
+      maxFama: 0
+    };
+
+    const restartGame = () => {
+      const hName = G.huteName;
+      const diff = G.difficulty || "normal";
+      G = initState();
+      G.huteName = hName;
+      G.difficulty = diff;
+      G.phase = "playing";
+      render();
+    };
+
+    const hdr = h("div", {class: "hdr", style: {background: "linear-gradient(180deg, rgba(42,26,10,.95) 0%, rgba(20,12,5,.98) 100%)", color: "#e8d8c8", borderBottom: "2px solid #8b3a2a"}},
+      h("div", null,
+        h("h1", {style: {color: "#e27d60", fontSize: "17px", display: "flex", alignItems: "center", gap: "6px"}},
+          "📜 "+(L==="cs"?"KRONIKA SKLÁŘSKÉHO RODU — ZÁNIK HUTĚ":"CHRONICLE OF THE GLASSHOUSE — THE FALL")),
+        h("small", {style: {color: "#c9952b", fontSize: "11px"}},
+          L==="cs"
+            ?`Sezóna ${st.season} · Měsíc ${st.round} · Léta Páně ${1679+st.season}`
+            :`Season ${st.season} · Month ${st.round} · Year of our Lord ${1679+st.season}`)));
+
+    const body = h("div", {style: {padding: "14px", overflowY: "auto", flex: "1", background: "#f5eee6"}});
+
+    // Příběhové vyprávění
+    let reasonTitle = "";
+    let reasonStory = "";
+    let reasonIcon = "🏚️";
+
+    if(fReason === "abandoned"){
+      reasonIcon = "🏚️";
+      reasonTitle = L==="cs" ? "Huť osiřela — taviči a tovaryši odešli" : "Foundry deserted — all glassmakers left";
+      reasonStory = L==="cs"
+        ? "Huť v hlubokých lužických hvozdech ztichla. Bez jídla, piva a spravedlivých mezd sbalili tovaryši své nářadí a odešli za obživou jinam. Nakonec i starý mistr František Kunc s těžkým srdcem uhasil oheň v peci, zavřel verštat a přes horské hřebeny se vydal do saských hutí. Za první zimy roztrhal mráz studenou pec a huť zarostla mechem a kapradím."
+        : "The glasshouse in the deep Lusatian forests fell silent. Without food, beer, or fair wages, the journeymen packed their tools and left to seek bread elsewhere. In the end, even master František Kunc with a heavy heart put out the furnace fire, shuttered the benches, and crossed the mountain ridges to Saxony. In the first winter, frost shattered the cold stones and moss reclaimed the site.";
+    } else if(fReason === "foreclosure"){
+      reasonIcon = "⚖️";
+      reasonTitle = L==="cs" ? "Panská exekuce a zabavení huti věřiteli" : "Manorial foreclosure and confiscation";
+      reasonStory = L==="cs"
+        ? "Panský hejtman hraběcího panství v doprovodu rychtáře a ozbrojených biřiců přitloukl na vrata huti exekuční pečeť. Pro nesplatitelné dluhy a neuhrazené účty u Faktora Weisse byla celá sklárna zabavena. Pánve a zásoby křišťálu šly do dražby v České Lípě a správu huti převzal cizí faktor."
+        : "The estate bailiff, accompanied by the reeve and armed guards, nailed the foreclosure seal upon the foundry gates. For insurmountable debt and unpaid credit to Factor Weiss, the entire glasshouse was confiscated. Crucibles and glass stocks were auctioned in Česká Lípa, and management handed to an outside overseer.";
+    } else {
+      reasonIcon = "🌋";
+      reasonTitle = L==="cs" ? "Zkáza pece a úplný rozpad huti" : "Collapse of the furnace and ruin of the workshop";
+      reasonStory = L==="cs"
+        ? "Vyčerpaná a popraskaná pec nevydržela žár tavení. Šamotová klenba se zřítila a všechny zbývající pánve byly zničeny. Bez peněz na novou stavbu, bez jílu a bez zralých pánví už huť nemohla obnovit oheň. Místo sklářské slávy zbyly jen ohořelé trámy a hromada střepů."
+        : "The exhausted, cracked furnace could not withstand the heat of the melt. The shamot vault caved in, destroying all remaining crucibles. With no coin for rebuilding, no clay, and no ready crucibles, the fire could never be relit. Only charred beams and rubble remain.";
+    }
+
+    const storyBox = h("div", {style: {background: "rgba(160,48,32,.08)", border: "1px solid rgba(160,48,32,.25)", borderRadius: "6px", padding: "12px 14px", marginBottom: "14px"}});
+    storyBox.append(
+      h("div", {style: {display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px"}},
+        h("span", {style: {fontSize: "24px"}}, reasonIcon),
+        h("h2", {style: {fontSize: "15px", color: "#a03020", margin: 0, fontWeight: "700"}}, reasonTitle)),
+      h("p", {style: {fontSize: "12px", color: "#4a2a14", lineHeight: "1.6", margin: 0, fontStyle: "italic"}}, reasonStory)
+    );
+    body.append(storyBox);
+
+    // Statistiky působení
+    const statsSec = h("div", {class: "sec", style: {marginBottom: "14px"}});
+    statsSec.append(h("div", {class: "sec-title"}, "📊 "+(L==="cs"?"Zápis v huťské knize (Dosažené výsledky)":"Foundry Chronicle (Tenure Record)")));
+    const statGrid = h("div", {style: {display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px"}});
+    [
+      {label: L==="cs"?"Doba vedení hutě":"Tenure length", val: `${st.season} ${L==="cs"?"sezón":"seasons"} · ${st.round} ${L==="cs"?"měsíců":"months"}`},
+      {label: L==="cs"?"Uvařeno skloviny":"Glass batches melted", val: `🔥 ${st.batches} ${L==="cs"?"várek":"batches"}`},
+      {label: L==="cs"?"Prodané výrobky":"Glassware sold", val: `✨ ${st.sold} ${L==="cs"?"kusů":"pieces"}`},
+      {label: L==="cs"?"Splněné zakázky":"Contracts fulfilled", val: `📜 ${st.contracts}`},
+      {label: L==="cs"?"Splaceno dluhů":"Debt repaid", val: `💰 ${st.debtPaid}g`},
+      {label: L==="cs"?"Nejvyšší věhlas (Fama)":"Highest Fama", val: `⭐ ${st.maxFama}/100`}
+    ].forEach(s => {
+      statGrid.append(h("div", {style: {padding: "8px", background: "rgba(0,0,0,.04)", borderRadius: "4px"}},
+        h("div", {style: {fontSize: "10px", color: "#8b5e34"}}, s.label),
+        h("div", {style: {fontSize: "13px", fontWeight: "700", color: "#2a1a0a", marginTop: "2px"}}, s.val)));
+    });
+    statsSec.append(statGrid);
+    body.append(statsSec);
+
+    // Rady mistrů pro příští pokus
+    const tipsBox = h("div", {style: {background: "rgba(74,122,58,.08)", border: "1px solid rgba(74,122,58,.25)", borderRadius: "6px", padding: "12px 14px", marginBottom: "16px"}});
+    tipsBox.append(h("div", {style: {fontSize: "11px", fontWeight: "700", color: "#4a7a3a", marginBottom: "8px"}},
+      "💡 "+(L==="cs"?"POUČENÍ ZE ZÁNIKU — RADY PRO NOVOU HUŤ":"LESSONS FROM THE FALL — MASTER ADVICE")));
+
+    const tipsList = [
+      L==="cs"?"🍞 Zásoba jídla a piva: Nenechávej zásoby jídla na nule. Alespoň 1 díl piva udrží morálku a věrnost dělníků."
+             :"🍞 Provisions: Keep food in stock. At least 1 beer ration maintains morale and worker loyalty.",
+      L==="cs"?"⏳ Odklad splátek u Faktora Weisse: Pokud v zimě chybí groše na mzdy, vyjednej u Weisse 2 kola odkladu splátek."
+             :"⏳ Debt moratorium: When winter cash is tight for wages, negotiate a 2-round repayment deferral with Weiss.",
+      L==="cs"?"📦 Neprodávej pozdě: Nenechávej hotové sklo ležet na skladě — proměň ho u Weisse nebo na Trhu v groše pro provoz."
+             :"📦 Liquidate inventory: Sell finished glass promptly at Market or quick-sell to Weiss for operational cashflow.",
+      L==="cs"?"🏺 Pánve potřebují 2 kola: Káninský musí šlapat jíl dříve, než stará pánev doslouží a praskne."
+             :"🏺 Crucibles take time: Have Káninský prepare crucibles well before the working one fractures."
+    ];
+    tipsList.forEach(tip => tipsBox.append(h("div", {style: {fontSize: "11px", color: "#3a2a14", marginBottom: "5px", lineHeight: "1.4"}}, tip)));
+    body.append(tipsBox);
+
+    // Tlačítka akcí
+    const btnRow = h("div", {style: {display: "flex", gap: "8px", flexWrap: "wrap"}});
+    btnRow.append(
+      h("button", {class: "btn btn-p", style: {flex: "1", minWidth: "180px", padding: "12px", fontSize: "14px", fontWeight: "700"},
+        onClick: restartGame},
+        "🔥 "+(L==="cs"?"Založit novou huť (Zkusit znovu)":"Found New Glasshouse (Retry)")),
+      h("button", {class: "btn btn-s", style: {padding: "12px", fontSize: "13px"},
+        onClick: () => { G.tab = "log"; G.phase = "playing"; render(); }},
+        "📖 "+(L==="cs"?"Prohlédnout Kroniku":"View Chronicle"))
+    );
+    body.append(btnRow);
+
+    app.append(hdr, body);
     return;
   }
 
@@ -5535,21 +6344,42 @@ function render(){
     }
     body.append(prodBox);
 
-    // ── ROZPAD EKONOMIKY ──
+    // ── FINANČNÍ PŘEHLED & DLUHOVÝ ROZBOR KOLA ──
     const ecoBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #c9952b"}});
-    ecoBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"📊 ÚČETNICTVÍ KOLA":"📊 ROUND ACCOUNTS"));
+    ecoBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"📊 ÚČETNICTVÍ & HOSPODAŘENÍ KOLA":"📊 ROUND ACCOUNTS & FINANCES"));
     const ecoRows=[
-      ...(sd.contractIncome>0?[{label:L==="cs"?"✅ Zakázky":"✅ Contracts",val:"+"+sd.contractIncome+"g",c:"#4a7a3a"}]:[]),
-      {label:L==="cs"?"💸 Mzdy celkem":"💸 Wages total",val:"-"+sd.wages+"g",c:"#a03020"},
-      ...(sd.wagesDeficit>0?[{label:L==="cs"?"⚠️ Nezaplaceno":"⚠️ Unpaid",val:sd.wagesDeficit+"g → dluh",c:"#a03020",bold:true}]:[]),
-      {label:L==="cs"?"🍺 Pivo":"🍺 Beer",val:"-"+sd.bCost+"g",c:"#8b5e34"},
-      ...(sd.dPay>0?[{label:L==="cs"?"📜 Auto-splátka dluhu":"📜 Auto debt payment",val:"-"+sd.dPay+"g",c:"#4a7a3a"}]:[]),
-      {label:L==="cs"?"Δ Pokladna":"Δ Cash",val:(sd.groseDelta>=0?"+":"")+sd.groseDelta+"g",c:sd.groseDelta>=0?"#4a7a3a":"#a03020",bold:true},
+      ...(sd.contractIncome>0?[{label:L==="cs"?"✅ Příjem ze zakázek":"✅ Contract income",val:"+"+sd.contractIncome+"g",c:"#4a7a3a"}]:[]),
+      {label:L==="cs"?"💸 Mzdy (náklad)":"💸 Wages (cost)",val:"-"+sd.wages+"g",c:"#a03020"},
+      {label:L==="cs"?"🍺 Pivo & režie":"🍺 Beer & rations",val:"-"+sd.bCost+"g",c:"#8b5e34"},
+      ...(sd.dPay>0?[{label:L==="cs"?"📜 Splátka dluhu u Weisse":"📜 Weiss debt payment",val:"-"+sd.dPay+"g",c:"#4a7a3a"}]:[]),
+      {label:L==="cs"?"Δ Změna pokladny":"Δ Cash change",val:(sd.groseDelta>=0?"+":"")+sd.groseDelta+"g",c:sd.groseDelta>=0?"#4a7a3a":"#a03020",bold:true},
     ];
     ecoRows.forEach(r=>ecoBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",
       marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
       h("span",{style:{color:"#8b5e34"}},r.label),
       h("span",{style:{color:r.c}},r.val))));
+
+    // DLUH STATUS & VAROVÁNÍ
+    const debtStatusCard=h("div",{style:{marginTop:"6px",padding:"6px 8px",background:"rgba(42,26,10,.05)",borderRadius:"3px",border:"1px solid rgba(42,26,10,.12)"}});
+    const dHeader=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"11px"}});
+    dHeader.append(
+      h("span",{style:{fontWeight:"600",color:"#8b5e34"}},"📜 "+(L==="cs"?"Stav dluhu u Faktora Weisse:":"Debt owed to Factor Weiss:")),
+      h("strong",{style:{fontSize:"12px",color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?(p.debt+"g"):(L==="cs"?"✅ 0g (Bez dluhu)":"✅ 0g (No debt)"))
+    );
+    debtStatusCard.append(dHeader);
+    if(p.debtMoratorium>0){
+      debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#4a7a3a",marginTop:"3px",fontWeight:"600"}},
+        "⏳ "+(L==="cs"?`Aktivní odklad splátek: zbývá ${p.debtMoratorium} kol bez automatických srážek.`:`Active moratorium: ${p.debtMoratorium} rounds left without auto-deductions.`)));
+    }else if(p.debt>0&&sd.dPay>0){
+      debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#4a7a3a",marginTop:"2px"}},
+        L==="cs"?`✓ V tomto kole automaticky splaceno ${sd.dPay}g.`:`✓ Auto-repaid ${sd.dPay}g this round.`));
+    }
+    if(sd.wagesDeficit>0){
+      debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginTop:"4px",fontWeight:"700",background:"rgba(160,48,32,.08)",padding:"3px 5px",borderRadius:"3px"}},
+        L==="cs"?`⚠️ Huť dluží na mzdách ${sd.wagesDeficit}g! Zvyšuje se dluh a klesá loajalita dělníků. Sjednej odklad u Weisse nebo prodej sklo.`
+                :`⚠️ Foundry owes ${sd.wagesDeficit}g in wages! Debt increased and loyalty drops. Defer debt at Weiss or sell glass.`));
+    }
+    ecoBox.append(debtStatusCard);
     body.append(ecoBox);
 
     // ── DĚLNÍCI — mzdy a dluhy ──
@@ -5883,11 +6713,161 @@ function render(){
   const hdrEl=h("div",{class:"hdr",style:{padding:"7px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}});
   const logoD=document.createElement("div");
   logoD.style.cssText="display:flex;align-items:center;gap:8px;";
-  // Kruh se sítí
+  // Kruh se sítí — Animované chemické logo skloviny (SiO₂ · K₂O · CaO)
   const svgWrap=document.createElement("div");
-  svgWrap.style.cssText="line-height:0;flex-shrink:0;";
-  svgWrap.innerHTML=`<svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" style="height:48px;width:48px"><defs><clipPath id="crcH"><circle cx="28" cy="28" r="26"/></clipPath></defs><circle cx="28" cy="28" r="26" fill="#2a1608"/><g clip-path="url(#crcH)"><g stroke="#c9952b" stroke-width="1.1" fill="none"><line x1="14" y1="12" x2="24" y2="20"/><line x1="24" y1="20" x2="32" y2="13"/><line x1="32" y1="13" x2="42" y2="20"/><line x1="24" y1="20" x2="18" y2="30"/><line x1="18" y1="30" x2="10" y2="35"/><line x1="18" y1="30" x2="28" y2="35"/><line x1="28" y1="35" x2="36" y2="28"/><line x1="36" y1="28" x2="44" y2="33"/><line x1="36" y1="28" x2="42" y2="20"/><line x1="28" y1="35" x2="24" y2="44"/><line x1="24" y1="44" x2="34" y2="46"/><line x1="34" y1="46" x2="42" y2="40"/><line x1="42" y1="40" x2="44" y2="33"/><line x1="10" y1="35" x2="12" y2="45"/><line x1="12" y1="45" x2="22" y2="48"/><line x1="22" y1="48" x2="24" y2="44"/></g><g fill="#f0deb8" stroke="#1a0e06" stroke-width="0.8"><circle cx="14" cy="12" r="5"/><circle cx="32" cy="13" r="5"/><circle cx="18" cy="30" r="5"/><circle cx="10" cy="35" r="5"/><circle cx="28" cy="35" r="5"/><circle cx="44" cy="33" r="5"/><circle cx="24" cy="44" r="5"/><circle cx="34" cy="46" r="5"/><circle cx="42" cy="40" r="5"/><circle cx="12" cy="45" r="5"/><circle cx="22" cy="48" r="5"/></g><g fill="#c9952b"><circle cx="24" cy="20" r="3.5"/><circle cx="42" cy="20" r="3.5"/><circle cx="36" cy="28" r="3.5"/><circle cx="34" cy="46" r="3.5"/></g></g><circle cx="28" cy="28" r="26" fill="none" stroke="#c9952b" stroke-width="1.2"/></svg>`;
-  // Text blok
+  svgWrap.style.cssText="line-height:0;flex-shrink:0;cursor:pointer;";
+  svgWrap.title=L==="cs"?"Chemická podstata skla: SiO₂ (křemen) · K₂O (potaš) · CaO (vápenec)":"Chemical nature of glass: SiO₂ (silica) · K₂O (potash) · CaO (lime)";
+  svgWrap.onclick=(e)=>{
+    FajrumSfx.play("glass", 0.7);
+    spawnFloatText(L==="cs"?"✨ Vitrum: SiO₂ · K₂O · CaO":"✨ Vitrum: SiO₂ · K₂O · CaO", e, "gold");
+  };
+  svgWrap.innerHTML=`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="glass-chemical-logo" style="height:48px;width:48px;display:block;">
+    <defs>
+      <!-- Molten Crucible Ambient Glow -->
+      <radialGradient id="moltenGlassGradH" cx="45%" cy="38%" r="62%">
+        <stop offset="0%" stop-color="#3d1e08"/>
+        <stop offset="55%" stop-color="#241205"/>
+        <stop offset="100%" stop-color="#120702"/>
+      </radialGradient>
+      <!-- Silicon Atom Gradient (Amber/Gold Si4+) -->
+      <radialGradient id="siNodeGradH" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="35%" stop-color="#fcd34d"/>
+        <stop offset="75%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </radialGradient>
+      <!-- Oxygen Atom Gradient (Quartz Pearl O2-) -->
+      <radialGradient id="oNodeGradH" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="45%" stop-color="#fef3c7"/>
+        <stop offset="85%" stop-color="#d4af37"/>
+        <stop offset="100%" stop-color="#543714"/>
+      </radialGradient>
+      <!-- Potash / Lime Ion Gradient (K+ / Ca2+) -->
+      <radialGradient id="kModGradH" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#f0fdf4"/>
+        <stop offset="45%" stop-color="#4ade80"/>
+        <stop offset="85%" stop-color="#15803d"/>
+        <stop offset="100%" stop-color="#052e16"/>
+      </radialGradient>
+      <!-- Circular Clip -->
+      <clipPath id="crcHChem">
+        <circle cx="32" cy="32" r="28.5"/>
+      </clipPath>
+      <!-- Optical Gleam Gradient -->
+      <linearGradient id="gleamGradH" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset="48%" stop-color="#ffffff" stop-opacity="0.04"/>
+        <stop offset="50%" stop-color="#fff8db" stop-opacity="0.45"/>
+        <stop offset="52%" stop-color="#ffffff" stop-opacity="0.04"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Outer Antique Brass Bezel -->
+    <circle cx="32" cy="32" r="31" fill="#180b03" stroke="#c9952b" stroke-width="1.6"/>
+    <circle cx="32" cy="32" r="29.2" fill="none" stroke="#8b5e34" stroke-width="0.8" stroke-dasharray="2 1.5"/>
+
+    <!-- Inner Molten Crucible Basin -->
+    <circle cx="32" cy="32" r="28.5" fill="url(#moltenGlassGradH)"/>
+
+    <!-- Vitreous Molecular Silicate Lattice (SiO2 Amorphous Network) -->
+    <g clip-path="url(#crcHChem)">
+      <!-- Pulsing Molten Core Background Aura -->
+      <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(217,119,6,0.18)" stroke-width="6">
+        <animate attributeName="r" values="18;23;18" dur="3.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.15;0.4;0.15" dur="3.6s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- Siloxane Bonds (Si - O - Si) -->
+      <g stroke="#c9952b" stroke-width="1.25" stroke-linecap="round" opacity="0.85">
+        <line x1="16" y1="16" x2="26" y2="23"/>
+        <line x1="26" y1="23" x2="38" y2="17"/>
+        <line x1="38" y1="17" x2="48" y2="24"/>
+        <line x1="26" y1="23" x2="20" y2="34"/>
+        <line x1="20" y1="34" x2="11" y2="40"/>
+        <line x1="20" y1="34" x2="31" y2="39"/>
+        <line x1="31" y1="39" x2="42" y2="33"/>
+        <line x1="42" y1="33" x2="52" y2="38"/>
+        <line x1="42" y1="33" x2="48" y2="24"/>
+        <line x1="38" y1="17" x2="42" y2="33"/>
+        <line x1="31" y1="39" x2="26" y2="50"/>
+        <line x1="26" y1="50" x2="37" y2="54"/>
+        <line x1="37" y1="54" x2="47" y2="47"/>
+        <line x1="47" y1="47" x2="52" y2="38"/>
+        <line x1="11" y1="40" x2="15" y2="52"/>
+        <line x1="15" y1="52" x2="26" y2="50"/>
+      </g>
+
+      <!-- Dynamic Light & Energy Flow along Bonds -->
+      <g stroke="#fffbeb" stroke-width="1.3" opacity="0.8" fill="none" stroke-linecap="round" stroke-dasharray="3 13">
+        <line x1="16" y1="16" x2="26" y2="23"><animate attributeName="stroke-dashoffset" values="0;-16" dur="2.2s" repeatCount="indefinite"/></line>
+        <line x1="26" y1="23" x2="38" y2="17"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.9s" repeatCount="indefinite"/></line>
+        <line x1="38" y1="17" x2="48" y2="24"><animate attributeName="stroke-dashoffset" values="0;-16" dur="2.4s" repeatCount="indefinite"/></line>
+        <line x1="20" y1="34" x2="31" y2="39"><animate attributeName="stroke-dashoffset" values="0;-16" dur="2.0s" repeatCount="indefinite"/></line>
+        <line x1="31" y1="39" x2="42" y2="33"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.8s" repeatCount="indefinite"/></line>
+        <line x1="31" y1="39" x2="26" y2="50"><animate attributeName="stroke-dashoffset" values="0;-16" dur="2.1s" repeatCount="indefinite"/></line>
+        <line x1="37" y1="54" x2="47" y2="47"><animate attributeName="stroke-dashoffset" values="0;-16" dur="1.9s" repeatCount="indefinite"/></line>
+      </g>
+
+      <!-- Bridging Oxygen (O) Atoms -->
+      <g class="oxygen-nodes">
+        <circle cx="16" cy="16" r="3.8" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="38" cy="17" r="3.8" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="20" cy="34" r="3.8" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="11" cy="40" r="3.4" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="52" cy="38" r="3.6" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="26" cy="50" r="3.8" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="47" cy="47" r="3.8" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="15" cy="52" r="3.2" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+        <circle cx="37" cy="54" r="3.6" fill="url(#oNodeGradH)" stroke="#2a1608" stroke-width="0.6"/>
+      </g>
+
+      <!-- Interstitial Modifier Ions: K+ Potash & Ca2+ Lime -->
+      <g class="modifier-nodes">
+        <circle cx="29" cy="27" r="2.4" fill="url(#kModGradH)" stroke="#86efac" stroke-width="0.5">
+          <animate attributeName="r" values="2.2;2.7;2.2" dur="2.8s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="39" cy="44" r="2.0" fill="#ea580c" stroke="#fed7aa" stroke-width="0.5">
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="2.2s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+
+      <!-- Silicon (Si) Tetrahedral Centers -->
+      <g class="silicon-nodes">
+        <circle cx="26" cy="23" r="4.8" fill="url(#siNodeGradH)" stroke="#fef08a" stroke-width="0.8">
+          <animate attributeName="r" values="4.6;5.1;4.6" dur="3.0s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="48" cy="24" r="4.4" fill="url(#siNodeGradH)" stroke="#fef08a" stroke-width="0.7"/>
+        <circle cx="42" cy="33" r="5.0" fill="url(#siNodeGradH)" stroke="#fef08a" stroke-width="0.8">
+          <animate attributeName="r" values="4.8;5.3;4.8" dur="2.6s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="31" cy="39" r="4.6" fill="url(#siNodeGradH)" stroke="#fef08a" stroke-width="0.7"/>
+      </g>
+
+      <!-- Central Chemical Formula Badge -->
+      <g class="chem-center-badge">
+        <rect x="22" y="27.5" width="20" height="9" rx="2.5" fill="rgba(18,7,2,0.78)" stroke="#d97706" stroke-width="0.6"/>
+        <text x="32" y="34.2" text-anchor="middle" font-family="'Palatino Linotype',Georgia,serif" font-size="6.2" font-weight="bold" fill="#fffbeb" letter-spacing="0.3">
+          SiO<tspan font-size="4.5" dy="1.4">2</tspan>
+        </text>
+      </g>
+
+      <!-- Rotating Optical Caustic Refraction Glint -->
+      <rect x="-30" y="-30" width="124" height="124" fill="url(#gleamGradH)" pointer-events="none">
+        <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="8s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <!-- Outer Rim Borders & Cardinal Accents -->
+    <circle cx="32" cy="32" r="28.5" fill="none" stroke="#fbbf24" stroke-width="1.1"/>
+    <circle cx="32" cy="2" r="1.3" fill="#fffbeb" stroke="#c9952b" stroke-width="0.5"/>
+    <circle cx="62" cy="32" r="1.3" fill="#fffbeb" stroke="#c9952b" stroke-width="0.5"/>
+    <circle cx="32" cy="62" r="1.3" fill="#fffbeb" stroke="#c9952b" stroke-width="0.5"/>
+    <circle cx="2" cy="32" r="1.3" fill="#fffbeb" stroke="#c9952b" stroke-width="0.5"/>
+  </svg>`;
+
+  // Text blok s chemickou formulí
   const txtWrap=document.createElement("div");
   txtWrap.style.cssText="display:flex;flex-direction:column;justify-content:center;";
   const t1=document.createElement("div");
@@ -5906,11 +6886,87 @@ function render(){
   const t3=document.createElement("div");
   t3.style.cssText="font-family:Georgia,serif;font-size:7px;color:#8b5e34;letter-spacing:1px;";
   t3.textContent=`Anno Domini ${1679+p.season}`;
-  txtWrap.append(t2,t3);
-  // Pavučina za textem
+  
+  // Chemická formule — interaktivní odznak
+  const chemPill=document.createElement("div");
+  chemPill.className="chem-badge-pill";
+  chemPill.title=L==="cs"?"Složení českého skla: Křemen (SiO₂ ~72%), Potaš (K₂O ~18%), Vápenec (CaO ~10%)":"Bohemian glass formula: Silica (SiO₂ ~72%), Potash (K₂O ~18%), Lime (CaO ~10%)";
+  chemPill.innerHTML=`<span>⚗️ SiO₂ · K₂O · CaO</span>`;
+  chemPill.onclick=(e)=>{
+    e.stopPropagation();
+    FajrumSfx.play("glass", 0.6);
+    spawnFloatText(L==="cs"?"Křemen (SiO₂) · Potaš (K₂O) · Vápenec (CaO)":"Silica (SiO₂) · Potash (K₂O) · Lime (CaO)", e, "gold");
+  };
+
+  txtWrap.append(t2, t3, chemPill);
+
+  // Animovaná molekulární síť skla v záhlaví
   const netDiv=document.createElement("div");
-  netDiv.style.cssText="opacity:0.2;line-height:0;margin-left:4px;";
-  netDiv.innerHTML=`<svg width="70" height="40" viewBox="0 0 70 40" xmlns="http://www.w3.org/2000/svg"><g stroke="#c9952b" stroke-width="0.8" fill="none"><line x1="6" y1="8" x2="20" y2="18"/><line x1="20" y1="18" x2="38" y2="10"/><line x1="38" y1="10" x2="58" y2="20"/><line x1="20" y1="18" x2="12" y2="30"/><line x1="12" y1="30" x2="30" y2="34"/><line x1="30" y1="34" x2="38" y2="10"/><line x1="30" y1="34" x2="48" y2="28"/><line x1="48" y1="28" x2="58" y2="20"/><line x1="6" y1="8" x2="12" y2="30"/></g><g fill="#f0deb8"><circle cx="6" cy="8" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="12" cy="30" r="2.2"/><circle cx="30" cy="34" r="2.2"/><circle cx="48" cy="28" r="2.2"/><circle cx="58" cy="20" r="2.2"/></g><g fill="#c9952b"><circle cx="20" cy="18" r="1.5"/></g></svg>`;
+  netDiv.className="chem-network-wrap";
+  netDiv.style.cssText="opacity:0.55;line-height:0;margin-left:8px;";
+  netDiv.title=L==="cs"?"Amorfní křemičitá síť [SiO₄]⁴⁻ lesního skla":"Amorphous silicate [SiO₄]⁴⁻ vitreous lattice";
+  netDiv.onclick=(e)=>{
+    FajrumSfx.play("glass", 0.65);
+    spawnFloatText("✨ [SiO₄]⁴⁻ Silicium", e, "gold");
+  };
+  netDiv.innerHTML=`<svg width="100" height="42" viewBox="0 0 100 42" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="netPulseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#c9952b" stop-opacity="0.3"/>
+        <stop offset="50%" stop-color="#fff2a8" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#c9952b" stop-opacity="0.3"/>
+      </linearGradient>
+    </defs>
+    <!-- Siloxane Covalent Matrix -->
+    <g stroke="#c9952b" stroke-width="0.9" fill="none" stroke-linecap="round">
+      <line x1="8" y1="12" x2="24" y2="20"/>
+      <line x1="24" y1="20" x2="42" y2="12"/>
+      <line x1="42" y1="12" x2="64" y2="22"/>
+      <line x1="64" y1="22" x2="88" y2="14"/>
+      <line x1="24" y1="20" x2="16" y2="32"/>
+      <line x1="16" y1="32" x2="36" y2="36"/>
+      <line x1="36" y1="36" x2="42" y2="12"/>
+      <line x1="36" y1="36" x2="56" y2="30"/>
+      <line x1="56" y1="30" x2="64" y2="22"/>
+      <line x1="56" y1="30" x2="78" y2="34"/>
+      <line x1="78" y1="34" x2="88" y2="14"/>
+      <line x1="8" y1="12" x2="16" y2="32"/>
+    </g>
+    <!-- Traveling Energy Pulses along Bonds -->
+    <g stroke="url(#netPulseGrad)" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-dasharray="3 12">
+      <line x1="8" y1="12" x2="24" y2="20"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.4s" repeatCount="indefinite"/></line>
+      <line x1="24" y1="20" x2="42" y2="12"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.1s" repeatCount="indefinite"/></line>
+      <line x1="42" y1="12" x2="64" y2="22"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.5s" repeatCount="indefinite"/></line>
+      <line x1="64" y1="22" x2="88" y2="14"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.2s" repeatCount="indefinite"/></line>
+      <line x1="36" y1="36" x2="56" y2="30"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.0s" repeatCount="indefinite"/></line>
+      <line x1="56" y1="30" x2="78" y2="34"><animate attributeName="stroke-dashoffset" values="0;-15" dur="2.3s" repeatCount="indefinite"/></line>
+    </g>
+    <!-- Oxygen Bridging Atoms (O) -->
+    <g fill="#fef3c7" stroke="#2a1608" stroke-width="0.5">
+      <circle cx="8" cy="12" r="2.5"/>
+      <circle cx="42" cy="12" r="2.5"/>
+      <circle cx="16" cy="32" r="2.5"/>
+      <circle cx="36" cy="36" r="2.5"/>
+      <circle cx="56" cy="30" r="2.5"/>
+      <circle cx="88" cy="14" r="2.5"/>
+    </g>
+    <!-- Silicon Tetrahedral Atoms (Si) -->
+    <g fill="#f59e0b" stroke="#fef08a" stroke-width="0.6">
+      <circle cx="24" cy="20" r="3.2"><animate attributeName="r" values="3.0;3.5;3.0" dur="2.8s" repeatCount="indefinite"/></circle>
+      <circle cx="64" cy="22" r="3.2"><animate attributeName="r" values="3.0;3.5;3.0" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx="78" cy="34" r="2.8"/>
+    </g>
+    <!-- Modifier Ions K+ / Ca2+ -->
+    <g>
+      <circle cx="48" cy="22" r="1.8" fill="#4ade80" stroke="#15803d" stroke-width="0.4">
+        <animate attributeName="opacity" values="0.6;1;0.6" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="68" cy="32" r="1.6" fill="#fb923c" stroke="#9a3412" stroke-width="0.4"/>
+    </g>
+    <!-- Chemical Micro Notation -->
+    <text x="86" y="38" font-family="'Palatino Linotype',Georgia,serif" font-size="5.5" font-weight="bold" fill="#c9952b" opacity="0.85">SiO₂</text>
+  </svg>`;
+
   logoD.append(svgWrap, txtWrap, netDiv);
   hdrEl.append(logoD,
     h("div",{style:{display:"flex",gap:"4px"}},
@@ -5921,6 +6977,49 @@ function render(){
       h("button",{class:"btn btn-s",style:{background:"rgba(255,255,255,.1)",color:"#f0deb8",border:"1px solid rgba(255,255,255,.2)"},
         onClick:()=>{G.lang=L==="cs"?"en":"cs";render();}},L==="cs"?"EN":"CZ")));
   app.append(hdrEl);
+
+  // Zánik hutě — informační lišta při prohlížení kroniky
+  if(p.failureReason){
+    const goBanner = h("div", {
+      style: {
+        background: "linear-gradient(90deg, rgba(160,48,32,.95) 0%, rgba(100,28,18,.98) 100%)",
+        color: "#fff",
+        padding: "8px 14px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        fontSize: "11px",
+        borderBottom: "1px solid rgba(255,255,255,.2)",
+        flexWrap: "wrap",
+        gap: "8px"
+      }
+    });
+    goBanner.append(
+      h("span", {style: {fontWeight: "700", display: "flex", alignItems: "center", gap: "6px"}},
+        "📜 "+(L==="cs"?"Konec hry — Huť zanikla (prohlížení kroniky)":"Game Over — Foundry has fallen (viewing chronicle)")),
+      h("div", {style: {display: "flex", gap: "6px"}},
+        h("button", {
+          class: "btn btn-s",
+          style: {background: "rgba(255,255,255,.2)", color: "#fff", border: "1px solid rgba(255,255,255,.4)", fontSize: "10px"},
+          onClick: () => { G.phase = "game_over"; render(); }
+        }, L==="cs" ? "📜 Zpět na zánik" : "📜 Back to fall screen"),
+        h("button", {
+          class: "btn btn-s btn-p",
+          style: {fontSize: "10px", fontWeight: "700"},
+          onClick: () => {
+            const hName = G.huteName;
+            const diff = G.difficulty || "normal";
+            G = initState();
+            G.huteName = hName;
+            G.difficulty = diff;
+            G.phase = "playing";
+            render();
+          }
+        }, "🔥 "+(L==="cs"?"Založit novou huť":"New Game"))
+      )
+    );
+    app.append(goBanner);
+  }
 
   // Round bar
   // Round bar — 12 měsíců
@@ -6205,7 +7304,7 @@ function render(){
   GlassHutMusic.setMasterVolume(p.audio.masterVolume??0.8);
   GlassHutMusic.setMuted(!!_muteAll);
 
-  const content=h("div",{class:"content"});
+  const content=h("div",{class:"content tab-enter"});
 
   // ── TAB: PŘEHLED ──
   if(p.tab==="overview"){
@@ -6747,13 +7846,49 @@ function render(){
         // Sklad + craft button
         if(inv.length>0)card.append(h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
           `${L==="cs"?"Sklad":"Stock"}: ${inv.length}× ${stars(Math.round(inv.reduce((a,b)=>a+b,0)/inv.length))}`));
-        card.append(h("button",{class:"btn btn-s"+(ok?" btn-p":""),
-          style:{width:"100%",fontSize:"9px",opacity:ok?1:.45},
-          onClick:()=>{if(ok)craftBlown(key,selColor);}},
-          ok?(L==="cs"?"Foukat →":"Blow →")
-            :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
-            :!hasInput?(L==="cs"?`Chybí ${selColor}`:`No ${selColor}`)
-            :(L==="cs"?"Chybí forma":"No mould")));
+        const maxCraft = ok ? Math.min(Math.floor((p[selColor]||[]).length / it.qty), needsForma ? (p.res.formy || 0) : 999) : 0;
+        if (ok && maxCraft > 1) {
+          const btnRow = h("div", {class: "batch-btn-row"});
+          btnRow.append(h("button", {
+            class: "btn btn-s btn-p batch-btn",
+            title: L === "cs" ? "Foukat 1 kus" : "Blow 1 piece",
+            onClick: () => craftBlown(key, selColor)
+          }, L === "cs" ? "1×" : "1×"));
+          if (maxCraft >= 3) {
+            btnRow.append(h("button", {
+              class: "btn btn-s btn-p batch-btn",
+              title: L === "cs" ? "Foukat 3 kusy" : "Blow 3 pieces",
+              onClick: () => {
+                for (let i = 0; i < 3; i++) {
+                  if ((G[selColor]||[]).length >= it.qty && (!needsForma || (G.res.formy||0) > 0)) {
+                    craftBlown(key, selColor);
+                  }
+                }
+              }
+            }, L === "cs" ? "3×" : "3×"));
+          }
+          btnRow.append(h("button", {
+            class: "btn btn-s btn-p batch-btn",
+            title: L === "cs" ? `Foukat vše (${maxCraft}×)` : `Blow max (${maxCraft}×)`,
+            onClick: () => {
+              const count = Math.min(maxCraft, 20);
+              for (let i = 0; i < count; i++) {
+                if ((G[selColor]||[]).length >= it.qty && (!needsForma || (G.res.formy||0) > 0)) {
+                  craftBlown(key, selColor);
+                }
+              }
+            }
+          }, `Max (${maxCraft}×)`));
+          card.append(btnRow);
+        } else {
+          card.append(h("button",{class:"btn btn-s"+(ok?" btn-p":""),
+            style:{width:"100%",fontSize:"9px",opacity:ok?1:.45},
+            onClick:()=>{if(ok)craftBlown(key,selColor);}},
+            ok?(L==="cs"?"Foukat →":"Blow →")
+              :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
+              :!hasInput?(L==="cs"?`Chybí ${selColor}`:`No ${selColor}`)
+              :(L==="cs"?"Chybí forma":"No mould")));
+        }
         return card;
       }
 
@@ -7949,16 +9084,18 @@ function render(){
         // Spočítej co by dostal
         const basePricesQS={waldglas:3.5,crystal:9};
         Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{basePricesQS[k]=v.base;});
+        const qsRate = p.difficulty === "easy" ? 0.90 : 0.85;
+        const qsRatePct = Math.round(qsRate * 100);
         let qsTotal=0, qsCount=0;
         ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
           const inv=p[k]||[];
           if(!Array.isArray(inv)) return;
           const bp=basePricesQS[k]||3.5;
-          inv.forEach(q=>{qsTotal+=Math.round(q*bp*0.8);qsCount++;});
+          inv.forEach(q=>{qsTotal+=Math.max(1, Math.round(q*bp*qsRate));qsCount++;});
         });
         qSec.append(
           h("div",{style:{fontSize:"11px",color:"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
-            (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+qsTotal+"g (80%)"),
+            (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+qsTotal+`g (${qsRatePct}%)`),
           h("button",{
             class:"btn btn-s"+(qsCount>0?" btn-active":""),
             style:{opacity:qsCount>0?1:0.4,cursor:qsCount>0?"pointer":"default",width:"100%"},
@@ -7969,24 +9106,25 @@ function render(){
                 const inv=p[k]||[];
                 if(!Array.isArray(inv)||!inv.length) return;
                 const bp=basePricesQS[k]||3.5;
-                const gain=inv.reduce((s,q)=>s+Math.round(q*bp*0.8),0);
+                const gain=inv.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*qsRate)),0);
                 earned+=gain;
                 G[k]=[];
               });
               G.grose+=earned;
               G.quickSellUsed=true;
-              G.log.push(`__ECO__🐴 ${L==="cs"?"Kramář Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${earned}g (80%)`);
+              G.log.push(`__ECO__🐴 ${L==="cs"?"Kramář Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${earned}g (${qsRatePct}%)`);
               render();
             }},
-            L==="cs"?"🐴 Prodat vše Weissovi (80%)":"🐴 Sell all to Weiss (80%)")
+            L==="cs"?`🐴 Prodat vše Weissovi (${qsRatePct}%)`:`🐴 Sell all to Weiss (${qsRatePct}%)`)
         );
       }
       content.append(qSec);
     }
 
-    // Faktor Weiss — půjčky s reputací dlužníka
+    // Faktor Weiss — půjčky s reputací dlužníka a snadnějšími úroky v Light módu
     const dr=p.debtReputation||0;
-    const loanRate=dr>=75?0.10:dr>=50?0.15:dr>=25?0.20:0.25;
+    const isEasyLoan=p.difficulty==="easy";
+    const loanRate=isEasyLoan?(dr>=75?0.05:dr>=50?0.08:dr>=25?0.12:0.15):(dr>=75?0.08:dr>=50?0.12:dr>=25?0.16:0.20);
     const loanRatePct=Math.round(loanRate*100);
     const drLabel=dr>=75?(L==="cs"?"🟢 Výborný":"🟢 Excellent"):dr>=50?(L==="cs"?"🟡 Dobrý":"🟡 Good"):dr>=25?(L==="cs"?"🟠 Slušný":"🟠 Fair"):(L==="cs"?"🔴 Nový":"🔴 New");
     const faktorSec=h("div",{class:"sec"});
@@ -8002,7 +9140,7 @@ function render(){
         :`I always have coin — return with interest. Current rate ${loanRatePct}% — repay well and terms improve.`));
     if(p.debt>0)faktorSec.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginBottom:"6px"}},
       (L==="cs"?"Aktuální dluh: ":"Current debt: ")+p.debt+"g"));
-    const fLoanRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+    const fLoanRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
     [15,25,40].forEach(amt=>{
       const totalDebt=amt+Math.round(amt*loanRate);
       fLoanRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
@@ -8013,19 +9151,35 @@ function render(){
         }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
     });
     faktorSec.append(fLoanRow);
-    if(p.debt>0&&p.grose>=p.debt){
-      faktorSec.append(h("div",{style:{marginTop:"6px"}},
-        h("button",{class:"btn btn-s btn-p",
-          onClick:()=>{
-            const pay=p.debt;
-            G.grose-=pay; G.debt=0;
-            G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
-            G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
-            G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));
-            render();
-          }},
-          (L==="cs"?"✅ Splatit celý dluh (":"✅ Clear all debt (")+p.debt+"g)")));
+    // Odklad splátek (Moratorium) & Splacení
+    const fActionRow=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",alignItems:"center",marginTop:"4px"}});
+    if(p.debtMoratorium>0){
+      fActionRow.append(h("div",{style:{padding:"4px 7px",background:"rgba(74,122,58,.1)",borderRadius:"3px",fontSize:"10px",color:"#4a7a3a",fontWeight:"600"}},
+        "⏳ "+(L==="cs"?`Odklad splátek aktivní (zbývá ${p.debtMoratorium} kol)`:`Debt moratorium active (${p.debtMoratorium} rounds left)`)));
+    }else if(p.debt>0){
+      const moraCost=dr>=50?0:3;
+      const canMora=p.grose>=moraCost||dr>=25;
+      fActionRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px",opacity:canMora?1:0.6},
+        onClick:()=>{
+          if(p.grose>=moraCost&&moraCost>0){ G.grose-=moraCost; }
+          else if(moraCost>0){ G.debt+=4; }
+          G.debtMoratorium=2;
+          G.log.push(`__ECO__⏳ ${L==="cs"?"Sjednán odklad splátek na 2 kola u Faktora Weisse.":"Negotiated 2-round debt moratorium with Factor Weiss."}`);
+          render();
+        }},"⏳ "+(L==="cs"?`Odklad splátek 2 kola (${moraCost>0?moraCost+"g":"zdarma"})`:`Defer debt 2 rounds (${moraCost>0?moraCost+"g":"free"})`)));
     }
+    if(p.debt>0&&p.grose>=p.debt){
+      fActionRow.append(h("button",{class:"btn btn-s btn-p",style:{fontSize:"10px"},
+        onClick:()=>{
+          const pay=p.debt;
+          G.grose-=pay; G.debt=0;
+          G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
+          G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
+          G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));
+          render();
+        }},(L==="cs"?"✅ Splatit celý dluh (":"✅ Clear all debt (")+p.debt+"g)"));
+    }
+    if(fActionRow.children.length>0) faktorSec.append(fActionRow);
     content.append(faktorSec);
 
     // Zakázky
@@ -8449,7 +9603,7 @@ function render(){
       L==="cs"
         ?`Groše vždy najdu. Aktuální úrok: ${loanRatePctH}% — splácejte a podmínky se zlepší.`
         :`I always have coin. Current rate: ${loanRatePctH}% — repay well and terms improve.`));
-    const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
+    const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
     [15,25,40].forEach(amt=>{
       const totalDebt=amt+Math.round(amt*loanRateH);
       loanBtns.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
@@ -8460,6 +9614,26 @@ function render(){
         }},"+"+amt+"g (+"+totalDebt+"g dluh)"));
     });
     lichBox.append(loanBtns);
+    // Odklad splátek v Účtech
+    if(p.debtMoratorium>0){
+      lichBox.append(h("div",{style:{padding:"4px 6px",background:"rgba(74,122,58,.1)",borderRadius:"3px",fontSize:"10px",color:"#4a7a3a",fontWeight:"600",marginBottom:"4px"}},
+        "⏳ "+(L==="cs"?`Odklad splátek aktivní (zbývá ${p.debtMoratorium} kol) — auto-splátky pozastaveny.`:`Moratorium active (${p.debtMoratorium} rounds left) — auto-deductions paused.`)));
+    }else if(p.debt>0){
+      const moraCostH=drH>=50?0:3;
+      const canMoraH=p.grose>=moraCostH||drH>=25;
+      const moraRow=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginTop:"4px"}});
+      moraRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px",opacity:canMoraH?1:0.6},
+        onClick:()=>{
+          if(p.grose>=moraCostH&&moraCostH>0){ G.grose-=moraCostH; }
+          else if(moraCostH>0){ G.debt+=4; }
+          G.debtMoratorium=2;
+          G.log.push(`__ECO__⏳ ${L==="cs"?"Sjednán odklad splátek na 2 kola u Faktora Weisse.":"Negotiated 2-round debt moratorium with Factor Weiss."}`);
+          render();
+        }},"⏳ "+(L==="cs"?`Odklad splátek (2 kola, ${moraCostH>0?moraCostH+"g":"zdarma"})`:`Defer debt (2 rounds, ${moraCostH>0?moraCostH+"g":"free"})`)));
+      moraRow.append(h("span",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic"}},
+        L==="cs"?"Umožní použít groše na mzdy a dřevo":"Saves cash for wages and fuel"));
+      lichBox.append(moraRow);
+    }
     rightCol.append(lichBox);
 
     twoCol.append(leftCol,rightCol);
@@ -9639,15 +10813,47 @@ function render(){
     aSec.append(sfxBlock);
 
     // Hudba
-    const musicBlock=h("div",{style:{opacity:p.audio.muted?"0.4":"1",marginTop:"6px",paddingTop:"6px",borderTop:"1px solid rgba(42,26,10,.08)"}});
+    const musicBlock=h("div",{style:{opacity:p.audio.muted?"0.4":"1"}});
     const musicToggleRow=h("div",{class:"settings-row"});
     musicToggleRow.append(
-      h("span",{class:"settings-label"},L==="cs"?"🎵 Hudba":"🎵 Music"),
+      h("span",{class:"settings-label"},L==="cs"?"Hudba (Barokní generátor)":"Music (Baroque generator)"),
       h("button",{
-        class:"btn btn-s"+(p.audio.musicEnabled?" btn-active":""),
-        onClick:()=>{if(p.audio.muted)return;G.audio.musicEnabled=!G.audio.musicEnabled;GlassHutMusic.setEnabled(G.audio.musicEnabled);render();}},
-        p.audio.musicEnabled?(L==="cs"?"Zap":"On"):(L==="cs"?"Vyp":"Off")));
+        class:"btn btn-s"+(p.audio.music?" btn-p":""),
+        disabled:p.audio.muted,
+        onClick:()=>{
+          G.audio.music=!G.audio.music;
+          if(G.audio.music){GlassHutMusic.start();}else{GlassHutMusic.stop();}
+          render();
+        }
+      },p.audio.music?(L==="cs"?"Zap":"On"):(L==="cs"?"Vyp":"Off")));
     musicBlock.append(musicToggleRow);
+
+    // Zvukové efekty (SFX)
+    const sfxRow=h("div",{class:"settings-row"});
+    sfxRow.append(
+      h("span",{class:"settings-label"},L==="cs"?"Zvukové efekty (sklo, mince, pec)":"Sound Effects (glass, coins, furnace)"),
+      h("button",{
+        class:"btn btn-s",
+        onClick:()=>{
+          FajrumSfx.play("glass", 0.7);
+          setTimeout(()=>FajrumSfx.play("coin", 0.6), 250);
+          setTimeout(()=>FajrumSfx.play("bell", 0.5), 500);
+        }
+      },L==="cs"?"🔊 Vyzkoušet zvuk":"🔊 Test Sound"));
+    musicBlock.append(sfxRow);
+
+    // Klávesové zkratky
+    const hotkeyRow=h("div",{class:"settings-row",style:{flexDirection:"column",alignItems:"flex-start",gap:"4px"}});
+    hotkeyRow.append(
+      h("span",{class:"settings-label",style:{fontWeight:"700",color:"var(--warm)"}},L==="cs"?"⌨️ Klávesové zkratky":"⌨️ Keyboard Shortcuts"),
+      h("div",{style:{fontSize:"11px",color:"var(--ink)",lineHeight:"1.6"}},
+        h("div",{},h("span",{class:"hotkey-badge"},"Mezerník / Enter"), " — ", L==="cs"?"Posunout měsíc / kolo":"Advance month / round"),
+        h("div",{},h("span",{class:"hotkey-badge"},"1-9"), " — ", L==="cs"?"Rychlé přepínání záložek":"Quick tab switching"),
+        h("div",{},h("span",{class:"hotkey-badge"},"M"), " — ", L==="cs"?"Ztlumit / zapnout zvuk (Mute)":"Mute / unmute audio"),
+        h("div",{},h("span",{class:"hotkey-badge"},"Esc"), " — ", L==="cs"?"Zavřít dialog / okno":"Close dialog / modal")
+      )
+    );
+    musicBlock.append(hotkeyRow);
     if(p.audio.musicEnabled){
       const mvolRow=h("div",{class:"settings-row"});
       const mvolVal=h("span",{class:"settings-val"},Math.round((p.audio.musicVolume??0.5)*100)+"%");
