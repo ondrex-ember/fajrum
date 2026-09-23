@@ -33,6 +33,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
 
+  // Cizí domény (GTM, GA, …) nechat na prohlížeči — SW je necachuje ani nepodvrhuje
+  if (new URL(e.request.url).origin !== self.location.origin) return;
+
   // HTML navigace vždy nejdřív ze sítě → uživatel dostane novou verzi okamžitě
   // Fallback na cache pouze při offline
   if (e.request.mode === 'navigate') {
@@ -55,7 +58,7 @@ self.addEventListener('fetch', e => {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
         return res;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => Response.error()); // chybějící asset = chyba, ne podvržené HTML
     })
   );
 });
