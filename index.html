@@ -1677,10 +1677,8 @@ if (typeof window !== 'undefined') {
       G.audio.muted = !G.audio.muted;
       if (G.audio.muted) {
         FurnaceAudio.stop();
-        GlassHutMusic.stop();
       } else {
         FurnaceAudio.setPhase(G.round < PREP ? 'prep' : 'campaign');
-        if (G.audio.music) GlassHutMusic.start();
       }
       showToast(G.lang === 'cs' ? (G.audio.muted ? '🔇 Zvuk ztlumen' : '🔊 Zvuk zapnut') : (G.audio.muted ? '🔇 Sound muted' : '🔊 Sound enabled'), []);
       render();
@@ -11277,14 +11275,13 @@ function render(){
     musicToggleRow.append(
       h("span",{class:"settings-label"},L==="cs"?"Hudba (Barokní generátor)":"Music (Baroque generator)"),
       h("button",{
-        class:"btn btn-s"+(p.audio.music?" btn-p":""),
-        disabled:p.audio.muted,
+        class:"btn btn-s"+(p.audio.musicEnabled?" btn-p":""),
+        style:{pointerEvents:p.audio.muted?"none":"auto"},
         onClick:()=>{
-          G.audio.music=!G.audio.music;
-          if(G.audio.music){GlassHutMusic.start();}else{GlassHutMusic.stop();}
+          G.audio.musicEnabled=!G.audio.musicEnabled;
           render();
         }
-      },p.audio.music?(L==="cs"?"Zap":"On"):(L==="cs"?"Vyp":"Off")));
+      },p.audio.musicEnabled?(L==="cs"?"Zap":"On"):(L==="cs"?"Vyp":"Off")));
     musicBlock.append(musicToggleRow);
 
     // Zvukové efekty (SFX)
