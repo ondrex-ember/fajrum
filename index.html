@@ -3875,11 +3875,14 @@ function renderSeasonUpgrades(container, isInterseason=false){
   const titleBox=h("div",null,
     h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#8b5e34",display:"flex",alignItems:"center",gap:"6px"}},
       "🏛️ "+(L==="cs"?"Stavební rozvoj & Rozšíření sezóny":"Building Expansion & Season Tiers")),
-    h("div",{style:{fontSize:"11px",color:"#543714",marginTop:"2px"}},
-      (L==="cs"?"Aktuální kampaň: ":"Current schedule: ")+
-      `<strong style="color:#8b5e34;">${curInfo.badge} — ${L==="cs"?curInfo.name_cs:curInfo.name_en}</strong> `+
-      `<span style="color:#4a7a3a;font-weight:600;">(${L==="cs"?curInfo.months_cs:curInfo.months_en})</span>`
-    )
+  	h("div",{style:{fontSize:"11px",color:"#543714",marginTop:"2px"}},
+  	(L==="cs"?"Aktuální kampaň: ":"Current schedule: "),
+  	h("strong",{style:{color:"#8b5e34"}},
+    `${curInfo.badge} — ${L==="cs"?curInfo.name_cs:curInfo.name_en}`),
+  	" ",
+  	h("span",{style:{color:"#4a7a3a",fontWeight:"600"}},
+    `(${L==="cs"?curInfo.months_cs:curInfo.months_en})`)
+	)
   );
 
   const badge=h("span",{
