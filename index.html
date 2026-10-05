@@ -936,6 +936,25 @@ const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🟩"},clay:{b:2,e:"🧱"}
   refinedPotash:{b:4,e:"🌿"},charcoal:{b:3,e:"⚫"},wood:{b:WOOD_EMERGENCY_PRICE,e:"🌲"},water:{b:1,e:"💧"},
   food:{b:2,e:"🍞"},stone:{b:2,e:"🪨"},dryWood:{b:3,e:"🔥"},firebrick:{b:4,e:"🧱"},pitch:{b:3,e:"🌲"}};
 
+// Názvy a popisky zboží kramáře Weisse (CS/EN) — jedno místo pro Trh i kroniku
+const MERCH_INFO={
+  sand:         {cs:"Písek",           en:"Sand",           d_cs:"Waldglas: 3 ks na várku",                d_en:"Waldglas: 3 per batch"},
+  limestone:    {cs:"Vápenec",         en:"Limestone",      d_cs:"Tavidlo: 1 ks na várku",                 d_en:"Flux: 1 per batch"},
+  clay:         {cs:"Jíl",             en:"Clay",           d_cs:"Pánve (2 ks) a formy",                   d_en:"Crucibles (2 each) and moulds"},
+  pureSand:     {cs:"Čistý písek",     en:"Pure sand",      d_cs:"Křišťál: 3 ks na várku",                 d_en:"Crystal: 3 per batch"},
+  refinedPotash:{cs:"Čistá potaš",     en:"Refined potash", d_cs:"Křišťál: 2 ks na várku",                 d_en:"Crystal: 2 per batch"},
+  charcoal:     {cs:"Uhlí",            en:"Charcoal",       d_cs:"Křišťál: 1 ks na várku",                 d_en:"Crystal: 1 per batch"},
+  wood:         {cs:"Dřevo",           en:"Wood",           d_cs:"Palivo a potaš; hvozd je levnější",      d_en:"Fuel and potash; the forest is cheaper"},
+  water:        {cs:"Voda",            en:"Water",          d_cs:"Waldglas: 1 ks na várku, formy",         d_en:"Waldglas: 1 per batch, moulds"},
+  food:         {cs:"Jídlo",           en:"Food",           d_cs:"Živí dělníky",                           d_en:"Feeds the workers"},
+  stone:        {cs:"Lomový kámen",    en:"Quarry stone",   d_cs:"Stavba pece a šamotové kvádry",          d_en:"Furnace building and firebricks"},
+  dryWood:      {cs:"Suché dříví",     en:"Dry hardwood",   d_cs:"Rozšíření sezóny a zimní žár",           d_en:"Season extension and winter heat"},
+  firebrick:    {cs:"Šamotové kvádry", en:"Firebrick",      d_cs:"Mistrovská pec a celoroční provoz",      d_en:"Master furnace and year-round operation"},
+  pitch:        {cs:"Smůla",           en:"Pitch",          d_cs:"Izolace náhonu proti mrazu",             d_en:"Insulates the flume against frost"}
+};
+function merchName(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.cs:i.en):k;}
+function merchDesc(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.d_cs:i.d_en):"";}
+
 // Nákup parcel lesa — max 60, cena roste s počtem
 function buyParcely(n){
   const cur=G.forest;
@@ -4246,7 +4265,7 @@ function sellItems(type,n){
 function buyItem(k){
   const it=G.shop[k];if(!it||it.stock<=0||G.grose<it.price)return;
   it.stock--; G.grose-=it.price; G.res[k]=(G.res[k]||0)+1;
-  G.log.push(`__ECO__🛒 ${k} → -${it.price}g`);
+  G.log.push(`__ECO__🛒 ${merchName(k,G.lang)} → -${it.price}g`);
   FajrumSfx.play("coin", 0.5);
   spawnFloatText(`-${it.price}g 🛒`, null, "neg");
   render();
@@ -6170,6 +6189,8 @@ function getProfLabel(w, lang){
 }
 
 function render(){
+  // Průběžné ukládání: stav přežije reload i uprostřed měsíce / před prvním kolem (úvodní obrazovku nepřepisuje)
+  if(G&&G.phase&&G.phase!=="intro")autoSave();
   const p=G, L=p.lang;
   const ms=L==="cs"?MONTHS_CS:MONTHS_EN, hs=L==="cs"?HINTS_CS:HINTS_EN;
   const tsk=L==="cs"?TASK_CS:TASK_EN;
@@ -9801,12 +9822,12 @@ function render(){
     const grid=h("div",{class:"shop-grid"});
     Object.entries(p.shop).forEach(([k,it])=>{
       const can=p.grose>=it.price&&it.stock>0;
-      const labels={sand:"Písek",limestone:"Vápenec",clay:"Jíl",pureSand:"Čistý písek",
-        refinedPotash:"Čistá potaš",charcoal:"Uhlí",wood:"Dřevo",water:"Voda",food:"Jídlo"};
-      grid.append(h("button",{class:"btn btn-s",
-        style:{display:"flex",justifyContent:"space-between",width:"100%",opacity:can?1:.4,cursor:can?"pointer":"default"},
+      grid.append(h("button",{class:"btn btn-s",title:merchName(k,L)+" — "+merchDesc(k,L),
+        style:{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",textAlign:"left",opacity:can?1:.4,cursor:can?"pointer":"default"},
         onClick:()=>{if(can)buyItem(k);}},
-        h("span",null,it.e+" "+(L==="cs"?(labels[k]||k):k)),
+        h("span",{style:{display:"flex",flexDirection:"column",minWidth:0}},
+          h("span",null,it.e+" "+merchName(k,L)),
+          h("span",{style:{fontWeight:"400",fontSize:"9px",opacity:.7,lineHeight:"1.3"}},merchDesc(k,L))),
         h("span",{style:{fontWeight:"700"}},it.price+"g ",h("span",{style:{fontWeight:"400",fontSize:"9px"}},"("+it.stock+")"))));
     });
     bSec.append(grid);
