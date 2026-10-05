@@ -713,6 +713,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <script>
 const ROUNDS=12, PREP=5, PANEV_AGE=6, PANEV_DUR=5, FORMA_AGE=1, FUEL_BASE=4, WOOD_PER_POTASH=6;
 const INIT_FOREST=80, FOREST_REGEN_BASE=3;
+// Mzdy — odpočívající dělník (idle) nic nevyrábí, ale bere poloviční mzdu (zaokrouhleno nahoru, min. 1g)
+const IDLE_WAGE_FACTOR=0.5;
+function baseWageRateFor(isP,isEasy){return isP?(isEasy?1:1.5):(isEasy?1.5:2);}
+function workerWageFor(w,rate,task){
+  const work=Math.max(1,Math.round(rate+(w.wageMod||0)));
+  return (task||w.task)==="idle"?Math.max(1,Math.ceil(work*IDLE_WAGE_FACTOR)):work;
+}
 const FOREST_WARN=4;
 const WOOD_EMERGENCY_PRICE=4;
 
@@ -733,8 +740,8 @@ const KUPEC_ROUNDS=[1,2,5];
 const MONTH_DATA=[
   {// 0 - Listopad
    icon:"❄️", phase_cs:"Příprava · Zima", phase_en:"Prep · Winter",
-   priority_cs:"Svoz dřevo! Na sněhu dobře jedou sáně — těžba +50%.",
-   priority_en:"Haul wood! Sleds on snow — logging +50%.",
+   priority_cs:"Svoz dřeva! Na sněhu jedou sáně — těžba +50 %. Hvozd je konečný: kácej jen na palivo a potaš, které opravdu spotřebuješ.",
+   priority_en:"Haul wood! Sleds on snow — logging +50%. The forest is finite: cut only what fuel and potash will actually use.",
    tip_cs:"Pec vyhasnutá. Čas na opravu vyzdívky a sušení pánví.",
    tip_en:"Furnace cold. Time to repair lining and dry crucibles.",
    trh_cs:"⛔ Trh uzavřen — cesty zasněženy", trh_en:"⛔ Market closed — roads snowed in"},
@@ -749,8 +756,8 @@ const MONTH_DATA=[
    icon:"⛄", phase_cs:"Příprava · Tři králové", phase_en:"Prep · Epiphany",
    priority_cs:"Tři králové — kupec přijíždí naposledy. Těžba +50%.",
    priority_en:"Epiphany — merchant's last winter visit. Logging +50%.",
-   tip_cs:"Zásoby dřeva na celou kampaň musí být hotové do Února.",
-   tip_en:"Wood supplies for the whole campaign must be ready by February.",
+   tip_cs:"Palivo na celou kampaň musí být na skladě do března (primitivní pec ≈ 40 🪵: 4/kolo, od května 6/kolo). Přebytečné dřevo nepřeváděj na potaš.",
+   tip_en:"Fuel for the whole campaign must be in stock by March (primitive furnace ≈ 40 🪵: 4/round, 6/round from May). Don't turn surplus wood into potash.",
    trh_cs:"✅ Tříkrálový trh (6. ledna)", trh_en:"✅ Epiphany market (Jan 6th)"},
   {// 3 - Únor
    icon:"🌬️", phase_cs:"Příprava · Masopust", phase_en:"Prep · Carnival",
@@ -775,8 +782,8 @@ const MONTH_DATA=[
    trh_cs:"✅ Velikonoční trhy — kupec přijíždí!", trh_en:"✅ Easter market — merchant arrives!"},
   {// 6 - Květen
    icon:"🌸", phase_cs:"Kampaň · Jaro", phase_en:"Campaign · Spring",
-   priority_cs:"Pec se zabíhá. Waldglas teče. Zásobuj pískem a potaší.",
-   priority_en:"Furnace running in. Waldglas flowing. Stock sand and potash.",
+   priority_cs:"Pec se zabíhá. Waldglas teče. Hlídej písek a potaš (várka = 3 písek + 2 potaš). Od května pec pálí o 2 🪵 víc.",
+   priority_en:"Furnace running in. Waldglas flowing. Watch sand and potash (batch = 3 sand + 2 potash). From May the furnace burns 2 🪵 more.",
    tip_cs:"Účinnost pece roste s každou várkou — nevynechávej.",
    tip_en:"Furnace efficiency grows with each batch — don't skip.",
    trh_cs:"✅ Trh otevřen", trh_en:"✅ Market open"},
@@ -798,8 +805,8 @@ const MONTH_DATA=[
    icon:"🌾", phase_cs:"Kampaň · Žně", phase_en:"Campaign · Harvest",
    priority_cs:"Zásoby jídla! Pole a chlévy se plní před zimou.",
    priority_en:"Food supplies! Fields and stables before winter.",
-   tip_cs:"Dřevo pro zimu — začni sázet stromy pro příští sezónu.",
-   tip_en:"Winter wood — start planting trees for next season.",
+   tip_cs:"Výsadba (i v kampani) přidá v mezisezóně +2–3 parcely za kolo, max. 4 kola za sezónu. Pošli na ni dělníka, který nemá jinou práci.",
+   tip_en:"Reforesting (also in campaign) adds +2–3 parcels per round in the off-season, max. 4 rounds per season. Send a worker with nothing better to do.",
    trh_cs:"✅ Trh otevřen — žňové trhy", trh_en:"✅ Market open — harvest fairs"},
   {// 10 - Září
    icon:"🍂", phase_cs:"Kampaň · Podzim", phase_en:"Campaign · Autumn",
@@ -816,6 +823,10 @@ const MONTH_DATA=[
    tip_en:"Douse the furnace, sell stock. Winter comes — ready the sleds.",
    trh_cs:"✅ Poslední podzimní trhy", trh_en:"✅ Last autumn markets"}
 ];
+
+// Palivo: spotřeba dřeva za kolo (kampaň) a součet za celou kampaň — sdílí processRound i hinty v UI
+function fuelNeedPerRound(round,ft){return Math.ceil(FUEL_BASE*ft.fuelMult)+(round>=6?2:0);}
+function campaignFuelTotal(tier,ft){let t=0;for(let r=0;r<ROUNDS;r++)if(isCampaignMonth(r,tier))t+=fuelNeedPerRound(r,ft);return t;}
 
 // Účinnost pece: 0.3 (nová) → 0.9 (zaběhnutá + dobrá pánev)
 // furnaceEff = 0.35 + (runIn/100 * 0.35) + (panev_quality/5 * 0.2) + (shamotBonus)
@@ -1454,30 +1465,30 @@ const WERKSTAT_PROFS=["tavic","foukat_lesni","foukat_kristal","foukat_dekor","fo
 const TASK_CS={logging:"Kácení",quarry:"Lůmek",potash:"Loužírna",panev:"Pánvař",formar:"Formař",water:"Voda",clay:"Jíl",field:"Políčko",reforest:"Výsadba",idle:"Odpočinek",werkstat:"⚒️ Verštat",cereni:"🫧 Čeření"};
 const TASK_EN={logging:"Logging",quarry:"Quarry",potash:"Potash",panev:"Crucible-maker",formar:"Mould-maker",water:"Water",clay:"Clay",field:"Field",reforest:"Reforest",idle:"Rest",werkstat:"⚒️ Workshop",cereni:"🫧 Fining"};
 const TASK_INFO_CS={
-  logging:  "Kácení — +dřevo, +únava. Zimní bonus: ×1.5",
+  logging:  "Kácení — 1 parcela hvozdu = 4 🪵 (1–6 parcel/kolo), +únava. Hvozd je konečný. Zimní bonus ×1.5",
   quarry:   "Lůmek — +vápenec, +jíl, +únava",
-  potash:   "Loužírna — 6🪵→1🌿 potaš, +únava",
+  potash:   "Loužírna — spálí podíl Potaš ze zásoby dřeva (6🪵→1🌿). Várka = 2 potaš, víc nepotřebuješ. +únava",
   panev:    "Pánvař — vyrábí pánve (zrají 6 kol)",
   formar:   "Formař — vyrábí formy pro foukání",
   water:    "Voda — +voda do zásobníku",
   clay:     "Jíl — +jíl ze svahu",
   field:    "Políčko — +jídlo pro hutníky",
   reforest: "Výsadba — +les (pomalý efekt)",
-  idle:     "Odpočinek — -50% únavy",
+  idle:     "Odpočinek — nic nevyrábí, -50% únavy, poloviční mzda",
   werkstat: "Verštat — foukání / broušení / rytí",
   cereni:   "Čeření — waldglas + burel/mangandioxid → křišťál. Jen tavič v kampani."
 };
 const TASK_INFO_EN={
-  logging:  "Logging — +wood, +fatigue. Winter bonus: ×1.5",
+  logging:  "Logging — 1 forest parcel = 4 🪵 (1–6 parcels/round), +fatigue. Forest is finite. Winter bonus ×1.5",
   quarry:   "Quarry — +limestone, +clay, +fatigue",
-  potash:   "Potash — 6🪵→1🌿 potash, +fatigue",
+  potash:   "Potash — burns the Potash share of wood stock (6🪵→1🌿). A batch needs 2 potash, no more. +fatigue",
   panev:    "Crucible — makes crucibles (cure 6 rounds)",
   formar:   "Mould-maker — makes moulds for blowing",
   water:    "Water — +water to reservoir",
   clay:     "Clay — +clay from the hillside",
   field:    "Field — +food for workers",
   reforest: "Reforest — +forest (slow effect)",
-  idle:     "Rest — -50% fatigue",
+  idle:     "Rest — produces nothing, -50% fatigue, half wage",
   werkstat: "Workshop — blowing / grinding / engraving",
   cereni:   "Fining — waldglas + manganese/burel → crystal. Smelter only, campaign."
 };
@@ -2264,8 +2275,22 @@ function genShop(){
   return s;
 }
 
-function freshContracts(){
-  return [...CONTRACT_POOL].sort(()=>Math.random()-.5).slice(0,3);
+// Nabídka zakázek na začátek sezóny. Nelosují se zakázky, které nelze reálně splnit:
+// bez dostatečné zásoby musí termín nechat dost kol kampaně na výrobu (pec v přípravě netaví).
+// waldglas: ~2 ks/kolo, křišťál: ~1 ks/kolo + 1 kolo navíc (čeření vyžaduje hotový waldglas).
+function contractFeasible(c,st){
+  if(c.item!=="waldglas"&&c.item!=="crystal")return true;
+  const have=st&&Array.isArray(st[c.item])?st[c.item].length:0;
+  if(have>=c.qty)return true;
+  const tier=(st&&st.seasonTier)||0;
+  let firstProd=0; while(firstProd<ROUNDS&&!isCampaignMonth(firstProd,tier))firstProd++;
+  const roundsLeft=c.due-firstProd+1;
+  const need=c.item==="crystal"?c.qty+1:Math.max(1,Math.ceil(c.qty/2));
+  return roundsLeft>=need;
+}
+function freshContracts(st){
+  const pool=CONTRACT_POOL.filter(c=>contractFeasible(c,st));
+  return [...pool].sort(()=>Math.random()-.5).slice(0,3);
 }
 
 let G;
@@ -2405,14 +2430,16 @@ function processRound(){
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
       forest-=cut; r.wood+=cut*4;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
-      log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*3} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
+      log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*4} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
       if(Math.random()<0.35){
         r.pitch=(r.pitch||0)+1;
         log.push(`__PROD__🌲 ${w.name}: +1🌲 ${L==="cs"?"smůla a pryskyřice z hvozdu":"pitch & resin gathered"}`);
       }
-    }else if(w.task==="reforest"&&isP){
+    }else if(w.task==="reforest"){
+      // Výsadba funguje v přípravě i v kampani; efekt se projeví v mezisezóně (max 4 kola výsadby za sezónu)
       reforestCount++;
-      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?"sází stromy (+4 parcely v mezisezóně)":"planting trees (+4 parcels next interseason)"}`);
+      const rfPer=p.difficulty==="easy"?3:2;
+      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?`sází stromy (+${rfPer} parcely v mezisezóně)`:`planting trees (+${rfPer} parcels next interseason)`}`);
     }else if(w.task==="quarry"){
       const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2), st=clamp(Math.round(1.5*eff),1,3);
       r.sand+=sa; r.limestone+=li; r.stone=(r.stone||0)+st;
@@ -2670,7 +2697,7 @@ function processRound(){
 
     // Palivo: přímá spotřeba z fuel alokace (bez extra koeficientu)
     const fuelAlloc=Math.floor(r.wood*(p.wa.fuel/100));
-    const fuelNeed=Math.ceil(FUEL_BASE*ft.fuelMult)+(round>=6?2:0);
+    const fuelNeed=fuelNeedPerRound(round,ft);
     const fuelUsed=Math.min(fuelAlloc,fuelNeed+3);
 
     if(fuelUsed>=fuelNeed){
@@ -2957,10 +2984,10 @@ function processRound(){
   }
   // 5. Mzdy — individuální dle wageMod, zimní příprava a lehká obtížnost
   const isEasyDiff = p.difficulty === "easy";
-  const baseWageRate = isP ? (isEasyDiff ? 1 : 1.5) : (isEasyDiff ? 1.5 : 2);
+  const baseWageRate = baseWageRateFor(isP, isEasyDiff);
   let wages=0;
   const workerWages=p.workers.map(w=>{
-    const ww=w.task==="idle"?0:Math.max(1, Math.round(baseWageRate + (w.wageMod||0))); // odpočinek = 0g mzda
+    const ww=workerWageFor(w, baseWageRate); // odpočinek = poloviční mzda (IDLE_WAGE_FACTOR)
     wages+=ww;
     return{id:w.id,wage:ww};
   });
@@ -3454,6 +3481,10 @@ function processRound(){
   ecoLines.push(`💸 mzdy ${wagesPaid}g${wagesDeficit>0?` · ⚠️ nezaplaceno ${wagesDeficit}g`:""} · pivo ${bCost}g`+(dPay?` · dluh -${dPay}g`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
+  // Produkce tohoto kola (musí se spočítat PŘED Object.assign — potom je p===G a rozdíl by byl 0)
+  const prodW=tW-p.tW, prodC=tC-p.tC;
+  const newContractsDone=done-(p.done||0);
+
   Object.assign(G,{
     round:nr, res:r, log:[...log,...logAdditions], morale:mor, forest, grose, debt,
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
@@ -3477,13 +3508,14 @@ function processRound(){
     },
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
-    totalDone:(G.totalDone||0)+done,
+    totalDone:(G.totalDone||0)+newContractsDone,
+    totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
     failureReason:wk.length===0?"abandoned":((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8?"ruined":null)),
     failureStats:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))?{
       season:p.season, round:nr,
-      batches:(G.totalBatches||0)+(wg.length>p.waldglas.length||cr.length>p.crystal.length?1:0),
+      batches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
       sold:(G.totalSold||0),
-      contracts:(G.totalDone||0)+done,
+      contracts:(G.totalDone||0)+newContractsDone,
       debtPaid:(G.totalDebtPaid||0)+dPay,
       maxFama:Math.max(p.fama?.church||0, p.fama?.noble||0, p.fama?.trade||0)
     }:null,
@@ -3498,10 +3530,9 @@ function processRound(){
   const tL=[];
 
   // Produkce (kampaň)
-  const newWg=wg.length-p.waldglas.length, newCr=cr.length-p.crystal.length;
+  const newWg=prodW, newCr=prodC;
   if(newWg>0)tL.push(`🔥 +${newWg}× waldglas`);
   if(newCr>0)tL.push(`✨ +${newCr}× křišťál`);
-  if(newWg>0||newCr>0)G.totalBatches=(G.totalBatches||0)+1;
   // Pec stav (kampaň)
   if(isC&&fA)tL.push(`🌡️ ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
 
@@ -4056,7 +4087,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
 function startNewSeason(){
   const p=G;
   const newSeason=p.season+1;
-  const newContracts=freshContracts();
+  const newContracts=freshContracts(p);
 
   // Náklady na sklad: 1g za každý kus skla přeneseného do nové sezóny
   const blownStored=BLOWN_TYPES.reduce((s,k)=>s+(p[k]?.length||0),0);
@@ -4072,6 +4103,17 @@ function startNewSeason(){
   if(storedItems>0){
     oldLog.push(`__ECO__🏭 ${p.lang==="cs"?`Sklad: ${storedItems}× skla přeneseno, náklad ${storageCost}g`:`Storage: ${storedItems}× glass carried over, cost ${storageCost}g`}`);
   }
+
+  // Reputační zakázky přenesené z minulé sezóny: termín je v absolutních kolech, nová sezóna začíná kolem 0
+  // → posunout o ROUNDS; co je po termínu, propadá hned (s postihem reputace), ne až "nikdy".
+  const famaNew={...(p.fama||{church:0,noble:0,trade:0})};
+  const repCarried=[];
+  (p.repContracts||[]).forEach(rc=>{
+    const nd=(rc.due||0)-ROUNDS;
+    if(nd>=0){repCarried.push({...rc,due:nd});return;}
+    famaNew[rc.cat]=Math.max(0,(famaNew[rc.cat]||0)+(rc.isEndgame?EG_FAMA_LOSS:REP_FAMA_LOSS));
+    oldLog.push(`__EVT__⭐ ${p.lang==="cs"?(rc.isEndgame?"ENDGAME zakázka propadla":"Reputační zakázka propadla")+" — termín vypršel s koncem sezóny":(rc.isEndgame?"ENDGAME contract expired":"Rep contract expired")+" — deadline passed at season end"} (${FAMA_ICON[rc.cat]||""})`);
+  });
 
   G._contractModalPending=true;
   Object.assign(G,{
@@ -4096,7 +4138,7 @@ function startNewSeason(){
     contracts:[], avail:newContracts,
     // Pravidelné dodávky po endgame — generovat pro každou splněnou kategorii
     repContracts:(()=>{
-      const carried=[...(p.repContracts||[])];
+      const carried=[...repCarried];
       const eg=p.endgame||{};
       ["church","noble","trade"].forEach(cat=>{
         if(!eg[cat]) return; // endgame nesplněn
@@ -4115,7 +4157,7 @@ function startNewSeason(){
       });
       return carried;
     })(),
-    fama:{...(p.fama||{church:0,noble:0,trade:0})}, // fama přetrvává
+    fama:famaNew, // fama přetrvává (po případném postihu za propadlé zakázky)
     endgame:{...(p.endgame||{church:false,noble:false,trade:false})},
     shop:genShop(),
     morale:clamp(p.morale+5,30,100),
@@ -6425,7 +6467,7 @@ function render(){
         // Obrázek POD citátem
         introImgDiv),
       h("div",{style:{textAlign:"center",padding:"8px",fontSize:"10px",color:"#8b5e34",opacity:.5}},
-        "v7.9 · Multi-sezóna · Živá pec 🔥 · Barevné sklo 🎨 · ",
+        "v8.0 · Multi-sezóna · Živá pec 🔥 · Barevné sklo 🎨 · ",
         h("a",{href:"/about.html",target:"_blank",style:{color:"#c9952b",opacity:.8,textDecoration:"none"}},". . . About")));
     // Leaderboard
     try{
@@ -6786,8 +6828,8 @@ function render(){
       body.append(h("div",{style:{fontSize:"11px",color:"#a03020",padding:"6px",
         background:"rgba(160,48,32,.08)",borderRadius:"4px",marginBottom:"6px",lineHeight:"1.5"}},
         L==="cs"
-          ?"🌲 Hvozd je vyčerpán. Přidej dělníky na Výsadbu příští sezónu — každý přidá +4 parcely. Přirozená obnova bez výsadby: +1/sezónu."
-          :"🌲 Forest depleted. Assign workers to Reforest next season — each adds +4 parcels. Natural recovery without planting: +1/season."));
+          ?`🌲 Hvozd je vyčerpán. Přidej dělníky na Výsadbu (příprava i kampaň) — každé kolo výsadby přidá +${p.difficulty==="easy"?3:2} parcely, započítají se max. 4 kola za sezónu. Přirozená obnova vyčerpaného lesa: +2/sezónu.`
+          :`🌲 Forest depleted. Assign workers to Reforest (prep or campaign) — each planting round adds +${p.difficulty==="easy"?3:2} parcels, max 4 rounds count per season. Natural recovery of a depleted forest: +2/season.`));
     }
     const storedTotal=p.waldglas.length+p.crystal.length;
     if(storedTotal>0){
@@ -7792,6 +7834,9 @@ function render(){
     if(p.round===PREP-1) sitRep.push({warn:false, text:`⛽ ${L==="cs"?"Zásoby paliva na kampaň!":"Stock fuel for campaign!"}`});
     if(p.res.food<3) sitRep.push({warn:true, text:`🍞 ${L==="cs"?"Jídlo":"Food"}: ${p.res.food}`});
   }else{
+    {const fNeed=fuelNeedPerRound(p.round,ft), fGot=Math.floor((p.res.wood||0)*p.wa.fuel/100);
+     if(fGot<fNeed&&(p.res.wood||0)>=fNeed) sitRep.push({warn:true,
+       text:`🔥 ${L==="cs"?`Palivo: při podílu ${p.wa.fuel} % vyjde ${fGot} 🪵, pec potřebuje ${fNeed} → zvyš podíl Palivo`:`Fuel: ${p.wa.fuel}% share gives ${fGot} 🪵, furnace needs ${fNeed} → raise the Fuel share`}`});}
     if(!p.fActive) sitRep.push({warn:true, text:`🔥 ${L==="cs"?"Pec nehoří! Přidej palivo.":"Furnace out! Add fuel."}`});
     if(p.fTemp>85) sitRep.push({warn:true, text:`⚠️ ${L==="cs"?"Přetopeno! Ubeř palivo.":"Overheated! Reduce fuel."}`});
     if(p.pReady<1) sitRep.push({warn:true, text:`🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Halted."}`});
@@ -7799,6 +7844,11 @@ function render(){
     if(p.res.potash<2) sitRep.push({warn:true, text:`🌿 ${L==="cs"?"Dochází potaš":"Low potash"}: ${p.res.potash}`});
     if(p.res.wood<8) sitRep.push({warn:true, text:`🪵 ${L==="cs"?"Málo dřeva":"Low wood"}: ${p.res.wood}`});
   }
+  // Dřevo a potaš: přebytek potaše = zbytečně spálené dřevo; hvozd je konečný
+  if(p.res.potash>=12&&p.wa.potash>=30) sitRep.push({warn:false,
+    text:`🌿 ${L==="cs"?`Potaše máš na ${Math.floor(p.res.potash/2)} várek — dřevo se jen mění v nepotřebnou potaš → sniž podíl Potaš nebo přesuň dělníka z Loužírny`:`Potash for ${Math.floor(p.res.potash/2)} batches in stock — wood is just turning into unneeded potash → lower the Potash share or move the worker off Potash`}`});
+  if(p.forest<=20) sitRep.push({warn:p.forest<=8,
+    text:`🌲 ${L==="cs"?`Hvozd: zbývá ${p.forest} parcel (1 parcela = 4 🪵) → nekácej do zásoby, pošli dělníka na Výsadbu`:`Forest: ${p.forest} parcels left (1 parcel = 4 🪵) → stop logging into stock, send a worker to Reforest`}`});
   if(p.morale<35) sitRep.push({warn:true, text:`😟 ${L==="cs"?"Nálada kritická":"Morale critical"}: ${p.morale}%`});
 
   // Blokátory — co brání dělníkům pracovat
@@ -8111,6 +8161,29 @@ function render(){
           h("strong",{style:{width:"30px",textAlign:"right",flexShrink:0}},p.wa[k]+"%"));
         leftCol.append(aRow);
       });
+      // Co podíly znamenají — čísla pro aktuální stav (podíl se počítá ze zásoby dřeva v každém kole)
+      {
+        const wInfo=h("div",{style:{fontSize:"10px",lineHeight:"1.45",color:"#8b5e34"}});
+        const wood=p.res.wood||0;
+        if(isP){
+          wInfo.append(h("div",{},"🔥 "+(L==="cs"
+            ?`Kampaň spálí ≈ ${campaignFuelTotal(p.seasonTier||0,ft)} 🪵 (${fuelNeedPerRound(PREP-1,ft)}/kolo, od května ${fuelNeedPerRound(6,ft)}). Podíl se počítá ze zásoby v každém kole.`
+            :`Campaign burns ≈ ${campaignFuelTotal(p.seasonTier||0,ft)} 🪵 (${fuelNeedPerRound(PREP-1,ft)}/round, ${fuelNeedPerRound(6,ft)} from May). The share applies to the stock each round.`)));
+        }else{
+          const fNeed=fuelNeedPerRound(p.round,ft), fGot=Math.floor(wood*p.wa.fuel/100), fOk=fGot>=fNeed;
+          wInfo.append(h("div",{style:{color:fOk?"#4a7a3a":"#a03020"}},"🔥 "+(L==="cs"
+            ?`Palivo: potřeba ${fNeed} 🪵/kolo · při ${p.wa.fuel} % vyjde ${fGot} 🪵 ${fOk?"✓":"⚠️ pec nepoběží"}`
+            :`Fuel: need ${fNeed} 🪵/round · ${p.wa.fuel}% gives ${fGot} 🪵 ${fOk?"✓":"⚠️ furnace won't run"}`)));
+        }
+        const potBatches=Math.floor((p.res.potash||0)/2), potOver=(p.res.potash||0)>=12;
+        wInfo.append(h("div",{style:{color:potOver?"#c9952b":"#8b5e34"}},"🌿 "+(L==="cs"
+          ?`Potaš ${p.res.potash||0} ks = ${potBatches} várek · Loužírna spálí ${p.wa.potash} % zásoby dřeva (6 🪵 = 1 potaš)${potOver?" — máš dost, sniž podíl":""}`
+          :`Potash ${p.res.potash||0} = ${potBatches} batches · Potash worker burns ${p.wa.potash}% of the wood stock (6 🪵 = 1 potash)${potOver?" — enough, lower the share":""}`)));
+        wInfo.append(h("div",{style:{color:p.forest<=20?"#a03020":"#8b5e34"}},"🌲 "+(L==="cs"
+          ?`Hvozd ${p.forest}/${p.forestMax||INIT_FOREST} parcel · 1 parcela = 4 🪵 · Stavba = zbytek zůstává ve skladu`
+          :`Forest ${p.forest}/${p.forestMax||INIT_FOREST} parcels · 1 parcel = 4 🪵 · Build = the rest stays in stock`)));
+        leftCol.append(wInfo);
+      }
       const rightCol=h("div",{style:{flex:"1",minWidth:0}});
       const furnSlotsDisplay=ft.maxSlots||1;
       const slotsColor=furnSlotsDisplay>=4?"#4a7a3a":furnSlotsDisplay>=2?"#c9952b":"#8b5e34";
@@ -8182,7 +8255,17 @@ function render(){
           onClick:(evt)=>{
             if(disabled)return;
             spawnPills(evt,t);
-            G.workers.find(x=>x.id===w.id).task=t;render();
+            const wasIdle=w.task==="idle";
+            G.workers.find(x=>x.id===w.id).task=t;
+            if(t==="idle"&&!wasIdle){
+              // Upozornění: odpočívající dělník nic nevyrábí, ale dostává mzdu
+              const rate=baseWageRateFor(isP,p.difficulty==="easy");
+              const wIdle=workerWageFor(w,rate,"idle"), wWork=workerWageFor(w,rate,"work");
+              showToast("😴 "+w.name,L==="cs"
+                ?["Odpočívá — nic nevyrábí.","Mzda "+wIdle+"g/kolo (při práci "+wWork+"g), únava −50 %."]
+                :["Resting — produces nothing.","Wage "+wIdle+"g/round (working: "+wWork+"g), fatigue −50%."]);
+            }
+            render();
           }},label);
         return btn;
       };
@@ -11448,14 +11531,24 @@ function render(){
     iSec.append(
       h("div",{class:"sec-title"},L==="cs"?"O hře":"About"),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.8",marginBottom:"8px"}},
-        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v7.9"),h("br",null),
+        h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v8.0"),h("br",null),
         h("em",null,"Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680"),h("br",null),
         L==="cs"
           ?"Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách."
           :"A historical resource management game set in the world of 17th century forest glassworks in northern Bohemia."),
-      // Novinky v7.9
+      // Novinky v8.0
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px",marginTop:"8px"}},
-        L==="cs"?"✨ Novinky v7.9:":"✨ What's new in v7.9:"),
+        L==="cs"?"✨ Novinky v8.0:":"✨ What's new in v8.0:"),
+      h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9",marginBottom:"10px",
+        paddingBottom:"8px",borderBottom:"1px solid rgba(42,26,10,.1)"}},
+        "📜 "+(L==="cs"?"Huť: popisný přehled zakázek — co je potřeba udělat, termíny, stav zásob":"Foundry: descriptive contract list — what to do, deadlines, stock status"),h("br",null),
+        "🪵 "+(L==="cs"?"Hinty k dřevu, palivu a potaši s aktuálními čísly · varování před přebytkem potaše":"Wood, fuel and potash hints with live numbers · warning on potash surplus"),h("br",null),
+        "🌱 "+(L==="cs"?"Výsadba funguje i v kampani":"Reforestation works in campaign too"),h("br",null),
+        "😴 "+(L==="cs"?"Odpočívající dělník bere poloviční mzdu, upozornění při přiřazení":"Resting workers get half wage, warning on assignment"),h("br",null),
+        "🔧 "+(L==="cs"?"Opravy statistik, termínů přenesených zakázek a nabídky zakázek":"Fixes: stats, carried-over contract deadlines, contract offers")),
+      // Novinky v7.9
+      h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px"}},
+        L==="cs"?"Dříve — v7.9:":"Earlier — v7.9:"),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9",marginBottom:"10px",
         paddingBottom:"8px",borderBottom:"1px solid rgba(42,26,10,.1)"}},
         "🟤 "+(L==="cs"?"Jantarové sklo — první barevná skloviny pro lesní huť, dostupné od začátku":"Amber glass — first coloured glass for forest foundry, available from start"),h("br",null),
@@ -11468,7 +11561,7 @@ function render(){
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px"}},
         L==="cs"?"Herní systémy:":"Game systems:"),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9"}},
-        "🗓️ "+(L==="cs"?"12 kol · 5 příprava (březen–červenec) · 7 kampaň (srpen–únor)":"12 rounds · 5 prep (Mar–Jul) · 7 campaign (Aug–Feb)"),h("br",null),
+        "🗓️ "+(L==="cs"?"12 kol · 5 příprava (listopad–březen) · 7 kampaň (duben–říjen)":"12 rounds · 5 prep (Nov–Mar) · 7 campaign (Apr–Oct)"),h("br",null),
         "🔥 "+(L==="cs"?"Dynamická pec — zaběhnutost, šamot, 3 typy (primitivní/zděná/mistrovská)":"Dynamic furnace — run-in, shamot, 3 types (primitive/brick/master)"),h("br",null),
         "🌲 "+(L==="cs"?"Hvozd — konečný zdroj, zalesňování, vyčerpání hvozdu":"Forest — finite resource, reforestation, depletion"),h("br",null),
         "🏺 "+(L==="cs"?"Výroba pánví — zrání 6 měsíců, kvalita závisí na pánvaři":"Crucible system — 6 month curing, quality by crucible-maker"),h("br",null),
@@ -11504,7 +11597,7 @@ function render(){
 		  h("span",null," · 🧩 "),h("a",{href:"https://fractout.com/",style:{color:"#c9952b"}},"Fractout"),
           h("span",null," · 🔮 "),h("a",{href:"https://oracoolio.com",style:{color:"#c9952b"}},"Oracoolio")),
         h("div",{style:{marginTop:"4px",fontSize:"10px",color:"#aaa"}},
-          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v7.9 · ${new Date().getFullYear()}`),
+          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v8.0 · ${new Date().getFullYear()}`),
         h("div",{style:{marginTop:"8px"}},
           h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none",letterSpacing:"0.5px"}},
             "📖 "+(L==="cs"?"O hře — about.html →":"About the game →")))));
@@ -11658,15 +11751,15 @@ function render(){
     const modal=h("div",{class:"modal-bg",onClick:()=>{G.help=false;render();}},
       h("div",{class:"modal",style:{maxWidth:"380px",maxHeight:"85vh",overflowY:"auto"},onClick:e=>e.stopPropagation()},
         h("h3",{style:{margin:"0 0 10px",fontSize:"15px",borderBottom:"1px solid rgba(42,26,10,.15)",paddingBottom:"8px"}},
-          "📖 "+(L==="cs"?"Nápověda · v7.9":"Help · v7.9")),
+          "📖 "+(L==="cs"?"Nápověda · v8.0":"Help · v8.0")),
 
         // Rytmus hry
         h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
           L==="cs"?"⏱️ Rytmus hry":"⏱️ Game rhythm"),
         h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
           L==="cs"
-            ?"5 kol přípravy (březen–červenec): kácej dřevo, zásobuj, vyrob pánve, připrav kmen. 7 kol kampaně (srpen–únor): pec hoří, taví se, prodávej. Pak mezisezóna: oprav šamot, objednej přísady, uzavři kontrakty."
-            :"5 prep rounds (Mar–Jul): log wood, stockpile, make crucibles, prepare batch. 7 campaign rounds (Aug–Feb): furnace burns, smelt, sell. Then off-season: repair shamot, order additives, sign contracts."),
+            ?"5 kol přípravy (listopad–březen): kácej dřevo, zásobuj, vyrob pánve, připrav kmen. 7 kol kampaně (duben–říjen): pec hoří, taví se, prodávej. S lepší pecí se příprava zkracuje. Pak mezisezóna: oprav šamot, objednej přísady, uzavři kontrakty."
+            :"5 prep rounds (Nov–Mar): log wood, stockpile, make crucibles, prepare batch. 7 campaign rounds (Apr–Oct): furnace burns, smelt, sell. A better furnace shortens prep. Then off-season: repair shamot, order additives, sign contracts."),
 
         // Výroba skla
         h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"6px"}},
