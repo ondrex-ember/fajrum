@@ -9355,17 +9355,22 @@ function render(){
     }
 
     // Foukané výrobky
+    // základní výrobek + barevné varianty (klíč_barva, např. cise_modra)
     BLOWN_TYPES.forEach(k=>{
-      const arr=p[k]||[];
-      if(!arr.length)return;
       const it=BLOWN_ITEMS[k];
-      const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
-      glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
-        border:"1px solid rgba(139,94,52,.15)"}},
-        h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},it.icon+" "+(L==="cs"?it.cs:it.en)),
-        h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
-        h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
-          `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(avg)} · ~${it.base}g`)));
+      [["waldglas",k],...(it.inputs||[]).filter(c=>c!=="waldglas").map(c=>[c,k+"_"+c])].forEach(([col,sk])=>{
+        const arr=p[sk]||[];
+        if(!arr.length)return;
+        const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
+        const colorLabel=col!=="waldglas"?" "+COLOR_ICON[col]:"";
+        const price=col==="waldglas"?it.base:Math.round(it.base*COLOR_MULT[col]);
+        glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+          border:"1px solid rgba(139,94,52,.15)"}},
+          h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},it.icon+colorLabel+" "+(L==="cs"?it.cs:it.en)),
+          h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
+          h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
+            `${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(avg)} · ~${price}g`)));
+      });
     });
 
     // Broušené + rytiny
