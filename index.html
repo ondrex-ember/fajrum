@@ -7050,7 +7050,7 @@ function render(){
       const chron=document.createElement("div");
       chron.style.cssText="font-size:10px;color:#884444;font-style:italic;margin-bottom:16px;line-height:1.5;border-top:1px solid #4a1a1a;padding-top:10px;";
       const chronTexts={
-        cs:[`„Praskot byl slýšet až na druhém konci hvozdu.“`,`„Hanns se zastavil, podíval se na střepy a neřekl nic.“`,`„Rok 1680. Pánev nevydřela. Sklovina se rozlila po výh ni.“`],
+        cs:[`„Praskot byl slýšet až na druhém konci hvozdu.“`,`„Hanns se zastavil, podíval se na střepy a neřekl nic.“`,`„Rok 1680. Pánev nevydřela. Sklovina se rozlila po výhni.“`],
         en:["\"The crack echoed through the forest.\"","\"Hanns stopped, looked at the shards, and said nothing.\"","\"Year 1680. The crucible gave out. Glass spilled across the hearth.\""]
       };
       chron.textContent=(L==="cs"?chronTexts.cs:chronTexts.en)[Math.floor(Math.random()*3)];
@@ -7447,7 +7447,7 @@ function render(){
 
     // ── STAV HUTĚ ──
     body.append(
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · zaběhnutost ${p.furnace.runIn}%`),
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · ${L==="cs"?"zaběhnutost":"run-in"} ${p.furnace.runIn}%`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.forestMax||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"8px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`));
 
@@ -7462,11 +7462,11 @@ function render(){
     }
     // Suroviny delta
     const resReport=[
-      {icon:"🪵",label:"Dřevo",k:"wood"},{icon:"🏖️",label:"Písek",k:"sand"},
-      {icon:"🌿",label:"Potaš",k:"potash"},{icon:"🪨",label:"Vápenec",k:"limestone"},
-      {icon:"💧",label:"Voda",k:"water"},{icon:"🧱",label:"Jíl",k:"clay"},
-      {icon:"🍞",label:"Jídlo",k:"food"},{icon:"🌳",label:"Formy",k:"formy"},
-      {icon:"🏺",label:"Pánve",k:"pReady"}
+      {icon:"🪵",label:L==="cs"?"Dřevo":"Wood",k:"wood"},{icon:"🏖️",label:L==="cs"?"Písek":"Sand",k:"sand"},
+      {icon:"🌿",label:L==="cs"?"Potaš":"Potash",k:"potash"},{icon:"🪨",label:L==="cs"?"Vápenec":"Limestone",k:"limestone"},
+      {icon:"💧",label:L==="cs"?"Voda":"Water",k:"water"},{icon:"🧱",label:L==="cs"?"Jíl":"Clay",k:"clay"},
+      {icon:"🍞",label:L==="cs"?"Jídlo":"Food",k:"food"},{icon:"🌳",label:L==="cs"?"Formy":"Moulds",k:"formy"},
+      {icon:"🏺",label:L==="cs"?"Pánve":"Crucibles",k:"pReady"}
     ];
     const resGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 8px"}});
     resReport.forEach(({icon,label,k})=>{
@@ -7568,8 +7568,8 @@ function render(){
       row.append(
         h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
         h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
-          h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+wage+"g"):("✗ "+wage+"g → dluh")),
-          unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},"celk. dluh: "+unpaid+"g"):h("span",{},"")
+          h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+wage+"g"):("✗ "+wage+"g → "+(L==="cs"?"dluh":"debt"))),
+          unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},(L==="cs"?"celk. dluh":"total debt")+": "+unpaid+"g"):h("span",{},"")
         ));
       workerBox.append(row);
     });
@@ -8355,8 +8355,8 @@ function render(){
           h("span",{style:{fontWeight:"700",fontSize:"11px",color:isC&&p.fActive?tempColor:"#8b5e34"}},tempLabel),
           h("span",{style:{marginLeft:"5px",fontSize:"10px"}},`eff ${fEff}%`)),
         h("div",{class:"furnace-hud-row",style:{fontSize:"10px",color:"#8b5e34",marginBottom:"2px"}},
-          h("span",{},`zaběh. ${p.furnace.runIn}%`),
-          h("span",{style:{marginLeft:"5px",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"}},`šamot ${p.furnace.shamotWear}%`)),
+          h("span",{},`${L==="cs"?"zaběh.":"run-in"} ${p.furnace.runIn}%`),
+          h("span",{style:{marginLeft:"5px",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"}},`${L==="cs"?"šamot":"shamot"} ${p.furnace.shamotWear}%`)),
         h("div",{style:{display:"flex",gap:"2px"}},
           ...ZONES.map(z2=>h("div",{style:{
             flex:1,height:"3px",borderRadius:"2px",
@@ -8504,7 +8504,7 @@ function render(){
 
     // Hint-box se stránkováním šipkami
     const hints=hs.filter(Boolean);
-    const hintPage=G._hintPage||0;
+    const hintPage=G._hintPage===undefined?(p.round%12):G._hintPage;   // default: hint of the current month
     const hintTotal=hints.length;
     const hintText=hints[hintPage%hintTotal]||"";
     const hintWrap=h("div",{style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34"),
@@ -8913,7 +8913,7 @@ function render(){
     if(p.pAging.length){
       const agDiv=h("div",{style:{marginTop:"4px"}});
       p.pAging.forEach(pa=>{
-        const readyMonth=MONTHS_CS[pa.rdy%MONTHS_CS.length];
+        const readyMonth=(L==="cs"?MONTHS_CS:MONTHS_EN)[pa.rdy%MONTHS_CS.length];
         agDiv.append(h("div",{style:{fontSize:"10px",color:"#8b5e34"}},
           `🏺 ${stars(pa.q)} — ${L==="cs"?"hotovo v":"ready in"} ${readyMonth}`));
       });
@@ -8994,7 +8994,7 @@ function render(){
             const btn=h("button",{
               class:"btn btn-s"+(col===selColor?" btn-active":""),
               style:{fontSize:"8px",padding:"1px 4px",opacity:hasCol?1:.45},
-              title:`${col} · ${hasCol?(p[col]||[]).length+"×":"chybí"}`,
+              title:`${col==="waldglas"?(L==="cs"?"Lesní sklo":"Waldglas"):col==="crystal"?(L==="cs"?"Křišťál":"Crystal"):COLOR_RECIPES[col]?(L==="cs"?COLOR_RECIPES[col].cs:COLOR_RECIPES[col].en):col} · ${hasCol?(p[col]||[]).length+"×":(L==="cs"?"chybí":"missing")}`,
               onClick:()=>{G._blownColor[key]=col;render();}},
               `${COLOR_ICON[col]||col}`);
             colorRow.append(btn);
@@ -10279,8 +10279,8 @@ function render(){
       qSec.append(h("div",{class:"sec-title"},"🐴 "+(L==="cs"?"Rychlý výkup — kramář Weiss":"Quick buyout — merchant Weiss")));
       qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
         L==="cs"
-          ?"Weiss přijede a vykoupí vše co máš za 80% ceny. Okamžitá hotovost, žádné čekání. Jednou za sezónu."
-          :"Weiss rides out and buys everything at 80% price. Instant cash, no waiting. Once per season."));
+          ?`Weiss přijede a vykoupí vše co máš za ${quickSellQuote().ratePct}% ceny. Okamžitá hotovost, žádné čekání. Jednou za sezónu.`
+          :`Weiss rides out and buys everything at ${quickSellQuote().ratePct}% price. Instant cash, no waiting. Once per season.`));
       if(quickSellDone){
         qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
           L==="cs"?"✅ Výkup již použit tuto sezónu.":"✅ Buyout already used this season."));
@@ -10325,7 +10325,7 @@ function render(){
     [15,25,40].forEach(amt=>{
       const totalDebt=amt+Math.round(amt*loanRate);
       fLoanRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
-        onClick:()=>{takeLoan(amt,loanRate);}},"+"+amt+"g (+"+totalDebt+"g dluh)"));
+        onClick:()=>{takeLoan(amt,loanRate);}},"+"+amt+"g (+"+totalDebt+"g "+(L==="cs"?"dluh":"debt")+")"));
     });
     faktorSec.append(fLoanRow);
     // Odklad splátek (Moratorium) & Splacení
@@ -10607,7 +10607,7 @@ function render(){
         const arrow=p2.debt<prev?"↓":"↑";
         projBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px"}},
           h("span",{style:{color:"#8b5e34"}},(L==="cs"?"Kolo ":"Round ")+(i+1)),
-          h("span",{style:{color:col}},arrow+" "+p2.debt+"g dluh · "+p2.grose+"g pokladna")));
+          h("span",{style:{color:col}},arrow+" "+p2.debt+"g "+(L==="cs"?"dluh":"debt")+" · "+p2.grose+"g "+(L==="cs"?"pokladna":"cash"))));
       });
       rightCol.append(projBox);
     }
@@ -10626,7 +10626,7 @@ function render(){
     [15,25,40].forEach(amt=>{
       const totalDebt=amt+Math.round(amt*loanRateH);
       loanBtns.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
-        onClick:()=>{takeLoan(amt,loanRateH);}},"+"+amt+"g (+"+totalDebt+"g dluh)"));
+        onClick:()=>{takeLoan(amt,loanRateH);}},"+"+amt+"g (+"+totalDebt+"g "+(L==="cs"?"dluh":"debt")+")"));
     });
     lichBox.append(loanBtns);
     // Odklad splátek v Účtech
@@ -12024,7 +12024,7 @@ function render(){
             :"Allocate wood in Overview tab (fuel / potash / build). In campaign set Fuel to 100% — without wood the furnace won't heat."),
         h("button",{class:"btn btn-p",style:{width:"100%"},
           onClick:()=>{G.firstVisit=false;render();}},
-          "OK — Vstoupit do hutě")));
+          L==="cs"?"OK — Vstoupit do hutě":"OK — Enter the Foundry")));
     app.append(wModal);
   }
 
