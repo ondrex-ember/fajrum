@@ -988,9 +988,11 @@ const ADDITIVES={
   antimon:  {cs:"Antimon (Sb)",     en:"Antimony (Sb)",       icon:"🔘", base:14, rare:true,
              desc_cs:"Stabilizátor pro rubínové sklo (Kunckel).", desc_en:"Stabilizer for ruby glass (Kunckel)."},
   zlato:    {cs:"Zlatý prach (Au)", en:"Gold dust (Au)",      icon:"🟡", base:40, rare:true,
-             desc_cs:"Cassiusův purpur — základ rubínového skla.", desc_en:"Purple of Cassius — base of ruby glass."},
+             desc_cs:"Zlato pro purpurový prášek (později zvaný Cassiův purpur) — základ rubínového skla.", desc_en:"Gold for the purple powder (later called purple of Cassius) — base of ruby glass."},
   stribro:  {cs:"Stříbro (Ag)",     en:"Silver (Ag)",         icon:"🪙", base:16, rare:true,
              desc_cs:"Chlorid nebo dusičnan stříbrný — v pastě s okrem dává povrchovou stříbrnou žluť (jantarovou lazuru).", desc_en:"Silver chloride or nitrate — in a paste with ochre it gives the surface silver stain (amber glaze)."},
+  arsen:    {cs:"Arsen (As₂O₃)",  en:"Arsenic (As₂O₃)",     icon:"☠️", base:24, rare:true,
+             desc_cs:"Arsenová běl (hutní mouka) z krušnohorských hutí. Nejúčinnější čeřidlo — dvě dávky bonusu najednou — ale jedovatá (únava taviče). Potřebná také na alembik.", desc_en:"White arsenic from the Ore Mountain smelters. The most effective fining agent — two bonus charges at once — but poisonous (smelter fatigue). Also needed for the alembic."},
   rtut:     {cs:"Rtuť (Hg)",        en:"Mercury (Hg)",        icon:"🩶", base:20, rare:true,
              desc_cs:"Amalgám rtuti a cínu — zadní strana zrcadla. Nutný import, nelze vyrobit na místě.", desc_en:"Mercury-tin amalgam — rear of mirror. Must be imported, cannot be produced locally."}
 };
@@ -1053,8 +1055,8 @@ const COLOR_RECIPES={
   rubin:{
     cs:"Zlatý rubín (Kunckel)",  en:"Gold Ruby (Kunckel)",
     icon:"🔴", actMin:4,
-    desc_cs:"Kunckel 1679: zlato rozpuštěné v lučavce a vysrážené cínem (Cassiův purpur). Po tavení je sklo téměř bezbarvé — barvu vyvolá až druhé, pomalé zahřátí (náběh).",
-    desc_en:"Kunckel 1679: gold dissolved in aqua regia and precipitated with tin (purple of Cassius). After melting the glass is almost colourless — the colour comes only on a second, slow reheating (striking).",
+    desc_cs:"Kunckel 1679: zlato rozpuštěné v lučavce a vysrážené cínem (purpurový prášek, později zvaný Cassiův purpur). Po tavení je sklo téměř bezbarvé — barvu vyvolá až druhé, pomalé zahřátí (náběh).",
+    desc_en:"Kunckel 1679: gold dissolved in aqua regia and precipitated with tin (a purple powder, later called purple of Cassius). After melting the glass is almost colourless — the colour comes only on a second, slow reheating (striking).",
     inputs:{crystal:3, zlato:1, cin:1},
     output:"rubin", quality_bonus:2,
     furnaceMin:75,
@@ -1085,6 +1087,7 @@ const BARAN_OFFERS=[
   {season:2, item:"smolka",    qty:1, price:22, cs:"Šmolka ze Saska — stojí to za to.", en:"Zaffre from Saxony — worth every penny."},
   {season:2, item:"aesUstum",  qty:1, price:16, cs:"Pálená měď — sám jsem ji připravil.", en:"Burnt copper — prepared it myself."},
   {season:2, item:"cin",       qty:2, price:14, cs:"Cín čistý. Lattimo uděláte jako Benátčani.", en:"Pure tin. You'll make lattimo like Venice."},
+  {season:2, item:"arsen",    qty:1, price:26, cs:"Arsenová běl z Krušných hor. Opatrně s ní — jed, ale čeří jako nic jiného.", en:"White arsenic from the Ore Mountains. Careful — poison, but nothing fines like it."},
   {season:2, item:"stribro",   qty:2, price:20, cs:"Stříbro z Kutné Hory. Na křišťál se žlutou lazurou — rytci po ní šílí.", en:"Silver from Kutná Hora. For crystal with a yellow stain — engravers go mad for it."},
   // Sezóna 3: exkluzivní
   {season:3, item:"olovo",     qty:2, price:12, cs:"Olovo z Krumlova. První třídy.", en:"Lead from Krumlov. First class."},
@@ -1511,7 +1514,7 @@ const TASK_INFO_CS={
   reforest: "Výsadba — +les (pomalý efekt)",
   idle:     "Odpočinek — nic nevyrábí, -50% únavy, poloviční mzda",
   werkstat: "Verštat — foukání / broušení / rytí",
-  cereni:   "Čeření — burel (MnO₂) odbarví a zlepší příští dávku křišťálu (+1★, max 2 uložené). Jen tavič v kampani."
+  cereni:   "Čeření — burel (MnO₂) nebo antimon odbarví a zlepší příští dávku křišťálu (+1★, max 2 uložené); arsen dá +2★ najednou (tavič se víc unaví). Jen tavič v kampani."
 };
 const TASK_INFO_EN={
   logging:  "Logging — 1 forest parcel = 4 🪵 (1–6 parcels/round), +fatigue. Forest is finite. Winter bonus ×1.5",
@@ -1525,7 +1528,7 @@ const TASK_INFO_EN={
   reforest: "Reforest — +forest (slow effect)",
   idle:     "Rest — produces nothing, -50% fatigue, half wage",
   werkstat: "Workshop — blowing / grinding / engraving",
-  cereni:   "Fining — burel (MnO₂) decolourises and improves the next crystal batch (+1★, max 2 stored). Smelter only, campaign."
+  cereni:   "Fining — burel (MnO₂) or antimony decolourises and improves the next crystal batch (+1★, max 2 stored); arsenic gives +2★ at once (smelter tires more). Smelter only, campaign."
 };
 
 const TASK_ICON={
@@ -2035,8 +2038,16 @@ const GROUND_ITEMS={
 const GROUND_TYPES=Object.keys(GROUND_ITEMS);
 
 // Rytecké výrobky — motiv přidá bonus k ceně
-// Pravidla: rytí jen crystal a modra/smaragd (COLOR_CAN_ENGRAVE)
-const ENGRAVE_INPUTS=["brus_hrana_cise","brus_pokal","brus_vaza","brus_vaza_velka","brus_poharak","pohar","dekantr","cise","zlut"];
+// Pravidla: rytí jen crystal, stříbrná žluť a modra/smaragd (COLOR_CAN_ENGRAVE) — barevné varianty viz COLORED_ENGRAVE_ITEMS
+// Barevné varianty foukaných kusů, které lze rýt (COLOR_CAN_ENGRAVE): klíč = výrobek_barva (např. cise_modra); cena = cena barevného kusu
+const COLORED_ENGRAVE_ITEMS={};
+["cise","pohar","dekantr"].forEach(k=>{
+  const it=BLOWN_ITEMS[k];
+  it.inputs.filter(c=>c!=="waldglas"&&c!=="crystal"&&COLOR_CAN_ENGRAVE[c]).forEach(c=>{
+    COLORED_ENGRAVE_ITEMS[k+"_"+c]={cs:it.cs+" "+COLOR_ICON[c],en:it.en+" "+COLOR_ICON[c],icon:it.icon,base:Math.round(it.base*COLOR_MULT[c])};
+  });
+});
+const ENGRAVE_INPUTS=["brus_hrana_cise","brus_pokal","brus_vaza","brus_vaza_velka","brus_poharak","pohar","dekantr","cise","zlut",...Object.keys(COLORED_ENGRAVE_ITEMS)];
 const ENGRAVE_MOTIFS={
   basic:   {cs:"Základní rytina",  en:"Basic engraving",   mult:1.4},
   hunting: {cs:"Lovecká scéna",    en:"Hunting scene",     mult:1.6},
@@ -2049,7 +2060,7 @@ const ENGRAVE_BONUS_KEY={zlut:1.8};
 function engraveBonus(k){return ENGRAVE_BONUS_KEY[k]||ENGRAVE_BONUS;}
 // Žlutěný křišťál (výstup receptu "zlut") — zdroj pro rytí, definice jako u GROUND_ITEMS/BLOWN_ITEMS
 const STAINED_ITEMS={zlut:{cs:"Žlutěný křišťál",en:"Stained crystal",icon:"🟨",base:30}};
-function engraveSrc(k){return GROUND_ITEMS[k]||BLOWN_ITEMS[k]||STAINED_ITEMS[k];}
+function engraveSrc(k){return GROUND_ITEMS[k]||BLOWN_ITEMS[k]||STAINED_ITEMS[k]||COLORED_ENGRAVE_ITEMS[k];}
 
 function craftGround(itemKey){
   const it=GROUND_ITEMS[itemKey];
@@ -2103,7 +2114,7 @@ function craftEngrave(inputKey){
   const outKey="rytina_"+inputKey;
   if(!G[outKey])G[outKey]=[];
   G[outKey].push(q);
-  const srcName=GROUND_ITEMS[inputKey]?.cs||BLOWN_ITEMS[inputKey]?.cs||STAINED_ITEMS[inputKey]?.cs||inputKey;
+  const srcName=GROUND_ITEMS[inputKey]?.cs||BLOWN_ITEMS[inputKey]?.cs||STAINED_ITEMS[inputKey]?.cs||COLORED_ENGRAVE_ITEMS[inputKey]?.cs||inputKey;
   G.log.push(`__PROD__✂️ ${L==="cs"?"Rytina na":"Engraved"} ${srcName} ${stars(q)} (+${Math.round((engraveBonus(inputKey)-1)*100)}% cena)`);
   render();
 }
@@ -2265,7 +2276,7 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
   const lines=[];
   const prepTexts=L==="cs"?CHRON_PREP_CS:CHRON_PREP_EN;
   const campTexts=L==="cs"?CHRON_CAMP_CS:CHRON_CAMP_EN;
-  const flavor=isP?prepTexts[round%prepTexts.length]:campTexts[(round-4)%campTexts.length];
+  const flavor=isP?prepTexts[round%prepTexts.length]:campTexts[(((round-4)%campTexts.length)+campTexts.length)%campTexts.length]; // kampaň může začít před kolem 4 (vyšší tier) → záporný index
 
   // Humorné příhody — šance závisí na pivu
   const beerLvl=G?.beer||0;
@@ -2346,13 +2357,14 @@ function initState(){
     seasonTier:0, noblePrivilege:false,
     res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0,stone:0,dryWood:0,firebrick:0,pitch:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
-    additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0,rtut:0,stribro:0},
+    additives:{smolka:0,burel:0,aesUstum:0,crocusMartis:0,cin:0,olovo:0,antimon:0,zlato:0,rtut:0,stribro:0,arsen:0},
     // Sklady barevného skla
     jantar:[], zlut:[], modra:[], smaragd:[], lattimo:[], rubin:[], rubin_raw:[], // rubin_raw = bezbarvý polotovar čekající na náběh
     // Odemčené recepty (získávají se od Baranovského nebo výzkumem)
     unlockedRecipes:["jantar"], // jantar je dostupný od začátku — přirozená barva lesní huti
     furnSlotConfig:["waldglas","waldglas","waldglas","waldglas"], // hráč volí typ pro každý slot
     furnAtm:["ox","ox","ox","ox"], // atmosféra pánve: "ox" oxidační (čiré sklo) | "red" redukční (jantar, zakouřené sklo)
+    _arsenFined:false, // arsen už jednou použit k čeření (achievement Čeřič arsenem)
     _cerenBonus:0, // uložený bonus kvality příští dávky křišťálu (čeření burelem), max 2
     _activeColorRecipe:null, // aktuálně vybraná barva skloviny v pánvi (co JE v pánvi)
     _nextColorRecipe:null,   // příští várka — co hráč vybral (změní se při prázdné pánvi)
@@ -2401,6 +2413,7 @@ function initState(){
     rytina_brus_hrana_cise:[], rytina_brus_pokal:[],
     rytina_brus_vaza:[], rytina_brus_vaza_velka:[],
     rytina_brus_poharak:[], rytina_pohar:[], rytina_dekantr:[], rytina_cise:[], rytina_zlut:[],
+    rytina_cise_modra:[], rytina_cise_smaragd:[], rytina_pohar_modra:[], rytina_pohar_smaragd:[], rytina_dekantr_modra:[],
     fTemp:0, fActive:false,
     workers:[
       {...NPC_ROSTER[0], id:"w1", npcId:NPC_ROSTER[0].id, task:"potash",  xp:0, fat:0, seasonsInFoundry:0, incidents:0, contract:null},
@@ -2550,7 +2563,7 @@ function processRound(){
       const accTriggered=isOpilec&&p.beer>=2&&beerAcc>0&&Math.random()<beerAcc;
       if(accTriggered){
         // Najdi první dostupný výstupní kus workera a odstraň ho (rozbil ho)
-        const accKeys=["waldglas","crystal","jantar","modra","smaragd","lattimo","rubin"];
+        const accKeys=["waldglas","crystal","jantar","zlut","modra","smaragd","lattimo","rubin","rubin_raw"];
         const accKey=accKeys.find(k=>(G[k]||[]).length>0);
         if(accKey){
           const accStock=[...(G[accKey]||[])];
@@ -2685,24 +2698,28 @@ function processRound(){
         log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"verštat":"workshop"}`);
       }
     }else if(w.task==="cereni"){
-      // ── ČEŘENÍ — burel (MnO₂) nebo antimon odbarví a zlepší příští dávku křišťálu (+1★, zásoba max 2) ──────
+      // ── ČEŘENÍ — burel (MnO₂), antimon nebo arsen (+2) odbarví a zlepší příští dávku křišťálu (+1★, zásoba max 2) ──────
       if(!isC){
         log.push(`__PROD__⛔ ${w.name}: ${L==="cs"?"čeření jen v kampani":"fining only during campaign"}`);
       }else{
         const hasBurel=(G.additives?.burel||0)>=1;
         const hasAntimon=(G.additives?.antimon||0)>=1; // antimon = alternativní čiřidlo
-        const finingAgent=hasBurel?"burel":hasAntimon?"antimon":null;
+        const hasArsen=(G.additives?.arsen||0)>=1;      // arsen = nejúčinnější: +2 dávky najednou
         const cerStock=G._cerenBonus||0;
+        // arsen má přednost jen při prázdné zásobě (využije celou sílu), jinak je záložní
+        const finingAgent=(cerStock===0&&hasArsen)?"arsen":hasBurel?"burel":hasAntimon?"antimon":hasArsen?"arsen":null;
         if(cerStock>=2){
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — zásoba bonusu je plná (2★)":"fining — bonus store is full (2★)"}`);
         }else if(finingAgent){
           G.additives[finingAgent]=Math.max(0,(G.additives[finingAgent]||0)-1);
           const kuncBonus=w.npcId==="npc_kunc"?1:0; // Kunc čeří lépe
-          G._cerenBonus=Math.min(2,cerStock+1+kuncBonus);
-          const agentLabel=finingAgent==="burel"?"burel (MnO₂)":"antimon";
+          const agentGain=finingAgent==="arsen"?2:1;
+          if(finingAgent==="arsen"){G._arsenFined=true;w.fat=Math.min(1,(w.fat||0)+0.15);} // jedovatý: tavič je víc unavený
+          G._cerenBonus=Math.min(2,cerStock+agentGain+kuncBonus);
+          const agentLabel=finingAgent==="burel"?"burel (MnO₂)":finingAgent==="arsen"?"arsen (As₂O₃) ☠️":"antimon";
           log.push(`__PROD__🫧 ${w.name}: ${L==="cs"?"čeření — příští křišťál +★":"fining — next crystal +★"} (${G._cerenBonus}) (-1 ${agentLabel})`);
         }else{
-          log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí burel nebo antimon":"fining — no burel or antimony"}`);
+          log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí burel, antimon nebo arsen":"fining — no burel, antimony or arsenic"}`);
         }
       }
     }else{
@@ -2814,7 +2831,7 @@ function processRound(){
           usedSlots++;continue;
         }
         if(!r.pureSand||r.pureSand<3||!r.refinedPotash||r.refinedPotash<2||r.limestone<1||r.charcoal<1){
-          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": křišťál — chybí suroviny (pureSand/refinedPotash/charcoal)":"Slot "+(si+1)+": crystal — missing materials"}`);
+          log.push(`__PROD__⛔ ${L==="cs"?"Slot "+(si+1)+": křišťál — chybí suroviny (3× čistý písek, 2× čistá potaš, 1× vápenec, 1× uhlí)":"Slot "+(si+1)+": crystal — missing materials (3 pure sand, 2 refined potash, 1 limestone, 1 charcoal)"}`);
           newActiveBatches.push({slot:si,type:"crystal",colorKey:"crystal",blocked:true});
           usedSlots++;continue;
         }
@@ -3815,6 +3832,7 @@ function colorInputName(item,L){
 // recept je vyrobitelný: pec (nebo vlastní mufle) + atmosféra + vstupy
 function colorRecipeBlock(rec){
   if(rec.mufle){
+    if(!isCampaignMonth(G.round,G.seasonTier||0))return "season";
     if(((G.res&&G.res.wood)||0)<rec.wood)return "wood";
   }else if(!G.fActive||G.fTemp<rec.furnaceMin)return "temp";
   if(rec.atm==="red"&&!(G.furnAtm||[]).includes("red"))return "atm";
@@ -3829,6 +3847,10 @@ function craftColorGlass(recipeKey){
   if(!rec||!G.unlockedRecipes.includes(recipeKey))return;
   const L=G.lang;
   if(rec.mufle){
+    if(!isCampaignMonth(G.round,G.seasonTier||0)){
+      G.log.push(`__EVT__❌ ${L==="cs"?"Muflová pec pracuje jen v kampani":"The muffle furnace works only in the campaign"}`);
+      render(); return;
+    }
     if(((G.res&&G.res.wood)||0)<rec.wood){
       G.log.push(`__EVT__❌ ${L==="cs"?"Na muflovou pec chybí dřevo":"Not enough wood for the muffle furnace"} (${rec.wood}🪵)`);
       render(); return;
@@ -6447,9 +6469,10 @@ function resolveRubyStrike(){
     G.log.push(`__EVT__🔴 ${L==="cs"?"Strike! Rubínová barva se projevila. Kunckelova metoda funguje!":"Strike! The ruby colour has struck. Kunckel's method works!"}`);
     G.morale=Math.min(100,(G.morale||70)+8);
   } else {
-    // Selhání — vrátí jedno čiré sklo (znehodnocené)
-    G.crystal.push(1);
-    G.log.push(`__EVT__⚪ ${L==="cs"?"Náběh selhal — sklo zůstalo čiré. Zlatý koloid se nevytvořil. Výrobní tajemství Kunckela odolalo.":"Strike failed — glass stayed clear. Gold colloid did not form. Kunckel's secret held."}`);
+    // Selhání — sklo zůstalo čiré: polotovar jde zahřát znovu (o ★ horší); ze slabého zbyde jen znehodnocený křišťál
+    if(sq.q>1){if(!G.rubin_raw)G.rubin_raw=[];G.rubin_raw.push(sq.q-1);}
+    else G.crystal.push(1);
+    G.log.push(`__EVT__⚪ ${L==="cs"?"Náběh selhal — sklo zůstalo čiré. Zlatý koloid se nevytvořil. Výrobní tajemství Kunckela odolalo.":"Strike failed — glass stayed clear. Gold colloid did not form. Kunckel's secret held."}${sq.q>1?(L==="cs"?" Polotovar lze zahřát znovu (−1★).":" The blank can be reheated (−1★)."):(L==="cs"?" Zbyl jen znehodnocený křišťál.":" Only a degraded crystal remains.")}`);
     G.morale=Math.min(100,(G.morale||70)-3);
   }
   G._strikeQueue=null;
@@ -6962,8 +6985,8 @@ function render(){
         chance:{cs:"Nikdo neví proč. Tak to prostě je.",en:"No one knows why. That's how it goes."}
       }[cl.reason]||{cs:"",en:""};
       const lostLines=[];
-      if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× lesní sklo ${cl.wg.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
-      if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× křišťál ${cl.cr.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
+      if(cl.wg?.length) lostLines.push(`💔 ${cl.wg.length}× ${L==="cs"?"lesní sklo":"forest glass"} ${cl.wg.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
+      if(cl.cr?.length) lostLines.push(`💔 ${cl.cr.length}× ${L==="cs"?"křišťál":"crystal"} ${cl.cr.map(q=>"★".repeat(Math.max(0,q||0))).join(", ")}`);
       if(!cl.wg?.length&&!cl.cr?.length) lostLines.push(L==="cs"?"✅ Sklo zachováno — jen pánev odepsána":"✅ Glass preserved — crucible lost");
       lostLines.push(L==="cs"?"🔥 Ostatní sloty pokračují":"🔥 Other slots continue");
 
@@ -9133,7 +9156,7 @@ function render(){
         L==="cs"?"Rytec není v huti. Nastupuje v červnu.":"No engraver in foundry. Starts in June."));
     } else {
       wRyt.append(h("div",{style:{fontSize:"11px",color:"#8b7a2a",marginBottom:"6px"}},
-        `✂️ ${rytec.name} ★×${rytec.lv} · ${L==="cs"?"Rytina přidá +40% k ceně kusu":"Engraving adds +40% to piece price"}`));
+        `✂️ ${rytec.name} ★×${rytec.lv} · ${L==="cs"?"Rytina přidá +40% k ceně kusu (žlutěný křišťál +80%)":"Engraving adds +40% to piece price (stained crystal +80%)"}`));
       const rytGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px"}});
       ENGRAVE_INPUTS.forEach(key=>{
         const srcItem=engraveSrc(key);
@@ -9324,12 +9347,13 @@ function render(){
       h("div",{style:{fontSize:"10px",color:"#bbb",fontStyle:"italic"}},L==="cs"?"Prázdný sklad":"Empty")));
 
     // Barevné sklo
-    const colorDefs={jantar:{icon:"🟤",cs:"Jantar",en:"Amber",base:10},
-      zlut:{icon:"🟨",cs:"Stříbrná žluť",en:"Silver stain",base:30},
-      modra:{icon:"🔵",cs:"Temná modř",en:"Dark blue",base:14},
-      smaragd:{icon:"🟢",cs:"Smaragd",en:"Emerald",base:16},
-      lattimo:{icon:"⚪",cs:"Lattimo",en:"Milk glass",base:22},
-      rubin:{icon:"🔴",cs:"Rubín",en:"Ruby",base:50}};
+    const colorDefs={jantar:{icon:"🟤",cs:"Jantar",en:"Amber"},
+      zlut:{icon:"🟨",cs:"Stříbrná žluť",en:"Silver stain"},
+      modra:{icon:"🔵",cs:"Temná modř",en:"Dark blue"},
+      smaragd:{icon:"🟢",cs:"Smaragd",en:"Emerald"},
+      lattimo:{icon:"⚪",cs:"Lattimo",en:"Milk glass"},
+      rubin:{icon:"🔴",cs:"Rubín",en:"Ruby"}};
+    Object.values(colorDefs).forEach((d,i)=>{d.base=COLOR_RECIPES[Object.keys(colorDefs)[i]].sell_cs;}); // cena z receptu — jediný zdroj
     Object.entries(colorDefs).forEach(([k,def])=>{
       const arr=p[k]||[];
       if(arr.length===0)return;
@@ -9898,7 +9922,7 @@ function render(){
         class:"btn btn-s"+(sType==="crystal"?" btn-active":""),
         style:{fontSize:"9px",padding:"2px 6px",opacity:canCrystalUI?1:0.4},
         title:canCrystalUI
-          ?(L==="cs"?"Křišťál: čistý písek + čistá potaš + uhlí":"Crystal: pureSand + refinedPotash + charcoal")
+          ?(L==="cs"?"Křišťál: 3× čistý písek + 2× čistá potaš + 1× vápenec + 1× uhlí":"Crystal: 3 pure sand + 2 refined potash + 1 limestone + 1 charcoal")
           :(L==="cs"?"Vyžaduje foukače křišťálu v party":"Requires crystal blower in party"),
         onClick:()=>{
           if(!canCrystalUI)return;
@@ -9966,7 +9990,7 @@ function render(){
       const recipeGrid=h("div",{style:{display:"grid",gridTemplateColumns:isDesktop?"1fr 1fr 1fr 1fr":"1fr 1fr",gap:"6px"}});
       unlockedColors.forEach(([key,rec])=>{
         const block=colorRecipeBlock(rec);
-        const canCraft=(isC||rec.mufle)&&!block;
+        const canCraft=isC&&!block;
         const card=h("div",{style:{padding:"8px",borderRadius:"4px",
           border:`1px solid ${canCraft?"rgba(74,122,58,.3)":"rgba(42,26,10,.1)"}`,
           background:canCraft?"rgba(74,122,58,.05)":"rgba(0,0,0,.02)",
@@ -9998,6 +10022,8 @@ function render(){
                 ?(L==="cs"?`Min ${rec.furnaceMin}%`:`Min ${rec.furnaceMin}%`)
                 :block==="atm"
                   ?(L==="cs"?"Nutná redukce":"Needs reducing")
+                  :block==="season"
+                    ?(L==="cs"?"Jen v kampani":"Campaign only")
                   :block==="wood"
                     ?(L==="cs"?"Chybí dřevo":"No wood")
                     :(L==="cs"?"Chybí sur.":"Missing")));
@@ -12219,16 +12245,14 @@ const ACHIEVEMENTS=[
 
   {id:"cerenic_arsenem", icon:"🧪", cat:"tech",
    cs:"Čeřič arsenem", en:"Arsenic Finer",
-   desc_cs:"Arsenový oxid (As₂O₃) — nejúčinnější čeřidlo, 0,1–1 % hmotnosti. Odstraňuje bubliny a dekoloruje zbytkové železo. V Čechách od cca 1680. Vzácný, jedovatý, nepostradatelný pro křišťál.",
-   desc_en:"Arsenic oxide (As₂O₃) — the most effective fining agent, 0.1–1% by weight. Removes bubbles and decolours residual iron. In Bohemia from ca. 1680. Rare, toxic, indispensable for crystal.",
+   desc_cs:"Arsenový oxid (As₂O₃) — nejúčinnější čeřidlo, 0,1–1 % hmotnosti. Odstraňuje bubliny a dekoloruje zbytkové železo, takže křišťál je čistší. V Čechách od cca 1680. Vzácný a jedovatý — tavič se při čeření víc unaví.",
+   desc_en:"Arsenic oxide (As₂O₃) — the most effective fining agent, 0.1–1% by weight. Removes bubbles and decolours residual iron, so the crystal is clearer. In Bohemia from ca. 1680. Rare and poisonous — the smelter tires faster while fining.",
    latin:"Solve et coagula",
    src_cs:"Hujová & Vernerová 2017, Sedláčková 2015",
    src_en:"Hujová & Vernerová 2017, Sedláčková 2015",
-   hint_cs:"Přijde v další verzi — čeřidlo arsen.",
-   hint_en:"Coming in next version — arsenic fining agent.",
-   img_id:"ach_cerenic_arsenem", available:false,
-   future_cs:"Čeření arsenem — přijde v další verzi",
-   future_en:"Arsenic fining — coming in next version"},
+   hint_cs:"Vyčeř křišťál arsenem (Baranovský ho nabízí od sezóny 2).",
+   hint_en:"Fine crystal with arsenic (Baranovský offers it from season 2).",
+   img_id:"ach_cerenic_arsenem", available:true},
 
   // ── Obchodní a sociální ──
   {id:"vilkum", icon:"🏰", cat:"trade",
@@ -12359,6 +12383,14 @@ const WIKI_ENTRIES={
     src_en:"Valentová 2019, Hujová 2017",
     trigger:"first_zlut"},
 
+  arsen:{
+    icon:"☠️", cs:"Arsen (As₂O₃) — čeřidlo", en:"Arsenic (As₂O₃) — fining agent",
+    body_cs:"Arsenová běl (hutní mouka) vzniká pražením rud v krušnohorských hutích. V malém množství (0,1–1 % kmene) vyčeří sklovinu rychleji než burel: odstraní bubliny a zbytkové železo, takže křišťál vychází čistší. Je to ale prudký jed — pracovníci se při čeření unaví víc. Hutě ji přesto používaly běžně; od cca 1680 je i v Čechách. Hodí se i na alembik pro alchymisty a lékárníky.",
+    body_en:"White arsenic (smelter's flour) comes from roasting ores in the Ore Mountain smelters. In small amounts (0.1–1% of the batch) it fines the melt faster than burel: it removes bubbles and residual iron, so crystal comes out clearer. But it is a violent poison — workers tire more while fining. Foundries used it routinely anyway; in Bohemia from ca. 1680. It is also needed for the alembic for alchemists and apothecaries.",
+    src_cs:"Hujová & Vernerová 2017, Sedláčková 2015",
+    src_en:"Hujová & Vernerová 2017, Sedláčková 2015",
+    trigger:"first_arsen"},
+
   potash:{
     icon:"🌿", cs:"Potaš (K₂CO₃)", en:"Potash (K₂CO₃)",
     body_cs:"Základní tavidlo české hutě — loužení bukového popela. Tři kvality: černá (surová) → modrá (obyčejné sklo) → bílá (vícenásobné loužení, křišťál). 10 tun dřeva → 100 kg popela → 3 kg potaše.",
@@ -12432,6 +12464,7 @@ function checkAchievements(){
   if(G.rubin?.length>0){ addW("rubin"); }
   if(G.jantar?.length>0){ addW("jantar"); }
   if(G.zlut?.length>0){ addW("zlut"); }
+  if((G.additives?.arsen||0)>0||G._arsenFined){ addW("arsen"); }
   if((G.res?.potash||0)>0||G.tW>0){ addW("potash"); }
   if(G.pReady>0||G.pAging?.length>0){ addW("panev"); }
   if(G.furnace){ addW("pec_primitive"); addW("have_furnace"); }
@@ -12455,6 +12488,9 @@ function checkAchievements(){
 
   // Kunckel — první rubín
   if(G.rubin?.length>0&&!ach.includes("kunckel")) add("kunckel");
+
+  // Čeřič arsenem — křišťál poprvé vyčeřen arsenem
+  if(G._arsenFined&&!ach.includes("cerenic_arsenem")) add("cerenic_arsenem");
 
   // Vilkum — rytý pohár (rytina_brus_pokal prodán nebo v zásobě)
   const hasVilkum=(G.rytina_brus_pokal?.length>0||
