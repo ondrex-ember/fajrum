@@ -1310,6 +1310,40 @@ function getTomislavRank(p){
   return mins[idx].id;
 }
 
+// Co odemykají levely jednotlivých profesí (záložka Parta → Rozvoj); index = level (0 nepoužit)
+const PROF_UNLOCKS={
+  tavic:{cs:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
+         en:[null,"Crystal melting","Lower wood consumption","Quality bonus +1","Master smelter — ruby glass"]},
+  drvorubc:{cs:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
+         en:[null,"Logging +1 wood/round","Charcoal kiln — faster charcoal","Forest plot bonus","Forest expert — 0% loss"]},
+  panvar:{cs:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
+         en:[null,"Crucible quality 2","Crucible quality 3","Special crucible (+2 batches)","Master crucible"]},
+  popelar:{cs:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
+         en:[null,"Potash +1/round","Better leaching","Potash from leaves","Pure potash — glass bonus"]},
+  foukat_lesni:{cs:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
+         en:[null,"Blowing bowls","Blowing bottles","Blowing decor","Master shaping"]},
+  foukat_kristal:{cs:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
+         en:[null,"Clear vessels","Blowing goblets","Thin walls","Set of 6"]},
+  foukat_dekor:{cs:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
+         en:[null,"Thread decoration","Coloured rings","Filigree basics","Venetian thread"]},
+  foukat_formy:{cs:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
+         en:[null,"Moulds+1","Shape series","Fast moulds","Master mould"]},
+  brusic_hrana:{cs:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
+         en:[null,"Facet","Edge+1","Geometric cuts","Chandelier cut"]},
+  brusic_kulic:{cs:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
+         en:[null,"Sphere","Vase profile","Deep bowl","Master shaping"]},
+  rytec:{cs:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
+         en:[null,"Plain pattern","Plant motif","Coat of arms/initials","Master engraving"]},
+  hornik:{cs:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
+         en:[null,"Ore mining","Rare ores","Deep shaft","Full shaft"]},
+  obchodnik:{cs:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
+         en:[null,"Price +5%","New buyer","Foreign contact","Export network"]},
+  formar:{cs:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"],
+         en:[null,"Mould+1 slot","Sturdier moulds","Mould series","Master mould"]},
+  _default:{cs:[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"],
+         en:[null,"Experience +1","Bonus efficiency","Special ability","Master"]}
+};
+
 // Traity dělníků
 const TRAITS={
   silak:    {cs:"Siláč",    en:"Strong",      desc_cs:"Těžba +50%",                    desc_en:"Mining +50%",                 icon:"💪"},
@@ -3677,15 +3711,8 @@ function signContract(workerId,months){
   render();
 }
 
-// Osobní hodnocení hutmistra — statická báze + dynamika
-function workerAssessment(w,L){
-  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
-  const tier=workerTier(w.lv);
-  const seasons=w.seasonsInFoundry||0;
-  const incidents=w.incidents||0;
-  const loyalty=w.loyalty||75;
-  // Statická báze per NPC
-  const bases={
+// Osobní hodnocení hutmistra — statická báze per NPC (používá workerAssessment)
+const NPC_ASSESS={
     npc_kunc:    {cs:"Kunc nepotřebuje pochvalu. Pec mluví za něj.",         en:"Kunc needs no praise. The furnace speaks for him."},
     npc_komar:   {cs:"Komár padá stromy jako stroje. Přemýšlet mu moc nejde.",en:"Komár fells trees like a machine. Thinking isn't his forte."},
     npc_kanin:   {cs:"Káninský ví o pánvích víc než kdokoliv v kraji.",       en:"Káninský knows more about crucibles than anyone in the region."},
@@ -3705,7 +3732,16 @@ function workerAssessment(w,L){
     npc_kulic1:  {cs:"Kuličková je vytrvalá. Nikdy si nestěžuje, nikdy nepřestane.",en:"Kuličková is relentless. Never complains, never stops."},
     npc_rytec1:  {cs:"Rytíř rytím žije. Všechno ostatní je jen čekání.",      en:"Rytíř lives for engraving. Everything else is just waiting."},
   };
-  const base=bases[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
+
+// Osobní hodnocení hutmistra — statická báze + dynamika
+function workerAssessment(w,L){
+  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
+  const tier=workerTier(w.lv);
+  const seasons=w.seasonsInFoundry||0;
+  const incidents=w.incidents||0;
+  const loyalty=w.loyalty||75;
+  // Statická báze per NPC → NPC_ASSESS
+  const base=NPC_ASSESS[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
   const baseText=L==="cs"?base.cs:base.en;
   // Dynamická část
   const parts=[];
@@ -3715,7 +3751,7 @@ function workerAssessment(w,L){
   if(loyalty>=85) parts.push(L==="cs"?"Loajální jako málokdo.":"As loyal as they come.");
   else if(loyalty<30) parts.push(L==="cs"?"Uvažuje o odchodu. Nutno jednat.":"Thinking of leaving. Action needed.");
   if(w.mentorId) parts.push(L==="cs"?"Mentor mu otevřel oči.":"Mentorship opened his eyes.");
-  if(w.lv>=7) parts.push(L==="cs"?`${tier.cs} — respekt pečeme do skla.`:`${tier.cs} — respect baked into glass.`);
+  if(w.lv>=7) parts.push(L==="cs"?`${tier.cs} — respekt pečeme do skla.`:`${tier.de} — respect baked into glass.`);
   return baseText+(parts.length?" "+parts[0]:"");
 }
 
@@ -10827,14 +10863,14 @@ function render(){
           const partnerNPC=NPC_ROSTER.find(n=>n.id===partnerId);
           const pip=h("span",{
             style:{fontSize:"9px",cursor:"default",lineHeight:"1"},
-            title:`${b.type==="affinity"?"🟢 Afinita":"🔴 Tenze"}: ${partnerNPC?.name||partnerId} — ${L==="cs"?b.desc_cs:b.desc_en}`
+            title:`${b.type==="affinity"?(L==="cs"?"🟢 Afinita":"🟢 Affinity"):(L==="cs"?"🔴 Tenze":"🔴 Tension")}: ${partnerNPC?.name||partnerId} — ${L==="cs"?b.desc_cs:b.desc_en}`
           },b.type==="affinity"?"🟢":"🔴");
           bondPips.append(pip);
         });
         if(w.mentorId){
           const mNPC=NPC_ROSTER.find(n=>n.id===w.mentorId);
           bondPips.append(h("span",{style:{fontSize:"9px",cursor:"default"},
-            title:`📖 Mentorství: ${mNPC?.name||w.mentorId}`},"📖"));
+            title:`📖 ${L==="cs"?"Mentorství":"Mentorship"}: ${mNPC?.name||w.mentorId}`},"📖"));
         }
         info.append(bondPips);
       }
@@ -10848,7 +10884,7 @@ function render(){
         row.append(h("span",{class:"parta-bar-lbl"},lbl),bar);
         return row;
       };
-      const fat=w.fatigue||0;
+      const fat=Math.round((w.fat||0)*100); // w.fat is a 0–1 fraction (w.fatigue never existed → bar was always 0)
       info.append(mkBar("😊",mood,mood>=65?"#4a7a3a":mood>=40?"#c89628":"#a03020"));
       info.append(mkBar("😓",fat,fat<=40?"#4a7a3a":fat<=70?"#c89628":"#a03020"));
       card.append(info);
@@ -10865,7 +10901,7 @@ function render(){
         const profLabel=getProfLabel(w,L);
         const unpaid=w.unpaidDebt||0;
         const mood=w.mood||60;
-        const fat=w.fatigue||0;
+        const fat=Math.round((w.fat||0)*100);
         const health=w.health||100;
         const loyalty=w.loyalty||70;
         const npc=NPC_ROSTER.find(n=>n.id===w.npcId||n.id===w.id)||{};
@@ -10968,23 +11004,7 @@ function render(){
           }
           modal.append(xpTrack);
           // Co odemyká
-          const unlocks={
-            tavic:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
-            drvorubc:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
-            panvar:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
-            popelar:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
-            foukat_lesni:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
-            foukat_kristal:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
-            foukat_dekor:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
-            foukat_formy:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
-            brusic_hrana:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
-            brusic_kulic:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
-            rytec:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
-            hornik:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
-            obchodnik:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
-            formar:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"]
-          };
-          const lvlList=unlocks[w.prof]||[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"];
+          const lvlList=(PROF_UNLOCKS[w.prof]||PROF_UNLOCKS._default)[L==='cs'?'cs':'en'];
           const nextLvl=lvlList[curLv];
           const box=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px",marginBottom:"8px"}});
           box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"600",marginBottom:"4px"}},
@@ -11136,9 +11156,9 @@ function render(){
               btn.append(
                 h("span",{style:{fontWeight:"600"}},lbl),
                 h("div",{style:{display:"flex",gap:"8px",fontSize:"9px",color:"#8b5e34",marginTop:"1px"}},
-                  h("span",{},`${cost}g záloha`),
-                  h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?"✓ dost grošů":"✗ chybí grošů"),
-                  h("span",{},`+20 loaj.`)
+                  h("span",{},`${cost}g ${L==="cs"?"záloha":"advance"}`),
+                  h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?(L==="cs"?"✓ dost grošů":"✓ enough groschen"):(L==="cs"?"✗ chybí grošů":"✗ not enough groschen")),
+                  h("span",{},`+20 ${L==="cs"?"loaj.":"loy."}`)
                 )
               );
               modal.append(btn);
