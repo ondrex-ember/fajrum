@@ -1,9 +1,66 @@
 // Sklářská Huť — Service Worker
-// Network-first pro HTML, cache-first pro assets
+//
+// Dvě oddělené cache:
+//   CORE  — HTML, kód (ui/*), manifest, ikony (~1,8 MB). Instaluje se atomicky.
+//           ⚠️ Verzi zvedni při každém releasu (změna/přidání souboru z CORE_ASSETS).
+//   MEDIA — obrázky (/img/**, ~49 MB). Plní se na pozadí (best-effort) po zprávě
+//           CACHE_MEDIA z index.html, jinak průběžně při prvním použití.
+//           Název je záměrně zachovaný z původního SW, takže už stažené obrázky
+//           se nestahují znovu. Zvedni jen když se změní/přibudou obrázky.
+//
+// Strategie:
+//   navigace + kód (CORE_ASSETS) → network-first s timeoutem → cache
+//   obrázky (/img/**)            → cache-first
+// Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
+// skipWaiting při instalaci a žádný automatický reload.
 
-// ⚠️ Zvedni verzi při každém releasu → vynutí nový cache
-const CACHE = 'sklarska-hut-woodland-v1';
-const ASSETS = [
+const CORE = 'sklarska-hut-woodland-v1.1';
+const MEDIA = 'sklarska-hut-woodland-v1';
+const PREFIX = 'sklarska-hut-';
+
+const NAV_TIMEOUT = 4000;
+const ASSET_TIMEOUT = 3000;
+const MEDIA_CONCURRENCY = 4;
+
+const CORE_ASSETS = [
+  '/index.html',
+  '/about.html',
+  '/intro.jpg',
+  '/manifest.json',
+  '/icons/icon-32.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-192.png',
+  '/icons/icon-maskable-512.png',
+  '/icons/apple-touch-icon-180.png',
+  '/ui/fajrum-partners.js',
+  '/ui/fajrum-partners.css',
+  '/ui/fajrum-stories.js',
+  '/ui/fajrum-stories.css',
+  '/ui/fajrum-worksites.js',
+  '/ui/fajrum-worksites.css',
+  '/ui/fajrum-desktop.js',
+  '/ui/fajrum-desktop.css',
+  '/ui/fajrum-portraits.js',
+  '/ui/fajrum-portraits.css',
+  '/ui/fajrum-mobile.css',
+  '/ui/fajrum-ui.js',
+  '/ui/grain.svg',
+  '/ui/fajrum-artwork.js',
+  '/ui/fajrum-artwork.css',
+  '/ui/fajrum-products.js',
+  '/ui/fajrum-products.css',
+  '/ui/fajrum-recipes.js',
+  '/ui/fajrum-recipe-ui.js',
+  '/ui/fajrum-crew.js',
+  '/ui/fajrum-crew.css',
+  '/ui/fajrum-market.js',
+  '/ui/fajrum-market.css',
+  '/ui/fajrum-visuals.js',
+  '/ui/fajrum-visuals.css'
+];
+
+const MEDIA_ASSETS = [
   '/img/world/hut-winter-thinned.webp',
   '/img/world/hut-spring-thinned.webp',
   '/img/world/hut-summer-thinned.webp',
@@ -12,15 +69,12 @@ const ASSETS = [
   '/img/world/hut-spring-cleared.webp',
   '/img/world/hut-summer-cleared.webp',
   '/img/world/hut-autumn-cleared.webp',
-  '/ui/fajrum-partners.js',
-  '/ui/fajrum-partners.css',
   '/img/partners/weiss.webp',
   '/img/partners/hoffmann.webp',
   '/img/partners/abbot.webp',
   '/img/partners/priest.webp',
   '/img/partners/nobleman.webp',
   '/img/partners/noblewoman.webp',
-
   '/img/events/crack.webp',
   '/img/events/good.webp',
   '/img/events/merchant.webp',
@@ -39,8 +93,6 @@ const ASSETS = [
   '/img/achievements/vilkum.webp',
   '/img/achievements/kobaltova_serie.webp',
   '/img/achievements/faccon_de_venise.webp',
-  '/ui/fajrum-stories.js',
-  '/ui/fajrum-stories.css',
   '/img/furnaces/primitive-cold.webp',
   '/img/furnaces/primitive-embers.webp',
   '/img/furnaces/primitive-hot.webp',
@@ -50,16 +102,10 @@ const ASSETS = [
   '/img/furnaces/master-cold.webp',
   '/img/furnaces/master-embers.webp',
   '/img/furnaces/master-hot.webp',
-  '/ui/fajrum-worksites.js',
-  '/ui/fajrum-worksites.css',
   '/img/worksites/potash.webp',
   '/img/worksites/grinding.webp',
   '/img/worksites/engraving.webp',
   '/img/worksites/forestry.webp',
-  '/ui/fajrum-desktop.js',
-  '/ui/fajrum-desktop.css',
-  '/ui/fajrum-portraits.js',
-  '/ui/fajrum-portraits.css',
   '/img/workers/tomislav.webp',
   '/img/workers/npc_formar2.webp',
   '/img/workers/npc_foukac2.webp',
@@ -91,28 +137,6 @@ const ASSETS = [
   '/img/additives/rtut.webp',
   '/img/additives/stribro.webp',
   '/img/additives/arsen.webp',
-  '/',
-  '/index.html',
-  '/about.html',
-  '/intro.jpg',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/ui/fajrum-mobile.css',
-  '/ui/fajrum-ui.js',
-  '/ui/grain.svg',
-  '/ui/fajrum-artwork.js',
-  '/ui/fajrum-artwork.css',
-  '/ui/fajrum-products.js',
-  '/ui/fajrum-products.css',
-  '/ui/fajrum-recipes.js',
-  '/ui/fajrum-recipe-ui.js',
-  '/ui/fajrum-crew.js',
-  '/ui/fajrum-crew.css',
-  '/ui/fajrum-market.js',
-  '/ui/fajrum-market.css',
-  '/ui/fajrum-visuals.js',
-  '/ui/fajrum-visuals.css',
   '/img/sections/production.webp',
   '/img/sections/storage.webp',
   '/img/sections/market.webp',
@@ -155,52 +179,156 @@ const ASSETS = [
   '/img/workers/taborsky.jpg'
 ];
 
-// Install — cache všechny assets
+const CORE_SET = new Set(CORE_ASSETS);
+let mediaJob = null;
+
+// ── Pomocné funkce ──
+
+// Přesměrovaná odpověď nesmí být servírována navigaci → přebalit.
+function clean(res) {
+  if (!res.redirected) return res;
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
+// Klíč v CORE cache pro navigaci (bez query → UTM varianty se nemnoží).
+function navKey(url) {
+  if (url.pathname === '/' || url.pathname === '/index.html') return '/index.html';
+  if (url.pathname === '/about.html') return '/about.html';
+  return null;
+}
+
+// Síť s timeoutem → cache. Když v cache nic není, čeká se na síť bez limitu.
+async function networkFirst(req, key, ms) {
+  const cache = await caches.open(CORE);
+  const cached = await cache.match(key);
+  const net = fetch(req).then(res => {
+    if (res.type === 'opaqueredirect') return res;
+    if (res.ok) {
+      cache.put(key, clean(res.clone())).catch(() => {});
+      return res;
+    }
+    return cached || res; // 404/5xx → radši poslední dobrá verze
+  });
+  net.catch(() => {});
+  if (!cached) return net;
+  return Promise.race([
+    net,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]).catch(() => cached);
+}
+
+async function navigateOther(req) {
+  try {
+    return await fetch(req);
+  } catch (_) {
+    const cache = await caches.open(CORE);
+    return (await cache.match('/index.html')) || Response.error();
+  }
+}
+
+async function cacheFirst(req) {
+  const cache = await caches.open(MEDIA);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  try {
+    const res = await fetch(req);
+    if (res.ok) cache.put(req, res.clone()).catch(() => {});
+    return res;
+  } catch (_) {
+    return Response.error(); // chybějící obrázek = chyba, ne podvržené HTML
+  }
+}
+
+async function precacheCore() {
+  const cache = await caches.open(CORE);
+  await Promise.all(CORE_ASSETS.map(async url => {
+    const res = await fetch(new Request(url, { cache: 'reload' }));
+    if (!res.ok) throw new Error('precache ' + url + ' ' + res.status);
+    await cache.put(url, clean(res));
+  }));
+}
+
+// Best-effort: jeden selhaný obrázek nic nerozbije; spustitelné opakovaně.
+async function precacheMedia() {
+  const cache = await caches.open(MEDIA);
+  const queue = MEDIA_ASSETS.slice();
+  let cached = 0;
+  let failed = 0;
+  async function worker() {
+    while (queue.length) {
+      const url = queue.shift();
+      try {
+        if (await cache.match(url)) { cached++; continue; }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(String(res.status));
+        await cache.put(url, res);
+        cached++;
+      } catch (_) {
+        failed++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: MEDIA_CONCURRENCY }, worker));
+  const clients = await self.clients.matchAll({ includeUncontrolled: true });
+  clients.forEach(c => c.postMessage({ type: 'MEDIA_READY', cached, failed, total: MEDIA_ASSETS.length }));
+}
+
+// ── Životní cyklus ──
+
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(precacheCore());
 });
 
-// Activate — vymaž staré cache
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter(k => k.startsWith(PREFIX) && k !== CORE && k !== MEDIA).map(k => caches.delete(k))
+    );
+    // MEDIA převzala název původní cache → odstranit z ní staré HTML/JS/CSS.
+    const media = await caches.open(MEDIA);
+    const reqs = await media.keys();
+    await Promise.all(
+      reqs.filter(r => !new URL(r.url).pathname.startsWith('/img/')).map(r => media.delete(r))
+    );
+    await self.clients.claim();
+  })());
 });
 
-// Fetch — network-first pro HTML navigace, cache-first pro ostatní assets
+self.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  } else if (d.type === 'CACHE_MEDIA') {
+    if (!mediaJob) {
+      mediaJob = precacheMedia().catch(() => {}).then(() => { mediaJob = null; });
+    }
+    e.waitUntil(mediaJob);
+  }
+});
+
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
+  const req = e.request;
+  if (req.method !== 'GET') return;
 
-  // Cizí domény (GTM, GA, …) nechat na prohlížeči — SW je necachuje ani nepodvrhuje
-  if (new URL(e.request.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  // Cizí domény (GTM, GA, …) nechat na prohlížeči
+  if (url.origin !== self.location.origin) return;
+  if (req.headers.has('range')) return;
 
-  // HTML navigace vždy nejdřív ze sítě → uživatel dostane novou verzi okamžitě
-  // Fallback na cache pouze při offline
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).then(res => {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => caches.open(CACHE).then(c => c.match('/index.html')))
-    );
+  if (req.mode === 'navigate') {
+    const key = navKey(url);
+    e.respondWith(key ? networkFirst(req, key, NAV_TIMEOUT) : navigateOther(req));
     return;
   }
 
-  // Assets — číst pouze aktuální verzi, i když starý SW ještě dokončuje požadavky.
-  e.respondWith(
-    caches.open(CACHE).then(c => c.match(e.request)).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => Response.error()); // chybějící asset = chyba, ne podvržené HTML
-    })
-  );
+  if (url.pathname.startsWith('/img/')) {
+    e.respondWith(cacheFirst(req));
+    return;
+  }
+
+  if (CORE_SET.has(url.pathname)) {
+    e.respondWith(networkFirst(req, url.pathname, ASSET_TIMEOUT));
+  }
+  // vše ostatní (sw.js, og-image, …) řeší prohlížeč sám
 });
