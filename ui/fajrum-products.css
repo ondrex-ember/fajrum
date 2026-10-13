@@ -1,0 +1,37 @@
+.fj-recipe-grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))!important;gap:12px!important;align-items:stretch}
+:is(.fj-recipe-card,.fj-craft-card){padding:14px!important;border-radius:10px!important;background:linear-gradient(150deg,var(--card),var(--card2))!important;border:1px solid var(--border)!important;display:flex;flex-direction:column;gap:8px;min-width:0;box-shadow:0 3px 10px #0002}
+:is(.fj-recipe-card,.fj-craft-card)[data-available=true]{border-color:var(--gold)!important}
+:is(.fj-recipe-card,.fj-craft-card)>div:not(.fj-product-picture){font-size:14px!important;line-height:1.5}
+:is(.fj-recipe-card,.fj-craft-card)>div:nth-child(2)>span:first-child{font-size:17px!important;font-weight:700}
+:is(.fj-recipe-card,.fj-craft-card) button{min-height:48px;padding:8px 12px!important;font-size:14px!important}
+:is(.fj-recipe-card,.fj-craft-card)>.batch-btn-row,:is(.fj-recipe-card,.fj-craft-card)>button:last-child{margin-top:auto}
+.fj-glass-choice{opacity:1!important;flex:1 0 auto}
+.fj-product-picture{height:132px;display:flex;justify-content:center;align-items:center;background:transparent;border-radius:7px;overflow:hidden;flex-shrink:0}
+.fj-product-sprite{display:block;width:132px;height:132px;background-image:url('../img/products/glass-atlas-alpha.webp');background-size:400% 400%;background-repeat:no-repeat}
+.fj-product-no-art{display:none}
+.fj-stock-card{padding:12px!important;border-radius:8px!important;min-width:0}
+.fj-stock-card .fj-product-picture{height:100px;margin-bottom:10px}
+.fj-stock-card .fj-product-sprite{width:100px;height:100px}
+.fj-sale-row{gap:10px!important;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.fj-sale-row .fj-product-picture{width:64px;height:64px}
+.fj-sale-row .fj-product-sprite{width:64px;height:64px}
+.fj-sale-row>span{flex:1;min-width:130px;line-height:1.5}
+.fj-sale-row>div:last-child{margin-left:auto}
+@media(min-width:960px){.fj-recipe-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))!important}}
+@media(max-width:350px){:is(.fj-recipe-card,.fj-craft-card){padding:10px!important}.fj-stock-card{padding:8px!important}}
+
+.fj-glass-options{display:grid!important;grid-template-columns:1fr 1fr;gap:5px!important}.fj-glass-choice{min-width:0;padding:6px!important}
+
+/* Alpha artwork stays inside its own tile, including at fractional CSS sizes. */
+.fj-product-sprite{overflow:hidden;background-color:transparent}
+.fj-product-single{background-image:url('../img/products/mucholapka.webp');background-size:contain;background-position:center!important;clip-path:none}
+
+.fj-product-picture{position:relative}
+.fj-engraving-overlay{position:absolute;width:28px;height:28px;left:50%;top:52%;transform:translate(-50%,-50%);fill:none;stroke:#f5ede1;stroke-width:1.3;opacity:.8;filter:drop-shadow(0 1px 1px #51483b)}
+
+.fj-product-figurine{background-image:url('../img/products/figurka.webp')}
+
+.fj-recipe-cost{font-size:13px;line-height:1.5;color:var(--fj-muted);margin:0}
+.fj-recipe-heading{display:flex;justify-content:space-between;gap:12px}
+.fj-craft-card+.fj-craft-card{margin-top:10px}
+.fj-recipe-grid>.fj-craft-card{margin-top:0}

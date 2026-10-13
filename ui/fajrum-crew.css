@@ -1,0 +1,46 @@
+.parta-grid,#app.desktop .parta-grid{grid-template-columns:1fr;gap:12px;padding:12px 0}
+.parta-card{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:12px;border-radius:10px;min-width:0;box-shadow:0 3px 12px #0002;transition:none}
+.parta-card:hover{transform:none}
+.parta-portrait,#app.desktop .parta-portrait{width:96px;height:124px;aspect-ratio:auto;max-height:none;border-radius:6px;border:1px solid var(--fj-edge)}
+.parta-info{padding:0;min-width:0}
+.parta-name{font-size:17px;line-height:1.25;margin-bottom:6px}
+.parta-prof{font-size:14px;line-height:1.4;margin-bottom:4px}
+.parta-stars{font-size:13px!important;line-height:1.4}
+.parta-bar-row{display:grid;grid-template-columns:48px minmax(30px,1fr) 37px;gap:6px;align-items:center;margin-top:8px}
+.parta-bar-lbl{width:auto;font-size:12px}
+.parta-bar{height:6px;min-width:0;width:100%}
+.fj-crew-stat-value{font-size:12px;text-align:right}
+.fj-crew-current-task{font-size:14px;line-height:1.45;margin-top:10px;color:var(--ink)}
+.fj-crew-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+.fj-crew-actions button{min-height:48px;font-size:15px;padding:8px 10px}
+.fj-crew-summary{font-size:14px;line-height:1.5;color:var(--fj-muted);padding:10px 0;border-bottom:1px solid var(--fj-edge)}
+.fj-crew-task-list{display:flex;flex-direction:column;gap:8px}
+.fj-crew-task-intro{font-size:14px;line-height:1.5;margin:0 0 4px}
+.fj-crew-task-choice{font:inherit;text-align:left;background:var(--card);border:1px solid var(--fj-edge);color:var(--ink);border-radius:8px;padding:12px;min-height:52px;font-size:16px}
+.fj-crew-task-choice.is-current{border-color:var(--gold);box-shadow:inset 3px 0 var(--gold)}
+.fj-crew-task-description,.fj-crew-task-reason{display:block;font-size:13px;line-height:1.5;margin-top:5px;color:var(--fj-muted)}
+.fj-crew-task-choice:disabled{opacity:.65;cursor:not-allowed}
+.fj-crew-task-reason{color:var(--danger)}
+.fj-overview-worker-footer{display:grid;grid-template-columns:1.5fr 1fr;gap:8px}
+.fj-overview-worker-footer>.fj-crew-current-task{grid-column:1/-1}
+.fj-overview-worker-footer button{min-height:48px}
+.fj-overview-task-sheet{grid-template-columns:1fr 1fr!important;gap:8px!important}
+.fj-overview-task-sheet>div:first-child{display:none}
+.fj-overview-task-sheet button{min-height:48px;font-size:14px!important}
+.fj-overview-task-sheet>div{gap:8px!important}
+.fj-crew-profile{width:calc(100vw - 28px);max-height:calc(var(--fj-viewport-height,100dvh) - 36px);color:var(--ink);background:var(--card2);border:1px solid var(--fj-edge);border-radius:12px;overflow:auto;overscroll-behavior:contain}
+.fj-crew-profile .detail-portrait-big{width:90px;height:112px;flex-shrink:0}
+.fj-crew-profile button{min-height:48px}
+.fj-crew-profile .detail-subtabs{position:sticky;top:-14px;z-index:2;overflow-x:auto;overscroll-behavior-x:contain;flex-wrap:nowrap;gap:6px;background:var(--card2);padding:8px 0;scrollbar-width:thin}
+.fj-crew-profile .detail-subtab{flex:0 0 auto;font-size:14px;padding:8px 12px;white-space:nowrap}
+@media(min-width:700px){.parta-grid,#app.desktop .parta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:959px){.fj-crew-profile-bg{align-items:flex-end;padding:0}.fj-crew-profile{max-width:100%!important;width:100%;max-height:calc(var(--fj-viewport-height,100dvh) - 48px);border-radius:14px 14px 0 0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:350px){.parta-card{grid-template-columns:80px minmax(0,1fr);gap:10px;padding:10px}.parta-portrait,#app.desktop .parta-portrait{width:80px;height:106px}.parta-name{font-size:16px}.parta-bar-row{grid-template-columns:42px minmax(16px,1fr) 34px;gap:4px}}
+
+.fj-crew-bonds-disclosure{border:1px solid var(--fj-edge);border-radius:8px;margin:10px 0;color:var(--ink)}
+.fj-crew-bonds-disclosure>summary{min-height:48px;display:flex;align-items:center;padding:10px 12px;font-size:14px;cursor:pointer}
+.fj-crew-bonds-disclosure .fj-crew-bonds{margin:0!important;background:transparent!important}
+.fj-crew-profile-bg{z-index:1000}
+#app.desktop .parta-name{font-size:17px}#app.desktop .parta-prof{font-size:14px}
+.fj-crew-bonds-disclosure>summary::after{content:'⌄';margin-left:auto;padding-left:12px}
+.fj-crew-bonds-disclosure[open]>summary::after{content:'⌃'}

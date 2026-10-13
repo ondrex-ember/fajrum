@@ -1,0 +1,15 @@
+.fj-person-portrait-new{image-rendering:pixelated}
+.fj-player-portrait{width:90px!important;height:112px!important;position:relative;overflow:hidden}
+.fj-player-portrait.has-portrait{display:block!important}
+.fj-player-portrait-image{display:block;width:100%;height:100%;object-fit:cover;object-position:top center;image-rendering:pixelated}
+.fj-player-rank{position:absolute;right:4px;bottom:4px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid #c9952b;border-radius:50%;background:#21180ef0;font-size:18px;line-height:1;color:#f4e4c1;box-shadow:0 1px 4px #0007}
+.fj-player-id>div:last-child{min-width:0;overflow-wrap:anywhere}
+.fj-hiring-candidate.is-illustrated{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px}
+.fj-hiring-portrait{width:64px;height:82px;overflow:hidden;line-height:0;border:1px solid var(--fj-edge);border-radius:6px;background:#272116}
+.fj-hiring-portrait>img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
+.fj-hiring-portrait.is-unavailable{display:flex;align-items:center;justify-content:center;line-height:1;font-size:28px}
+.fj-hiring-copy,.fj-hiring-name{min-width:0;overflow-wrap:anywhere}
+.fj-hiring-head{flex-wrap:wrap;gap:8px}
+.fj-hiring-name{flex:1 1 180px!important}
+.fj-hiring-head>button{margin-left:0!important;min-height:44px}
+@media(max-width:350px){.fj-player-portrait{width:76px!important;height:100px!important}.fj-hiring-candidate.is-illustrated{grid-template-columns:56px minmax(0,1fr);gap:8px}.fj-hiring-portrait{width:56px;height:74px}}

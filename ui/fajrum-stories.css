@@ -1,0 +1,8 @@
+/* Event images fit their existing dialogs; achievement tiles retain 80×80 geometry. */
+.fj-event-dialog{max-height:calc(var(--fj-viewport-height,100dvh) - 32px)!important;overflow:auto;overscroll-behavior:contain}
+.fj-event-art{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;max-height:min(190px,28dvh);margin:0 0 12px;border-radius:6px}
+.fj-ach-art{position:relative;display:block;width:80px;height:80px;flex-shrink:0;overflow:hidden;border:1.5px solid #4a3020;border-radius:8px;background:#1a1208}
+.fj-ach-image{display:block;width:100%;height:100%;object-fit:cover}
+.ach-card.unlocked .fj-ach-art{border-color:#c9952b;filter:drop-shadow(0 0 6px rgba(201,149,43,.25))}
+.ach-card.locked .fj-ach-art,.ach-card.future .fj-ach-art{filter:grayscale(1) opacity(.4)}
+.fj-ach-tick{position:absolute;right:3px;top:3px;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:#c9952b;color:#201409;font:700 10px Georgia,serif;line-height:1}

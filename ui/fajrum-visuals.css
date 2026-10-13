@@ -1,0 +1,68 @@
+.fj-section-art{margin:10px;border:1px solid var(--fj-edge);border-radius:8px;overflow:hidden;background:var(--card)}
+.fj-section-art-figure{position:relative;margin:0;height:136px;overflow:hidden;isolation:isolate;background:#221b13}
+.fj-section-art-image{width:100%;height:100%;display:block;object-fit:cover;object-position:50% 53%}
+.fj-section-art[data-art-tab=storage] .fj-section-art-image{object-position:50% 48%}
+.fj-section-art-figure::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 20%,#140e078e 72%,#140e07ee);z-index:1;pointer-events:none}
+.fj-section-art-caption{position:absolute;z-index:2;left:14px;right:14px;bottom:12px;color:#f5e7cf;text-shadow:0 2px 7px #000a}
+.fj-section-art-caption>span{font-size:11px;letter-spacing:.6px;color:#dbc9ad}
+.fj-section-art-caption h2{font-size:22px;line-height:1.25;margin:4px 0 0;color:#f5e7cf;font-family:Georgia,serif}
+.fj-section-art-detail{padding:8px 12px;font-size:13px;line-height:1.5;color:var(--fj-muted);background:var(--fj-surface)}
+.fj-section-art[data-closed=true] .fj-section-art-detail{color:var(--danger)}
+.fj-section-art-figure.is-unavailable{height:80px}
+.fj-material-picture{display:inline-flex;width:56px;height:56px;align-items:center;justify-content:center;flex-shrink:0;background:transparent;overflow:hidden}
+.fj-material-picture>img{width:100%;height:100%;object-fit:contain;display:block}
+.fj-material-heading{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:12px}
+.fj-material-heading .fj-material-picture{width:104px;height:104px}
+.fj-material-heading .sec-title{font-size:18px;line-height:1.4;margin:0}
+.fj-material-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+:is(.fj-material-stock,.fj-additive-stock){min-width:0;min-height:90px;gap:8px!important;padding:10px!important;align-items:center!important;border-radius:8px!important}
+:is(.fj-material-stock,.fj-additive-stock)>div{min-width:0}
+:is(.fj-material-stock,.fj-additive-stock)>div>div:first-child{font-size:13px!important;line-height:1.4;text-transform:none!important;letter-spacing:0!important;overflow-wrap:anywhere}
+:is(.fj-material-stock,.fj-additive-stock)>div>div:last-child{font-size:20px!important;line-height:1.4;margin-top:5px;font-variant-numeric:tabular-nums}
+:is(.fj-material-stock,.fj-additive-stock) .fj-material-picture{width:44px;height:54px}
+.fj-glass-stock-grid,.fj-additive-stock-grid,.fj-economy-stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+:is(.fj-glass-stock-grid,.fj-additive-stock-grid,.fj-economy-stock-grid)>div{min-width:0}
+:is(.fj-additive-stock-grid,.fj-economy-stock-grid)>div>div{min-width:0;overflow-wrap:anywhere}
+.fj-accounts-reputation-grid{grid-template-columns:minmax(0,1fr)!important}
+.fj-accounts-reputation-grid>div{min-width:0;overflow-wrap:anywhere}
+.fj-shop-item-title{display:flex;gap:10px;align-items:center}
+.fj-shop-item-title .fj-material-picture{width:46px;height:46px}
+.fj-forest-wood-row>span{display:flex;gap:10px;align-items:center;min-width:0;line-height:1.5}
+.fj-forest-wood-row .fj-material-picture{width:48px;height:48px}
+.fj-forest-wood-row{gap:12px!important}
+.fj-codex-row{padding:12px!important;border-radius:8px!important;margin-bottom:10px!important;gap:12px!important;background:var(--card)!important;border-color:var(--fj-edge)!important;min-width:0}
+.fj-codex-row.fj-codex-art>.fj-product-picture{width:76px;height:90px;flex-shrink:0}
+.fj-codex-art .fj-product-sprite{width:76px;height:90px}
+.fj-codex-row>div:last-child>div:first-child>span:first-child{font-size:15px!important;line-height:1.4}
+.fj-codex-row>div:last-child>div:first-child>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.fj-codex-row>div:last-child>div:first-child>span:last-child{flex-shrink:1!important;white-space:normal;line-height:1.5}
+.fj-codex-recipe{font-size:13px!important;line-height:1.6!important;margin-top:7px!important;color:var(--fj-muted)!important}
+.fj-market-page .fj-contract-card .fj-contract-line-art{grid-template-columns:44px minmax(0,1fr) auto;gap:4px 10px}
+.fj-contract-line-art>.fj-product-picture{grid-column:1;grid-row:1/3;width:44px;height:50px;align-self:center}
+.fj-contract-line-art .fj-product-sprite{width:44px;height:50px}
+.fj-contract-line-art>.fj-contract-line-name{grid-column:2}
+.fj-contract-line-art>strong{grid-column:3}
+.fj-contract-line-art>.fj-contract-line-detail{grid-column:2/-1}
+.fj-commission-card{min-width:0;max-width:150px;text-align:center}
+.fj-commission-image{width:140px;height:140px;object-fit:cover;border-radius:8px;display:block;border:1px solid var(--fj-edge)}
+.fj-commission-card>div:last-child{color:var(--fj-muted)!important;font-size:13px!important;line-height:1.5}
+@media(min-width:700px){.fj-material-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}:is(.fj-material-stock,.fj-additive-stock) .fj-material-picture{width:56px;height:64px}}
+@media(min-width:700px){.fj-additive-stock-grid,.fj-economy-stock-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(min-width:700px){.fj-accounts-reputation-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:699px){.content .fj-contract-heading{display:block!important}.content .fj-contract-deadline{text-align:left!important;margin-top:6px}.content .fj-contract-heading>div{min-width:0;overflow-wrap:anywhere}}
+@media(min-width:960px){.fj-section-art-figure{height:164px}.fj-section-art-caption h2{font-size:26px}.fj-codex-row.fj-codex-art>.fj-product-picture{width:96px;height:100px}.fj-codex-art .fj-product-sprite{width:96px;height:100px}}
+@media(max-width:350px){.fj-material-heading{grid-template-columns:82px minmax(0,1fr);gap:10px}.fj-material-heading .fj-material-picture{width:82px;height:90px}:is(.fj-material-stock,.fj-additive-stock){padding:8px!important;gap:6px!important;min-height:88px}:is(.fj-material-stock,.fj-additive-stock) .fj-material-picture{width:34px;height:48px}.fj-codex-art>.fj-product-picture{width:58px!important;height:72px!important}.fj-codex-art .fj-product-sprite{width:58px;height:72px}.fj-codex-row{padding:10px!important;gap:10px!important}}
+@media(max-height:650px){.fj-section-art-figure{height:104px}.fj-section-art-caption{bottom:8px}.fj-section-art-caption h2{font-size:20px}.fj-section-art-detail{padding:5px 10px}}
+@media(max-height:500px) and (orientation:landscape){.fj-section-art{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(210px,1fr)}.fj-section-art-detail{display:flex;align-items:center;justify-content:center;padding:12px}.fj-section-art-figure{height:96px}}
+
+/* Phase 7: transparent additive illustrations and the off-season offer. */
+.fj-additive-chip{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:3px 6px!important;vertical-align:middle}
+.fj-additive-chip .fj-material-picture{width:30px;height:32px}
+.fj-additive-chip-quantity{font-variant-numeric:tabular-nums;white-space:nowrap}
+.fj-color-input{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.fj-color-input .fj-material-picture{width:24px;height:24px}
+.fj-additive-chip[data-quantity="0"] .fj-material-picture{opacity:.45}
+.fj-additive-offer-heading{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:10px}
+.fj-additive-offer-heading .fj-material-picture{width:76px;height:76px}
+.fj-additive-offer-copy{min-width:0;overflow-wrap:anywhere}
+@media(max-width:350px){.fj-additive-offer-heading{grid-template-columns:60px minmax(0,1fr);gap:8px}.fj-additive-offer-heading .fj-material-picture{width:60px;height:68px}}
