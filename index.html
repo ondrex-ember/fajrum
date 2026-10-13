@@ -703,6 +703,30 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 }
 
 </style>
+<link rel="stylesheet" href="ui/fajrum-mobile.css">
+<link rel="stylesheet" href="ui/fajrum-artwork.css">
+<script src="ui/fajrum-ui.js"></script>
+<script src="ui/fajrum-artwork.js"></script>
+<link rel="stylesheet" href="ui/fajrum-products.css">
+<script src="ui/fajrum-products.js"></script>
+<script src="ui/fajrum-recipes.js"></script>
+<script src="ui/fajrum-recipe-ui.js"></script>
+<link rel="stylesheet" href="ui/fajrum-crew.css">
+<script src="ui/fajrum-crew.js"></script>
+<link rel="stylesheet" href="ui/fajrum-market.css">
+<script src="ui/fajrum-market.js"></script>
+<link rel="stylesheet" href="ui/fajrum-visuals.css">
+<script src="ui/fajrum-visuals.js"></script>
+<link rel="stylesheet" href="ui/fajrum-portraits.css">
+<script src="ui/fajrum-portraits.js"></script>
+<link rel="stylesheet" href="ui/fajrum-desktop.css">
+<script src="ui/fajrum-desktop.js"></script>
+<link rel="stylesheet" href="ui/fajrum-worksites.css">
+<script src="ui/fajrum-worksites.js"></script>
+<link rel="stylesheet" href="ui/fajrum-stories.css">
+<script src="ui/fajrum-stories.js"></script>
+<link rel="stylesheet" href="ui/fajrum-partners.css">
+<script src="ui/fajrum-partners.js"></script>
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -1310,40 +1334,6 @@ function getTomislavRank(p){
   return mins[idx].id;
 }
 
-// Co odemykají levely jednotlivých profesí (záložka Parta → Rozvoj); index = level (0 nepoužit)
-const PROF_UNLOCKS={
-  tavic:{cs:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
-         en:[null,"Crystal melting","Lower wood consumption","Quality bonus +1","Master smelter — ruby glass"]},
-  drvorubc:{cs:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
-         en:[null,"Logging +1 wood/round","Charcoal kiln — faster charcoal","Forest plot bonus","Forest expert — 0% loss"]},
-  panvar:{cs:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
-         en:[null,"Crucible quality 2","Crucible quality 3","Special crucible (+2 batches)","Master crucible"]},
-  popelar:{cs:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
-         en:[null,"Potash +1/round","Better leaching","Potash from leaves","Pure potash — glass bonus"]},
-  foukat_lesni:{cs:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
-         en:[null,"Blowing bowls","Blowing bottles","Blowing decor","Master shaping"]},
-  foukat_kristal:{cs:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
-         en:[null,"Clear vessels","Blowing goblets","Thin walls","Set of 6"]},
-  foukat_dekor:{cs:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
-         en:[null,"Thread decoration","Coloured rings","Filigree basics","Venetian thread"]},
-  foukat_formy:{cs:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
-         en:[null,"Moulds+1","Shape series","Fast moulds","Master mould"]},
-  brusic_hrana:{cs:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
-         en:[null,"Facet","Edge+1","Geometric cuts","Chandelier cut"]},
-  brusic_kulic:{cs:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
-         en:[null,"Sphere","Vase profile","Deep bowl","Master shaping"]},
-  rytec:{cs:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
-         en:[null,"Plain pattern","Plant motif","Coat of arms/initials","Master engraving"]},
-  hornik:{cs:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
-         en:[null,"Ore mining","Rare ores","Deep shaft","Full shaft"]},
-  obchodnik:{cs:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
-         en:[null,"Price +5%","New buyer","Foreign contact","Export network"]},
-  formar:{cs:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"],
-         en:[null,"Mould+1 slot","Sturdier moulds","Mould series","Master mould"]},
-  _default:{cs:[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"],
-         en:[null,"Experience +1","Bonus efficiency","Special ability","Master"]}
-};
-
 // Traity dělníků
 const TRAITS={
   silak:    {cs:"Siláč",    en:"Strong",      desc_cs:"Těžba +50%",                    desc_en:"Mining +50%",                 icon:"💪"},
@@ -1742,6 +1732,7 @@ function spawnFloatText(text, targetOrEvt, type = 'pos') {
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+    if ((e.key === ' ' || e.key === 'Enter') && ['BUTTON', 'A', 'SUMMARY'].includes(document.activeElement?.tagName)) return;
     if (typeof G === 'undefined' || !G || G.phase !== 'playing') return;
 
     if (e.key === ' ' || e.key === 'Enter') {
@@ -1901,7 +1892,7 @@ const BLOWN_ITEMS={
   tezitko:    {cs:"Těžítko",        en:"Paperweight",    icon:"💠",
                inputs:["crystal","lattimo"],
                qty:1, base:18, spec:"foukat_dekor", specOnly:true},
-  pucmeloun:  {cs:"Pucmeloun",      en:"Pucmeloun ball", icon:"🫧",
+  pucmeloun:  {cs:"Skleněná figurka", en:"Glass figurine", icon:"🐦",
                inputs:["waldglas","lattimo"],
                qty:1, base:8,  spec:"foukat_dekor", specOnly:true},
   vaza_dekor: {cs:"Váza",           en:"Vase",           icon:"🏺",
@@ -1971,6 +1962,7 @@ const BLOWN_ITEMS={
 };
 
 // Všechny foukané typy pro state/sell
+Object.assign(BLOWN_ITEMS,FajrumCatalog.blown);
 const BLOWN_TYPES=Object.keys(BLOWN_ITEMS);
 
 // Craft foukaného výrobku — inputColor = konkrétní surovina/barva z it.inputs[]
@@ -1987,11 +1979,13 @@ function craftBlown(itemKey, inputColor){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet (kampaň)":"Furnace must be running (campaign)"}`);
     render(); return;
   }
-  const needsForma=["dzban","misa","dzban_forma"].includes(itemKey);
+  const needsForma=!!it.requiresMould||["dzban","misa","dzban_forma"].includes(itemKey);
   if(needsForma&&(p.res.formy||0)<1){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí forma":"No mould available"}`);
     render(); return;
   }
+  const missingResource=FajrumCatalog.resourceCost(it,p);
+  if(missingResource){G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí surovina":"Missing resource"}: ${missingResource[0]}`);render();return;}
   // Vstupní zásoba — barva/surovina je klíč v state
   const inv=[...(p[color]||[])];
   if(inv.length<it.qty){
@@ -2012,6 +2006,7 @@ function craftBlown(itemKey, inputColor){
   const used=inv.slice(0,it.qty);
   const avgQ=Math.round(used.reduce((s,q)=>s+q,0)/it.qty);
   G[color]=inv.slice(it.qty);
+  FajrumCatalog.consumeResources(it,G);
   if(needsForma)G.res.formy=Math.max(0,(G.res.formy||0)-1);
   const isSpec=specialists.length>0;
   const specLv=isSpec?specialists[0].lv:1;
@@ -2069,6 +2064,7 @@ const GROUND_ITEMS={
   brus_misa:        {cs:"Broušená mísa",     en:"Cut bowl",         icon:"🥗", input:"crystal", qty:1, base:20, spec:"brusic_kulic"},
   brus_poharak:     {cs:"Broušený pohárek",  en:"Cut cup",          icon:"🫗", input:"crystal", qty:1, base:18, spec:"brusic_kulic"},
 };
+Object.assign(GROUND_ITEMS,FajrumCatalog.ground);
 const GROUND_TYPES=Object.keys(GROUND_ITEMS);
 
 // Rytecké výrobky — motiv přidá bonus k ceně
@@ -2109,6 +2105,9 @@ function craftGround(itemKey){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí":"Missing"}: ${L==="cs"?PROF_CS[it.spec]:PROF_EN[it.spec]}`);
     render(); return;
   }
+  if(it.needsHeat&&!p.fActive){G.log.push(`__EVT__⛔ ${L==="cs"?"Pec musí běžet":"Furnace must run"}`);render();return;}
+  const missingResource=FajrumCatalog.resourceCost(it,p);
+  if(missingResource){G.log.push(`__EVT__⛔ ${L==="cs"?"Chybí surovina":"Missing resource"}: ${missingResource[0]}`);render();return;}
   const inv=[...(p[it.input]||[])];
   if(inv.length<it.qty){
     G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek":"Not enough"}: ${it.input}`);
@@ -2118,6 +2117,7 @@ function craftGround(itemKey){
   const used=inv.slice(0,it.qty);
   const avgQ=Math.round(used.reduce((s,q)=>s+q,0)/it.qty);
   G[it.input]=inv.slice(it.qty);
+  FajrumCatalog.consumeResources(it,G);
   const qBonus=Math.round(worker.lv*0.6);
   const outQ=clamp(avgQ+qBonus+(Math.random()>.5?1:0),1,5);
   if(!G[itemKey])G[itemKey]=[];
@@ -2185,6 +2185,8 @@ const SPECIAL_ITEMS={
   }
 };
 
+Object.assign(SPECIAL_ITEMS,FajrumCatalog.special);
+
 function craftSpecial(itemKey){
   const it=SPECIAL_ITEMS[itemKey];
   if(!it) return;
@@ -2204,30 +2206,11 @@ function craftSpecial(itemKey){
       render(); return;
     }
   }
-  // Zkontroluj suroviny
-  for(const [key,qty] of Object.entries(it.inputs)){
-    // crystal je pole, additives jsou v G.additives
-    const isAdditive= key in (p.additives||{}) || ["cin","rtut","olovo","antimon","zlato","smolka","burel","aesUstum","crocusMartis"].includes(key);
-    const have= key==="crystal"?(p[key]||[]).length
-                : isAdditive ? (p.additives?.[key]||0)
-                : (p[key]||[]).length;
-    if(have<qty){
-      G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek":"Not enough"}: ${ADDITIVES[key]?.cs||key} (${have}/${qty})`);
-      render(); return;
-    }
+  // Validate all inventory, additive and numeric resource inputs before consuming any.
+  for(const [key,qty]of Object.entries(it.inputs)){
+    if(FajrumCatalog.specialHave(p,key)<qty){G.log.push(`__EVT__⛔ ${L==="cs"?"Nedostatek":"Not enough"}: ${key}`);render();return;}
   }
-  // Odeber suroviny
-  for(const [key,qty] of Object.entries(it.inputs)){
-    const isAdditive= key in (p.additives||{}) || ["cin","rtut","olovo","antimon","zlato","smolka","burel","aesUstum","crocusMartis"].includes(key);
-    if(key==="crystal"){
-      const arr=[...p.crystal].sort((a,b)=>b-a);
-      G.crystal=arr.slice(qty);
-    } else if(isAdditive){
-      G.additives[key]=(G.additives[key]||0)-qty;
-    } else {
-      G.res[key]=(G.res[key]||0)-qty;
-    }
-  }
+  for(const [key,qty]of Object.entries(it.inputs))FajrumCatalog.specialConsume(G,key,qty);
   // Výstup
   const worker=p.workers.find(w=>it.workers.includes(w.prof));
   const qBonus=worker?Math.round(worker.lv*0.6):0;
@@ -2413,6 +2396,9 @@ function initState(){
     formyAging:[], // legacy — formy jsou nyní okamžité
     // Pec jako živý objekt
     furnace:{type:"primitive",runIn:0,shamotWear:0,age:0},
+    ...Object.fromEntries(BLOWN_TYPES.flatMap(k=>[[k,[]],...(BLOWN_ITEMS[k].inputs||[]).filter(c=>c!=="waldglas").map(c=>[k+"_"+c,[]])])),
+    ...Object.fromEntries(GROUND_TYPES.map(k=>[k,[]])),
+    ...Object.fromEntries(Object.keys(SPECIAL_ITEMS).map(k=>[k,[]])),
     waldglas:[], crystal:[],
     // Foukané — okenní sklo
     tercik:[], tercik_vyplne:[], tercik_zebrovy:[],
@@ -2618,7 +2604,7 @@ function processRound(){
 
       if(wProf==="tavic"||wProf==="foukat_lesni"){
         // Tavič/Foukač lesní — fouká waldglas nádoby
-        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_lesni"&&!BLOWN_ITEMS[k].specOnly);
+        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_lesni"&&!BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         const waldglasAvail=(r.waldglas||[]).length||G.waldglas?.length;
         const waldStock=[...(G.waldglas||[])];
         if(waldStock.length>=1&&(r.formy||0)>=1){
@@ -2638,7 +2624,7 @@ function processRound(){
         }
       }else if(wProf==="foukat_kristal"){
         const crystalStock=[...(G.crystal||[])];
-        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_kristal"&&BLOWN_ITEMS[k].specOnly);
+        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_kristal"&&BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         if(crystalStock.length>=1){
           const key=blownKeys[Math.floor(Math.random()*blownKeys.length)]||"pohar";
           const it=BLOWN_ITEMS[key];
@@ -2653,7 +2639,7 @@ function processRound(){
         }
       }else if(wProf==="foukat_dekor"){
         const waldStock=[...(G.waldglas||[])];
-        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_dekor"&&BLOWN_ITEMS[k].specOnly);
+        const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_dekor"&&BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         if(waldStock.length>=1){
           const key=blownKeys[Math.floor(Math.random()*blownKeys.length)]||"koule";
           const it=BLOWN_ITEMS[key];
@@ -2686,7 +2672,7 @@ function processRound(){
       }else if(wProf==="brusic_hrana"||wProf==="brusic_kulic"){
         // Brusič — spotřebuje crystal + water, vyrobí broušený kus
         const crystalStock=[...(G.crystal||[])];
-        const groundKeys=Object.keys(GROUND_ITEMS).filter(k=>GROUND_ITEMS[k].spec===wProf);
+        const groundKeys=Object.keys(GROUND_ITEMS).filter(k=>GROUND_ITEMS[k].spec===wProf&&!GROUND_ITEMS[k].manualOnly);
         if(crystalStock.length>=1&&r.water>=1){
           const key=groundKeys[Math.floor(Math.random()*groundKeys.length)];
           const it=GROUND_ITEMS[key];
@@ -3711,8 +3697,15 @@ function signContract(workerId,months){
   render();
 }
 
-// Osobní hodnocení hutmistra — statická báze per NPC (používá workerAssessment)
-const NPC_ASSESS={
+// Osobní hodnocení hutmistra — statická báze + dynamika
+function workerAssessment(w,L){
+  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
+  const tier=workerTier(w.lv);
+  const seasons=w.seasonsInFoundry||0;
+  const incidents=w.incidents||0;
+  const loyalty=w.loyalty||75;
+  // Statická báze per NPC
+  const bases={
     npc_kunc:    {cs:"Kunc nepotřebuje pochvalu. Pec mluví za něj.",         en:"Kunc needs no praise. The furnace speaks for him."},
     npc_komar:   {cs:"Komár padá stromy jako stroje. Přemýšlet mu moc nejde.",en:"Komár fells trees like a machine. Thinking isn't his forte."},
     npc_kanin:   {cs:"Káninský ví o pánvích víc než kdokoliv v kraji.",       en:"Káninský knows more about crucibles than anyone in the region."},
@@ -3732,16 +3725,7 @@ const NPC_ASSESS={
     npc_kulic1:  {cs:"Kuličková je vytrvalá. Nikdy si nestěžuje, nikdy nepřestane.",en:"Kuličková is relentless. Never complains, never stops."},
     npc_rytec1:  {cs:"Rytíř rytím žije. Všechno ostatní je jen čekání.",      en:"Rytíř lives for engraving. Everything else is just waiting."},
   };
-
-// Osobní hodnocení hutmistra — statická báze + dynamika
-function workerAssessment(w,L){
-  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
-  const tier=workerTier(w.lv);
-  const seasons=w.seasonsInFoundry||0;
-  const incidents=w.incidents||0;
-  const loyalty=w.loyalty||75;
-  // Statická báze per NPC → NPC_ASSESS
-  const base=NPC_ASSESS[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
+  const base=bases[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
   const baseText=L==="cs"?base.cs:base.en;
   // Dynamická část
   const parts=[];
@@ -3751,7 +3735,7 @@ function workerAssessment(w,L){
   if(loyalty>=85) parts.push(L==="cs"?"Loajální jako málokdo.":"As loyal as they come.");
   else if(loyalty<30) parts.push(L==="cs"?"Uvažuje o odchodu. Nutno jednat.":"Thinking of leaving. Action needed.");
   if(w.mentorId) parts.push(L==="cs"?"Mentor mu otevřel oči.":"Mentorship opened his eyes.");
-  if(w.lv>=7) parts.push(L==="cs"?`${tier.cs} — respekt pečeme do skla.`:`${tier.de} — respect baked into glass.`);
+  if(w.lv>=7) parts.push(L==="cs"?`${tier.cs} — respekt pečeme do skla.`:`${tier.cs} — respect baked into glass.`);
   return baseText+(parts.length?" "+parts[0]:"");
 }
 
@@ -4263,7 +4247,9 @@ function startNewSeason(){
   const blownStored=BLOWN_TYPES.reduce((s,k)=>s+(p[k]?.length||0),0);
   const groundStored=GROUND_TYPES.reduce((s,k)=>s+(p[k]?.length||0),0);
   const engraveStored=ENGRAVE_INPUTS.reduce((s,k)=>s+(p["rytina_"+k]?.length||0),0);
-  const storedItems=p.waldglas.length+p.crystal.length+blownStored+groundStored+engraveStored;
+  const newColourStored=Object.keys(FajrumCatalog.blown).reduce((sum,key)=>sum+(BLOWN_ITEMS[key].inputs||[]).filter(c=>c!=="waldglas").reduce((n,c)=>n+(p[key+"_"+c]?.length||0),0),0);
+  const newSpecialStored=Object.keys(FajrumCatalog.special).reduce((sum,key)=>sum+(p[key]?.length||0),0);
+  const storedItems=p.waldglas.length+p.crystal.length+blownStored+groundStored+engraveStored+newColourStored+newSpecialStored;
   const storageCost=storedItems*STORAGE_COST_PER_ITEM;
   const newGrose=Math.max(0,p.grose-storageCost);
 
@@ -4301,6 +4287,7 @@ function startNewSeason(){
         const sk=k+"_"+c; return [sk,[...(p[sk]||[])]];
       })
     )),
+    ...Object.fromEntries(Object.keys(SPECIAL_ITEMS).map(k=>[k,[...(p[k]||[])]])),
     // Broušené a rytiny přeneseny
     ...Object.fromEntries(GROUND_TYPES.map(k=>[k,[...(p[k]||[])]])),
     ...Object.fromEntries(ENGRAVE_INPUTS.map(k=>["rytina_"+k,[...(p["rytina_"+k]||[])]])),
@@ -4358,17 +4345,7 @@ function calcSeasonScore(){
 function totalScore(sc){return Object.values(sc).reduce((a,b)=>a+b,0);}
 
 // ── AKCE ────────────────────────────────────────────────────
-function sellItems(type,n){
-  const inv=[...G[type]];if(!inv.length)return;
-  const md=MONTH_DATA[G.round];
-  if(MARKET_CLOSED[G.round]){
-    G.log.push(`__EVT__⛔ ${G.lang==="cs"?md.trh_cs:md.trh_en}`);
-    render(); return;
-  }
-  const cnt=Math.min(n,inv.length);
-  inv.sort((a,b)=>b-a);
-  const selling=inv.slice(0,cnt),rest=inv.slice(cnt);
-  const hasObchodnik=G.workers.some(w=>w.traits?.includes("obchodnik"));
+function marketSalePrices(){
   // Ceny: základní suroviny + foukané (s color multiplikátorem) + broušené + rytiny
   const basePrices={waldglas:3.5,crystal:9,jantar:10,zlut:30,modra:14,smaragd:16,lattimo:22,rubin:50};
   // Foukané — základní (waldglas) a barevné varianty
@@ -4388,6 +4365,7 @@ function sellItems(type,n){
     const srcBase=GROUND_ITEMS[k]?.base||basePrices[k]||10;
     basePrices["rytina_"+k]=Math.round(srcBase*engraveBonus(k));
   });
+  Object.entries(SPECIAL_ITEMS).forEach(([key,it])=>{basePrices[key]=it.base;});
   // Okenní sklo a speciální výrobky
   basePrices["tercik"]=6;
   basePrices["tercik_vyplne"]=2;
@@ -4402,11 +4380,30 @@ function sellItems(type,n){
   basePrices["pateriky_modra"]=4;
   basePrices["pateriky_smaragd"]=5;
   basePrices["pateriky_lattimo"]=6;
-  const bp=basePrices[type]||3.5;
+  return basePrices;
+}
+function marketSaleQuote(type,n){
+  // Read-only quote. Selling and the market display use the same prices and rounding.
+  const inv=[...(G[type]||[])];
+  const cnt=Math.min(n,inv.length);
+  inv.sort((a,b)=>b-a);
+  const selling=inv.slice(0,cnt),rest=inv.slice(cnt);
+  const hasObchodnik=G.workers.some(w=>w.traits?.includes("obchodnik"));
+  const bp=marketSalePrices()[type]||3.5;
   const isVelmistr=getTomislavRank(G)==="velmistr";
   const easyPriceMult = G.difficulty === "easy" ? 1.20 : 1.0;
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
   const total=selling.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*mul)),0);
+  return {count:cnt,total,rest,base:bp,multiplier:mul};
+}
+function sellItems(type,n){
+  if(!G[type].length)return;
+  const md=MONTH_DATA[G.round];
+  if(MARKET_CLOSED[G.round]){
+    G.log.push(`__EVT__⛔ ${G.lang==="cs"?md.trh_cs:md.trh_en}`);
+    render(); return;
+  }
+  const {count:cnt,total,rest}=marketSaleQuote(type,n);
   G[type]=rest; G.grose+=total;
   G.totalSold=(G.totalSold||0)+cnt;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
@@ -4567,24 +4564,24 @@ function renderContractCard(c,kind){
   const total=st.lines.reduce((s,x)=>s+x.need,0);
   const got=st.lines.reduce((s,x)=>s+Math.min(x.have,x.need),0);
   const pct=total>0?Math.round(got/total*100):0;
-  const box=h("div",{style:{padding:"8px 10px",marginBottom:"6px",borderRadius:"4px",
+  const box=h("div",{class:"fj-contract-card","data-contract-id":c.id,"data-contract-kind":kind,"data-state":st.state,style:{padding:"8px 10px",marginBottom:"6px",borderRadius:"4px",
     background:warn?"rgba(160,48,32,.07)":(st.ready?"rgba(74,122,58,.07)":"rgba(0,0,0,.04)"),
     border:"1px solid "+(warn?"rgba(160,48,32,.25)":(st.ready?"rgba(74,122,58,.25)":"rgba(42,26,10,.12)"))}});
   // Hlavička: kdo chce co + termín
-  box.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",marginBottom:"5px"}},
-    h("div",{style:{fontSize:"11px",fontWeight:"700",color:warn?"#a03020":"#3a2a14",lineHeight:"1.35",flex:1}},
+  box.append(h("div",{class:"fj-contract-heading",style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"8px",marginBottom:"5px"}},
+    h("div",{class:"fj-contract-name",style:{fontSize:"11px",fontWeight:"700",color:warn?"#a03020":"#3a2a14",lineHeight:"1.35",flex:1}},
       contractIcon(c)+" "+(cs?c.cs:c.en)),
-    h("div",{style:{fontSize:"10px",color:colMain,fontWeight:warn?"700":"400",textAlign:"right",flexShrink:0}},
+    h("div",{class:"fj-contract-deadline",style:{fontSize:"10px",color:colMain,fontWeight:warn?"700":"400",textAlign:"right",flexShrink:0}},
       "⏳ "+contractDeadlineText(c,st.remaining))));
   // Co dodat
   box.append(h("div",{style:{fontSize:"9px",fontWeight:"700",color:"#8b5e34",textTransform:"uppercase",letterSpacing:".5px",marginBottom:"2px"}},
     cs?"Dodat:":"Deliver:"));
   st.lines.forEach(x=>{
-    box.append(h("div",{style:{fontSize:"10px",color:x.done?"#4a7a3a":"#5a3a1a",marginBottom:"1px"}},
+    box.append(h("div",{class:"fj-contract-line","data-item":x.item,"data-have":x.have,"data-need":x.need,style:{fontSize:"10px",color:x.done?"#4a7a3a":"#5a3a1a",marginBottom:"1px"}},
       (x.done?"✅ ":"⬜ ")+x.label+" — "+(cs?"na skladě ":"in stock ")+x.have+"/"+x.need));
   });
   // Průběh
-  box.append(h("div",{style:{height:"5px",background:"rgba(0,0,0,.1)",borderRadius:"3px",margin:"5px 0"}},
+  box.append(h("div",{class:"fj-contract-progress",role:"progressbar","aria-label":cs?"Plnění zakázky":"Contract progress","aria-valuemin":0,"aria-valuemax":100,"aria-valuenow":pct,style:{height:"5px",background:"rgba(0,0,0,.1)",borderRadius:"3px",margin:"5px 0"}},
     h("div",{style:{width:pct+"%",height:"100%",borderRadius:"3px",
       background:st.ready?"#4a7a3a":(warn?"#a03020":"#c9952b")}})));
   // Odměna a reputace
@@ -4593,7 +4590,7 @@ function renderContractCard(c,kind){
     famaTxt=" · "+FAMA_ICON[fama.cat]+" "+(cs?"reputace ":"reputation ")+(cs?FAMA_LABEL_CS[fama.cat]:FAMA_LABEL_EN[fama.cat])
       +" +"+fama.gain+" / "+(cs?"při propadnutí ":"if missed ")+fama.loss;
   }
-  box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},"💰 +"+reward+"g"+famaTxt));
+  box.append(h("div",{class:"fj-contract-reward",style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},"💰 +"+reward+"g"+famaTxt));
   // Co dělat
   const where=contractWhere(st.lines,L);
   let msg;
@@ -4610,7 +4607,7 @@ function renderContractCard(c,kind){
     msg=cs?`🔨 Chybí ${st.missing} ks — vyrob je (${where}) a nech na skladě.`
           :`🔨 ${st.missing} missing — make them (${where}) and keep them in stock.`;
   }
-  box.append(h("div",{style:{fontSize:"10px",fontWeight:"600",color:colMain,lineHeight:"1.4"}},msg));
+  box.append(h("div",{class:"fj-contract-guidance",style:{fontSize:"10px",fontWeight:"600",color:colMain,lineHeight:"1.4"}},msg));
   if(c.isEndgame&&!st.ready){
     box.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",marginTop:"2px"}},
       cs?"Odevzdá se, až budou na skladě všechny komponenty najednou."
@@ -4625,7 +4622,7 @@ function contractOfferRow(c){
   const can=canAcceptContract();
   const fama=contractFamaInfo(c,"market");
   const dueTxt=contractDueText(c.due);
-  const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px",
+  const row=h("div",{class:"fj-contract-offer","data-contract-id":c.id,style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px",
     padding:"6px 8px",borderRadius:"4px",marginBottom:"4px",
     background:"rgba(42,26,10,.04)",border:"1px solid rgba(42,26,10,.1)"}});
   row.append(
@@ -4634,7 +4631,7 @@ function contractOfferRow(c){
       h("div",{style:{fontSize:"9px",color:"#8b5e34"}},
         "💰 +"+contractReward(c,"market")+"g"+(dueTxt?" · ⏳ "+dueTxt:"")
         +(fama.cat?" · "+FAMA_ICON[fama.cat]+" +"+fama.gain:""))),
-    h("button",{class:"btn btn-s"+(can?" btn-p":""),
+    h("button",{class:"btn btn-s"+(can?" btn-p":""),...(can?{}:{disabled:true}),
       style:{fontSize:"9px",flexShrink:0,opacity:can?1:0.45,cursor:can?"pointer":"not-allowed"},
       onClick:()=>{acceptContract(c.id);}},cs?"Přijmout":"Accept"));
   return row;
@@ -6134,12 +6131,12 @@ function hireFromMarket(candidate){
 function buildCandidateCard(c,body,p,L){
   const canHire=p.grose>=c.hireCost&&p.workers.length<MAX_WORKERS;
   const isSpec=["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","brusic_hrana","brusic_kulic","rytec"].includes(c.prof);
-  const card=h("div",{style:{
+  const card=h("div",{class:"fj-hiring-candidate","data-candidate-id":c.id,style:{
     padding:"8px",marginBottom:"5px",borderRadius:"4px",
     background:isSpec?"rgba(201,149,43,.04)":"rgba(0,0,0,.03)",
     border:`1px solid ${isSpec?"rgba(201,149,43,.2)":"rgba(42,26,10,.1)"}`}});
-  const topRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}});
-  const nameBlock=h("div",{style:{flex:"1"}},
+  const topRow=h("div",{class:"fj-hiring-head",style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}});
+  const nameBlock=h("div",{class:"fj-hiring-name",style:{flex:"1"}},
     h("div",{style:{fontWeight:"700",fontSize:"12px"}},
       `${c.name} · ${stars(c.lv)} · ${L==="cs"?PROF_CS[c.prof]||c.prof:PROF_EN[c.prof]||c.prof}`),
     h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px"}},
@@ -6348,6 +6345,8 @@ function getProfLabel(w, lang){
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── new game / restart ──
+function restoreGameState(saved){Object.assign(G,initState(),saved);}
+
 function startGame(diff){
   const name=G.huteName;
   G=initState();
@@ -6731,13 +6730,34 @@ function acceptEndgameContract(cat){
   render();
 }
 
+// Mobile presentation wraps the original renderer; all game rules/actions are retained.
 function render(){
+  const visualScroll=app.querySelector('.content')?.scrollTop||0;
+  if(window.FajrumCrew)FajrumCrew.beforeRender();
+  if(window.FajrumUI)FajrumUI.beforeRender();
+  const result=renderOriginal();
+  if(window.FajrumUI)FajrumUI.finish(app,G,key=>{G.tab=key;render();});
+  if(window.FajrumProducts)FajrumProducts.finish(app,G);
+  if(window.FajrumRecipeUI)FajrumRecipeUI.finish(app,G);
+  if(window.FajrumCrew)FajrumCrew.finish(app,G,{taskOptions:workerTaskOptions,assign:setWorkerTask,profile:id=>{G._partaDetail=id;G._partaSubtab="profil";G.tab="parta";render();}});
+  if(window.FajrumMarket)FajrumMarket.finish(app,G,{quote:marketSaleQuote,prices:marketSalePrices,sell:sellItems,lines:contractLines,status:contractStatus});
+  if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:!!MARKET_CLOSED[G.round],stockKeys:Object.keys(marketSalePrices())});
+  if(window.FajrumPortraits)FajrumPortraits.finish(app,G);
+  if(window.FajrumWorksites)FajrumWorksites.finish(app,G);
+  if(window.FajrumArt?.finish)FajrumArt.finish(app,G);
+  if(window.FajrumStories)FajrumStories.finish(app,G);
+  if(window.FajrumPartners)FajrumPartners.finish(app,G);
+  if(window.FajrumDesktop)FajrumDesktop.finish(app,G);
+  if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
+  return result;
+}
+function renderOriginal(){
   // Průběžné ukládání: stav přežije reload i uprostřed měsíce / před prvním kolem (úvodní obrazovku nepřepisuje)
   if(G&&G.phase&&G.phase!=="intro")autoSave();
   const p=G, L=p.lang;
   const ms=L==="cs"?MONTHS_CS:MONTHS_EN, hs=L==="cs"?HINTS_CS:HINTS_EN;
   const tsk=L==="cs"?TASK_CS:TASK_EN;
-  const isP=p.round<PREP, isC=p.round>=PREP, z=zone(p.fTemp);
+  const isP=isPrepMonth(p.round,p.seasonTier||0), isC=!isP, z=zone(p.fTemp);
   const fEff=Math.round(calcFurnaceEff(p.furnace,p.panevQuality)*100);
   const ft=FURNACE_TYPES[p.furnace.type];
   // Zachovat scroll pozici content oblasti
@@ -6746,7 +6766,7 @@ function render(){
   app.innerHTML="";
 
   // Desktop detekce — musí být před render sekcemi
-  const isDesktop=window.innerWidth>=768;
+  const isDesktop=window.innerWidth>=960&&window.innerHeight>=500;
   if(isDesktop){app.classList.add("desktop");}else{app.classList.remove("desktop");}
 
   // Intro = scrollovatelný, hra = fixed height
@@ -6897,7 +6917,7 @@ function render(){
 
       <!-- Title & Chemical Typography on Right -->
       <g transform="translate(114, 22)">
-        <text x="0" y="24" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#2a1608" letter-spacing="0.5">Sklářská Huť</text>
+        <text x="0" y="24" font-family="Georgia,serif" font-size="22" font-weight="bold" fill="#2a1608" letter-spacing="0.5">${L==="cs"?"Sklářská Huť":"Glassworks"}</text>
         <text x="0" y="42" font-family="Georgia,serif" font-size="11" font-weight="bold" fill="#8b5e34" letter-spacing="1">FAJRUM · ANNO DOMINI 1680</text>
         <text x="0" y="58" font-family="'Palatino Linotype',Georgia,serif" font-size="9.5" fill="#6a4520" font-style="italic">Haida · Arnsdorf · Novoborsko</text>
         
@@ -6976,7 +6996,7 @@ function render(){
                 if(sv&&sv.season){
                   const dt=sv._savedAt?new Date(sv._savedAt).toLocaleString("cs-CZ",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
                   return h("button",{class:"btn",style:{borderColor:"#c9952b",color:"#c9952b"},
-                    onClick:()=>{Object.assign(G,sv);render();}},
+                    onClick:()=>{restoreGameState(sv);render();}},
                     `▶ ${L==="cs"?"Pokračovat":"Continue"}${dt?` · ${dt}`:""}`);
                 }
               }
@@ -7044,9 +7064,11 @@ function render(){
       const crackModal=document.createElement("div");
       crackModal.style.cssText="position:fixed;inset:0;background:rgba(40,4,4,.92);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;";
       const crackBox=document.createElement("div");
+      crackBox.className="fj-event-dialog";
       crackBox.style.cssText="background:linear-gradient(145deg,#2a0808,#1a0404);border:2px solid #8b1a1a;border-radius:8px;padding:24px 20px;max-width:340px;width:100%;text-align:center;animation:crackShake 0.6s ease-out;box-shadow:0 0 40px rgba(160,0,0,.5);";
 
       const icon=document.createElement("div");
+      icon.className="fj-event-placeholder";
       icon.style.cssText="font-size:56px;margin-bottom:8px;filter:drop-shadow(0 0 12px #ff4444);";
       icon.textContent="💔";
 
@@ -7123,8 +7145,8 @@ function render(){
     };
     const ev=evtData[p.curEvt]||{i:"📜",cs:p.curEvt,en:p.curEvt,dcs:"",den:""};
     const evModal=h("div",{class:"modal-bg",onClick:dismissEvt},
-      h("div",{class:"modal",style:{maxWidth:"360px",textAlign:"center"},onClick:e=>e.stopPropagation()},
-        h("div",{style:{fontSize:"48px",marginBottom:"10px"}},ev.i),
+      h("div",{class:"modal fj-event-dialog",style:{maxWidth:"360px",textAlign:"center"},onClick:e=>e.stopPropagation()},
+        h("div",{class:"fj-event-placeholder",style:{fontSize:"48px",marginBottom:"10px"}},ev.i),
         h("h2",{style:{fontSize:"18px",margin:"0 0 8px"}},L==="cs"?ev.cs:ev.en),
         h("p",{style:{fontSize:"13px",color:"#8b5e34",marginBottom:"20px",lineHeight:"1.5"}},L==="cs"?ev.dcs:ev.den),
         h("button",{class:"btn btn-p",onClick:dismissEvt},L==="cs"?"Rozumím":"OK")));
@@ -7318,7 +7340,7 @@ function render(){
       if(p.furnace.type==="primitive"){
         const uc=UPGRADE_COST.stone;
         body.append(h("button",{
-          class:"btn"+(canUpgradeStone?" btn-p":""),
+          class:"btn"+(canUpgradeStone?" btn-p":""),"data-furnace-preview":"stone",
           style:{width:"100%",marginBottom:"4px",opacity:canUpgradeStone?1:.5},
           onClick:()=>{if(canUpgradeStone)upgradeFurnace("stone");}},
           `🔥 ${L==="cs"?"Zděná pec":"Stone furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
@@ -7326,7 +7348,7 @@ function render(){
       if(p.furnace.type==="stone"){
         const uc=UPGRADE_COST.master;
         body.append(h("button",{
-          class:"btn"+(canUpgradeMaster?" btn-p":""),
+          class:"btn"+(canUpgradeMaster?" btn-p":""),"data-furnace-preview":"master",
           style:{width:"100%",marginBottom:"4px",opacity:canUpgradeMaster?1:.5},
           onClick:()=>{if(canUpgradeMaster)upgradeFurnace("master");}},
           `🔥 ${L==="cs"?"Mistrovská pec":"Master furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
@@ -7362,9 +7384,9 @@ function render(){
       const bo=p.baranOffer;
       const ad=ADDITIVES[bo.item];
       const canBuy=p.grose>=bo.price;
-      const baranSec=h("div",{class:"sec-title",style:{marginTop:"10px"}},
+      const baranSec=h("div",{class:"sec-title","data-partner":"baranovsky",style:{marginTop:"10px"}},
         `🗣️ ${L==="cs"?"Baranovský přišel s nabídkou":"Baranovský has an offer"}`);
-      const baranCard=h("div",{style:{padding:"8px",background:"rgba(201,149,43,.08)",
+      const baranCard=h("div",{class:"fj-additive-offer","data-additive":bo.item,style:{padding:"8px",background:"rgba(201,149,43,.08)",
         border:"1px solid rgba(201,149,43,.25)",borderRadius:"4px",marginBottom:"8px"}});
       baranCard.append(
         h("div",{style:{fontSize:"12px",color:"#3a2a14",marginBottom:"4px",fontStyle:"italic"}},
@@ -7805,7 +7827,7 @@ function render(){
       const portBox=h("div",{style:{width:"56px",height:"56px",borderRadius:"5px",overflow:"hidden",
         background:"#1a0e06",flexShrink:0}});
       const imgEl=document.createElement("img");
-      imgEl.src=`img/workers/${rw.portrait||"unknown"}.jpg`;
+      if(window.FajrumPortraits)FajrumPortraits.configure(imgEl,rw);else imgEl.src=`img/workers/${rw.portrait||"unknown"}.jpg`;
       imgEl.style.cssText="width:100%;height:100%;object-fit:cover;object-position:top center;";
       imgEl.onerror=function(){this.style.display="none";};
       portBox.appendChild(imgEl);
@@ -7881,6 +7903,7 @@ function render(){
   // Header
   const hdrEl=h("div",{class:"hdr",style:{padding:"7px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}});
   const logoD=document.createElement("div");
+  logoD.className="fj-brand";
   logoD.style.cssText="display:flex;align-items:center;gap:8px;";
   // Kruh se sítí — Animované chemické logo skloviny (SiO₂ · K₂O · CaO)
   const svgWrap=document.createElement("div");
@@ -8038,10 +8061,11 @@ function render(){
 
   // Text blok s chemickou formulí
   const txtWrap=document.createElement("div");
+  txtWrap.className="fj-brand-copy";
   txtWrap.style.cssText="display:flex;flex-direction:column;justify-content:center;";
   const t1=document.createElement("div");
   t1.style.cssText="font-family:Georgia,serif;font-size:16px;color:#f0deb8;letter-spacing:0.3px;line-height:1.1;font-weight:bold;";
-  t1.textContent="Sklářská Huť";
+  t1.textContent=isDesktop?(L==="cs"?"Sklářská Huť":"Glassworks"):"FAJRUM";
   txtWrap.append(t1);
   if(p.huteName){
     const tName=document.createElement("div");
@@ -8215,6 +8239,7 @@ function render(){
       abbr[i]));
   }
   rb.append(pips);
+  if(!isDesktop&&window.FajrumUI)FajrumUI.calendar(rb,p);
   app.append(rb);
 
   // Resource bar s tooltips
@@ -8294,7 +8319,7 @@ function render(){
       ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barvy: ${rainbowTip}`:`Colours: ${rainbowTip}`)]:[]))
     resBar.append(row1,row2);
   }
-  app.append(resBar);
+  app.append(!isDesktop&&window.FajrumUI?FajrumUI.resources(resBar,p):resBar);
 
   // Sezónní kontext panel — vždy viditelný
   // ── SEASON PANEL — 2 sloupce 60:40 ───────────────────────
@@ -8447,7 +8472,7 @@ function render(){
   colR.append(furnHud,bars,famaWidget);
   spGrid.append(colL,colR);
   sp.append(spGrid);
-  app.append(sp);
+  if(isDesktop)app.append(sp);
 
   // Varování: les kriticky nízko
   if(p.forest<=FOREST_WARN){
@@ -8695,7 +8720,7 @@ function render(){
     if(wState){
       const wGrid=h("div",{class:isDesktop?"workers-grid":""});
       p.workers.forEach(w=>{
-        const card=h("div",{class:"worker-card"});
+        const card=h("div",{class:"worker-card","data-worker-id":w.id});
       const fatPct=Math.round(w.fat*100);
       const fatColor=w.fat>.7?"#a03020":w.fat>.4?"#c9952b":"#4a7a3a";
       const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
@@ -8737,7 +8762,7 @@ function render(){
         const pd=document.createElement("div");
         pd.style.cssText="line-height:0;border-radius:4px;overflow:hidden;width:72px;height:72px;background:#1a0e06;";
         const imgEl=document.createElement("img");
-        imgEl.src=`img/workers/${npc.portrait}.jpg`;
+        if(window.FajrumPortraits)FajrumPortraits.configure(imgEl,w);else imgEl.src=`img/workers/${npc.portrait}.jpg`;
         imgEl.alt=w.name;
         imgEl.style.cssText="width:100%;height:100%;object-fit:cover;object-position:top center;display:block;";
         imgEl.onerror=function(){
@@ -8794,7 +8819,7 @@ function render(){
       card.append(topRow);
 
       // ── DOLNÍ ČÁST: 4 sloupce (rezerva | prim | výrobní | příroda) ──
-      const taskGrid=h("div",{style:{display:"grid",gridTemplateColumns:"76px 1fr 1fr 1fr",gap:"3px"}});
+      const taskGrid=h("div",{class:"fj-task-grid",style:{display:"grid",gridTemplateColumns:"76px 1fr 1fr 1fr",gap:"3px"}});
 
       // Sloupec 1 — prázdná rezerva (šířka portrétu)
       const col0=h("div",{});
@@ -8922,7 +8947,7 @@ function render(){
     content.append(specSec);
   }else if(p.tab==="production"){
     // Waldglas
-    const w1=h("div",{class:"sec"});
+    const w1=h("div",{class:"sec","data-worksite":"potash"});
     w1.append(
       h("div",{class:"sec-title"},L==="cs"?"⚗️ Lesní sklo (Waldglas)":"⚗️ Forest Glass (Waldglas)"),
       h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px"}},
@@ -8937,7 +8962,7 @@ function render(){
       w1.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.waldglas.length}×`),inv);
     }
     // w1 w2 w3 wFormy jsou sestaveny do gridu níže
-    const w2=h("div",{class:"sec"});
+    const w2=h("div",{class:"sec fj-material-card","data-material":"panev"});
     w2.append(
       h("div",{class:"sec-title"},L==="cs"?"🏺 Výroba pánví":"🏺 Crucible Making"),
       h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px"}},
@@ -8968,7 +8993,7 @@ function render(){
       w3.append(h("div",{style:{fontSize:"10px",color:"#3a6a9a",marginTop:"4px"}},`${L==="cs"?"Sklad":"Stock"}: ${p.crystal.length}×`),inv);
     }
     // ── FORMY ──
-    const wFormy=h("div",{class:"sec"});
+    const wFormy=h("div",{class:"sec fj-material-card","data-material":"formy"});
     const formyInHutte=p.workers.filter(w=>w.prof==="formar");
     wFormy.append(h("div",{class:"sec-title"},"🌳 "+(L==="cs"?"Dřevěné formy":"Wooden Moulds")));
     wFormy.append(h("div",{style:{fontSize:"11px",marginBottom:"6px",padding:"6px",
@@ -9011,13 +9036,18 @@ function render(){
         const stateKey=selColor==="waldglas"?key:key+"_"+selColor;
         const inv=p[stateKey]||[];
         const hasInput=(p[selColor]||[]).length>=it.qty;
-        const needsForma=["dzban","misa","dzban_forma"].includes(key);
+        const needsForma=!!it.requiresMould||["dzban","misa","dzban_forma"].includes(key);
         const hasForma=!needsForma||(p.res.formy||0)>0;
-        const ok=isC&&p.fActive&&hasInput&&hasForma&&(isSpecWorker||!it.specOnly);
+        const missingResource=FajrumCatalog.resourceCost(it,p);
+        const ok=isC&&p.fActive&&hasInput&&hasForma&&!missingResource&&(isSpecWorker||!it.specOnly);
         const estPrice=Math.round(it.base*COLOR_MULT[selColor]);
         const card=h("div",{style:{padding:"6px",borderRadius:"4px",
           border:`1px solid ${ok?"rgba(201,149,43,.3)":"rgba(42,26,10,.08)"}`,
           background:ok?"rgba(201,149,43,.05)":"rgba(0,0,0,.02)"}});
+        card.classList.add("fj-recipe-card");
+        card.dataset.product=key;card.dataset.glass=selColor;
+        card.dataset.available=String(ok);
+        if(window.FajrumProducts)card.append(FajrumProducts.picture(key,selColor));
         // Hlavička: ikona + jméno + cena
         card.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"3px"}},
           h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
@@ -9029,6 +9059,7 @@ function render(){
             const hasCol=(p[col]||[]).length>=it.qty;
             const btn=h("button",{
               class:"btn btn-s"+(col===selColor?" btn-active":""),
+              "data-glass":col,
               style:{fontSize:"8px",padding:"1px 4px",opacity:hasCol?1:.45},
               title:`${col==="waldglas"?(L==="cs"?"Lesní sklo":"Waldglas"):col==="crystal"?(L==="cs"?"Křišťál":"Crystal"):COLOR_RECIPES[col]?(L==="cs"?COLOR_RECIPES[col].cs:COLOR_RECIPES[col].en):col} · ${hasCol?(p[col]||[]).length+"×":(L==="cs"?"chybí":"missing")}`,
               onClick:()=>{G._blownColor[key]=col;render();}},
@@ -9040,7 +9071,8 @@ function render(){
         // Sklad + craft button
         if(inv.length>0)card.append(h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},
           `${L==="cs"?"Sklad":"Stock"}: ${inv.length}× ${stars(Math.round(inv.reduce((a,b)=>a+b,0)/inv.length))}`));
-        const maxCraft = ok ? Math.min(Math.floor((p[selColor]||[]).length / it.qty), needsForma ? (p.res.formy || 0) : 999) : 0;
+        const resourceMax=Math.min(999,...Object.entries(it.resCost||{}).map(([k,n])=>Math.floor((p.res[k]||0)/n)));
+        const maxCraft = ok ? Math.min(resourceMax,Math.floor((p[selColor]||[]).length / it.qty), needsForma ? (p.res.formy || 0) : 999) : 0;
         if (ok && maxCraft > 1) {
           const btnRow = h("div", {class: "batch-btn-row"});
           btnRow.append(h("button", {
@@ -9081,6 +9113,7 @@ function render(){
             ok?(L==="cs"?"Foukat →":"Blow →")
               :!isC||!p.fActive?(L==="cs"?"Pec neběží":"Furnace off")
               :!hasInput?(L==="cs"?`Chybí ${selColor}`:`No ${selColor}`)
+              :missingResource?(L==="cs"?`Chybí ${missingResource[0]}`:`Missing ${missingResource[0]}`)
               :(L==="cs"?"Chybí forma":"No mould")));
         }
         return card;
@@ -9088,7 +9121,7 @@ function render(){
 
       wFouk.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"6px",fontWeight:"700"}},
         L==="cs"?"Základní výrobky (všichni foukači):":"Basic wares (all blowers):"));
-      const basicGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"10px"}});
+      const basicGrid=h("div",{class:"fj-recipe-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"10px"}});
       basicItems.forEach(([key,it])=>{
         const spec=foukaci.find(w=>w.prof===it.spec);
         basicGrid.append(blownCard(key,it,!!spec));
@@ -9096,7 +9129,7 @@ function render(){
       wFouk.append(basicGrid);
 
       // Specializované výrobky — seskupeny po foukači
-      const specGroups={foukat_kristal:[],foukat_dekor:[],foukat_formy:[]};
+      const specGroups={foukat_lesni:[],foukat_kristal:[],foukat_dekor:[],foukat_formy:[]};
       specItems.forEach(([key,it])=>{if(specGroups[it.spec])specGroups[it.spec].push([key,it]);});
       Object.entries(specGroups).forEach(([profCode,items])=>{
         if(items.length===0)return;
@@ -9108,7 +9141,7 @@ function render(){
           specWorker?h("span",{style:{fontWeight:"400",fontSize:"9px"}},`— ${specWorker.name} ★×${specWorker.lv}`):
             h("span",{style:{fontStyle:"italic",fontWeight:"400"}},L==="cs"?" (není v huti)":" (not hired)"));
         wFouk.append(secLabel);
-        const sGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"4px",
+        const sGrid=h("div",{class:"fj-recipe-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"4px",
           opacity:specWorker?1:.4}});
         items.forEach(([key,it])=>sGrid.append(blownCard(key,it,!!specWorker)));
         wFouk.append(sGrid);
@@ -9117,7 +9150,7 @@ function render(){
     content.append(wFouk);
 
     // ── BROUŠENÍ ──
-    const wBrus=h("div",{class:"sec"});
+    const wBrus=h("div",{class:"sec","data-worksite":"grinding"});
     wBrus.append(h("div",{class:"sec-title"},"💎 "+(L==="cs"?"Broušení":"Grinding")));
     const hranar=p.workers.find(w=>w.prof==="brusic_hrana");
     const kulic=p.workers.find(w=>w.prof==="brusic_kulic");
@@ -9130,12 +9163,12 @@ function render(){
         wBrus.append(h("div",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700",margin:"4px 0"}},
           `💎 ${hranar.name} ★×${hranar.lv} — ${L==="cs"?"Hranař":"Edge-cutter"}`));
         const hGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"8px"}});
-        ["brus_hrana_cise","brus_hrana_panel","brus_koule","brus_tezitko"].forEach(key=>{
+        ["brus_hrana_cise","brus_hrana_panel","brus_koule","brus_tezitko","brus_lustr_dil","brus_pokal"].forEach(key=>{
           const it=GROUND_ITEMS[key];
           const inv=p[key]||[];
           const hasInput=(p[it.input]||[]).length>=it.qty;
           const ok=isC&&hasInput;
-          const card=h("div",{style:{padding:"6px",borderRadius:"4px",
+          const card=h("div",{class:"fj-craft-card","data-product":key,"data-glass":"crystal","data-available":String(ok),style:{padding:"6px",borderRadius:"4px",
             border:`1px solid ${ok?"rgba(58,106,154,.3)":"rgba(42,26,10,.08)"}`,
             background:ok?"rgba(58,106,154,.04)":"rgba(0,0,0,.02)"}});
           card.append(
@@ -9158,24 +9191,24 @@ function render(){
         wBrus.append(h("div",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700",margin:"4px 0"}},
           `🔵 ${kulic.name} ★×${kulic.lv} — ${L==="cs"?"Kulič":"Sphere-grinder"}`));
         const kGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px",marginBottom:"8px"}});
-        ["brus_vaza","brus_misa","brus_poharak"].forEach(key=>{
+        ["brus_vaza","brus_vaza_velka","brus_misa","brus_poharak",...Object.keys(FajrumCatalog.ground)].forEach(key=>{
           const it=GROUND_ITEMS[key];
           const inv=p[key]||[];
           const hasInput=(p[it.input]||[]).length>=it.qty;
-          const ok=isC&&hasInput;
-          const card=h("div",{style:{padding:"6px",borderRadius:"4px",
+          const ok=isC&&hasInput&&(!it.needsHeat||p.fActive)&&!FajrumCatalog.resourceCost(it,p);
+          const card=h("div",{class:"fj-craft-card","data-product":key,"data-glass":it.input,"data-available":String(ok),style:{padding:"6px",borderRadius:"4px",
             border:`1px solid ${ok?"rgba(58,106,154,.3)":"rgba(42,26,10,.08)"}`,
             background:ok?"rgba(58,106,154,.04)":"rgba(0,0,0,.02)"}});
           card.append(
             h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px"}},
               h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
               h("span",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700"}},`~${it.base}g`)),
-            h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},`✨ ${it.qty}× crystal`),
+            h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},`${COLOR_ICON[it.input]||"✨"} ${it.qty}× ${it.input}`),
             inv.length?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},`${L==="cs"?"Sklad":"Stock"}: ${inv.length}×`):"",
             h("button",{class:"btn btn-s"+(ok?" btn-p":""),
               style:{width:"100%",fontSize:"9px",opacity:ok?1:.45},
               onClick:()=>{if(ok)craftGround(key);}},
-              ok?(L==="cs"?"Brousit →":"Grind →"):(L==="cs"?"Chybí křišťál":"Need crystal")));
+              ok?((L==="cs"?it.action_cs:it.action_en)||(L==="cs"?"Brousit →":"Grind →")):(L==="cs"?"Chybí vstup, surovina nebo žár":"Missing input, resource or heat")));
           kGrid.append(card);
         });
         wBrus.append(kGrid);
@@ -9184,7 +9217,7 @@ function render(){
     content.append(wBrus);
 
     // ── RYTINY ──
-    const wRyt=h("div",{class:"sec"});
+    const wRyt=h("div",{class:"sec","data-worksite":"engraving"});
     wRyt.append(h("div",{class:"sec-title"},"✂️ "+(L==="cs"?"Rytiny (Rytec)":"Engravings (Engraver)")));
     const rytec=p.workers.find(w=>w.prof==="rytec");
     if(!rytec){
@@ -9201,7 +9234,7 @@ function render(){
         const rytInv=p["rytina_"+key]||[];
         const srcBase=srcItem.base;
         const ok=isC&&inv.length>0;
-        const card=h("div",{style:{padding:"6px",borderRadius:"4px",
+        const card=h("div",{class:"fj-craft-card","data-product":"rytina_"+key,"data-available":String(ok),style:{padding:"6px",borderRadius:"4px",
           border:`1px solid ${ok?"rgba(139,122,42,.35)":"rgba(42,26,10,.08)"}`,
           background:ok?"rgba(139,122,42,.05)":"rgba(0,0,0,.02)"}});
         card.append(
@@ -9232,7 +9265,7 @@ function render(){
     const hasTercikInput=(p.waldglas||[]).length>=2;
     const hasFoukacLesni=!!p.workers.find(w=>w.prof==="foukat_lesni"||w.prof==="tavic");
     const tercikOk=isC&&p.fActive&&hasTercikInput&&hasFoukacLesni;
-    const tercikCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+    const tercikCard=h("div",{class:"fj-craft-card","data-product":"tercik","data-glass":"waldglas","data-available":String(tercikOk),style:{padding:"8px",borderRadius:"5px",
       border:`1px solid ${tercikOk?"rgba(74,122,58,.4)":"rgba(42,26,10,.1)"}`,
       background:tercikOk?"rgba(74,122,58,.06)":"rgba(0,0,0,.02)",
       marginBottom:"6px"}});
@@ -9276,7 +9309,7 @@ function render(){
     const zrOk=isC&&p.fActive&&hasCrystal2&&hasRtut&&hasCin&&hasBrusic&&p.season>=3;
     const zrStock=p.zrcadlo?.length||0;
 
-    const zrCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+    const zrCard=h("div",{class:"fj-craft-card","data-product":"zrcadlo","data-glass":"crystal","data-available":String(zrOk),style:{padding:"8px",borderRadius:"5px",
       border:`1px solid ${zrOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.1)"}`,
       background:zrOk?"rgba(201,149,43,.06)":"rgba(0,0,0,.02)",
       marginBottom:"6px"}});
@@ -9315,7 +9348,7 @@ function render(){
     const alOk=isC&&p.fActive&&hasCrystal2al&&hasArsen&&hasFoukacKrist&&p.season>=2;
     const alStock=p.alembik?.length||0;
 
-    const alCard=h("div",{style:{padding:"8px",borderRadius:"5px",
+    const alCard=h("div",{class:"fj-craft-card","data-product":"alembik","data-glass":"crystal","data-available":String(alOk),style:{padding:"8px",borderRadius:"5px",
       border:`1px solid ${alOk?"rgba(122,74,154,.4)":"rgba(42,26,10,.1)"}`,
       background:alOk?"rgba(122,74,154,.05)":"rgba(0,0,0,.02)",
       marginBottom:"6px"}});
@@ -9351,6 +9384,7 @@ function render(){
         ?"🪟 Terčíky = foukané jako základní výrobek, quality≤2 → výplně, ≥4 → žebrový. 🪞 Rtuť jen od Baranovského (sez.3+). ⚗️ Alembik = zakázka alchymisty/lékárníka."
         :"🪟 Window discs = blown as basic item, quality≤2 → fillers, ≥4 → ribbed. 🪞 Mercury only from Baranovský (season 3+). ⚗️ Alembic = alchemist/apothecary commission."));
 
+    if(window.FajrumRecipeUI)FajrumRecipeUI.specialCards(wSpec,p,{isCampaign:isC,craft:craftSpecial});
     content.append(wSpec);
   }else if(p.tab==="storage"){
 
@@ -9358,7 +9392,7 @@ function render(){
     const glassSec=h("div",{class:"sec"});
     glassSec.append(h("div",{class:"sec-title"},L==="cs"?"🔥 Sklo na skladě":"🔥 Glass in stock"));
 
-    const glassGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}});
+    const glassGrid=h("div",{class:"fj-glass-stock-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}});
 
     // Waldglas
     const wg=p.waldglas||[];
@@ -9424,7 +9458,7 @@ function render(){
         const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
         const colorLabel=col!=="waldglas"?" "+COLOR_ICON[col]:"";
         const price=col==="waldglas"?it.base:Math.round(it.base*COLOR_MULT[col]);
-        glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+        glassGrid.append(h("div",{class:"fj-stock-card","data-product":k,"data-glass":col,style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
           border:"1px solid rgba(139,94,52,.15)"}},
           h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},it.icon+colorLabel+" "+(L==="cs"?it.cs:it.en)),
           h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
@@ -9443,12 +9477,23 @@ function render(){
       if(!it)return;
       const avg=Math.round(arr.reduce((s,q)=>s+q,0)/arr.length);
       const basePrice=isEngrave?Math.round(it.base*engraveBonus(baseKey)):it.base;
-      glassGrid.append(h("div",{style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+      glassGrid.append(h("div",{class:"fj-stock-card","data-product":k,style:{padding:"8px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
         border:"1px solid rgba(139,94,52,.15)"}},
         h("div",{style:{fontWeight:"700",fontSize:"12px",marginBottom:"2px"}},
           (isEngrave?"✂️ ":it.icon+" ")+(L==="cs"?it.cs:it.en)+(isEngrave?" ✂️":"")),
         h("div",{style:{fontSize:"18px",fontWeight:"700",color:"#3a2a14"}},arr.length+"×"),
         h("div",{style:{fontSize:"10px",color:"#8b5e34"}},`~${basePrice}g`)));
+    });
+
+    ["tercik_vyplne","tercik_zebrovy",...Object.keys(SPECIAL_ITEMS)].forEach(key=>{
+      const arr=p[key]||[];if(!arr.length)return;
+      const info=SPECIAL_ITEMS[key];
+      const labels={tercik_vyplne:["Výplňový terčík","Filler disc"],tercik_zebrovy:["Žebrový terčík","Ribbed disc"]};
+      const label=info?(L==="cs"?info.cs:info.en):(labels[key]||[key,key])[L==="cs"?0:1];
+      const avg=Math.round(arr.reduce((sum,q)=>sum+q,0)/arr.length);
+      glassGrid.append(h("div",{class:"fj-stock-card","data-product":key,style:{padding:"8px",border:"1px solid rgba(139,94,52,.15)",borderRadius:"4px"}},
+        h("div",{style:{fontWeight:"700"}},label),h("div",{style:{fontSize:"18px",fontWeight:"700"}},arr.length+"×"),
+        h("div",{style:{fontSize:"11px"}},`${L==="cs"?"Průměr kval.":"Avg. qual."}: ${stars(avg)}`)));
     });
 
     glassSec.append(glassGrid);
@@ -9457,13 +9502,13 @@ function render(){
     // ── SEKCE 2: Přísady & barvy ──
     const addSec=h("div",{class:"sec"});
     addSec.append(h("div",{class:"sec-title"},L==="cs"?"🧪 Přísady & barvy":"🧪 Additives & colorants"));
-    const addGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    const addGrid=h("div",{class:"fj-additive-stock-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
     let anyAdd=false;
     Object.entries(ADDITIVES).forEach(([k,ad])=>{
       const qty=p.additives?.[k]||0;
       if(!qty)return;
       anyAdd=true;
-      addGrid.append(h("div",{style:{padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
+      addGrid.append(h("div",{class:"fj-additive-stock","data-additive":k,"data-quantity":qty,style:{padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
         border:"1px solid rgba(139,94,52,.15)",display:"flex",alignItems:"center",gap:"6px"}},
         h("span",{style:{fontSize:"16px"}},ad.icon),
         h("div",null,
@@ -9481,22 +9526,26 @@ function render(){
     const resSec=h("div",{class:"sec"});
     resSec.append(h("div",{class:"sec-title"},L==="cs"?"🌲 Suroviny":"🌲 Raw materials"));
     const resItems=[
-      {icon:"🌳",label:L==="cs"?"Dřevo":"Wood",val:p.res.wood,warn:p.res.wood<5},
-      {icon:"🏖️",label:L==="cs"?"Křemenný písek":"Quartz sand",val:p.res.sand,warn:p.res.sand<3},
-      {icon:"🟩",label:L==="cs"?"Vápenec":"Limestone",val:p.res.limestone,warn:p.res.limestone<1},
-      {icon:"🌿",label:L==="cs"?"Potaš":"Potash",val:p.res.potash,warn:p.res.potash<2},
-      {icon:"💧",label:L==="cs"?"Voda":"Water",val:p.res.water},
-      {icon:"🧱",label:L==="cs"?"Jíl":"Clay",val:p.res.clay},
-      {icon:"🪨",label:L==="cs"?"Šamot":"Shamot",val:p.res.shamot},
-      {icon:"🍞",label:L==="cs"?"Jídlo":"Food",val:p.res.food,warn:p.res.food<2},
-      {icon:"⚫",label:L==="cs"?"Dřevěné uhlí":"Charcoal",val:p.res.charcoal},
-      {icon:"✨",label:L==="cs"?"Čistý písek":"Pure sand",val:p.res.pureSand||0},
-      {icon:"🌿",label:L==="cs"?"Čistá potaš":"Refined potash",val:p.res.refinedPotash||0},
-      {icon:"🪚",label:L==="cs"?"Formy":"Moulds",val:p.res.formy||0,warn:(p.res.formy||0)<1&&isC},
+      {key:"wood",icon:"🌳",label:L==="cs"?"Dřevo":"Wood",val:p.res.wood,warn:p.res.wood<5},
+      {key:"sand",icon:"🏖️",label:L==="cs"?"Křemenný písek":"Quartz sand",val:p.res.sand,warn:p.res.sand<3},
+      {key:"limestone",icon:"🟩",label:L==="cs"?"Vápenec":"Limestone",val:p.res.limestone,warn:p.res.limestone<1},
+      {key:"potash",icon:"🌿",label:L==="cs"?"Potaš":"Potash",val:p.res.potash,warn:p.res.potash<2},
+      {key:"water",icon:"💧",label:L==="cs"?"Voda":"Water",val:p.res.water},
+      {key:"clay",icon:"🧱",label:L==="cs"?"Jíl":"Clay",val:p.res.clay},
+      {key:"shamot",icon:"🪨",label:L==="cs"?"Šamot":"Shamot",val:p.res.shamot},
+      {key:"food",icon:"🍞",label:L==="cs"?"Jídlo":"Food",val:p.res.food,warn:p.res.food<2},
+      {key:"charcoal",icon:"⚫",label:L==="cs"?"Dřevěné uhlí":"Charcoal",val:p.res.charcoal},
+      {key:"pureSand",icon:"✨",label:L==="cs"?"Čistý písek":"Pure sand",val:p.res.pureSand||0},
+      {key:"refinedPotash",icon:"🌿",label:L==="cs"?"Čistá potaš":"Refined potash",val:p.res.refinedPotash||0},
+      {key:"formy",icon:"🪚",label:L==="cs"?"Formy":"Moulds",val:p.res.formy||0,warn:(p.res.formy||0)<1&&isC},
+      {key:"stone",icon:"🪨",label:L==="cs"?"Lomový kámen":"Quarry stone",val:p.res.stone||0},
+      {key:"dryWood",icon:"🔥",label:L==="cs"?"Suché dříví":"Dry hardwood",val:p.res.dryWood||0},
+      {key:"firebrick",icon:"🧱",label:L==="cs"?"Šamotové kvádry":"Firebrick",val:p.res.firebrick||0},
+      {key:"pitch",icon:"🌲",label:L==="cs"?"Smůla":"Pitch",val:p.res.pitch||0},
     ];
-    const resGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    const resGrid=h("div",{class:"fj-material-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
     resItems.forEach(item=>{
-      resGrid.append(h("div",{style:{padding:"6px",background:item.warn?"rgba(160,48,32,.06)":"rgba(0,0,0,.03)",
+      resGrid.append(h("div",{class:"fj-material-stock","data-material":item.key,"data-quantity":item.val,style:{padding:"6px",background:item.warn?"rgba(160,48,32,.06)":"rgba(0,0,0,.03)",
         borderRadius:"4px",border:`1px solid ${item.warn?"rgba(160,48,32,.2)":"rgba(42,26,10,.1)"}`,
         display:"flex",alignItems:"center",gap:"6px"}},
         h("span",{style:{fontSize:"14px"}},item.icon),
@@ -9522,7 +9571,7 @@ function render(){
       {icon:"⚙️",label:L==="cs"?"Zaběhnutost":"Run-in",val:p.furnace.runIn+"%",color:"#c9952b"},
       {icon:"🧱",label:L==="cs"?"Šamot (opotřeben)":"Shamot worn",val:p.furnace.shamotWear+"%",color:p.furnace.shamotWear>70?"#a03020":"#8b5e34"},
     ];
-    const ecoGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
+    const ecoGrid=h("div",{class:"fj-economy-stock-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"5px"}});
     ecoItems.forEach(item=>{
       ecoGrid.append(h("div",{style:{padding:"6px",background:"rgba(0,0,0,.03)",borderRadius:"4px",
         border:"1px solid rgba(42,26,10,.1)",display:"flex",alignItems:"center",gap:"6px"}},
@@ -9538,7 +9587,7 @@ function render(){
   }else if(p.tab==="furnace"){
     const z=zone(p.fTemp);
     const tempColor=z.c;
-    const isTempering=isP&&p.round===PREP-1;
+    const isTempering=isTemperingMonth(p.round,p.seasonTier||0);
     const isCooling=isP&&p.fTemp>10;
     const tempLabel=[
       {max:10,cs:"Studená · topeniště mlčí",en:"Cold · hearth is silent"},
@@ -9920,10 +9969,12 @@ function render(){
     Object.entries(ADDITIVES).forEach(([key,ad])=>{
       const qty=p.additives?.[key]||0;
       if(qty>0){hasAny=true;}
-      addDiv.append(h("span",{style:{fontSize:"11px",padding:"2px 6px",borderRadius:"8px",
+      addDiv.append(h("span",{class:"fj-additive-chip","data-additive":key,"data-quantity":qty,
+        title:(L==="cs"?ad.cs:ad.en)+" — "+(L==="cs"?ad.desc_cs:ad.desc_en),
+        "aria-label":(L==="cs"?ad.cs:ad.en)+": "+qty,style:{fontSize:"11px",padding:"2px 6px",borderRadius:"8px",
         background:qty>0?"rgba(139,94,52,.15)":"rgba(0,0,0,.04)",
         color:qty>0?"#3a2a14":"#bbb",border:qty>0?"1px solid rgba(139,94,52,.3)":"1px solid transparent"}},
-        `${ad.icon} ${qty}`));
+        h("span",null,ad.icon),h("span",{class:"fj-additive-chip-quantity"},qty+"×")));
     });
     if(!hasAny){
       addDiv.append(h("span",{style:{fontSize:"11px",color:"#8b5e34",fontStyle:"italic"}},
@@ -10043,10 +10094,12 @@ function render(){
             ...Object.entries(rec.inputs).map(([item,qty])=>{
               const have=colorInputHave(item);
               const ok=have>=qty;
-              return h("span",{style:{padding:"1px 5px",borderRadius:"4px",
+              return h("span",{class:"fj-color-input","data-input":item,
+                title:colorInputName(item,L),"aria-label":colorInputName(item,L)+": "+have+"/"+qty,
+                style:{padding:"1px 5px",borderRadius:"4px",
                 background:ok?"rgba(74,122,58,.1)":"rgba(160,48,32,.08)",
                 color:ok?"#4a7a3a":"#a03020",border:`1px solid ${ok?"rgba(74,122,58,.2)":"rgba(160,48,32,.2)"}`}},
-                `${colorInputIcon(item)} ${have}/${qty}`);
+                h("span",null,colorInputIcon(item)),h("span",null,`${have}/${qty}`));
             })),
           h("button",{
             class:"btn"+(canCraft?" btn-p":""),
@@ -10105,28 +10158,28 @@ function render(){
     const md2=MONTH_DATA[p.round]||MONTH_DATA[0];
     const closed=MARKET_CLOSED[p.round];
     // Stav trhu — vždy nahoře
-    const trhStatus=h("div",{class:"sec"});
-    trhStatus.append(h("div",{style:{
+    const trhStatus=h("div",{class:"sec fj-market-status"});
+    trhStatus.append(h("div",{class:"fj-market-open","data-closed":String(!!closed),style:{
       padding:"8px",borderRadius:"4px",
       background:closed?"rgba(160,48,32,.08)":"rgba(74,122,58,.08)",
       border:`1px solid ${closed?"rgba(160,48,32,.2)":"rgba(74,122,58,.2)"}`,
       fontSize:"12px",color:closed?"#a03020":"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
       L==="cs"?md2.trh_cs:md2.trh_en));
-    const sSec2=h("div",null);
+    const sSec2=h("div",{class:"sec fj-market-section","data-market-section":"sell",id:"fj-market-sell"});
     sSec2.append(h("div",{class:"sec-title"},"💰 "+(L==="cs"?"Prodej":"Sell")));
     if(p.mBonus)sSec2.append(h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"4px"}},"🗣️ "+( L==="cs"?"Kupec Weiss přijel — ceny ×1.5!":"Merchant Weiss arrived — prices ×1.5!")));
     if(closed){
-      sSec2.append(h("div",{style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
+      sSec2.append(h("div",{class:"fj-sale-closed",style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
         L==="cs"?"Cesty jsou nesjízdné. Počkej na otevření trhů.":"Roads impassable. Wait for markets to open."));
     }else if(p.waldglas.length){
-      sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+      sSec2.append(h("div",{class:"fj-sale-row","data-product":"waldglas","data-glass":"waldglas",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
         h("span",{style:{fontSize:"12px"}},"🔥 Waldglas ("+p.waldglas.length+"×) · ~3.5g/★"),
         h("div",{style:{display:"flex",gap:"3px"}},
           h("button",{class:"btn btn-s",onClick:()=>sellItems("waldglas",1)},"1×"),
           h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("waldglas",999)},L==="cs"?"Vše":"All"))));
     }
     if(!closed&&p.crystal.length){
-      sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+      sSec2.append(h("div",{class:"fj-sale-row","data-product":"crystal","data-glass":"crystal",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
         h("span",{style:{fontSize:"12px",color:"#3a6a9a"}},"✨ "+(L==="cs"?"Křišťál":"Crystal")+" ("+p.crystal.length+"×) · ~9g/★"),
         h("div",{style:{display:"flex",gap:"3px"}},
           h("button",{class:"btn btn-s",onClick:()=>sellItems("crystal",1)},"1×"),
@@ -10138,15 +10191,15 @@ function render(){
         const inv=p[type]||[];
         const rec=COLOR_RECIPES[type];
         if(!inv.length||!rec)return;
-        sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+        sSec2.append(h("div",{class:"fj-sale-row","data-product":type,"data-glass":type,style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
           h("span",{style:{fontSize:"12px",color:col}},`${icon} ${L==="cs"?rec.cs:rec.en} (${inv.length}×) · ~${rec.sell_cs}g/★`),
           h("div",{style:{display:"flex",gap:"3px"}},
             h("button",{class:"btn btn-s",onClick:()=>sellItems(type,1)},"1×"),
             h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems(type,999)},L==="cs"?"Vše":"All"))));
       });
     }
-    if(!closed&&!p.waldglas.length&&!p.crystal.length){
-      sSec2.append(h("div",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Nic k prodeji.":"Nothing to sell."));
+    if(!closed&&!Object.keys(marketSalePrices()).some(k=>Array.isArray(p[k])&&p[k].length)){
+      sSec2.append(h("div",{class:"fj-sale-empty",style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Nic k prodeji.":"Nothing to sell."));
     }
       // Foukané výrobky na trhu — základní + barevné varianty
     if(!closed){
@@ -10168,7 +10221,7 @@ function render(){
           const inv=p[key]||[];
           const price=Math.round(it.base*COLOR_MULT[color]);
           const colorLabel=color!=="waldglas"?` ${COLOR_ICON[color]}`:"";
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":key,"data-glass":color,style:{display:"flex",justifyContent:"space-between",
             alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px"}},`${it.icon}${colorLabel} ${L==="cs"?it.cs:it.en} (${inv.length}×) · ~${price}g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
@@ -10186,7 +10239,7 @@ function render(){
         groundAvail.forEach(key=>{
           const it=GROUND_ITEMS[key];
           const inv=p[key]||[];
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":key,"data-glass":"crystal",style:{display:"flex",justifyContent:"space-between",
             alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#3a6a9a"}},`${it.icon} ${L==="cs"?it.cs:it.en} (${inv.length}×) · ~${it.base}g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
@@ -10205,7 +10258,7 @@ function render(){
           const rKey="rytina_"+key;
           const inv=p[rKey]||[];
           const price=Math.round((srcItem?.base||10)*engraveBonus(key));
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":rKey,style:{display:"flex",justifyContent:"space-between",
             alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#8b7a2a"}},
               `✂️ ${srcItem?.icon||""} ${L==="cs"?srcItem?.cs:srcItem?.en} (${inv.length}×) · ~${price}g/★`),
@@ -10221,35 +10274,35 @@ function render(){
           margin:"6px 0 3px",borderTop:"1px solid rgba(42,26,10,.08)",paddingTop:"6px"}},
           "🪟 "+(L==="cs"?"Okenní sklo & Speciální:":"Window glass & Special:")));
         if((p.tercik||[]).length>0){
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":"tercik",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#5a6a2a"}},`🪟 ${L==="cs"?"Okenní terčík":"Window disc"} (${p.tercik.length}×) · ~6g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik",999)},L==="cs"?"Vše":"All"))));
         }
         if((p.tercik_vyplne||[]).length>0){
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":"tercik_vyplne",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#7a6a2a"}},`🟫 ${L==="cs"?"Výplňové terče (nepodařené)":"Filler discs (rejects)"} (${p.tercik_vyplne.length}×) · ~2g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik_vyplne",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik_vyplne",999)},L==="cs"?"Vše":"All"))));
         }
         if((p.tercik_zebrovy||[]).length>0){
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":"tercik_zebrovy",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#5a7a4a"}},`🪟✨ ${L==="cs"?"Terčík žebrový (prémiový)":"Ribbed disc (premium)"} (${p.tercik_zebrovy.length}×) · ~9g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("tercik_zebrovy",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("tercik_zebrovy",999)},L==="cs"?"Vše":"All"))));
         }
         if((p.zrcadlo||[]).length>0){
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":"zrcadlo",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#c9952b"}},`🪞 ${L==="cs"?"Zrcadlo (luxus)":"Mirror (luxury)"} (${p.zrcadlo.length}×) · ~65g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("zrcadlo",1)},"1×"),
               h("button",{class:"btn btn-s btn-active",onClick:()=>sellItems("zrcadlo",999)},L==="cs"?"Vše":"All"))));
         }
         if((p.alembik||[]).length>0){
-          sSec2.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
+          sSec2.append(h("div",{class:"fj-sale-row","data-product":"alembik",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",color:"#7a4a9a"}},`⚗️ ${L==="cs"?"Alembik (zakázka)":"Alembic (commission)"} (${p.alembik.length}×) · ~55g/★`),
             h("div",{style:{display:"flex",gap:"3px"}},
               h("button",{class:"btn btn-s",onClick:()=>sellItems("alembik",1)},"1×"),
@@ -10257,18 +10310,18 @@ function render(){
         }
       }
     }
-    trhStatus.append(sSec2);
-    content.append(trhStatus);
+    if(window.FajrumRecipeUI)FajrumRecipeUI.marketRows(sSec2,p,{closed,sell:sellItems});
+    content.append(trhStatus,sSec2);
 
     // Nákup parcel + bulk dřevo
-    const extraSec=h("div",{class:"sec"});
+    const extraSec=h("div",{class:"sec fj-market-section","data-market-section":"forest","data-worksite":"forestry",id:"fj-market-forest"});
     extraSec.append(h("div",{class:"sec-title"},"🌲 "+(L==="cs"?"Hvozd & Dřevo":"Forest & Wood")));
     // Bulk dřevo
     const woodPrice=emergencyWoodPrice();
     const canWood=p.grose>=woodPrice;
-    extraSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
+    extraSec.append(h("div",{class:"fj-forest-wood-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
       h("span",{style:{fontSize:"11px",color:"#3a2a14"}},`🌳 ${L==="cs"?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${woodPrice}g`),
-      h("button",{class:"btn btn-s"+(canWood?" btn-p":""),style:{opacity:canWood?1:.4},
+      h("button",{class:"btn btn-s"+(canWood?" btn-p":""),...(canWood?{}:{disabled:true}),style:{opacity:canWood?1:.4},
         onClick:()=>{if(canWood){buyEmergencyWood();}}},
         L==="cs"?"Koupit":"Buy")));
     // Parcely
@@ -10288,12 +10341,12 @@ function render(){
         p.forest>=200?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
     content.append(extraSec);
 
-    const bSec=h("div",{class:"sec"});
+    const bSec=h("div",{class:"sec fj-market-section","data-market-section":"buy",id:"fj-market-buy"});
     bSec.append(h("div",{class:"sec-title"},"🛒 "+(L==="cs"?"Kramář Weiss":"Merchant Weiss")));
     const grid=h("div",{class:"shop-grid"});
     Object.entries(p.shop).forEach(([k,it])=>{
       const can=p.grose>=it.price&&it.stock>0;
-      grid.append(h("button",{class:"btn btn-s",title:merchName(k,L)+" — "+merchDesc(k,L),
+      grid.append(h("button",{class:"btn btn-s fj-market-buy-item","data-resource":k,...(can?{}:{disabled:true}),title:merchName(k,L)+" — "+merchDesc(k,L),
         style:{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",textAlign:"left",opacity:can?1:.4,cursor:can?"pointer":"default"},
         onClick:()=>{if(can)buyItem(k);}},
         h("span",{style:{display:"flex",flexDirection:"column",minWidth:0}},
@@ -10311,12 +10364,12 @@ function render(){
       return s+(Array.isArray(inv)?inv.length:0);
     },0);
     if(allStock>0||!quickSellDone){
-      const qSec=h("div",{class:"sec"});
+      const qSec=h("div",{class:"sec fj-market-section","data-market-section":"quick",id:"fj-market-quick"});
       qSec.append(h("div",{class:"sec-title"},"🐴 "+(L==="cs"?"Rychlý výkup — kramář Weiss":"Quick buyout — merchant Weiss")));
       qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
         L==="cs"
-          ?`Weiss přijede a vykoupí vše co máš za ${quickSellQuote().ratePct}% ceny. Okamžitá hotovost, žádné čekání. Jednou za sezónu.`
-          :`Weiss rides out and buys everything at ${quickSellQuote().ratePct}% price. Instant cash, no waiting. Once per season.`));
+          ?`Weiss přijede a vykoupí vybrané zboží za ${quickSellQuote().ratePct}% ceny. Okamžitá hotovost, žádné čekání. Jednou za sezónu.`
+          :`Weiss rides out and buys selected goods at ${quickSellQuote().ratePct}% price. Instant cash, no waiting. Once per season.`));
       if(quickSellDone){
         qSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
           L==="cs"?"✅ Výkup již použit tuto sezónu.":"✅ Buyout already used this season."));
@@ -10327,7 +10380,7 @@ function render(){
           h("div",{style:{fontSize:"11px",color:"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
             (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+qsTotal+`g (${qsRatePct}%)`),
           h("button",{
-            class:"btn btn-s"+(qsCount>0?" btn-active":""),
+            class:"btn btn-s fj-market-buyout"+(qsCount>0?" btn-active":""),...(qsCount>0?{}:{disabled:true}),
             style:{opacity:qsCount>0?1:0.4,cursor:qsCount>0?"pointer":"default",width:"100%"},
             onClick:()=>{
               if(qsCount===0) return;
@@ -10344,7 +10397,7 @@ function render(){
     const loanRate=loanRateMarket();
     const loanRatePct=Math.round(loanRate*100);
     const drLabel=dr>=75?(L==="cs"?"🟢 Výborný":"🟢 Excellent"):dr>=50?(L==="cs"?"🟡 Dobrý":"🟡 Good"):dr>=25?(L==="cs"?"🟠 Slušný":"🟠 Fair"):(L==="cs"?"🔴 Nový":"🔴 New");
-    const faktorSec=h("div",{class:"sec"});
+    const faktorSec=h("div",{class:"sec fj-market-section","data-market-section":"loans",id:"fj-market-loans"});
     faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Weiss — půjčky":"Factor Weiss — loans")));
     // Reputace dlužníka
     faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},
@@ -10382,30 +10435,42 @@ function render(){
     if(fActionRow.children.length>0) faktorSec.append(fActionRow);
     content.append(faktorSec);
 
-    // Zakázky
-    const cSec=h("div",{class:"sec"});
+    // Zakázky: aktivní jsou před nabídkami, všechny používají původní vyhodnocení.
+    const cSec=h("div",{class:"sec fj-market-section","data-market-section":"contracts",id:"fj-market-contracts"});
     cSec.append(h("div",{class:"sec-title"},"📜 "+(L==="cs"?"Zakázky":"Contracts")));
+    const activeCards=h("div",{class:"fj-contract-active-list"});
+    const addContract=(c,kind,index,source)=>{
+      const card=renderContractCard(c,kind);
+      card.dataset.contractIndex=index;
+      card.dataset.contractSource=source;
+      activeCards.append(card);
+    };
+    p.contracts.forEach((c,i)=>addContract(c,"market",i,"market"));
+    (p.repContracts||[]).forEach((c,i)=>addContract(c,c.isEndgame?"endgame":"rep",i,"rep"));
+    if(activeCards.children.length){
+      cSec.append(h("h3",{class:"fj-market-subheading"},L==="cs"?"Aktivní zakázky":"Active contracts"),activeCards);
+    }
     if(p.avail.length){
-      cSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},L==="cs"?"Dostupné:":"Available:"));
-      p.avail.forEach(c=>cSec.append(contractOfferRow(c)));
+      cSec.append(h("h3",{class:"fj-market-subheading"},L==="cs"?"Nové nabídky":"New offers"));
+      const offers=h("div",{class:"fj-contract-offer-list"});
+      p.avail.forEach(c=>offers.append(contractOfferRow(c)));
+      cSec.append(offers);
       if(!canAcceptContract()){
-        cSec.append(h("div",{style:{fontSize:"10px",color:"#a03020",fontStyle:"italic",marginBottom:"4px"}},
-          L==="cs"?`⚠️ Plno zakázek (max ${MAX_CONTRACTS}). Splň aktivní před přijetím dalších.`:`⚠️ Contract slots full (max ${MAX_CONTRACTS}). Finish an active one first.`));
+        cSec.append(h("div",{class:"fj-market-note is-warning"},
+          L==="cs"?`Plno tržních zakázek (max ${MAX_CONTRACTS}). Splň aktivní před přijetím dalších.`:`Market contract slots full (max ${MAX_CONTRACTS}). Finish an active one first.`));
       }
     }
-    if(p.contracts.length){
-      cSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px",marginTop:"6px"}},L==="cs"?"Aktivní zakázky:":"Active Contracts:"));
-      p.contracts.forEach(c=>cSec.append(renderContractCard(c,"market")));
+    if(!p.avail.length&&!activeCards.children.length){
+      cSec.append(h("div",{class:"fj-market-note"},L==="cs"?"Žádné zakázky.":"No contracts."));
     }
-    if(!p.avail.length&&!p.contracts.length){
-      cSec.append(h("div",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Žádné zakázky.":"No contracts."));
-    }
-    content.append(cSec);
+    cSec.append(h("button",{class:"btn btn-s fj-market-accounts",onClick:()=>{G.tab="accounts";render();}},
+      L==="cs"?"Reputace a další zakázky →":"Reputation and further contracts →"));
+    content.insertBefore(cSec,sSec2);
 
     // Nábor specialistů na trhu
     const trhNPC=p.trhuNPC||[];
     if(trhNPC.length>0&&p.workers.length<MAX_WORKERS){
-      const nSec=h("div",{class:"sec"});
+      const nSec=h("div",{class:"sec fj-market-section","data-market-section":"hire",id:"fj-market-hire"});
       nSec.append(h("div",{class:"sec-title"},"💨 "+(L==="cs"?"Specialisté hledají práci":"Specialists seeking work")));
       nSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px"}},
         L==="cs"?"Sv. Jiří přilákal do kraje foukače a brusiče. Nabídka platí tuto sezónu."
@@ -10422,7 +10487,7 @@ function render(){
             h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px"}},
               c.traits.map(t=>{const tr=TRAITS[t];return tr?`${tr.icon} ${L==="cs"?tr.cs:tr.en}`:"";}).filter(Boolean).join(" · ")||"—")),
           h("button",{
-            class:"btn btn-s"+(canHire?" btn-p":""),
+            class:"btn btn-s"+(canHire?" btn-p":""),...(canHire?{}:{disabled:true}),
             style:{opacity:canHire?1:.4,flexShrink:0,marginLeft:"8px"},
             onClick:()=>{
               if(!canHire)return;
@@ -10510,7 +10575,7 @@ function render(){
     }
     hutSec.append(activeBox);
 
-    const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}});
+    const twoCol=h("div",{class:"fj-accounts-columns",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}});
 
     // ── LEVÝ SLOUPEC: ZAKÁZKY ──
     const leftCol=h("div",{});
@@ -10525,7 +10590,7 @@ function render(){
       const {eg,reqFurn,furnOk,available}=endgameOffer(cat);
       if(available){
         hasEgAvail=true;
-        const egBox=h("div",{style:{background:furnOk?"rgba(201,149,43,.12)":"rgba(42,26,10,.06)",border:"1px solid "+(furnOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.2)"),borderRadius:"4px",padding:"7px 9px",marginBottom:"6px",opacity:furnOk?1:0.75}});
+        const egBox=h("div",{class:"fj-endgame-offer","data-commission-kind":cat,style:{background:furnOk?"rgba(201,149,43,.12)":"rgba(42,26,10,.06)",border:"1px solid "+(furnOk?"rgba(201,149,43,.4)":"rgba(42,26,10,.2)"),borderRadius:"4px",padding:"7px 9px",marginBottom:"6px",opacity:furnOk?1:0.75}});
         egBox.append(
           h("div",{style:{fontSize:"10px",fontWeight:"700",color:furnOk?"#8b3a00":"#8b5e34",marginBottom:"3px"}},
             FAMA_ICON[cat]+" "+(L==="cs"?"ENDGAME ZAKÁZKA":"ENDGAME CONTRACT")),
@@ -10652,7 +10717,7 @@ function render(){
     const loanRateH=loanRateAccounts();
     const loanRatePctH=Math.round(loanRateH*100);
     const lichBox=h("div",{style:{padding:"8px 10px",background:"rgba(42,26,10,.06)",borderRadius:"4px",border:"1px dashed rgba(139,94,52,.3)",marginBottom:"4px"}});
-    lichBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
+    lichBox.append(h("div",{"data-partner":"Weiss",style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
       "🪙 "+(L==="cs"?"Faktor Weiss — půjčky a zálohy":"Factor Weiss — loans & advances")));
     lichBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
       L==="cs"
@@ -10688,7 +10753,7 @@ function render(){
     const repPanel=h("div",{style:{borderTop:"1px solid rgba(42,26,10,.12)",paddingTop:"10px",marginTop:"4px"}});
     repPanel.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"8px"}},
       "⭐ "+(L==="cs"?"Reputace hutě — Fama":"Foundry Reputation — Fama")));
-    const repGrid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}});
+    const repGrid=h("div",{class:"fj-accounts-reputation-grid",style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}});
     ["church","noble","trade"].forEach(cat=>{
       const val=famaState[cat]||0;
       const icon=FAMA_ICON[cat];
@@ -10762,7 +10827,7 @@ function render(){
       return wa&&wb;
     });
     if(bondsInPlay.length){
-      const bondsBox=h("div",{style:{marginBottom:"10px",padding:"8px 10px",
+      const bondsBox=h("div",{class:"fj-crew-bonds",style:{marginBottom:"10px",padding:"8px 10px",
         background:"rgba(0,0,0,.04)",borderRadius:"6px",border:"1px solid rgba(42,26,10,.1)"}});
       bondsBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},
         L==="cs"?"⚗️ Vazby v partě:":"⚗️ Bonds in crew:"));
@@ -10826,18 +10891,18 @@ function render(){
     const grid=h("div",{class:"parta-grid"});
 
     p.workers.forEach(w=>{
-      const mood=w.mood||60;
+      const mood=Number.isFinite(w.mood)?w.mood:60;
       const moodCls=mood>=65?"mood-ok":mood>=40?"mood-warn":"mood-bad";
       const unpaid=w.unpaidDebt||0;
       const profLabel=getProfLabel(w,L);
       const tier=workerTier(w.lv);
       const tierLabel=`${tier.cs} · ${tier.de} lv.${w.lv}`;
-      const card=h("div",{class:`parta-card ${moodCls}`,onClick:()=>{G._partaDetail=w.id;G._partaSubtab="profil";render();}});
+      const card=h("div",{class:`parta-card ${moodCls}`,"data-worker-id":w.id,onClick:()=>{G._partaDetail=w.id;G._partaSubtab="profil";render();}});
 
       // Portrét
       const portBox=h("div",{class:"parta-portrait"});
       const imgEl=document.createElement("img");
-      imgEl.src=`img/workers/${w.portrait||"unknown"}.jpg`;
+      if(window.FajrumPortraits)FajrumPortraits.configure(imgEl,w);else imgEl.src=`img/workers/${w.portrait||"unknown"}.jpg`;
       imgEl.alt=w.name;
       imgEl.onerror=function(){
         this.style.display="none";
@@ -10863,14 +10928,14 @@ function render(){
           const partnerNPC=NPC_ROSTER.find(n=>n.id===partnerId);
           const pip=h("span",{
             style:{fontSize:"9px",cursor:"default",lineHeight:"1"},
-            title:`${b.type==="affinity"?(L==="cs"?"🟢 Afinita":"🟢 Affinity"):(L==="cs"?"🔴 Tenze":"🔴 Tension")}: ${partnerNPC?.name||partnerId} — ${L==="cs"?b.desc_cs:b.desc_en}`
+            title:`${b.type==="affinity"?"🟢 Afinita":"🔴 Tenze"}: ${partnerNPC?.name||partnerId} — ${L==="cs"?b.desc_cs:b.desc_en}`
           },b.type==="affinity"?"🟢":"🔴");
           bondPips.append(pip);
         });
         if(w.mentorId){
           const mNPC=NPC_ROSTER.find(n=>n.id===w.mentorId);
           bondPips.append(h("span",{style:{fontSize:"9px",cursor:"default"},
-            title:`📖 ${L==="cs"?"Mentorství":"Mentorship"}: ${mNPC?.name||w.mentorId}`},"📖"));
+            title:`📖 Mentorství: ${mNPC?.name||w.mentorId}`},"📖"));
         }
         info.append(bondPips);
       }
@@ -10884,7 +10949,7 @@ function render(){
         row.append(h("span",{class:"parta-bar-lbl"},lbl),bar);
         return row;
       };
-      const fat=Math.round((w.fat||0)*100); // w.fat is a 0–1 fraction (w.fatigue never existed → bar was always 0)
+      const fat=Math.round(Math.max(0,Math.min(1,Number(w.fat)||0))*100);
       info.append(mkBar("😊",mood,mood>=65?"#4a7a3a":mood>=40?"#c89628":"#a03020"));
       info.append(mkBar("😓",fat,fat<=40?"#4a7a3a":fat<=70?"#c89628":"#a03020"));
       card.append(info);
@@ -10900,20 +10965,20 @@ function render(){
         const stab=G._partaSubtab||"profil";
         const profLabel=getProfLabel(w,L);
         const unpaid=w.unpaidDebt||0;
-        const mood=w.mood||60;
-        const fat=Math.round((w.fat||0)*100);
-        const health=w.health||100;
-        const loyalty=w.loyalty||70;
+        const mood=Number.isFinite(w.mood)?w.mood:60;
+        const fat=Math.round(Math.max(0,Math.min(1,Number(w.fat)||0))*100);
+        const health=w.health??100;
+        const loyalty=w.loyalty??70;
         const npc=NPC_ROSTER.find(n=>n.id===w.npcId||n.id===w.id)||{};
 
-        const bg=h("div",{class:"modal-bg",onClick:e=>{if(e.target===bg){G._partaDetail=null;render();}}});
-        const modal=h("div",{class:"modal",style:{maxWidth:"380px"}});
+        const bg=h("div",{class:"modal-bg fj-crew-profile-bg",onClick:e=>{if(e.target===bg){G._partaDetail=null;render();}}});
+        const modal=h("div",{class:"modal fj-crew-profile",style:{maxWidth:"580px"}});
 
         // Hlavička s portrétem
         const head=h("div",{style:{display:"flex",gap:"12px",marginBottom:"12px",alignItems:"flex-start"}});
         const portBig=h("div",{class:"detail-portrait-big"});
         const bigImg=document.createElement("img");
-        bigImg.src=`img/workers/${w.portrait||"unknown"}.jpg`;
+        if(window.FajrumPortraits)FajrumPortraits.configure(bigImg,w);else bigImg.src=`img/workers/${w.portrait||"unknown"}.jpg`;
         bigImg.alt=w.name;
         bigImg.onerror=function(){
           this.style.display="none";
@@ -11004,7 +11069,23 @@ function render(){
           }
           modal.append(xpTrack);
           // Co odemyká
-          const lvlList=(PROF_UNLOCKS[w.prof]||PROF_UNLOCKS._default)[L==='cs'?'cs':'en'];
+          const unlocks={
+            tavic:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
+            drvorubc:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
+            panvar:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
+            popelar:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
+            foukat_lesni:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
+            foukat_kristal:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
+            foukat_dekor:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
+            foukat_formy:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
+            brusic_hrana:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
+            brusic_kulic:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
+            rytec:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
+            hornik:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
+            obchodnik:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
+            formar:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"]
+          };
+          const lvlList=unlocks[w.prof]||[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"];
           const nextLvl=lvlList[curLv];
           const box=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px",marginBottom:"8px"}});
           box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"600",marginBottom:"4px"}},
@@ -11156,9 +11237,9 @@ function render(){
               btn.append(
                 h("span",{style:{fontWeight:"600"}},lbl),
                 h("div",{style:{display:"flex",gap:"8px",fontSize:"9px",color:"#8b5e34",marginTop:"1px"}},
-                  h("span",{},`${cost}g ${L==="cs"?"záloha":"advance"}`),
-                  h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?(L==="cs"?"✓ dost grošů":"✓ enough groschen"):(L==="cs"?"✗ chybí grošů":"✗ not enough groschen")),
-                  h("span",{},`+20 ${L==="cs"?"loaj.":"loy."}`)
+                  h("span",{},`${cost}g záloha`),
+                  h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?"✓ dost grošů":"✗ chybí grošů"),
+                  h("span",{},`+20 loaj.`)
                 )
               );
               modal.append(btn);
@@ -11271,12 +11352,12 @@ function render(){
     const nextRank=HRAC_RANKS[currentRankIdx+1]||null;
 
     // ── Identita karta ──
-    const idCard=h("div",{style:{padding:"12px",borderRadius:"8px",
+    const idCard=h("div",{class:"fj-player-id",style:{padding:"12px",borderRadius:"8px",
       border:"1px solid rgba(201,149,43,.3)",background:"rgba(201,149,43,.05)",
       marginBottom:"12px",display:"flex",gap:"12px",alignItems:"flex-start"}});
 
-    // Placeholder portrét (SVG monogram)
-    const portrait=h("div",{style:{width:"60px",height:"60px",flexShrink:"0",
+    // Portrait artwork is applied without changing the active rank or its symbol.
+    const portrait=h("div",{class:"fj-player-portrait","data-rank-label":L==="cs"?currentRank.cs:currentRank.en,style:{width:"60px",height:"60px",flexShrink:"0",
       borderRadius:"6px",background:"rgba(42,26,10,.15)",border:"1px solid rgba(139,94,52,.3)",
       display:"flex",alignItems:"center",justifyContent:"center",fontSize:"26px"}});
     portrait.textContent=currentRank.icon;
@@ -11456,7 +11537,7 @@ function render(){
        desc:L==="cs"?"Hoffmann":"Hoffmann"},
     ];
     egItems.forEach(eg=>{
-      const card=h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",
+      const card=h("div",{class:"fj-commission-card","data-commission":eg.id,style:{display:"flex",flexDirection:"column",alignItems:"center",gap:"6px",
         opacity:eg.done?1:.5,filter:eg.done?"none":"grayscale(.7)"}});
       // Placeholder SVG — nahradit <img src="obrazky/endgame_church.png"> až bude obrázek
       const svg=endgamePlaceholder(eg.id, eg.icon, eg.label);
@@ -11491,7 +11572,7 @@ function render(){
         const unlocked=(p.achievements||[]).includes(a.id);
         const isFuture=!a.available;
         let cls="ach-card"+(unlocked?" unlocked":isFuture?" future":" locked");
-        const card=h("div",{class:cls,
+        const card=h("div",{class:cls,"data-achievement":a.id,
           title:unlocked?(L==="cs"?a.desc_cs:a.desc_en)
             :isFuture?(L==="cs"?(a.future_cs||"Přijde"):(a.future_en||"Coming soon"))
             :(L==="cs"?"🔒 "+a.hint_cs:"🔒 "+a.hint_en)});
@@ -11543,7 +11624,7 @@ function render(){
         {
           title_cs:"💨 Foukané — základní (všichni foukači)", title_en:"💨 Blown — basic (all blowers)",
           items: Object.entries(BLOWN_ITEMS).filter(([,v])=>!v.specOnly).map(([k,v])=>({
-            icon:v.icon, cs:v.cs, en:v.en,
+            key:k,glass:v.inputs[0],icon:v.icon, cs:v.cs, en:v.en,
             price:`~${v.base}g${v.inputs.length>1?" (waldglas)":""}`,
             recipe_cs:`${v.qty}× ${v.inputs.map(i=>csGlassMap[i]||i).join(" / ")} → foukání`,
             recipe_en:`${v.qty}× ${v.inputs.join(" / ")} → blowing`,
@@ -11556,7 +11637,7 @@ function render(){
             const specLabel={foukat_kristal:"foukač křišťálu",foukat_dekor:"foukač dekor",foukat_formy:"formař"};
             const specLabelEn={foukat_kristal:"crystal blower",foukat_dekor:"decor blower",foukat_formy:"mould-blower"};
             return {
-              icon:v.icon,
+              key:k,glass:v.inputs[0],icon:v.icon,
               cs:`${v.cs} (${specLabel[v.spec]||v.spec})`,
               en:`${v.en} (${specLabelEn[v.spec]||v.spec})`,
               price:`~${v.base}g`,
@@ -11572,7 +11653,7 @@ function render(){
             const sL={brusic_hrana:"hranař",brusic_kulic:"kulič"};
             const sE={brusic_hrana:"edge-cutter",brusic_kulic:"sphere-grinder"};
             return {
-              icon:v.icon,
+              key:k,glass:v.input,icon:v.icon,
               cs:`${v.cs} (${sL[v.spec]||v.spec})`,
               en:`${v.en} (${sE[v.spec]||v.spec})`,
               price:`~${v.base}g`,
@@ -11588,7 +11669,7 @@ function render(){
             const it=engraveSrc(k);
             const nm=it?(L==="cs"?it.cs:it.en):k;
             return {
-              icon:"✂️",
+              key:"rytina_"+k,icon:"✂️",
               cs:`Rytina: ${nm}`,
               en:`Engraving: ${nm}`,
               price:`~${it?Math.round(it.base*engraveBonus(k)):0}g`,
@@ -11602,24 +11683,27 @@ function render(){
         {
           title_cs:"🪟 Okenní sklo & speciální výrobky", title_en:"🪟 Window glass & special items",
           items:[
-            {icon:"🪟",cs:"Okenní terčík",en:"Window disc",
+            {key:"tercik",icon:"🪟",cs:"Okenní terčík",en:"Window disc",
              price:"6g/★ · výplně 2g · žebrové 9g",
              recipe_cs:"2× lesní sklo → foukání → Ø8–10 cm. Kval.≤2 → výplně, kval.≥4 → žebrové.",
              recipe_en:"2× waldglas → blowing → Ø8–10 cm. Qual.≤2 → fillers, qual.≥4 → ribbed.",
              note_cs:"Hromadný odbyt každé hutě. Kláštery, měšťanské domy, Haida trh. (CP_13II2015)",
              note_en:"Bulk product of every foundry. Monasteries, townhouses, Haida market. (CP_13II2015)"},
-            {icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
+            {key:"zrcadlo",icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
              price:"~65g",
              recipe_cs:"2× křišťál + 1× rtuť + 1× cín + hranař",
              recipe_en:"2× crystal + 1× mercury + 1× tin + edge-cutter",
              note_cs:"Amalgám rtuti+cínu na zadní stranu. Rtuť z Idrie = import. Vzácný luxus pro šlechtu.",
              note_en:"Mercury-tin amalgam on reverse. Mercury from Idrija = import. Rare noble luxury."},
-            {icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
+            {key:"alembik",icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
              price:"~55g",
              recipe_cs:"2× křišťál + 1× arsen (As₂O₃) + foukač křišťálu",
              recipe_en:"2× crystal + 1× arsenic (As₂O₃) + crystal blower",
              note_cs:"Destilační helma. Nejstarší nález stř. Evropy: klarisy Bratislava ~1290. (Sedláčková 2021)",
              note_en:"Distillation helmet. Oldest Central European find: Poor Clares Bratislava ~1290. (Sedláčková 2021)"},
+            {key:"hodiny",glass:"waldglas",icon:"⏳",cs:SPECIAL_ITEMS.hodiny.cs,en:SPECIAL_ITEMS.hodiny.en,
+             price:"~"+SPECIAL_ITEMS.hodiny.base+"g/★",
+             recipe_cs:"",recipe_en:"",note_cs:SPECIAL_ITEMS.hodiny.desc_cs,note_en:SPECIAL_ITEMS.hodiny.desc_en},
           ]
         },
       ];
@@ -11630,7 +11714,7 @@ function render(){
           borderBottom:"1px solid rgba(139,94,52,.2)",paddingBottom:"4px",marginBottom:"6px"}},
           L==="cs"?sec.title_cs:sec.title_en));
         sec.items.forEach(it=>{
-          const row=h("div",{style:{display:"flex",gap:"6px",alignItems:"flex-start",
+          const row=h("div",{class:"fj-codex-row","data-product":it.key||"","data-glass":it.glass||"",style:{display:"flex",gap:"6px",alignItems:"flex-start",
             padding:"5px 6px",borderRadius:"4px",marginBottom:"3px",
             background:"rgba(42,26,10,.03)",border:"1px solid rgba(42,26,10,.06)"}});
           row.append(h("span",{style:{fontSize:"14px",flexShrink:"0",lineHeight:"1.3"}},it.icon));
@@ -11640,7 +11724,7 @@ function render(){
             h("span",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14"}},L==="cs"?it.cs:it.en),
             h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700",flexShrink:"0"}},it.price));
           txt.append(topRow);
-          txt.append(h("div",{style:{fontSize:"9px",color:"#6a4830",marginTop:"1px"}},
+          txt.append(h("div",{class:"fj-codex-recipe",style:{fontSize:"9px",color:"#6a4830",marginTop:"1px"}},
             L==="cs"?it.recipe_cs:it.recipe_en));
           const note=L==="cs"?it.note_cs:it.note_en;
           if(note)txt.append(h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic",marginTop:"1px"}},note));
@@ -11736,7 +11820,7 @@ function render(){
           onClick:()=>{
             try{
               const saved=JSON.parse(localStorage.getItem("sh_v9"));
-              if(saved){Object.assign(G,saved);render();}
+              if(saved){restoreGameState(saved);render();}
             }catch(e){alert(L==="cs"?"Chyba načtení":"Load error");}
           }},L==="cs"?"📂 Načíst":"📂 Load"));
       saveSec.append(lsLoadRow);
@@ -11751,7 +11835,7 @@ function render(){
         reader.onload=ev=>{
           try{
             const saved=JSON.parse(ev.target.result);
-            if(saved&&saved.season){Object.assign(G,saved);render();}
+            if(saved&&saved.season){restoreGameState(saved);render();}
             else alert(L==="cs"?"Neplatný soubor":"Invalid file");
           }catch(err){alert(L==="cs"?"Chyba čtení souboru":"File read error");}
         };
@@ -11988,6 +12072,13 @@ function render(){
     content.append(iSec);
   }
 
+  // Keep the complete existing season panel inside the scrolling mobile content.
+  if(!isDesktop)content.prepend(window.FajrumUI?FajrumUI.context(sp,p,sitRep):sp);
+  if(window.FajrumArt&&(p.tab==="overview"||p.tab==="furnace")){
+    const artworkOptions={inPrep:isPrepMonth(p.round,p.seasonTier||0),tempering:isTemperingMonth(p.round,p.seasonTier||0),furnaceType:ft,
+      select:key=>{G.tab=key;content.scrollTop=0;render();}};
+    content.prepend(p.tab==="overview"?FajrumArt.hut(p,artworkOptions):FajrumArt.furnace(p,artworkOptions));
+  }
   app.append(content);
   // Obnovit scroll pozici po překreslení
   if(_scrollTop>0){
@@ -12012,8 +12103,15 @@ function render(){
   }else{
     app.classList.remove("desktop");
     const contentShell=h("div",{class:"content-shell mobile-shell"});
-    contentShell.append(content,actionBar);
-    app.append(tabBar,contentShell);
+    if(window.FajrumUI){
+      const mobileNav=FajrumUI.navigation({tabBar,state:p,app,select:key=>{G.tab=key;render();}});
+      if(mobileNav.subnav)contentShell.append(mobileNav.subnav);
+      contentShell.append(content,actionBar,mobileNav.nav);
+      app.append(contentShell);
+    }else{
+      contentShell.append(content,actionBar);
+      app.append(tabBar,contentShell);
+    }
   }
 
   // Welcome modal — jednorázový po prvním vstupu
@@ -12579,7 +12677,7 @@ try{
   const saved=localStorage.getItem("sh_v9");
   if(saved){
     const parsed=JSON.parse(saved);
-    if(parsed&&parsed.season){Object.assign(G,parsed);}
+    if(parsed&&parsed.season){restoreGameState(parsed);}
   }
 }catch(e){}
 render();
