@@ -1,0 +1,34 @@
+/* C1 is scoped to the overview; portrait and furnace illustrations are untouched. */
+.fj-overview-page {--fj-overview-paper:linear-gradient(#302a22ee,#302a22e8),url('../img/ui/surface-paper.webp');--fj-overview-wood:linear-gradient(#28241eec,#28241ee8),url('../img/ui/surface-sootwood.webp');}
+:root[data-fajrum-theme=light] .fj-overview-page {--fj-overview-paper:linear-gradient(#f0e7d566,#f0e7d58c),url('../img/ui/surface-paper.webp');--fj-overview-wood:linear-gradient(#e8ddc5e8,#e8ddc5e8),url('../img/ui/surface-sootwood.webp');}
+.content.fj-overview-page :is(.fj-overview-ledger,.fj-overview-operations,.fj-overview-roster,.fj-overview-specialists) {min-width:0;padding:16px;background-image:var(--fj-overview-paper);background-size:auto,620px;background-position:center;box-shadow:inset 0 1px 0 #dfcba533,0 2px 5px #00000015;}
+.fj-overview-ledger {position:relative;isolation:isolate;}
+.fj-overview-ledger::before {content:'';position:absolute;inset:0;border:12px solid transparent;border-image:url('../img/ui/frame-brass.webp') 200 stretch;pointer-events:none;}
+.fj-overview-card-head {display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--fj-edge);}
+.fj-overview-card-head h3 {min-width:0;margin:0;font-size:16px;line-height:1.25;color:var(--ink);overflow-wrap:anywhere;}
+.fj-overview-thumb {display:inline-flex;align-items:center;justify-content:center;flex:none;width:60px;height:40px;border-radius:4px;background:#241e18;overflow:hidden;}
+.fj-overview-thumb>img {display:block;width:100%;height:100%;object-fit:contain;}
+.fj-overview-thumb>[hidden] {display:none!important;}
+.fj-overview-hint {padding:8px 10px!important;border-radius:0 4px 4px 0;background:#99774b0b;}
+.fj-overview-hint button {min-width:40px;min-height:44px;}
+.fj-overview-toggle {min-height:44px;gap:8px;}
+.fj-overview-toggle .sec-title {display:flex;align-items:center;gap:8px;min-width:0;}
+.fj-overview-toggle:focus-visible {outline:2px solid var(--gold);outline-offset:3px;border-radius:4px;}
+.fj-overview-resource-columns {display:grid!important;grid-template-columns:minmax(0,1fr);gap:12px!important;}
+.fj-overview-allocations,.fj-overview-furnace {min-width:0;padding:12px;border:1px solid var(--fj-edge);border-radius:5px;background-color:var(--card);background-image:var(--fj-overview-wood);background-size:auto,520px;}
+.fj-overview-allocations input[type=range] {min-width:0;min-height:44px;width:100%;}
+.fj-overview-stat-row {display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:8px;line-height:1.45;}
+.fj-overview-stat-row strong {text-align:right;overflow-wrap:anywhere;}
+.fj-overview-furnace-status {display:flex;margin:0 0 10px;}
+.fj-overview-meter {margin-bottom:12px;}
+.fj-overview-meter-caption {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;font-size:12px;color:var(--fj-muted);}
+.fj-overview-meter-caption strong {color:var(--ink);font-variant-numeric:tabular-nums;}
+.fj-overview-meter-track {height:8px;overflow:hidden;border-radius:3px;border:1px solid #97784a55;background:#00000024;}
+.fj-overview-meter-fill {display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#567642,#a3b97a);}
+[data-overview-meter=heat] .fj-overview-meter-fill {background:linear-gradient(90deg,#956138,#d7a34f,#efd799);}
+.fj-overview-meter.is-warning .fj-overview-meter-caption strong {color:var(--danger);}
+.fj-overview-meter.is-warning .fj-overview-meter-fill {background:linear-gradient(90deg,#9d4936,#d58360);}
+.fj-overview-page .fj-hut-hero .fj-art-foot {background-image:var(--fj-overview-paper);background-size:auto,620px;}
+@media(min-width:640px) {.fj-overview-resource-columns {grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);}}
+@media(min-width:960px) and (min-height:500px) {#app.desktop .fj-overview-columns {gap:12px;padding:10px;align-items:start;}#app.desktop .fj-overview-columns>.sec {margin:0;border:1px solid var(--fj-edge);border-radius:6px;}}
+@media(max-width:370px) {.content.fj-overview-page :is(.fj-overview-ledger,.fj-overview-operations,.fj-overview-roster,.fj-overview-specialists) {padding:14px;}.fj-overview-card-head {gap:8px;}.fj-overview-card-head h3 {font-size:15px;}.fj-overview-allocations,.fj-overview-furnace {padding:10px;}}

@@ -1,0 +1,197 @@
+/* FAJRUM C2a — stained parchment / forged iron / workshop detail. Scoped to Dílna. */
+#app .content.fj-c2a-production {
+  --c2a-metal: #b99356;
+  --c2a-shadow: rgba(10, 7, 4, .28);
+  --c2a-line: rgba(172, 119, 58, .4);
+}
+
+/* Hero: let the existing 1680 workshop painting breathe on desktop. */
+#app .fj-c2a-production .fj-section-art[data-art-tab="production"] {
+  border: 1px solid var(--fj-edge);
+  box-shadow: 0 7px 19px var(--c2a-shadow), inset 0 0 0 1px rgba(234,187,105,.11);
+}
+#app .fj-c2a-production .fj-section-art[data-art-tab="production"] .fj-section-art-figure {
+  height: clamp(160px, 22vw, 270px);
+}
+#app .fj-c2a-production .fj-section-art[data-art-tab="production"] .fj-section-art-caption h2 {
+  letter-spacing: .035em;
+  text-shadow: 0 2px 7px rgba(0,0,0,.8);
+}
+
+/* Status: a thin engraved instrument plate, not another blocky dashboard. */
+#app .fj-c2a-ribbon {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 8px 10px 12px;
+  min-width: 0;
+  border: 1px solid var(--fj-edge);
+  border-top: 2px solid var(--c2a-metal);
+  border-radius: 5px;
+  background: linear-gradient(105deg, rgba(167,112,48,.09), transparent 38%, rgba(167,112,48,.06)), var(--card);
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+#app .fj-c2a-ribbon-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px 11px;
+}
+#app .fj-c2a-ribbon-cell + .fj-c2a-ribbon-cell { border-left: 1px solid var(--fj-edge); }
+#app .fj-c2a-ribbon-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid var(--c2a-line);
+  border-radius: 50%;
+  color: var(--c2a-metal);
+  font: bold 19px Georgia, serif;
+}
+#app .fj-c2a-ribbon-copy { display: grid; gap: 2px; min-width: 0; }
+#app .fj-c2a-ribbon-copy small {
+  color: var(--fj-muted);
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: .035em;
+}
+#app .fj-c2a-ribbon-copy strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+#app .fj-c2a-ribbon[data-furnace-active="true"] .fj-c2a-ribbon-cell:first-child .fj-c2a-ribbon-icon {
+  color: #d18037;
+  text-shadow: 0 0 8px rgba(220,97,27,.42);
+}
+
+/* Four productive stations: imperfect timber, decorative rivets, corner brass. */
+#app .content.fj-c2a-production .sec.fj-c2a-station {
+  position: relative;
+  min-width: 0;
+  isolation: isolate;
+  padding: 15px;
+  overflow: hidden;
+  border: 1px solid var(--fj-edge);
+  border-top: 2px solid var(--c2a-metal);
+  border-radius: 5px 8px 6px 5px;
+  background-color: var(--fj-surface);
+  background-image: linear-gradient(155deg, rgba(181,129,55,.09), transparent 34%, rgba(25,17,10,.15)),
+    url('../img/ui/surface-sootwood.webp');
+  background-size: auto, 460px auto;
+  background-blend-mode: normal, soft-light;
+  box-shadow: 0 5px 14px var(--c2a-shadow), inset 0 0 0 1px rgba(206,155,80,.075);
+}
+#app .content.fj-c2a-production .sec.fj-c2a-station::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 36px;
+  height: 36px;
+  pointer-events: none;
+  opacity: .57;
+  background: url('brass-corner.svg') top right / contain no-repeat;
+}
+#app .content.fj-c2a-production .sec.fj-c2a-station::after {
+  content: '';
+  position: absolute;
+  bottom: 9px;
+  right: 10px;
+  width: 4px;
+  height: 4px;
+  pointer-events: none;
+  border-radius: 50%;
+  background: #d0a365;
+  box-shadow: -11px 0 #7c5b39, 0 -11px #7c5b39;
+  opacity: .55;
+}
+#app .fj-c2a-production .fj-c2a-station .sec-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--c2a-line);
+  text-wrap: pretty;
+}
+#app .fj-c2a-production .fj-c2a-ordinal {
+  margin-left: auto;
+  padding: 2px 7px;
+  border: 1px solid var(--c2a-line);
+  border-radius: 3px;
+  color: var(--fj-muted);
+  font: italic 11px Georgia, serif;
+  letter-spacing: .08em;
+}
+#app .fj-c2a-production .fj-c2a-station[data-c2a-station="waldglas"] { --c2a-metal:#b2894c; }
+#app .fj-c2a-production .fj-c2a-station[data-c2a-station="crucibles"] { --c2a-metal:#a76d48; }
+#app .fj-c2a-production .fj-c2a-station[data-c2a-station="crystal"] { --c2a-metal:#7d9eaa; }
+#app .fj-c2a-production .fj-c2a-station[data-c2a-station="moulds"] { --c2a-metal:#8a9361; }
+#app .fj-c2a-production .fj-c2a-station .fj-material-heading { padding-right: 10px; }
+#app .fj-c2a-production .fj-worksite-card {
+  border-style: solid;
+  background: rgba(20,15,11,.11);
+  box-shadow: inset 0 0 0 1px rgba(206,155,80,.06);
+}
+
+/* Glassware: leave the existing product imagery, prices, selectors, and actions untouched. */
+#app .fj-c2a-production .sec.fj-c2a-glassware {
+  position: relative;
+  border-top: 2px solid #b99356;
+  box-shadow: 0 5px 15px var(--c2a-shadow);
+}
+#app .fj-c2a-production .fj-c2a-glassware > .sec-title {
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--c2a-line);
+}
+#app .fj-c2a-production .fj-recipe-card {
+  border-radius: 7px !important;
+  border-color: var(--fj-edge) !important;
+  background: linear-gradient(145deg, rgba(166,106,44,.055), transparent 38%), var(--card) !important;
+  box-shadow: 0 3px 10px rgba(9,7,4,.17), inset 0 0 0 1px rgba(213,168,104,.09) !important;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+#app .fj-c2a-production .fj-recipe-card[data-available="true"] {
+  border-color: var(--gold) !important;
+  box-shadow: 0 3px 11px rgba(9,7,4,.2), inset 0 0 0 1px rgba(201,149,43,.22) !important;
+}
+#app .fj-c2a-production .fj-recipe-card:focus-within { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+/* Ledger theme: old paper and ink instead of sootwood. */
+:root[data-fajrum-theme="light"] #app .content.fj-c2a-production .sec.fj-c2a-station {
+  background-image: linear-gradient(150deg, rgba(255,248,225,.44), rgba(155,111,57,.075)),
+    url('../img/ui/surface-paper.webp');
+  background-blend-mode: normal, multiply;
+  box-shadow: 0 4px 10px rgba(71,47,18,.12), inset 0 0 0 1px rgba(255,244,213,.4);
+}
+:root[data-fajrum-theme="light"] #app .fj-c2a-production .fj-worksite-card { background: rgba(245,232,202,.64); }
+:root[data-fajrum-theme="light"] #app .fj-c2a-production .fj-recipe-card {
+  background: linear-gradient(145deg, rgba(177,123,55,.065), transparent 55%), var(--card) !important;
+}
+
+/* Responsive, including small portrait screens. */
+@media (min-width: 960px) and (min-height: 500px) {
+  #app.desktop .fj-c2a-production .fj-section-art[data-art-tab="production"] .fj-section-art-figure { height: 228px; }
+  #app.desktop .fj-c2a-production .fj-c2a-ribbon { margin-top: 11px; }
+}
+@media (max-width: 540px) {
+  #app .fj-c2a-production .fj-section-art[data-art-tab="production"] .fj-section-art-figure { height: 154px; }
+  #app .fj-c2a-ribbon-cell { gap: 5px; padding: 8px 5px; }
+  #app .fj-c2a-ribbon-icon { width: 23px; height: 23px; flex-basis: 23px; font-size: 16px; }
+  #app .fj-c2a-ribbon-copy small { font-size: 9px; }
+  #app .fj-c2a-ribbon-copy strong { font-size: 11px; }
+  #app .content.fj-c2a-production .sec.fj-c2a-station { padding: 12px; }
+}
+@media (max-width: 350px) {
+  #app .fj-c2a-ribbon-icon { display: none; }
+  #app .fj-c2a-ribbon-cell { padding: 7px 4px; }
+  #app .fj-c2a-production .fj-c2a-ordinal { font-size: 10px; padding: 1px 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #app .fj-c2a-production .fj-recipe-card { transition: none; }
+}

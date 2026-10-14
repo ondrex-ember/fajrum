@@ -828,6 +828,10 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 <script src="ui/fajrum-stories.js"></script>
 <link rel="stylesheet" href="ui/fajrum-partners.css">
 <script src="ui/fajrum-partners.js"></script>
+<link rel="stylesheet" href="ui/fajrum-overview.css">
+<script src="ui/fajrum-overview.js"></script>
+<link rel="stylesheet" href="ui/fajrum-c2a-workshop.css">
+<script src="ui/fajrum-c2a-workshop.js"></script>
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -6852,6 +6856,8 @@ function render(){
   if(window.FajrumStories)FajrumStories.finish(app,G);
   if(window.FajrumPartners)FajrumPartners.finish(app,G);
   if(window.FajrumDesktop)FajrumDesktop.finish(app,G);
+  if(window.FajrumC2a)FajrumC2a.finish(app,G);
+  if(window.FajrumOverview)FajrumOverview.finish(app,G);
   if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
   return result;
 }
@@ -8627,7 +8633,7 @@ function renderOriginal(){
 
   // ── TAB: PŘEHLED ──
   if(p.tab==="overview"){
-    const topCols=h("div",{class:isDesktop?"overview-top-cols":""});
+    const topCols=h("div",{class:"fj-overview-columns"+(isDesktop?" overview-top-cols":"")});
 
     // ── ATTENTION BANNER — kritické akce ──
     const attItems=[];
@@ -8653,7 +8659,7 @@ function renderOriginal(){
       action:L==="cs"?"→ Políčko nebo koupit na trhu":"→ Field task or buy at market"});
 
     // ── LEVÝ SLOUPEC: attention banner + hint (se stránkováním) + pivovar ──
-    const leftOverview=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"6px"}});
+    const leftOverview=h("div",{class:"sec fj-overview-ledger",style:{display:"flex",flexDirection:"column",gap:"6px"}});
     if(attItems.length>0){
       const banner=h("div",{class:"attention-banner"});
       banner.append(h("div",{class:"att-title"},
@@ -8674,7 +8680,7 @@ function renderOriginal(){
     const hintPage=G._hintPage===undefined?(p.round%12):G._hintPage;   // default: hint of the current month
     const hintTotal=hints.length;
     const hintText=hints[hintPage%hintTotal]||"";
-    const hintWrap=h("div",{style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34"),
+    const hintWrap=h("div",{class:"fj-overview-hint",style:{borderLeft:"3px solid "+(isP?"#4a7a3a":"#8b5e34"),
       padding:"4px 8px",fontSize:"10px",lineHeight:"1.4",position:"relative"}});
     hintWrap.append(h("div",{style:{paddingRight:"36px",minHeight:"32px",color:"#3a2a14"}},hintText));
     if(hintTotal>1){
@@ -8739,12 +8745,12 @@ function renderOriginal(){
     topCols.append(leftOverview);
 
     // ── PRAVÝ SLOUPEC: Dřevo/Pec (pivovar přesunut doleva) ──
-    const rightOverview=h("div",{class:"sec",style:{display:"flex",flexDirection:"column",gap:"6px"}});
+    const rightOverview=h("div",{class:"sec fj-overview-operations",style:{display:"flex",flexDirection:"column",gap:"6px"}});
 
     // Dřevo + Pec (collapsible)
     const quickRow=h("div",{});
     const qState=G._quickOpen===undefined?true:G._quickOpen;
-    const qHdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+    const qHdr=h("div",{class:"fj-overview-toggle",role:"button",tabindex:"0","aria-expanded":String(qState),style:{display:"flex",justifyContent:"space-between",alignItems:"center",
       cursor:"pointer",userSelect:"none",marginBottom:qState?"8px":"0"},
       onClick:()=>{G._quickOpen=!qState;render();}});
     qHdr.append(
@@ -8753,14 +8759,14 @@ function renderOriginal(){
       h("span",{style:{fontSize:"11px",color:"#8b5e34"}},qState?"▲":"▼"));
     quickRow.append(qHdr);
     if(qState){
-      const twoCol=h("div",{style:{display:"flex",gap:"10px"}});
-      const leftCol=h("div",{style:{flex:"2",minWidth:0}});
+      const twoCol=h("div",{class:"fj-overview-resource-columns",style:{display:"flex",gap:"10px"}});
+      const leftCol=h("div",{class:"fj-overview-allocations",style:{flex:"2",minWidth:0}});
       const aLabels={fuel:L==="cs"?"Palivo":"Fuel",potash:L==="cs"?"Potaš":"Potash",build:L==="cs"?"Stavba":"Build"};
       ["fuel","potash","build"].forEach(k=>{
         const aRow=h("div",{style:{display:"flex",alignItems:"center",gap:"4px",marginBottom:"5px",fontSize:"11px"}});
         aRow.append(
           h("span",{style:{width:"42px",flexShrink:0,color:"#8b5e34"}},aLabels[k]),
-          h("input",{type:"range",min:"0",max:"100",value:""+p.wa[k],
+          h("input",{type:"range",min:"0",max:"100",value:""+p.wa[k],"aria-label":aLabels[k],
             style:{flex:1,accentColor:"#8b5e34"},
             onInput:e=>setAlloc(k,+e.target.value)}),
           h("strong",{style:{width:"30px",textAlign:"right",flexShrink:0}},p.wa[k]+"%"));
@@ -8789,7 +8795,7 @@ function renderOriginal(){
           :`Forest ${p.forest}/${p.forestMax||INIT_FOREST} parcels · 1 parcel = 4 🪵 · Build = the rest stays in stock`)));
         leftCol.append(wInfo);
       }
-      const rightCol=h("div",{style:{flex:"1",minWidth:0}});
+      const rightCol=h("div",{class:"fj-overview-furnace",style:{flex:"1",minWidth:0}});
       const furnSlotsDisplay=ft.maxSlots||1;
       const slotsColor=furnSlotsDisplay>=4?"#4a7a3a":furnSlotsDisplay>=2?"#c9952b":"#8b5e34";
       const fRows=[
@@ -8800,7 +8806,7 @@ function renderOriginal(){
         {label:L==="cs"?"Eff.":"Eff.",val:fEff+"%",color:fEff>65?"#4a7a3a":fEff>45?"#c9952b":"#a03020"}
       ];
       fRows.forEach(r=>{
-        rightCol.append(h("div",{style:{display:"flex",justifyContent:"space-between",
+        rightCol.append(h("div",{class:"fj-overview-stat-row",style:{display:"flex",justifyContent:"space-between",
           fontSize:"11px",marginBottom:"5px",borderBottom:"1px solid rgba(42,26,10,.06)",paddingBottom:"3px"}},
           h("span",{style:{color:"#8b5e34"}},r.label),
           h("strong",{style:{color:r.color}},r.val)));
@@ -8814,9 +8820,9 @@ function renderOriginal(){
     content.append(topCols);
 
     // Dělníci — collapsible
-    const wSec=h("div",{class:"sec"});
+    const wSec=h("div",{class:"sec fj-overview-roster"});
     const wState=G._workersOpen===undefined?true:G._workersOpen;
-    const wHdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+    const wHdr=h("div",{class:"fj-overview-toggle",role:"button",tabindex:"0","aria-expanded":String(wState),style:{display:"flex",justifyContent:"space-between",alignItems:"center",
       cursor:"pointer",userSelect:"none",marginBottom:wState?"8px":"0"},
       onClick:()=>{G._workersOpen=!wState;render();}});
     wHdr.append(
@@ -8987,9 +8993,9 @@ function renderOriginal(){
 
     // Specializované profese
     const specProfs=["formar","foukac","brusic","rytec"];
-    const specSec=h("div",{class:"sec"});
+    const specSec=h("div",{class:"sec fj-overview-specialists"});
     const spState=G._specOpen===undefined?true:G._specOpen;
-    const spHdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+    const spHdr=h("div",{class:"fj-overview-toggle",role:"button",tabindex:"0","aria-expanded":String(spState),style:{display:"flex",justifyContent:"space-between",alignItems:"center",
       cursor:"pointer",userSelect:"none",marginBottom:spState?"8px":"0"},
       onClick:()=>{G._specOpen=!spState;render();}});
     spHdr.append(
