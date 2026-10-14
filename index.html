@@ -832,6 +832,8 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 <script src="ui/fajrum-overview.js"></script>
 <link rel="stylesheet" href="ui/fajrum-c2a-workshop.css">
 <script src="ui/fajrum-c2a-workshop.js"></script>
+<link rel="stylesheet" href="ui/fajrum-c2b-furnace.css">
+<script src="ui/fajrum-c2b-furnace.js"></script>
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -6858,6 +6860,7 @@ function render(){
   if(window.FajrumDesktop)FajrumDesktop.finish(app,G);
   if(window.FajrumC2a)FajrumC2a.finish(app,G);
   if(window.FajrumOverview)FajrumOverview.finish(app,G);
+  if(window.FajrumC2b)FajrumC2b.finish(app,G);
   if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
   return result;
 }
