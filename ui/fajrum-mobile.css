@@ -270,4 +270,29 @@ input[type=range]::-webkit-slider-thumb {min-width:22px;min-height:22px;}
 @media(max-width:370px) {.fj-subnav .tab {font-size:12px;gap:4px;}.fj-subnav .tab-label {font-size:12px;}.fj-subnav .fj-nav-art {width:26px;height:26px;}}
 @media(max-height:500px) and (orientation:landscape) {.fj-nav-button {gap:4px;min-height:44px;padding-block:2px;}.fj-nav-button .fj-nav-art {width:26px;height:26px;padding:1px;}}
 @media(hover:hover) and (pointer:fine) {:is(.fj-nav-button,.fj-more-entry,.fj-subnav .tab,#app.desktop .tabs>.tab):hover>.fj-nav-art {border-color:#c8a56a;}}
+/* B3: worked wood, quiet ledger paper and engraved calendar details. */
+.fj-worked-header {position:relative;isolation:isolate;background-color:var(--fj-header);background-image:linear-gradient(#15110ba6,#15110bc4),url('../img/ui/surface-sootwood.webp');background-size:auto,560px;background-position:center;box-shadow:inset 0 1px 0 #d6b67835,inset 0 -1px 0 #c8a46a55;}
+.fj-worked-header::before,.fj-worked-header::after {content:'';position:absolute;bottom:1px;width:44px;height:8px;background:url('brass-corner.svg') center/contain no-repeat;opacity:.65;pointer-events:none;}
+.fj-worked-header::before {left:8px;}
+.fj-worked-header::after {right:8px;transform:scaleX(-1);}
+.fj-ledger-calendar {--fj-season-ink:#c0ab87;background-color:var(--card);background-image:linear-gradient(#28241eeb,#28241ee6),url('../img/ui/surface-sootwood.webp');background-size:auto,560px;background-position:center;box-shadow:inset 0 -1px 0 #b18b4b28;}
+:root[data-fajrum-theme=light] .fj-ledger-calendar {background-image:linear-gradient(#e8ddc560,#e8ddc590),url('../img/ui/surface-paper.webp');background-size:auto,560px;}
+.fj-ledger-calendar[data-fajrum-season=winter] {--fj-season-ink:#aac6cb;}
+.fj-ledger-calendar[data-fajrum-season=spring] {--fj-season-ink:#a8bd84;}
+.fj-ledger-calendar[data-fajrum-season=summer] {--fj-season-ink:#dfb770;}
+.fj-ledger-calendar[data-fajrum-season=autumn] {--fj-season-ink:#d2a17b;}
+:root[data-fajrum-theme=light] .fj-ledger-calendar[data-fajrum-season=winter] {--fj-season-ink:#43666e;}
+:root[data-fajrum-theme=light] .fj-ledger-calendar[data-fajrum-season=spring] {--fj-season-ink:#49652f;}
+:root[data-fajrum-theme=light] .fj-ledger-calendar[data-fajrum-season=summer] {--fj-season-ink:#835619;}
+:root[data-fajrum-theme=light] .fj-ledger-calendar[data-fajrum-season=autumn] {--fj-season-ink:#835139;}
+.fj-month-stamp {display:inline-flex;align-items:center;gap:5px;}
+.fj-month-stamp .fj-season-mark {width:16px;height:16px;color:var(--fj-season-ink);}
+.fj-calendar summary .fj-icon {width:15px;height:15px;color:var(--warm);}
+.fj-calendar summary::-webkit-details-marker {display:none;}
+.fj-calendar-pips .round-pip {box-sizing:border-box;min-width:0;border-radius:3px;box-shadow:inset 0 -1px 0 #87673d44;}
+#app.desktop .fj-calendar-pips {padding:0;}
+.fj-calendar-pips .round-pip[data-status=upcoming] {color:var(--fj-muted)!important;}
+.fj-calendar-pips .round-pip[data-status=current] {box-shadow:inset 0 -2px 0 #f4dfaa,0 0 0 1px #b48b4d;}
+.fj-calendar[open] summary {color:var(--ink);}
+@media(max-height:500px) and (orientation:landscape) {.fj-worked-header::before,.fj-worked-header::after {display:none;}.fj-month-stamp .fj-season-mark {width:14px;height:14px;}}
 @media(prefers-reduced-motion:reduce) {*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;}}

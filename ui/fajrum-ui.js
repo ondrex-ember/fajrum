@@ -38,7 +38,11 @@
     food: '<path d="M3 19v-9c0-9 18-9 18 0v9H3Zm5-8 2-4M13 11l2-4"/>',
     panev: '<path d="M3 7h18l-3 14H6L3 7Zm0 0c0-4 18-4 18 0M6 11h12"/>',
     moon: '<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/>',
-    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+    winter: '<path d="M12 2v20M3 7l18 10M3 17 21 7M8 4l4 3 4-3M8 20l4-3 4 3M3 11l4-2-1-4M21 13l-4 2 1 4M3 13l4 2-1 4M21 11l-4-2 1-4"/>',
+    spring: '<path d="M12 22V11M12 15C5 15 3 11 3 5c6 0 9 3 9 10ZM12 11c0-6 3-9 9-9 0 6-3 9-9 9ZM6 8l6 7M17 6l-5 5"/>',
+    autumn: '<path d="m5 21 7-8M12 13l6-6M5 18c-3-6 0-13 6-14l1 4 5-5 1 5 4 1-4 4 3 2c-3 6-10 8-16 3Z"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 10h18M7 14h2M13 14h2M7 17h2M13 17h2"/>'
   };
   function icon(key) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -282,10 +286,59 @@
     const details = el('details','fj-calendar');
     details.open = prefs.calendarOpen;
     const summary = el('summary','',cs(state)?'Kalendář sezóny':'Season calendar');
+    summary.prepend(icon('calendar'));
     details.append(summary,pips);
     summary.addEventListener('click',()=>{prefs.calendarOpen=!details.open;savePrefs();});
     details.addEventListener('toggle',()=>{if(details.isConnected){prefs.calendarOpen=details.open;savePrefs();}});
     node.append(details);
+  }
+  const calendarMonths = {
+    cs:['Listopad','Prosinec','Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen'],
+    en:['November','December','January','February','March','April','May','June','July','August','September','October']
+  };
+  const seasonNames = {
+    winter:{cs:'Zima',en:'Winter'},spring:{cs:'Jaro',en:'Spring'},
+    summer:{cs:'Léto',en:'Summer'},autumn:{cs:'Podzim',en:'Autumn'}
+  };
+  function headerAndCalendar(app,state,header) {
+    if (header) header.classList.add('fj-worked-header');
+    const bar = app.querySelector('.round-bar');
+    if (!bar) return;
+    bar.classList.add('fj-ledger-calendar');
+    const season = window.FajrumArt?.seasonForRound?.(state.round);
+    if (seasonNames[season]) {
+      bar.dataset.fajrumSeason = season;
+      const stamp = bar.querySelector('.round-bar-top>div:first-child>span:first-child');
+      if (stamp) {
+        stamp.classList.add('fj-month-stamp');
+        if (!stamp.querySelector('.fj-season-mark')) {
+          const mark = icon(season === 'summer' ? 'sun' : season);
+          mark.classList.add('fj-season-mark');
+          stamp.prepend(mark);
+        }
+        stamp.title = seasonNames[season][cs(state)?'cs':'en'];
+      }
+    }
+    const pips = [...bar.querySelectorAll('.round-pip')];
+    if (!pips.length) return;
+    const strip = pips[0].parentElement;
+    strip.classList.add('fj-calendar-pips');
+    strip.setAttribute('role','list');
+    strip.setAttribute('aria-label',cs(state)?'Kalendář sezóny':'Season calendar');
+    pips.forEach((pip,i) => {
+      const current = i === state.round;
+      const prep = typeof window.isPrepMonth === 'function' ? window.isPrepMonth(i,state.seasonTier||0) : null;
+      pip.dataset.status = current ? 'current' : i < state.round ? 'complete' : 'upcoming';
+      if (prep !== null) pip.dataset.phase = prep ? 'prep' : 'campaign';
+      const phase = prep === null ? '' : prep ? (cs(state)?'Příprava':'Prep') : (cs(state)?'Kampaň':'Campaign');
+      const status = current ? (cs(state)?'Aktuální měsíc':'Current month') : i < state.round ? (cs(state)?'Uplynulý měsíc':'Past month') : (cs(state)?'Budoucí měsíc':'Upcoming month');
+      const label = [calendarMonths[cs(state)?'cs':'en'][i] || pip.textContent,phase,status].filter(Boolean).join(' · ');
+      pip.setAttribute('role','listitem');
+      pip.setAttribute('aria-label',label);
+      pip.title = label;
+      if (current) pip.setAttribute('aria-current','date');
+      else pip.removeAttribute('aria-current');
+    });
   }
   function context(panel,state,reports) {
     const wrapper = el('details','fj-context');
@@ -347,6 +400,7 @@
       }
     }
     const header = app.querySelector('.hdr');
+    headerAndCalendar(app,state,header);
     if (app.classList.contains('desktop')) {
       [...app.querySelectorAll('.tabs > .tab')].forEach((node,i) => {
         const key = navigationKeys[i];
