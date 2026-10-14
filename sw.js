@@ -14,7 +14,7 @@
 // Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
 // skipWaiting při instalaci a žádný automatický reload.
 
-const CORE = 'sklarska-hut-woodland-v1.1';
+const CORE = 'sklarska-hut-woodland-v1.2-b1';
 const MEDIA = 'sklarska-hut-woodland-v1';
 const PREFIX = 'sklarska-hut-';
 
@@ -61,6 +61,7 @@ const CORE_ASSETS = [
 ];
 
 const MEDIA_ASSETS = [
+  '/img/ui/coins.webp',
   '/img/world/hut-winter-thinned.webp',
   '/img/world/hut-spring-thinned.webp',
   '/img/world/hut-summer-thinned.webp',

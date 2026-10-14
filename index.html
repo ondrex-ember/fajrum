@@ -6207,9 +6207,12 @@ function h(tag,attrs,...kids){
   return el;
 }
 function pill(emoji,val,cls){return h("span",{class:"pill"+(cls?" "+cls:"")},emoji," ",h("strong",null,val));}
-function pillTip(emoji,val,cls,tipText){
+function pillTip(emoji,val,cls,tipText,resourceKey){
   const w=h("span",{class:"tip-wrap"});
-  w.append(h("span",{class:"pill"+(cls?" "+cls:""),onClick:()=>{w.classList.toggle("open");}},emoji," ",h("strong",null,val)));
+  const art=resourceKey&&window.FajrumUI?.resourceIcon?FajrumUI.resourceIcon(resourceKey,emoji):emoji;
+  const attrs={class:"pill"+(cls?" "+cls:""),onClick:()=>{w.classList.toggle("open");}};
+  if(resourceKey){attrs["data-fajrum-resource"]=resourceKey;attrs["aria-label"]=tipText;}
+  w.append(h("span",attrs,art," ",h("strong",null,val)));
   if(tipText)w.append(h("span",{class:"tip"},tipText));
   return w;
 }
@@ -8322,7 +8325,9 @@ function renderOriginal(){
     h("div",{style:{display:"flex",gap:"8px",fontSize:"11px",alignItems:"center"}},
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Groše: ":"Groats: "),
-        h("strong",{style:{color:p.grose<20?"#a03020":"#3a2a14",fontSize:"13px"}},"💰 "+p.grose+"g")),
+        h("strong",{class:"fj-money-value",style:{color:p.grose<20?"#a03020":"#3a2a14",fontSize:"13px"}},
+          window.FajrumUI?.resourceIcon?FajrumUI.resourceIcon("coins","💰"):"💰 ",
+          h("span",null,p.grose+"g"))),
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Dluhy: ":"Debts: "),
         h("strong",{style:{color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?"📜 "+p.debt+"g":"✓")))));
@@ -8369,23 +8374,23 @@ function renderOriginal(){
     resBar.append(
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
-      pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"key",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`),
-      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché dříví: ${p.res.dryWood||0} · vysušené tvrdé dřevo pro zimní žár`:`Dry wood: ${p.res.dryWood||0}`)]:[]),
-      ...(hasPitch?[pillTip("🌲",p.res.pitch||0,"",L==="cs"?`Smůla: ${p.res.pitch||0} · izolace a těsnění`:`Pitch: ${p.res.pitch||0}`)]:[]),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"ember":p.res.wood<10?"warn":"key",L==="cs"?`Dřevo: ${p.res.wood} · potřeba 9/várku`:`Wood: ${p.res.wood} · need 9/melt`,"wood"),
+      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché dříví: ${p.res.dryWood||0} · vysušené tvrdé dřevo pro zimní žár`:`Dry wood: ${p.res.dryWood||0}`,"dryWood")]:[]),
+      ...(hasPitch?[pillTip("🌲",p.res.pitch||0,"",L==="cs"?`Smůla: ${p.res.pitch||0} · izolace a těsnění`:`Pitch: ${p.res.pitch||0}`,"pitch")]:[]),
       sep(),
       grpLabel(L==="cs"?"Suro.":"Mats"),
-      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
-      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
-      pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"key",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`),
-      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
-      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
-      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Lomový kámen: ${p.res.stone||0} · stavba huti a pecí`:`Quarry stone: ${p.res.stone||0}`)]:[]),
-      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamotové kvádry: ${p.res.firebrick||0} · žáruvzdorné cihly`:`Firebricks: ${p.res.firebrick||0}`)]:[]),
-      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
+      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`,"sand"),
+      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`,"limestone"),
+      pillTip("🌿",p.res.potash,p.res.potash===0?"ember":p.res.potash<2?"warn":"key",L==="cs"?`Potaš: ${p.res.potash} · přiřaď Loužírnu!`:`Potash: ${p.res.potash} · assign Potash!`,"potash"),
+      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`,"water"),
+      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`,"clay"),
+      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Lomový kámen: ${p.res.stone||0} · stavba huti a pecí`:`Quarry stone: ${p.res.stone||0}`,"stone")]:[]),
+      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamotové kvádry: ${p.res.firebrick||0} · žáruvzdorné cihly`:`Firebricks: ${p.res.firebrick||0}`,"firebrick")]:[]),
+      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`,"food"),
       sep(),
       grpLabel(L==="cs"?"Výr.":"Prod."),
-      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"key",L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing`),
-      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`),
+      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"key",L==="cs"?`Pánve: ${p.pReady} hotové, ${p.pAging.length} zrají · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready, ${p.pAging.length} curing`,"panev"),
+      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`,"formy"),
       ...(additivesTotal>0?[pillTip("🧪",additivesTotal,"",L==="cs"?`Přísady: ${additivesTip}`:`Additives: ${additivesTip}`)]:[]),
       ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barevné sklo: ${rainbowTip}`:`Coloured glass: ${rainbowTip}`)]:[]),
       sep(),
@@ -8396,26 +8401,26 @@ function renderOriginal(){
     row1.append(
       grpLabel(L==="cs"?"Les":"For."),
       pillTip("🌲",p.forest+"/"+(p.forestMax||INIT_FOREST),p.forest<=FOREST_WARN?"warn":"",L==="cs"?`Hvozd: ${p.forest} parcel`:`Forest: ${p.forest} parcels`),
-      pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`),
-      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché: ${p.res.dryWood||0}`:`Dry: ${p.res.dryWood||0}`)]:[]),
+      pillTip("🌳",p.res.wood,p.res.wood<5?"warn":"",L==="cs"?`Dřevo: ${p.res.wood}`:`Wood: ${p.res.wood}`,"wood"),
+      ...(hasDryWood?[pillTip("🔥",p.res.dryWood||0,"",L==="cs"?`Suché: ${p.res.dryWood||0}`:`Dry: ${p.res.dryWood||0}`,"dryWood")]:[]),
       sep(),
-      pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`),
-      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`),
+      pillTip("🌿",p.res.potash,p.res.potash<2?"warn":"",L==="cs"?`Potaš: ${p.res.potash}`:`Potash: ${p.res.potash}`,"potash"),
+      pillTip("🍞",p.res.food,p.res.food<2?"warn":"",L==="cs"?`Jídlo: ${p.res.food}`:`Food: ${p.res.food}`,"food"),
       sep(),
       pillTip("😊",p.morale+"%",p.morale<40?"warn":"",L==="cs"?`Nálada: ${p.morale}%`:`Morale: ${p.morale}%`));
     const row2=h("div",{class:"pill-row"});
     row2.append(
       grpLabel(L==="cs"?"Suro.":"Mat."),
-      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`),
-      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`),
-      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`),
-      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`),
-      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Kámen: ${p.res.stone||0}`:`Stone: ${p.res.stone||0}`)]:[]),
-      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamot: ${p.res.firebrick||0}`:`Brick: ${p.res.firebrick||0}`)]:[]),
+      pillTip("🏖️",p.res.sand,"",L==="cs"?`Písek: ${p.res.sand}`:`Sand: ${p.res.sand}`,"sand"),
+      pillTip("🟩",p.res.limestone,"",L==="cs"?`Vápenec: ${p.res.limestone}`:`Limestone: ${p.res.limestone}`,"limestone"),
+      pillTip("💧",p.res.water,"",L==="cs"?`Voda: ${p.res.water}`:`Water: ${p.res.water}`,"water"),
+      pillTip("🧱",p.res.clay,"",L==="cs"?`Jíl: ${p.res.clay}`:`Clay: ${p.res.clay}`,"clay"),
+      ...(hasStone?[pillTip("🪨",p.res.stone||0,"",L==="cs"?`Kámen: ${p.res.stone||0}`:`Stone: ${p.res.stone||0}`,"stone")]:[]),
+      ...(hasFirebrick?[pillTip("🧱",p.res.firebrick||0,"",L==="cs"?`Šamot: ${p.res.firebrick||0}`:`Brick: ${p.res.firebrick||0}`,"firebrick")]:[]),
       sep(),
       grpLabel(L==="cs"?"Výr.":"Pr."),
-      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready`),
-      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`),
+      pillTip("🏺",p.pReady+(p.pAging.length?"+"+p.pAging.length:""),p.pReady<1&&isC?"warn":"",L==="cs"?`Pánve: ${p.pReady} hotové · kval. ${stars(p.panevQuality)}`:`Crucibles: ${p.pReady} ready`,"panev"),
+      pillTip("🌳",p.res.formy||0,"",L==="cs"?`Formy: ${p.res.formy||0}`:`Moulds: ${p.res.formy||0}`,"formy"),
       ...(additivesTotal>0?[pillTip("🧪",additivesTotal,"",L==="cs"?`Přísady: ${additivesTip}`:`Additives: ${additivesTip}`)]:[]),
       ...(colorStock>0?[pillTip("🌈",colorStock,"",L==="cs"?`Barvy: ${rainbowTip}`:`Colours: ${rainbowTip}`)]:[]))
     resBar.append(row1,row2);

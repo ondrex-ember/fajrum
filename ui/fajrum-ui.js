@@ -48,6 +48,30 @@
     svg.innerHTML = paths[key] || paths.more;
     return svg;
   }
+  const resourceImages = Object.fromEntries(
+    ['wood','potash','food','panev','sand','limestone','water','clay','stone','dryWood','firebrick','pitch','formy']
+      .map(key => [key, 'img/materials/' + key + '.webp'])
+  );
+  resourceImages.coins = 'img/ui/coins.webp';
+  function resourceIcon(key, glyph) {
+    if (!resourceImages[key]) return glyph == null ? icon(key) : el('span','',glyph);
+    const frame = el('span','fj-resource-art');
+    frame.setAttribute('aria-hidden','true');
+    const image = el('img');
+    image.src = resourceImages[key];
+    image.alt = '';
+    image.width = 26;
+    image.height = 26;
+    image.decoding = 'async';
+    const fallback = glyph == null ? icon(key) : el('span','fj-resource-fallback',glyph);
+    fallback.setAttribute('hidden','');
+    image.addEventListener('error', () => {
+      image.setAttribute('hidden','');
+      fallback.removeAttribute('hidden');
+    }, { once: true });
+    frame.append(image,fallback);
+    return frame;
+  }
   function el(tag, cls, text) {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -216,7 +240,8 @@
       ['panev',cs(state)?'Pánve':'Crucibles',state.pReady,state.round>=5&&state.pReady<1]
     ]) {
       const cell = el('span','fj-resource-cell'+(warn?' is-warning':''));
-      cell.append(icon(key),el('span','fj-resource-label',label),el('strong','',value));
+      cell.dataset.fajrumResource = key;
+      cell.append(resourceIcon(key),el('span','fj-resource-label',label),el('strong','',value));
       summary.append(cell);
     }
     summary.append(el('span','fj-resource-chevron','⌄'));
@@ -284,7 +309,7 @@
         if(!trigger||!tip||trigger.dataset.fajrumTip)continue;
         trigger.dataset.fajrumTip='true';
         trigger.setAttribute('role','button');trigger.tabIndex=0;
-        trigger.setAttribute('aria-label',`${trigger.textContent} · ${cs(state)?'Podrobnosti':'Details'}`);
+        trigger.setAttribute('aria-label',trigger.dataset.fajrumResource ? tip.textContent : `${trigger.textContent} · ${cs(state)?'Podrobnosti':'Details'}`);
         trigger.addEventListener('click',()=>{
           wrap.classList.remove('open');
           const text=el('p','fj-tip-body',tip.textContent);
@@ -310,7 +335,7 @@
     if (state.phase==='intro' && !app.querySelector('.fj-theme-control')) app.prepend(themeControl(state,select));
     // In-scroll SVG labels are part of the existing illustrations; keep their colors and sizes.
   }
-  window.FajrumUI = {icon,navigation,resources,calendar,context,finish,beforeRender,sheet};
+  window.FajrumUI = {icon,resourceIcon,navigation,resources,calendar,context,finish,beforeRender,sheet};
   let desktopMode = null;
   function viewport() {
     root.style.setProperty('--fj-viewport-height', `${window.visualViewport ? window.visualViewport.height : window.innerHeight}px`);
