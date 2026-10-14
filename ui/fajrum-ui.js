@@ -72,6 +72,31 @@
     frame.append(image,fallback);
     return frame;
   }
+  const navigationKeys = ['overview','production','storage','furnace','market','log','accounts','parta','hrac','archiv'];
+  const navigationImages = {
+    overview:'hut', workshop:'workshop', production:'workshop', furnace:'furnace',
+    storage:'storage', parta:'crew', market:'market', more:'more',
+    accounts:'accounts', log:'chronicle', hrac:'journal', archiv:'archive', settings:'settings'
+  };
+  function navigationIcon(key) {
+    if (!navigationImages[key]) return icon(key);
+    const frame = el('span','fj-nav-art');
+    frame.dataset.navIcon = key;
+    frame.setAttribute('aria-hidden','true');
+    const image = el('img');
+    image.src = 'img/ui/nav-' + navigationImages[key] + '.webp';
+    image.alt = '';
+    image.width = image.height = 36;
+    image.decoding = 'async';
+    const fallback = icon(key === 'workshop' ? 'production' : key);
+    fallback.setAttribute('hidden','');
+    image.addEventListener('error', () => {
+      image.setAttribute('hidden','');
+      fallback.removeAttribute('hidden');
+    }, { once:true });
+    frame.append(image,fallback);
+    return frame;
+  }
   function el(tag, cls, text) {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -82,7 +107,8 @@
     const node = el('button', cls || 'fj-nav-button');
     node.type = 'button';
     node.setAttribute('aria-label', label);
-    node.append(icon(key), el('span', '', label));
+    node.append(navigationIcon(key), el('span', '', label));
+    if (navigationImages[key]) node.dataset.fajrumNav = key;
     node.addEventListener('click', action);
     return node;
   }
@@ -145,10 +171,10 @@
     const brandCopy = app.querySelector('.fj-brand-copy');
     const references = brandCopy ? [...brandCopy.children].slice(1) : [];
     const network = app.querySelector('.chem-network-wrap');
-    const keys = ['overview','production','storage','furnace','market','log','accounts','parta','hrac','archiv'];
+    const keys = navigationKeys;
     original.forEach((node, i) => {
       node.dataset.fajrumTab = keys[i];
-      node.prepend(icon(keys[i]));
+      node.prepend(navigationIcon(keys[i]));
       for (const child of [...node.childNodes]) if (child.nodeType === 3) child.remove();
       node.setAttribute('aria-label', labels[keys[i]]);
       if (state.tab === keys[i]) node.setAttribute('aria-current', 'page');
@@ -165,7 +191,7 @@
       for (const key of ['accounts','log','hrac','archiv']) {
         const node = original[keys.indexOf(key)];
         node.className = 'fj-more-entry';
-        node.replaceChildren(icon(key), el('span','',labels[key]));
+        node.replaceChildren(navigationIcon(key), el('span','',labels[key]));
         list.append(node);
       }
       list.append(button(labels.settings, 'settings', () => select('settings'), 'fj-more-entry'));
@@ -181,7 +207,7 @@
     };
     for (const [key, glyph, action] of [
       ['overview','overview',()=>select('overview')],
-      ['workshop','production',()=>select(prefs.workshop)],
+      ['workshop','workshop',()=>select(prefs.workshop)],
       ['parta','parta',()=>select('parta')],
       ['market','market',()=>select('market')],
       ['more','more',openMore]
@@ -204,7 +230,7 @@
       for (const key of workshop) subnav.append(original[keys.indexOf(key)]);
     } else if (current === 'more') {
       subnav = el('div','fj-section-heading');
-      subnav.append(icon(state.tab), el('h2','',labels[state.tab] || labels.more));
+      subnav.append(navigationIcon(state.tab), el('h2','',labels[state.tab] || labels.more));
       subnav.append(button(labels.more,'more',openMore,'fj-section-switch'));
     }
     return {nav, subnav};
@@ -321,6 +347,26 @@
       }
     }
     const header = app.querySelector('.hdr');
+    if (app.classList.contains('desktop')) {
+      [...app.querySelectorAll('.tabs > .tab')].forEach((node,i) => {
+        const key = navigationKeys[i];
+        if (!key || node.querySelector('.fj-nav-art')) return;
+        for (const child of [...node.childNodes]) if (child.nodeType === 3) child.remove();
+        node.prepend(navigationIcon(key));
+        node.dataset.fajrumTab = key;
+        node.setAttribute('aria-label',node.querySelector('.tab-label').textContent);
+        if (key === state.tab) node.setAttribute('aria-current','page');
+      });
+    }
+    const settings = header && [...header.querySelectorAll('button')].find(node => node.textContent.trim() === '⚙️');
+    if (settings) {
+      settings.replaceChildren(navigationIcon('settings'));
+      settings.classList.add('fj-header-settings');
+      settings.dataset.fajrumNav = 'settings';
+      settings.setAttribute('aria-label',cs(state)?'Nastavení':'Settings');
+      settings.title = cs(state)?'Nastavení':'Settings';
+      if (state.tab === 'settings') settings.setAttribute('aria-current','page');
+    }
     if (header && !header.querySelector('.fj-header-theme')) {
       const toggle = button(cs(state)?'Změnit motiv':'Change theme',prefs.theme==='dark'?'sun':'moon',()=>setTheme(prefs.theme==='dark'?'light':'dark',()=>select(state.tab)),'fj-header-theme');
       toggle.title = cs(state)?'Přepnout světlý / tmavý motiv':'Switch light / dark theme';
@@ -335,7 +381,7 @@
     if (state.phase==='intro' && !app.querySelector('.fj-theme-control')) app.prepend(themeControl(state,select));
     // In-scroll SVG labels are part of the existing illustrations; keep their colors and sizes.
   }
-  window.FajrumUI = {icon,resourceIcon,navigation,resources,calendar,context,finish,beforeRender,sheet};
+  window.FajrumUI = {icon,resourceIcon,navigationIcon,navigation,resources,calendar,context,finish,beforeRender,sheet};
   let desktopMode = null;
   function viewport() {
     root.style.setProperty('--fj-viewport-height', `${window.visualViewport ? window.visualViewport.height : window.innerHeight}px`);
