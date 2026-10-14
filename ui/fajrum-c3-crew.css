@@ -1,0 +1,168 @@
+/* FAJRUM C3 — The crew book. Decorative layer only, no controls replaced. */
+:root[data-fajrum-theme="light"]{
+  --fj-c3-paper:#efe4cd;--fj-c3-ink:#34261b;--fj-c3-soft:#745939;
+  --fj-c3-frame:#916943;--fj-c3-glaze:#faeecf;--fj-c3-wash:#67482b1a;
+  --fj-c3-stamp:#6b3d20;--fj-c3-shadow:#291b1330;
+}
+:root[data-fajrum-theme="dark"],:root:not([data-fajrum-theme]){
+  --fj-c3-paper:#29231c;--fj-c3-ink:#eadbc3;--fj-c3-soft:#bea17e;
+  --fj-c3-frame:#8d6e48;--fj-c3-glaze:#d8b684;--fj-c3-wash:#bb9a6a16;
+  --fj-c3-stamp:#d7ae79;--fj-c3-shadow:#0006;
+}
+/* The existing overview, hiring logic and profile buttons remain unchanged. */
+#app .fj-c3-roster{
+  --fj-c3-border:color-mix(in srgb,var(--fj-c3-frame),transparent 27%);
+  position:relative;isolation:isolate;overflow:visible;
+  background:var(--fj-c3-paper);color:var(--fj-c3-ink);
+  background-image:radial-gradient(ellipse at 100% 4%,var(--fj-c3-wash),transparent 53%),
+                   radial-gradient(ellipse at 5% 95%,var(--fj-c3-wash),transparent 43%),
+                   url('grain.svg');
+  border:1px solid var(--fj-c3-border);border-radius:8px;
+}
+#app .fj-c3-masthead{
+  position:relative;display:grid;grid-template-columns:66px minmax(0,1fr);
+  align-items:center;gap:13px;margin:-14px -14px 13px;padding:17px 17px 15px;
+  min-width:0;overflow:hidden;color:#f4e6c9;
+  background:linear-gradient(128deg,#35261aee,#1d1813f2),url('../img/ui/surface-sootwood.webp') center/cover;
+  border-radius:7px 7px 0 0;border-bottom:3px double #997149;
+}
+#app .fj-c3-masthead::before,#app .fj-c3-masthead::after{
+  content:'';position:absolute;pointer-events:none;width:39px;height:39px;opacity:.50;
+  background:url('brass-corner.svg') center/contain no-repeat;
+}
+#app .fj-c3-masthead::before{top:0;left:0}
+#app .fj-c3-masthead::after{right:0;bottom:0;transform:rotate(180deg)}
+#app .fj-c3-masthead-emblem{
+  display:grid;place-items:center;width:66px;height:66px;box-sizing:border-box;
+  border:1px solid #b68b52;border-radius:50%;
+  background:radial-gradient(circle at 40% 28%,#b98b4226,#1c150cdd);
+  box-shadow:inset 0 0 0 4px #20170e,inset 0 0 0 5px #bb955e80,0 4px 10px #0006;
+}
+#app .fj-c3-masthead-emblem img{display:block;width:48px;height:48px;object-fit:contain;filter:drop-shadow(0 2px 3px #0009)}
+#app .fj-c3-masthead-copy{min-width:0;position:relative;z-index:1}
+#app .fj-c3-kicker{display:block;font:600 9px/1.5 Georgia,serif;letter-spacing:1.5px;color:#d8b989}
+#app .fj-c3-masthead h2{font:700 clamp(22px,4vw,31px)/1.2 Georgia,serif;margin:3px 0 4px;color:#f4e5c7}
+#app .fj-c3-masthead p{font:italic 12px/1.45 Georgia,serif;margin:0;color:#d7c1a1}
+#app .fj-c3-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;margin:0 0 12px!important}
+#app .fj-c3-summary .parta-sum-pill{
+  display:flex;align-items:center;justify-content:center;min-height:40px;
+  padding:7px 8px;box-sizing:border-box;border:1px solid var(--fj-c3-border);border-radius:5px;
+  background:linear-gradient(160deg,var(--fj-c3-wash),transparent 82%);color:var(--fj-c3-ink);
+  font-size:12px!important;font-weight:600;line-height:1.35;text-align:center;
+}
+#app .fj-c3-secondary-summary{font:italic 12px/1.45 Georgia,serif;color:var(--fj-c3-soft);padding:2px 1px 12px}
+#app .fj-c3-roster .parta-grid{padding:2px 0 10px!important;gap:12px!important}
+#app .fj-c3-roster .fj-c3-worker{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:var(--fj-c3-paper)!important;
+  background-image:radial-gradient(ellipse at 90% -15%,var(--fj-c3-wash),transparent 65%),url('grain.svg')!important;
+  border:1px solid var(--fj-c3-border)!important;border-radius:7px!important;
+  box-shadow:0 3px 8px var(--fj-c3-shadow),inset 0 0 0 3px color-mix(in srgb,var(--fj-c3-frame),transparent 92%)!important;
+  cursor:pointer;min-width:0;color:var(--fj-c3-ink);
+}
+#app .fj-c3-roster .fj-c3-worker::before,#app .fj-c3-roster .fj-c3-worker::after{
+  content:'';position:absolute;pointer-events:none;width:31px;height:31px;z-index:2;opacity:.44;
+  background:url('brass-corner.svg') center/contain no-repeat;
+}
+#app .fj-c3-roster .fj-c3-worker::before{top:0;left:0}
+#app .fj-c3-roster .fj-c3-worker::after{right:0;bottom:0;transform:rotate(180deg)}
+#app .fj-c3-roster .fj-c3-worker[data-c3-mood="low"]{border-color:color-mix(in srgb,var(--danger),var(--fj-c3-frame) 55%)!important}
+#app .fj-c3-roster .fj-c3-worker:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+#app .fj-c3-portrait-frame{position:relative;isolation:isolate;overflow:hidden;border-radius:4px!important;
+  background:#26170e;border:2px solid #a27c4c!important;
+  box-shadow:inset 0 0 0 2px #342415,0 2px 6px #0003;
+}
+#app .fj-c3-roster .parta-portrait{max-width:100%;min-width:0;box-sizing:border-box}
+#app .fj-c3-roster .parta-portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+#app .fj-c3-roster .fj-c3-portrait-frame::after,#app .fj-c3-profile .fj-c3-portrait-frame::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  border:4px solid #ca9b4b15;box-shadow:inset 0 0 13px #170e0b9a;
+}
+#app .fj-c3-worker-number{position:absolute;right:5px;top:5px;z-index:2;
+  display:grid;place-items:center;min-width:25px;height:23px;padding:1px 3px;
+  font:700 12px/1 Georgia,serif;color:#f7e7c4;background:#322013e5;
+  border:1px solid #ba9060;border-radius:2px;box-shadow:0 1px 3px #0008
+}
+#app .fj-c3-roster .parta-info{min-width:0;color:var(--fj-c3-ink)}
+#app .fj-c3-roster .parta-name{font:700 17px/1.28 Georgia,serif;color:var(--fj-c3-ink)!important;
+  white-space:normal!important;overflow-wrap:anywhere;margin:0 0 8px}
+#app .fj-c3-roster .fj-c3-profession{display:flex;align-items:center;gap:7px;color:var(--fj-c3-soft)!important;
+  font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+#app .fj-c3-trade-mark{flex:0 0 24px;width:24px;height:24px;display:grid;place-items:center;
+  font:700 18px/1 Georgia,serif;color:var(--fj-c3-stamp);
+  background:radial-gradient(circle,#c99a5626,transparent 90%);border:1px solid var(--fj-c3-border);
+  border-radius:50%;box-shadow:inset 0 0 0 2px var(--fj-c3-paper)}
+#app .fj-c3-roster .fj-c3-trade-level{margin-top:6px!important;letter-spacing:.15px!important;
+  font-size:12px!important;color:var(--fj-c3-soft)!important}
+#app .fj-c3-roster .parta-bar-row{margin-top:9px}
+#app .fj-c3-roster .parta-bar-lbl{color:var(--fj-c3-soft);font-size:11px}
+#app .fj-c3-roster .parta-bar{height:8px!important;border-radius:4px;
+  border:1px solid var(--fj-c3-border);background:color-mix(in srgb,var(--fj-c3-frame),transparent 88%)}
+#app .fj-c3-roster .parta-bar-fill{height:100%;border-radius:3px}
+#app .fj-c3-roster .fj-crew-stat-value{font:700 12px/1.2 Georgia,serif;color:var(--fj-c3-ink)}
+#app .fj-c3-roster .fj-c3-duty{margin-top:10px;padding:7px 8px;
+  border-top:1px dashed var(--fj-c3-border);border-bottom:1px dashed var(--fj-c3-border);
+  color:var(--fj-c3-ink);background:var(--fj-c3-wash);font:600 12px/1.4 Georgia,serif;
+  overflow-wrap:anywhere}
+#app .fj-c3-roster .fj-c3-actions{position:relative;z-index:3;gap:7px}
+#app .fj-c3-roster .fj-c3-actions button{
+  min-height:46px!important;color:var(--fj-c3-ink);
+  border:1px solid var(--fj-c3-frame);background:transparent;font-size:13px!important;
+  border-radius:4px;box-shadow:inset 0 1px #fff2;
+}
+#app .fj-c3-roster .fj-c3-actions .fj-crew-assign{color:#fae7c6;
+  background:linear-gradient(#98602e,#693a1a);border-color:#bb844d}
+#app .fj-c3-roster .fj-c3-actions button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#app .fj-c3-roster .fj-crew-bonds-disclosure{border:1px solid var(--fj-c3-border);
+  background:var(--fj-c3-wash);margin:0 0 12px}
+#app .fj-c3-roster .fj-crew-bonds-disclosure>summary{font:700 13px/1.4 Georgia,serif;color:var(--fj-c3-ink)}
+#app .fj-c3-roster .fj-crew-bonds-disclosure .fj-crew-bonds{color:var(--fj-c3-ink)}
+/* Profile sheet: all original subtabs and character actions still work. */
+#app .fj-c3-profile{position:relative;background:var(--fj-c3-paper);
+  background-image:radial-gradient(ellipse at 0 0,var(--fj-c3-wash),transparent 55%),url('grain.svg');
+  border:2px solid var(--fj-c3-frame);box-shadow:0 16px 48px #0008,inset 0 0 0 4px var(--fj-c3-wash);color:var(--fj-c3-ink)}
+#app .fj-c3-profile-heading{position:relative;padding:10px 10px 13px;margin:-5px -5px 10px!important;
+  border-bottom:3px double var(--fj-c3-border);gap:12px;min-width:0}
+#app .fj-c3-profile-heading>div:nth-child(2){min-width:0;overflow-wrap:anywhere}
+#app .fj-c3-profile-heading>div:nth-child(2)>div:first-child{font:700 clamp(18px,4vw,23px)/1.25 Georgia,serif!important;
+  color:var(--fj-c3-ink)}
+#app .fj-c3-profile-heading .detail-portrait-big{border-radius:5px;width:96px;height:126px;flex:0 0 96px}
+#app .fj-c3-profile-medal{display:inline-flex;padding:5px 10px;margin-top:8px;
+  color:var(--fj-c3-stamp);border:1px solid var(--fj-c3-border);
+  font:700 12px/1.4 Georgia,serif;border-radius:3px;
+  background:var(--fj-c3-wash)}
+#app .fj-c3-profile .fj-c3-detail-tabs{background:var(--fj-c3-paper);border-bottom:1px solid var(--fj-c3-border)}
+#app .fj-c3-profile .fj-c3-detail-tabs .detail-subtab{font:600 13px/1.3 Georgia,serif;
+  border-color:var(--fj-c3-border);background:transparent;color:var(--fj-c3-ink)}
+#app .fj-c3-profile .fj-c3-detail-tabs .detail-subtab.active{background:#74451f;color:#f8e7c8}
+#app .fj-c3-profile button{min-height:44px}
+/* Existing task-selection sheet; no interaction rewiring. */
+#app .fj-sheet:has(.fj-crew-task-list){background:var(--fj-c3-paper);color:var(--fj-c3-ink);
+  background-image:url('grain.svg');border:2px solid var(--fj-c3-frame)}
+#app .fj-sheet:has(.fj-crew-task-list) .fj-crew-task-choice{
+  background:var(--fj-c3-wash);color:var(--fj-c3-ink);border-color:var(--fj-c3-border);
+  box-shadow:inset 0 1px color-mix(in srgb,var(--fj-c3-glaze),transparent 80%)}
+#app .fj-sheet:has(.fj-crew-task-list) .fj-crew-task-choice.is-current{border-color:var(--fj-c3-frame);box-shadow:inset 4px 0 var(--gold)}
+#app .fj-sheet:has(.fj-crew-task-list) .fj-crew-task-description{color:var(--fj-c3-soft)}
+@media (min-width:1080px) and (min-height:500px){
+ #app.desktop .fj-c3-roster .parta-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #app.desktop .fj-c3-roster .parta-card{grid-template-columns:82px minmax(0,1fr);gap:9px;padding:10px}
+ #app.desktop .fj-c3-roster .parta-portrait{width:82px;height:110px}
+ #app.desktop .fj-c3-roster .parta-name{font-size:15px}
+}
+@media (min-width:700px) and (max-width:1079px){#app .fj-c3-roster .parta-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:699px){#app .fj-c3-roster .parta-grid{grid-template-columns:minmax(0,1fr)!important}}
+@media(max-width:375px){
+ #app .fj-c3-masthead{grid-template-columns:52px minmax(0,1fr);gap:9px;padding:14px;margin:-14px -14px 12px}
+ #app .fj-c3-masthead-emblem{width:52px;height:52px}
+ #app .fj-c3-masthead-emblem img{width:39px;height:39px}
+ #app .fj-c3-kicker{font-size:8px;letter-spacing:.8px}
+ #app .fj-c3-masthead h2{font-size:21px}
+ #app .fj-c3-masthead p{font-size:11px}
+ #app .fj-c3-roster .fj-c3-worker{grid-template-columns:80px minmax(0,1fr);gap:9px;padding:9px}
+ #app .fj-c3-roster .parta-portrait{width:80px;height:106px}
+ #app .fj-c3-roster .parta-name{font-size:16px}
+ #app .fj-c3-summary{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ #app .fj-c3-profile-heading .detail-portrait-big{width:76px;height:103px;flex-basis:76px}
+}
+@media(prefers-reduced-motion:reduce){#app .fj-c3-roster .fj-c3-worker{transition:none!important}}
