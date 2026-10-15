@@ -1,0 +1,234 @@
+/* FAJRUM D2 — the foundry's accounting book, real figures / original actions.
+   Matches C2b furnace's hand-finished soot, brass and instrument treatment. */
+#app .fj-d2-accounts{
+  --d2-brass:#b88a50;--d2-brass-edge:rgba(173,128,77,.48);
+  --d2-shadow:rgba(11,8,4,.26);--d2-danger:#c45e45;
+  min-width:0;
+}
+/* The existing accounts illustration is not redrawn or stretched. */
+#app .fj-d2-accounts .fj-d2-accounts-art{
+  border:2px solid #916a42;border-radius:7px;overflow:hidden;
+  box-shadow:0 6px 20px var(--d2-shadow),inset 0 0 0 1px #e8c38a36;
+}
+#app .fj-d2-accounts-art .fj-section-art-figure{position:relative;min-width:0;}
+#app .fj-d2-accounts-art .fj-section-art-caption h2{
+  color:#ffdfad;font-size:clamp(21px,2.5vw,27px);text-shadow:0 3px 9px #000d;
+}
+#app .fj-d2-etched-corners{
+  position:absolute;inset:9px;z-index:3;pointer-events:none;border:1px solid #f4c68a6b;
+  border-radius:2px;background:url('brass-corner.svg') left top / 40px 40px no-repeat,
+  url('brass-corner.svg') right top / 40px 40px no-repeat;
+  box-shadow:inset 0 0 0 2px #140d071a;
+}
+/* Master accounting header: four metal counters and a hand-built balance indicator. */
+#app .fj-d2-book-header{
+  position:relative;isolation:isolate;overflow:hidden;margin:10px 10px 12px;
+  border:1px solid var(--fj-edge);border-top:3px solid var(--d2-brass);
+  border-radius:6px;padding:14px 15px 13px;background:
+  linear-gradient(115deg,#b78d4e18,transparent 41%,#24110812),var(--card);
+  box-shadow:0 5px 18px var(--d2-shadow),inset 0 0 0 1px #dcac7220;
+}
+#app .fj-d2-book-header::before{
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:url('../img/ui/surface-sootwood.webp') center/480px auto;
+  opacity:.19;mix-blend-mode:soft-light;
+}
+#app .fj-d2-book-header::after{
+  content:'';position:absolute;right:11px;top:10px;pointer-events:none;
+  width:45px;height:45px;opacity:.34;
+  background:url('brass-corner.svg') center/contain no-repeat;transform:rotate(90deg);
+}
+#app .fj-d2-book-top{display:flex;align-items:center;justify-content:space-between;gap:11px;min-width:0;margin-bottom:14px;}
+#app .fj-d2-book-lead{display:flex;align-items:center;gap:12px;min-width:0;}
+#app .fj-d2-glyph{
+  display:grid;place-items:center;flex:0 0 61px;width:61px;height:61px;
+  border:1px solid #a6814f;border-radius:50%;background:
+  radial-gradient(circle at 38% 25%,#d4a85b33,transparent 70%),var(--fj-surface);
+  box-shadow:inset 0 0 0 4px #b6905b15,inset 0 0 0 5px #c5a57755,0 2px 5px #0002;
+  color:var(--d2-brass);font:700 29px/1 Georgia,serif;
+}
+#app .fj-d2-glyph img{display:block;width:47px;height:47px;object-fit:contain;filter:drop-shadow(0 2px 3px #0004);}
+#app .fj-d2-book-title{min-width:0;}
+#app .fj-d2-kicker{display:block;color:var(--fj-muted);letter-spacing:1.25px;font:700 9px/1.5 Georgia,serif;}
+#app .fj-d2-book-title h2{color:var(--ink);font:700 clamp(22px,2.4vw,29px)/1.14 Georgia,serif;margin:3px 0 5px;}
+#app .fj-d2-book-title p{color:var(--fj-muted);font:italic 12px/1.45 Georgia,serif;margin:0;}
+#app .fj-d2-book-seal{
+  position:relative;z-index:1;display:grid;place-items:center;flex:0 0 76px;
+  width:76px;height:76px;border:2px double #966d44;border-radius:50%;
+  background:radial-gradient(circle,#84502621,transparent 70%);
+  color:var(--d2-brass);font:700 10px/1.2 Georgia,serif;letter-spacing:1px;
+  text-align:center;transform:rotate(-9deg);box-shadow:inset 0 0 0 5px var(--card),inset 0 0 0 6px #a87e5566;
+}
+#app .fj-d2-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
+#app .fj-d2-metric{
+  display:flex;flex-direction:column;justify-content:center;min-width:0;gap:3px;
+  border:1px solid var(--d2-brass-edge);border-bottom:2px solid #89623c;
+  border-radius:4px;padding:11px 12px;min-height:77px;
+  background:linear-gradient(155deg,#a97b411c,transparent 76%),var(--fj-surface);
+  box-shadow:inset 0 1px #ffffff0b,0 2px 8px #0001;
+}
+#app .fj-d2-metric-label{font:600 10px/1.35 Georgia,serif;color:var(--fj-muted);}
+#app .fj-d2-metric-value{font:700 clamp(18px,2.2vw,27px)/1.13 Georgia,serif;letter-spacing:.1px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;}
+#app .fj-d2-metric[data-kind="cash"] .fj-d2-metric-value{color:var(--ok);}
+#app .fj-d2-metric[data-alert="true"] .fj-d2-metric-value{color:var(--danger);}
+#app .fj-d2-financial-warning{
+  display:flex;align-items:center;gap:10px;margin-top:11px;padding:8px 10px;
+  border:1px solid color-mix(in srgb,var(--ok),transparent 66%);
+  border-radius:4px;background:color-mix(in srgb,var(--ok),transparent 94%);min-width:0;
+}
+#app .fj-d2-financial-warning[data-ok="false"]{border-color:color-mix(in srgb,var(--danger),transparent 53%);background:color-mix(in srgb,var(--danger),transparent 92%);}
+#app .fj-d2-warning-medallion{
+  display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:50%;
+  border:1px solid currentColor;color:var(--ok);font:700 17px/1 Georgia,serif;
+}
+#app .fj-d2-financial-warning[data-ok="false"] .fj-d2-warning-medallion{color:var(--danger);}
+#app .fj-d2-warning-copy{display:flex;flex-wrap:wrap;gap:3px 10px;align-items:baseline;min-width:0;line-height:1.4;}
+#app .fj-d2-warning-copy strong{font-size:12px;color:var(--ink);}
+#app .fj-d2-warning-copy span{font-size:11px;color:var(--fj-muted);}
+#app .fj-d2-cover-gauge{
+  height:5px;overflow:hidden;margin-top:8px;border-radius:4px;border:1px solid #9c7c5630;
+  background:color-mix(in srgb,var(--fj-muted),transparent 87%);
+}
+#app .fj-d2-cover-fill{display:block;height:100%;border-radius:4px;width:0;
+  background:linear-gradient(90deg,#6f8646,var(--ok));}
+#app .fj-d2-book-header[data-solvency="short"] .fj-d2-cover-fill{
+  background:linear-gradient(90deg,#945030,var(--danger));
+}
+/* Original UI: nothing is cloned, action buttons stay connected. */
+#app .fj-d2-ledger-section{
+  position:relative;isolation:isolate;overflow:hidden;
+  border:1px solid var(--d2-brass-edge);border-top:3px double #a87d4d;
+  background:linear-gradient(125deg,#9c6b3510,transparent 35%,#3b29130e),var(--fj-surface);
+  box-shadow:0 4px 19px #0002,inset 0 0 0 1px #d2ab791a;
+}
+#app .fj-d2-ledger-section::before{
+  content:'';position:absolute;right:8px;top:6px;width:39px;height:39px;z-index:-1;pointer-events:none;opacity:.42;
+  background:url('brass-corner.svg') center/contain no-repeat;transform:rotate(90deg);
+}
+#app .fj-d2-ledger-section-title{
+  margin:0 0 16px!important;padding:0 0 11px!important;border-bottom:3px double var(--d2-brass-edge);
+  color:var(--ink);font:700 clamp(16px,2vw,20px)/1.4 Georgia,serif!important;
+}
+#app .fj-d2-active-contracts{
+  position:relative;min-width:0;margin:0 0 15px!important;padding:12px!important;
+  border:1px solid var(--d2-brass-edge)!important;border-left:4px solid #9e7647!important;border-radius:5px!important;
+  background:linear-gradient(140deg,#ad7b2a16,transparent 72%),var(--card)!important;
+  box-shadow:0 2px 8px #00000014;
+}
+#app .fj-d2-active-contracts>div:first-child{font:700 14px/1.35 Georgia,serif!important;color:var(--ink)!important;gap:8px;flex-wrap:wrap;}
+#app .fj-d2-active-contracts>div:first-child button{min-height:44px;}
+#app .fj-d2-active-contracts .fj-contract-card{background:var(--fj-surface);border-color:var(--d2-brass-edge);border-radius:4px;}
+#app .fj-d2-ledger-columns{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;align-items:start;
+}
+#app .fj-d2-ledger-columns>div{
+  min-width:0;padding:11px;position:relative;border:1px solid var(--d2-brass-edge);
+  border-top:3px solid #916943;border-radius:5px;
+  background:linear-gradient(160deg,#bc925920,transparent 41%),var(--card);
+  box-shadow:inset 0 0 0 1px #ebd1a20b,0 4px 10px #0001;
+}
+#app .fj-d2-pane-heading{
+  min-width:0;display:flex;align-items:center;gap:7px;padding:2px 0 10px!important;margin-bottom:11px!important;
+  border-bottom:2px double var(--d2-brass-edge)!important;
+  color:var(--ink)!important;font:700 16px/1.35 Georgia,serif!important;
+}
+#app .fj-d2-finance-pane>div:not(.fj-d2-pane-heading){margin-bottom:11px!important;min-width:0;}
+#app .fj-d2-cash-panel,#app .fj-d2-expenditure-panel,#app .fj-d2-projection-panel,#app .fj-d2-repayment-panel,#app .fj-d2-factor-panel{
+  position:relative;border:1px solid var(--d2-brass-edge)!important;border-radius:4px!important;
+  background:linear-gradient(165deg,#ab79321b,transparent 75%),var(--fj-surface)!important;
+  padding:11px 12px!important;box-shadow:0 2px 7px #00000015;
+}
+#app .fj-d2-cash-panel{border-left:4px solid #a17e4e!important;}
+#app .fj-d2-cash-panel strong{font:700 18px/1.3 Georgia,serif!important;white-space:nowrap;}
+#app .fj-d2-expenditure-panel{border-left:4px solid #9e7444!important;}
+#app .fj-d2-repayment-panel,#app .fj-d2-projection-panel{border-left:4px solid var(--danger)!important;}
+#app .fj-d2-factor-panel{
+  border-left:4px solid #967446!important;
+  background-image:linear-gradient(120deg,#ca945719,transparent 80%),url('../img/ui/surface-paper.webp')!important;
+  background-size:auto,cover!important;background-blend-mode:normal,soft-light!important;
+}
+#app .fj-d2-factor-panel [data-partner="Weiss"]{color:var(--ink)!important;font:700 14px/1.35 Georgia,serif!important;}
+#app .fj-d2-finance-pane :is(.fj-d2-expenditure-panel,.fj-d2-projection-panel,.fj-d2-repayment-panel)>div:first-child{font:700 13px/1.4 Georgia,serif!important;color:var(--ink)!important;margin-bottom:8px!important;}
+#app .fj-d2-ledger-section .fj-d2-account-action{
+  min-height:44px!important;min-width:57px;white-space:normal;
+  padding:8px 11px!important;border:1px solid var(--d2-brass-edge)!important;
+  border-radius:4px!important;color:var(--ink)!important;
+  background:linear-gradient(145deg,#b7884a20,transparent 65%),var(--card)!important;
+  box-shadow:inset 0 1px #fff1;line-height:1.3!important;
+}
+#app .fj-d2-ledger-section .fj-d2-account-action:hover{border-color:var(--d2-brass)!important;}
+#app .fj-d2-ledger-section .fj-d2-account-action:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+#app .fj-d2-offer{
+  border:1px solid var(--d2-brass-edge)!important;border-left:3px solid #906d43!important;
+  border-radius:4px!important;background:linear-gradient(120deg,#9b754316,transparent),var(--fj-surface)!important;
+  box-shadow:0 2px 8px #00000013;min-width:0;
+}
+#app .fj-d2-reputation{
+  position:relative;margin:16px 0 0!important;padding:15px 0 0!important;
+  border-top:3px double var(--d2-brass-edge)!important;
+}
+#app .fj-d2-reputation-heading{margin-bottom:11px!important;font:700 17px/1.4 Georgia,serif!important;color:var(--ink)!important;}
+#app .fj-d2-reputation .fj-accounts-reputation-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;
+}
+#app .fj-d2-reputation-card{
+  min-width:0;position:relative;padding:13px 11px!important;
+  border:1px solid var(--d2-brass-edge)!important;border-top:3px solid #9b7750!important;
+  border-radius:4px!important;box-shadow:0 2px 8px #00000013;
+  background:linear-gradient(145deg,#b288491a,transparent 70%),var(--card)!important;
+}
+#app .fj-d2-reputation-card::before{
+  content:'✥';position:absolute;right:9px;bottom:6px;pointer-events:none;
+  font:30px/1 Georgia,serif;color:var(--d2-brass);opacity:.11;
+}
+#app .fj-d2-reputation-card[data-faction="church"]::before{content:'✝';}
+#app .fj-d2-reputation-card[data-faction="noble"]::before{content:'♜';}
+#app .fj-d2-reputation-card[data-faction="trade"]::before{content:'⚖';}
+#app .fj-d2-reputation-card>div:first-child{display:flex;flex-wrap:wrap;gap:3px;}
+#app .fj-d2-reputation-card>div:first-child>span:nth-child(2){font:700 13px/1.4 Georgia,serif!important;color:var(--ink)!important;}
+#app .fj-d2-reputation-card>div:first-child>span:last-child{font:700 18px/1.1 Georgia,serif!important;color:var(--ink)!important;}
+#app .fj-d2-fama-track{height:9px!important;border:1px solid var(--d2-brass-edge);border-radius:5px!important;background:color-mix(in srgb,var(--fj-muted),transparent 85%)!important;}
+#app .fj-d2-fama-track>div{height:100%!important;border-radius:4px!important;}
+#app .fj-d2-reputation-card>div:nth-child(3){font-size:11px!important;line-height:1.45;overflow-wrap:anywhere;}
+#app .fj-d2-accounts :is(.fj-d2-offers-pane,.fj-d2-finance-pane,.fj-d2-ledger-section) button:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+/* Mobile phones: one continuous book page, no tiny half-width tables or controls. */
+@media(max-width:959px){
+ #app:not(.desktop) .fj-d2-ledger-columns{grid-template-columns:minmax(0,1fr)!important;}
+ #app .fj-d2-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
+ #app .fj-d2-metric{min-height:72px;padding:9px 10px;}
+ #app .fj-d2-reputation .fj-accounts-reputation-grid{grid-template-columns:minmax(0,1fr)!important;}
+ #app .fj-d2-reputation-card{padding:11px!important;}
+ #app .fj-d2-ledger-columns>div{padding:10px;}
+}
+@media(min-width:960px) and (max-width:1199px){
+ #app.desktop .fj-d2-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
+ #app.desktop .fj-d2-reputation .fj-accounts-reputation-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
+@media(max-width:375px){
+ #app .fj-d2-book-header{padding:11px;margin:8px 8px 10px;}
+ #app .fj-d2-book-top{margin-bottom:10px;}
+ #app .fj-d2-glyph{width:45px;height:45px;flex-basis:45px;}
+ #app .fj-d2-glyph img{width:36px;height:36px;}
+ #app .fj-d2-book-seal{display:none;}
+ #app .fj-d2-book-lead{gap:9px;}
+ #app .fj-d2-kicker{font-size:8px;letter-spacing:.55px;}
+ #app .fj-d2-book-title h2{font-size:22px;}
+ #app .fj-d2-book-title p{font-size:11px;}
+ #app .fj-d2-metrics{gap:6px;}
+ #app .fj-d2-metric-label{font-size:10px;}
+ #app .fj-d2-metric-value{font-size:19px;}
+ #app .fj-d2-metric{padding:8px;min-height:66px;}
+ #app .fj-d2-warning-copy strong{font-size:11px;}
+ #app .fj-d2-warning-copy span{font-size:10px;}
+ #app .fj-d2-active-contracts{padding:9px!important;}
+ #app .fj-d2-ledger-section{padding:11px!important;}
+ #app .fj-d2-finance-pane .fj-d2-cash-panel strong{font-size:16px!important;}
+}
+@media(max-height:500px) and (orientation:landscape){
+ #app .fj-d2-book-header{padding:10px 12px;}
+ #app .fj-d2-glyph{width:43px;height:43px;flex-basis:43px;}
+ #app .fj-d2-glyph img{width:34px;height:34px;}
+ #app .fj-d2-book-seal{display:none;}
+ #app .fj-d2-metric{min-height:60px;padding:8px;}
+}
+@media(prefers-reduced-motion:reduce){#app .fj-d2-accounts *{transition:none!important;}}
