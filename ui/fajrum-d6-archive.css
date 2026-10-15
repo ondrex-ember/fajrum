@@ -194,3 +194,16 @@
 @media(prefers-reduced-motion:reduce) {
  #app .fj-d6-archive *,#app .fj-d6-archive-scene * {transition:none!important;animation:none!important;}
 }
+
+/* D6H1: visibly identify raw batches without inventing historical art. */
+#app .fj-d6-sample-row > .fj-d6-sample-icon{
+ display:grid;place-items:center;flex:0 0 68px;width:68px;height:76px;
+ padding:4px;border:1px dashed var(--d6-edge);border-radius:3px;
+ background:var(--d6-surface);color:var(--d6-ink);
+ font-size:24px!important;text-align:center;line-height:1.1;
+}
+@media(max-width:390px){
+ #app .fj-d6-sample-row > .fj-d6-sample-icon{
+  width:49px;height:62px;flex-basis:49px;font-size:21px!important;
+ }
+}

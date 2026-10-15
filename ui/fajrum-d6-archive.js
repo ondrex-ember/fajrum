@@ -78,6 +78,12 @@
     }
     rows.forEach(row => {
       row.classList.add('fj-d6-sample-row');
+      // Raw glass has no dedicated image in the repository; preserve and frame
+      // its original glyph rather than inventing a different glass object.
+      if (!row.querySelector(':scope > .fj-product-picture')) {
+        const glyph = row.firstElementChild;
+        if (glyph && glyph.tagName === 'SPAN') glyph.classList.add('fj-d6-sample-icon');
+      }
       const copy = row.querySelector(':scope > div:last-child');
       if (!copy) return;
       copy.classList.add('fj-d6-sample-copy');

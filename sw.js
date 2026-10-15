@@ -14,7 +14,7 @@
 // Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
 // skipWaiting při instalaci a žádný automatický reload.
 
-const CORE = 'sklarska-hut-woodland-v1.16-d7-shell';
+const CORE = 'sklarska-hut-woodland-v1.17-d6h1-art';;
 const MEDIA = 'sklarska-hut-woodland-v1';
 const PREFIX = 'sklarska-hut-';
 

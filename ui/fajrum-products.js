@@ -20,8 +20,21 @@
   const catalogue=Object.prototype.hasOwnProperty.call(catalogueTiles,k);
   const tile=catalogue?catalogueTiles[k]:extra?extraTiles[k]:tiles[k];let sprite;
   if(singleAssets[k]){
-   sprite=document.createElement('span');sprite.className='fj-product-sprite fj-product-single'+(k==='pucmeloun'?' fj-product-figurine':'');
-   sprite.style.backgroundImage="url('img/products/"+singleAssets[k]+"')";
+   // Standalone historical product images must be DOM images, not CSS backgrounds.
+   // CSS-background sprites were invisible in the Codex although the files loaded.
+   sprite=document.createElement('span');
+   sprite.className='fj-product-sprite fj-product-single'+(k==='pucmeloun'?' fj-product-figurine':'');
+   const img=document.createElement('img');
+   img.className='fj-product-single-image';
+   img.src='img/products/'+singleAssets[k];
+   img.alt=''; img.decoding='async'; img.loading='eager';
+   img.addEventListener('error',()=>{
+    img.remove();
+    sprite.classList.add('fj-product-single-unavailable');
+    // A neutral missing-image mark rather than a different, incorrect vessel.
+    sprite.textContent='◇';
+   },{once:true});
+   sprite.append(img);
   }else{
    // Exact per-object source windows; the generated atlas is NOT a regular grid.
    // viewBox preserves proportions and prevents any neighboring object from entering the frame.
