@@ -1,0 +1,119 @@
+/* FAJRUM E1c — ordinary dialogues of the existing forest glassworks, c.1680.
+   Readable parchment/soot and wood, no new objects or modern instruments.
+   D1 market offers, crew profile, consent modal and game logic are untouched. */
+#app .fj-e1c-dialog {
+  --e1c-sheet:#2e2820;--e1c-sheet2:#3a3026;--e1c-ink:#f0e4d1;
+  --e1c-muted:#d8c2a5;--e1c-edge:#957249;--e1c-accent:#e0b77b;
+  --e1c-danger:#ffc0a6;--e1c-positive:#cce3ac;
+  box-sizing:border-box;min-width:0;max-width:min(470px,100%)!important;
+  width:100%!important;padding:clamp(14px,2.4vw,22px)!important;
+  max-height:calc(100dvh - 32px)!important;overflow-y:auto!important;
+  overscroll-behavior:contain;overflow-wrap:anywhere;
+  background:linear-gradient(137deg,#ae88521a,transparent 65%),var(--e1c-sheet)!important;
+  color:var(--e1c-ink)!important;
+  border:1px solid var(--e1c-edge)!important;
+  border-top:3px double var(--e1c-accent)!important;border-radius:6px!important;
+  box-shadow:0 14px 46px #0009,inset 0 0 0 1px #dbbc8525!important;
+  font:13px/1.55 Georgia,'Palatino Linotype',serif;
+}
+:root[data-fajrum-theme="light"] #app .fj-e1c-dialog {
+  --e1c-sheet:#eee2cc;--e1c-sheet2:#e3d4b9;--e1c-ink:#33271c;
+  --e1c-muted:#644a34;--e1c-edge:#af885f;--e1c-accent:#87542c;
+  --e1c-danger:#923929;--e1c-positive:#3e642c;
+}
+#app .fj-e1c-overlay {
+  box-sizing:border-box;padding:16px!important;
+  background:rgba(14,10,7,.78)!important;
+  overflow-y:auto;overscroll-behavior:contain;
+}
+#app .fj-e1c-dialog :is(h1,h2,h3),
+#app .fj-e1c-dialog .fj-d7-dialog-heading{
+  color:var(--e1c-ink)!important;
+  font-family:Georgia,'Palatino Linotype',serif;
+  font-weight:700;line-height:1.35;
+}
+#app .fj-e1c-dialog .fj-d7-dialog-heading{
+  font-size:clamp(18px,2.6vw,22px)!important;
+  padding-bottom:10px;border-bottom:1px solid var(--e1c-edge);
+}
+/* Inline colours from the older light-only dialogue implementation. */
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small,h2,h3)[style*="color: rgb(58, 42, 20)"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small,h2,h3)[style*="color: rgb(58, 32, 16)"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small,h2,h3)[style*="color: #3a2a14"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small,h2,h3)[style*="color: #3a2010"]{
+  color:var(--e1c-ink)!important;
+}
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: rgb(139, 94, 52)"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: rgb(90, 58, 26)"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: rgb(107, 58, 16)"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: #8b5e34"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: #5a3a1a"],
+#app .fj-e1c-dialog :is(div,span,p,em,strong,small)[style*="color: #6b3a10"]{
+  color:var(--e1c-muted)!important;
+}
+#app .fj-e1c-dialog :is(div,span,p)[style*="color: rgb(160, 48, 32)"],
+#app .fj-e1c-dialog :is(div,span,p)[style*="color: #a03020"]{color:var(--e1c-danger)!important;}
+/* Help recipes and early-game introduction remain legible in both themes. */
+#app .fj-e1c-dialog :is(div,p)[style*="font-size: 10px"],
+#app .fj-e1c-dialog :is(div,p)[style*="font-size: 11px"]{
+  font-size:12px!important;line-height:1.6!important;
+}
+#app .fj-e1c-dialog [style*="font-family: monospace"]{
+  display:block;color:var(--e1c-ink)!important;
+  background:var(--e1c-sheet2)!important;
+  border:1px solid var(--e1c-edge);padding:8px 9px!important;
+  white-space:normal;overflow-wrap:anywhere;font-size:12px!important;
+}
+#app .fj-e1c-dialog a{color:var(--e1c-accent)!important;overflow-wrap:anywhere;}
+#app .fj-e1c-dialog .btn{
+  min-height:46px!important;padding:9px 12px!important;font-size:13px!important;
+  line-height:1.4!important;white-space:normal;overflow-wrap:anywhere;
+  border-color:var(--e1c-edge)!important;
+}
+#app .fj-e1c-dialog .btn:not(.btn-p):not(.btn-danger){
+  background:var(--e1c-sheet2)!important;color:var(--e1c-ink)!important;
+}
+#app .fj-e1c-dialog .btn:focus-visible,
+#app .fj-e1c-dialog [role="button"]:focus-visible{
+  outline:3px solid var(--e1c-accent);outline-offset:2px;
+}
+/* Wage arrears: 17th-century manuscript slips rather than pale pop-ups. */
+#app .fj-e1c-dialog[data-e1c-kind="wages"] > div[style*="background"],
+#app .fj-e1c-dialog[data-e1c-kind="retention"] > div[style*="background"]{
+  background:var(--e1c-sheet2)!important;
+  border:1px solid var(--e1c-edge);padding:9px!important;border-radius:3px;
+}
+#app .fj-e1c-dialog[data-e1c-kind="retention"] .contract-btn{
+  min-height:47px;display:flex;flex-wrap:wrap;gap:5px 10px;
+  background:var(--e1c-sheet2)!important;
+  border:1px solid var(--e1c-edge)!important;border-radius:3px;
+  color:var(--e1c-ink);padding:9px 11px!important;
+  font-size:12px!important;line-height:1.45;
+}
+#app .fj-e1c-dialog .contract-btn:hover:not(.disabled){border-color:var(--e1c-accent)!important;}
+#app .fj-e1c-dialog .contract-btn.disabled{opacity:.65!important;cursor:not-allowed;}
+#app .fj-e1c-dialog .contract-btn span{min-width:0;overflow-wrap:anywhere;}
+#app .fj-e1c-dialog[data-e1c-kind="retention"] .contract-btn span:last-child{
+  margin-left:auto;color:var(--e1c-muted)!important;
+}
+/* Dramatic cracked-crucible screen keeps its existing deep-red illustration. */
+#app .fj-e1c-crack-overlay{
+  overflow-y:auto;overscroll-behavior:contain;padding:12px!important;
+}
+#app .fj-e1c-crack{
+  box-sizing:border-box;max-height:calc(100dvh - 24px);
+  overflow-y:auto;overscroll-behavior:contain;
+}
+#app .fj-e1c-crack-quote{color:#f0b4a0!important;font-size:12px!important;}
+#app .fj-e1c-crack button{min-height:46px;}
+@media(max-width:420px){
+  #app .fj-e1c-overlay{padding:8px!important;align-items:safe center;}
+  #app .fj-e1c-dialog{padding:13px!important;max-height:calc(100dvh - 16px)!important;}
+  #app .fj-e1c-dialog .btn{min-height:46px!important;}
+  #app .fj-e1c-dialog[data-e1c-kind="wages"] > div[style*="background"]{flex-wrap:wrap;gap:4px!important;}
+}
+@media(max-height:540px) and (orientation:landscape){
+  #app .fj-e1c-overlay{align-items:flex-start!important;padding:6px!important;}
+  #app .fj-e1c-dialog{max-height:calc(100dvh - 12px)!important;}
+}
+@media(prefers-reduced-motion:reduce){#app .fj-e1c-dialog *{transition:none!important;}}

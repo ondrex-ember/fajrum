@@ -853,6 +853,8 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 <link rel="stylesheet" href="ui/fajrum-e1-hero.css">
 <link rel="stylesheet" href="ui/fajrum-e1b-header.css">
 <script src="ui/fajrum-d7-shell.js"></script>
+<link rel="stylesheet" href="ui/fajrum-e1c-dialogs.css">
+<script src="ui/fajrum-e1c-dialogs.js"></script>
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -6889,6 +6891,7 @@ function render(){
   if(window.FajrumD5)FajrumD5.finish(app,G);
   if(window.FajrumD6)FajrumD6.finish(app,G);
   if(window.FajrumD7)FajrumD7.finish(app,G);
+  if(window.FajrumE1c)FajrumE1c.finish(app,G);
   if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
   return result;
 }
@@ -7983,6 +7986,7 @@ function renderOriginal(){
         h("div",{style:{fontSize:"10px",color:"#5a3a1a",fontStyle:"italic",lineHeight:"1.5"}},
           `"${rw[L==="cs"?"quote_cs":"quote_en"]||"..."}"`)
       );
+      headRow.append(headInfo); // E1c: originally omitted; show the existing name, rank and quote beside the portrait.
       box.append(headRow);
       // Situace
       const unpaid=rw.unpaidDebt||0;
