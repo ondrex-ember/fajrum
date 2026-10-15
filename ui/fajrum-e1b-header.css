@@ -1,0 +1,180 @@
+/* FAJRUM E1b · ČITELNOST HERNI HLAVIČKY
+   Prezentační doplněk k původnímu lesnímu sklářství kolem roku 1680.
+   Pouze text, kontrast, mezery a stavové zápisy; žádná herní logika.
+   Slouží pro CZ/EN i světlý/tmavý režim. */
+
+:root[data-fajrum-theme="dark"] #app {
+  --e1b-ink: #f0e2cc;
+  --e1b-secondary: #dcc3a3;
+  --e1b-dim: #c7ad8e;
+  --e1b-edge: #74573a;
+  --e1b-paper: #29241e;
+  --e1b-positive: #bddfa6;
+  --e1b-warning: #ffc298;
+  --e1b-gold: #e2b477;
+}
+:root[data-fajrum-theme="light"] #app {
+  --e1b-ink: #382b1d;
+  --e1b-secondary: #59432e;
+  --e1b-dim: #684e36;
+  --e1b-edge: #b7976f;
+  --e1b-paper: #e4d5b9;
+  --e1b-positive: #315a2d;
+  --e1b-warning: #8c3023;
+  --e1b-gold: #7a4b25;
+}
+
+/* Kalendář — lépe čitelný drobný text, bez změny symbolů a navigace. */
+#app .round-bar {
+  border-bottom-color: var(--e1b-edge);
+}
+#app .round-bar-top {
+  gap: 8px;
+  color: var(--e1b-ink);
+  font-size: 12px !important;
+  line-height: 1.5;
+}
+#app .round-bar-top :is(strong,span) {
+  line-height: 1.45;
+}
+#app .round-bar .fj-calendar summary {
+  color: var(--e1b-secondary);
+  font-size: 12px;
+}
+#app .round-pip {
+  font-size: 10px;
+  line-height: 1.15;
+}
+#app .round-pip[title] {cursor: default;}
+
+/* Hlavní sezónní zápis. Nepřepisujeme ikonky, obsah, obrázky ani průběh hry. */
+#app .season-panel {
+  color: var(--e1b-ink);
+  background: linear-gradient(116deg, var(--e1b-paper), var(--card) 82%);
+  border-bottom: 1px solid var(--e1b-edge);
+}
+#app .season-panel .season-panel-top {align-items: flex-start;gap: 10px;}
+#app .season-panel .season-phase {
+  color: var(--e1b-gold) !important;
+  font: 700 13px/1.45 Georgia,'Palatino Linotype',serif !important;
+  letter-spacing: .55px;
+}
+#app .season-panel .season-priority {
+  color: var(--e1b-ink) !important;
+  font: italic 14px/1.55 Georgia,'Palatino Linotype',serif !important;
+  overflow-wrap: anywhere;
+}
+#app .season-panel .season-tip {
+  color: var(--e1b-secondary) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+#app .season-panel .season-trh {
+  color: var(--e1b-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.5 !important;
+}
+/* Zachovat význam zeleného / červeného stavu trhu. Jádro používá var(--ok)/var(--danger). */
+#app .season-panel .season-trh[style*="var(--ok)"],
+#app .season-panel .season-trh[style*="#4a7a3a"] { color: var(--e1b-positive) !important; }
+#app .season-panel .season-trh[style*="var(--danger)"],
+#app .season-panel .season-trh[style*="#a03020"] { color: var(--e1b-warning) !important; }
+/* Inline barvy z historického jádra hry jsou pro dark režim příliš tmavé. */
+#app .season-panel > div > div:first-child > div:not(.season-panel-top):not(.season-tip):not(.season-trh) > div {
+  color: var(--e1b-secondary) !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+#app .season-panel .furnace-hud > div:first-child {
+  color: var(--e1b-gold) !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  line-height: 1.4;
+}
+#app .season-panel .furnace-hud-row,
+#app .season-panel .furnace-hud-row > span {
+  color: var(--e1b-secondary) !important;
+  font-size: 11px !important;
+  line-height: 1.45;
+}
+#app .season-panel .furnace-hud-row > span:first-child {
+  color: var(--e1b-ink) !important;
+  font-weight: 700;
+}
+/* Původní metriky: text do 9 px je prakticky nečitelný na notebooku. */
+#app.desktop > .season-panel > div > div:last-child > div:nth-child(2) > div > div:first-child {
+  font-size: 11px !important;
+  color: var(--e1b-secondary) !important;
+  line-height: 1.4 !important;
+  white-space: normal;
+}
+/* Pověst u církve, šlechty a kupců: skutečné původní hodnoty a stupnice. */
+#app.desktop > .season-panel > div > div:last-child > div:last-child {
+  border-top-color: var(--e1b-edge) !important;
+}
+#app.desktop > .season-panel > div > div:last-child > div:last-child > div:first-child {
+  color: var(--e1b-gold) !important;
+  font-size: 11px !important;
+  line-height: 1.5;
+}
+#app.desktop > .season-panel > div > div:last-child > div:last-child > div:not(:first-child) {
+  font-size: 11px !important;
+  min-height: 17px;
+  line-height: 1.4;
+  gap: 6px !important;
+}
+#app.desktop > .season-panel > div > div:last-child > div:last-child > div:not(:first-child) > span:nth-of-type(1) {
+  color: var(--e1b-ink) !important;
+  font-size: 11px !important;
+}
+#app.desktop > .season-panel > div > div:last-child > div:last-child > div:not(:first-child) > span:last-child {
+  color: var(--e1b-dim) !important;
+  font-size: 11px !important;
+  max-width: 150px !important;
+}
+/* Přehled hutě: stavebně navázané nápovědy a hlášení. */
+#app .attention-banner {
+  border-color: var(--e1b-edge);
+  background: color-mix(in srgb, var(--e1b-warning) 7%, var(--card));
+}
+#app .attention-banner .att-title {
+  color: var(--e1b-warning) !important;
+  font-size: 12px !important;
+  line-height: 1.45;
+}
+#app .attention-banner .attention-item {
+  color: var(--e1b-secondary) !important;
+  font-size: 12px !important;
+  line-height: 1.55;
+}
+#app .attention-banner .attention-item.critical {color: var(--e1b-warning) !important;}
+#app .attention-banner .att-action {
+  color: var(--e1b-gold) !important;
+  font-size: 12px !important;
+}
+#app .fj-overview-hint > div:first-child {
+  color: var(--e1b-ink) !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+/* Desktop: text nesmí zanikat v široké ploše, ani roztáhnout lištu mimo viewport. */
+@media (min-width: 960px) {
+  #app.desktop > .season-panel > div {gap: 12px;min-width: 0;}
+  #app.desktop > .season-panel > div > div {min-width: 0;}
+  #app.desktop > .season-panel > div > div:first-child {padding: 10px 12px 10px 14px !important;}
+  #app.desktop > .season-panel > div > div:last-child {padding: 7px 10px !important;}
+  #app.desktop .season-panel .furnace-hud {padding: 4px 8px !important;}
+}
+/* Telefon / úzká okna: zachovat původní sbalený sezónní kontext. */
+@media (max-width: 959px) {
+  #app .round-bar-top {font-size: 12px !important;flex-wrap: wrap;}
+  #app .fj-context .season-panel .season-priority {font-size: 13px !important;}
+  #app .fj-context .season-panel .season-phase {font-size: 12px !important;}
+  #app .fj-overview-hint > div:first-child {font-size: 12px !important;}
+}
+@media (max-width: 360px) {
+  #app .round-bar-top {gap: 4px;font-size: 11px !important;}
+  #app .season-panel .season-priority {font-size: 12px !important;}
+}
