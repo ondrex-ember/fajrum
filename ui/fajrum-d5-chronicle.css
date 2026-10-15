@@ -1,0 +1,161 @@
+/* FAJRUM D5 — 1680 forest glassworks: recorded pages and Tomislav's journal.
+   Existing art remains untouched. Scoped styling for light / dark readability. */
+#app .fj-d5-chronicle,#app .fj-d5-journal {
+  --d5-ink:var(--ink);--d5-muted:var(--fj-muted);--d5-edge:var(--fj-edge);
+  --d5-paper:var(--card);--d5-leaf:var(--fj-surface);
+  position:relative;isolation:isolate;overflow:hidden;
+  background:linear-gradient(130deg,#af875414,transparent 42%),var(--d5-paper);
+  border:1px solid var(--d5-edge);border-top:3px double var(--gold);
+  box-shadow:0 5px 18px #0002,inset 0 0 0 1px #ccaa7b12;
+  color:var(--d5-ink);
+}
+#app .fj-d5-chronicle::before,#app .fj-d5-journal::before {
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:url('../img/ui/surface-paper.webp') center/500px auto;opacity:.08;
+}
+#app .fj-d5-title {
+  display:flex;align-items:center;gap:12px;padding:4px 0 12px!important;
+  margin:0 0 8px!important;border-bottom:3px double var(--d5-edge);
+  color:var(--d5-ink)!important;font:700 clamp(17px,2vw,21px)/1.35 Georgia,serif!important;
+}
+#app .fj-d5-book-emblem {
+  width:49px;height:49px;flex:0 0 49px;display:grid;place-items:center;
+  border:1px solid #ab814c;border-radius:5px;
+  background:linear-gradient(155deg,#caa16d23,transparent),var(--d5-leaf);
+  box-shadow:inset 0 0 0 2px #a9884d28;
+  color:var(--gold);font:700 27px Georgia,serif;
+}
+#app .fj-d5-book-emblem img{width:42px;height:42px;object-fit:contain;display:block;}
+#app .fj-d5-subtitle {
+  color:var(--d5-muted);font:italic 13px/1.55 Georgia,serif;
+  margin:0 0 12px;
+}
+#app .fj-d5-register{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;
+  padding:9px 0;margin-bottom:11px;border-top:1px solid var(--d5-edge);
+  border-bottom:1px solid var(--d5-edge);color:var(--d5-ink);
+}
+#app .fj-d5-register-item{
+  display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;
+  gap:4px 10px;min-width:0;padding:3px 8px;
+  font:12px/1.4 Georgia,serif;border-right:1px solid var(--d5-edge);
+}
+#app .fj-d5-register-item:last-child{border-right:0}
+#app .fj-d5-register-item>span{color:var(--d5-muted)}
+#app .fj-d5-register-item strong{color:var(--d5-ink);font:700 17px/1.2 Georgia,serif;font-variant-numeric:tabular-nums;}
+/* Chronicle: handwritten-looking entries are rendered from real log data. */
+#app .fj-d5-pages{
+  position:relative;max-height:min(65dvh,610px)!important;
+  overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
+  padding:11px 12px 12px 15px!important;
+  border:1px solid var(--d5-edge);border-left:5px double #aa8453;
+  border-radius:3px;background:var(--d5-leaf);
+  box-shadow:inset 0 1px 11px #0000000c;
+  overscroll-behavior:contain;
+}
+#app .fj-d5-pages.is-empty{font:italic 14px/1.6 Georgia,serif;color:var(--d5-muted)}
+#app .fj-d5-entry{overflow-wrap:anywhere;font:13px/1.6 Georgia,serif!important;margin:3px 0;padding:3px 6px;}
+#app .fj-d5-entry-season{
+  margin:15px 0 11px!important;padding:11px 6px 8px!important;
+  border-top:3px double var(--d5-edge);border-bottom:1px solid var(--d5-edge);
+  color:var(--d5-ink)!important;font:bold 15px/1.4 Georgia,serif!important;
+  text-align:center;letter-spacing:.2px;
+}
+#app .fj-d5-entry-month{
+  margin:14px 0 5px!important;padding:5px 7px!important;
+  border-bottom:1px solid var(--d5-edge);
+  color:var(--gold)!important;font:700 14px/1.4 Georgia,serif!important;
+}
+#app .fj-d5-entry-narrative{
+  color:var(--d5-ink)!important;font:italic 13px/1.7 Georgia,serif!important;
+  border-left:2px solid #a88a62!important;padding:5px 8px 5px 12px!important;
+}
+#app .fj-d5-entry-production{color:var(--ok)!important;border-left:2px solid var(--ok);padding-left:11px!important;}
+#app .fj-d5-entry-economy{color:var(--d5-muted)!important;border-left:2px solid var(--d5-edge);padding-left:11px!important;}
+#app .fj-d5-entry-event{color:var(--danger)!important;border-left:2px solid var(--danger);padding-left:11px!important;font-weight:700!important;}
+#app .fj-d5-entry-legacy{color:var(--d5-muted)!important;font:13px/1.6 Georgia,serif!important;}
+/* Journal: personal book page; keep Tomislav's original portrait and rank. */
+#app .fj-d5-journal-folio{
+  display:inline-block;margin:-2px 0 14px;padding:3px 10px;
+  color:var(--d5-muted);border:1px solid var(--d5-edge);
+  border-radius:3px;font:italic 12px/1.4 Georgia,serif;
+}
+#app .fj-d5-identity{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:linear-gradient(135deg,#ac804b18,transparent),var(--d5-leaf)!important;
+  border:1px solid #9f7847!important;border-left:4px solid #a78550!important;
+  box-shadow:0 3px 11px #0002;padding:13px!important;
+}
+#app .fj-d5-identity .fj-player-portrait{
+  width:94px!important;height:108px!important;flex:0 0 94px!important;
+  border:1px solid #ad885a!important;border-radius:4px!important;
+  overflow:hidden;background:#30261e!important;
+}
+#app .fj-d5-identity .fj-player-portrait img{width:100%;height:100%;object-fit:cover;display:block;}
+#app .fj-d5-identity > div:last-child{min-width:140px;flex:1!important;}
+#app .fj-d5-identity > div:last-child > div:first-child {
+  color:var(--d5-ink)!important;font:700 20px/1.3 Georgia,serif!important;
+}
+#app .fj-d5-identity > div:last-child > div:nth-child(2){color:var(--gold)!important;font:700 14px/1.4 Georgia,serif!important;}
+#app .fj-d5-identity > div:last-child > div:nth-child(3){color:var(--d5-muted)!important;font:italic 13px/1.55 Georgia,serif!important;}
+#app .fj-d5-abilities,#app .fj-d5-progress,#app .fj-d5-timeline,#app .fj-d5-stats{
+  border:1px solid var(--d5-edge)!important;border-radius:4px!important;
+  background:linear-gradient(145deg,#9d794910,transparent),var(--d5-leaf)!important;
+  padding:12px!important;margin-bottom:13px!important;
+  box-shadow:0 2px 8px #00000010;
+}
+#app .fj-d5-abilities > div:first-child,#app .fj-d5-progress > div:first-child,
+#app .fj-d5-timeline > div:first-child,#app .fj-d5-stats > div:first-child{
+  color:var(--d5-ink)!important;font:700 15px/1.4 Georgia,serif!important;
+  border-bottom:1px solid var(--d5-edge);padding-bottom:7px!important;margin-bottom:9px!important;
+}
+#app .fj-d5-abilities > div:not(:first-child){
+  color:var(--d5-ink)!important;font-size:13px!important;line-height:1.65!important;
+}
+#app .fj-d5-progress > div{color:var(--d5-ink)!important;line-height:1.6!important;}
+#app .fj-d5-progress > div[style*="justify-content"]{font-size:12px!important;}
+#app .fj-d5-progress > div[style*="height: 4px"]{
+  background:color-mix(in srgb,var(--d5-edge),transparent 65%)!important;
+  height:6px!important;border-radius:3px!important;
+}
+#app .fj-d5-rank-row {
+  display:grid!important;grid-template-columns:23px minmax(0,1fr);
+  gap:8px!important;align-items:start!important;opacity:1!important;
+  border:1px solid transparent!important;border-bottom-color:var(--d5-edge)!important;
+  border-radius:3px!important;padding:9px 7px!important;margin-bottom:4px!important;
+  background:transparent!important;
+}
+#app .fj-d5-rank-row.is-current{
+  background:color-mix(in srgb,var(--gold),transparent 88%)!important;
+  border-color:var(--gold)!important;
+}
+#app .fj-d5-rank-row.is-future{opacity:1!important;}
+#app .fj-d5-rank-row > div > div:first-child{color:var(--d5-ink)!important;font:700 13px/1.4 Georgia,serif!important;}
+#app .fj-d5-rank-row.is-current > div > div:first-child{color:var(--gold)!important;}
+#app .fj-d5-rank-row > div > div:nth-child(2){color:var(--d5-muted)!important;font:italic 12px/1.55 Georgia,serif!important;}
+#app .fj-d5-rank-row > div > div:nth-child(3){color:var(--d5-muted)!important;font-size:11px!important;}
+#app .fj-d5-rank-row.is-future > div > div:first-child{color:var(--d5-muted)!important;}
+#app .fj-d5-stats > div:last-child{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+#app .fj-d5-stats > div:last-child > div {
+  min-width:0;padding:10px!important;border:1px solid var(--d5-edge);
+  border-radius:3px!important;background:var(--d5-paper)!important;
+}
+#app .fj-d5-stats > div:last-child > div > div{min-width:0;overflow-wrap:anywhere;}
+#app .fj-d5-stats > div:last-child > div > div > div:first-child{color:var(--d5-muted)!important;font-size:11px!important;}
+#app .fj-d5-stats > div:last-child > div > div > div:last-child{color:var(--d5-ink)!important;font:700 17px/1.35 Georgia,serif!important;}
+@media(max-width:410px){
+ #app .fj-d5-title{gap:9px;font-size:17px!important;}
+ #app .fj-d5-book-emblem{width:40px;height:40px;flex-basis:40px;}
+ #app .fj-d5-book-emblem img{width:35px;height:35px;}
+ #app .fj-d5-register-item{flex-direction:column;align-items:center;font-size:11px;gap:2px;padding:3px;}
+ #app .fj-d5-pages{padding:8px 7px 10px 10px!important;}
+ #app .fj-d5-stats > div:last-child{grid-template-columns:minmax(0,1fr)!important;}
+ #app .fj-d5-identity .fj-player-portrait{width:76px!important;height:94px!important;flex-basis:76px!important;}
+ #app .fj-d5-identity > div:last-child{min-width:0;flex:1 1 150px!important;}
+}
+@media(min-width:960px){
+ #app.desktop .fj-d5-chronicle,#app.desktop .fj-d5-journal{max-width:1250px;margin-left:auto;margin-right:auto;}
+ #app.desktop .fj-d5-pages{max-height:min(70dvh,700px)!important;}
+ #app.desktop .fj-d5-journal .fj-d5-stats > div:last-child{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
+@media(prefers-reduced-motion:reduce){#app .fj-d5-chronicle *,#app .fj-d5-journal *{transition:none!important;}}
