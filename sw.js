@@ -14,7 +14,7 @@
 // Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
 // skipWaiting při instalaci a žádný automatický reload.
 
-const CORE = 'sklarska-hut-woodland-v1.12-d3-storage';
+const CORE = 'sklarska-hut-woodland-v1.13-d4-workshop';
 const MEDIA = 'sklarska-hut-woodland-v1';
 const PREFIX = 'sklarska-hut-';
 
@@ -23,6 +23,8 @@ const ASSET_TIMEOUT = 3000;
 const MEDIA_CONCURRENCY = 4;
 
 const CORE_ASSETS = [
+  '/ui/fajrum-d4-workshop.js',
+  '/ui/fajrum-d4-workshop.css',
   '/ui/fajrum-d3-storage.js',
   '/ui/fajrum-d3-storage.css',
   '/ui/fajrum-h1-contrast.css',

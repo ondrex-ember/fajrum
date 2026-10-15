@@ -1,0 +1,179 @@
+/* FAJRUM D4 · dílenský rejstřík a výrobní karty.
+   Historic forest glassworks, 1680. Existing artwork and real controls only. */
+#app .fj-d4-production{
+ --d4-edge:#8a6f4f;--d4-ink:var(--ink);--d4-muted:var(--fj-muted);
+ --d4-wood:var(--card2);--d4-paper:var(--card);--d4-panel:var(--fj-surface);
+ --d4-brass:#b99261;--d4-shadow:#0003;
+ min-width:0;
+}
+:root[data-fajrum-theme="dark"] #app .fj-d4-production{
+ --d4-edge:#866a49;--d4-ink:#f2e6d2;--d4-muted:#cdbb9f;
+ --d4-wood:#211d18;--d4-paper:#2c251e;--d4-panel:#322a21;
+ --d4-brass:#e0b783;
+}
+:root[data-fajrum-theme="light"] #app .fj-d4-production{
+ --d4-edge:#a68a65;--d4-ink:#33271b;--d4-muted:#69513a;
+ --d4-wood:#ddcdb0;--d4-paper:#f0e4cd;--d4-panel:#e7d8bc;
+ --d4-brass:#82582f;
+}
+/* Leave the actual workshop painting untouched. Only frame its existing container. */
+#app .fj-d4-production .fj-d4-original-scene{
+ border:2px solid var(--d4-edge);border-radius:6px;
+ box-shadow:0 6px 18px var(--d4-shadow),inset 0 0 0 1px #e3b77e30;
+}
+#app .fj-d4-production .fj-d4-original-scene .fj-section-art-figure{min-width:0;}
+#app .fj-d4-production .fj-d4-original-scene .fj-section-art-detail{
+ color:var(--d4-ink)!important;background:var(--d4-paper)!important;
+ font:italic 12px/1.5 Georgia,serif;
+}
+/* Table of contents, like the loose leaf kept at the foreman's bench. */
+#app .fj-d4-register{
+ position:relative;isolation:isolate;min-width:0;margin:9px 10px 12px;padding:13px;
+ border:1px solid var(--d4-edge);border-left:4px solid var(--d4-brass);border-radius:5px;
+ background:linear-gradient(120deg,#bb8b4e17,transparent 50%),var(--d4-paper);
+ box-shadow:0 4px 15px var(--d4-shadow),inset 0 1px 0 #ffedd31c;
+}
+#app .fj-d4-register::before{content:'';position:absolute;right:8px;top:7px;width:32px;height:32px;
+ pointer-events:none;opacity:.29;background:url('brass-corner.svg') center/contain no-repeat;transform:rotate(90deg);}
+#app .fj-d4-register-brand{display:flex;align-items:center;gap:12px;min-width:0;margin-bottom:10px;}
+#app .fj-d4-register-emblem{display:grid;place-items:center;flex:0 0 52px;height:52px;border:1px solid var(--d4-edge);
+ border-radius:4px;background:radial-gradient(ellipse,#b28d5c2f,transparent 75%),var(--d4-wood);}
+#app .fj-d4-register-emblem img{display:block;width:46px;height:46px;object-fit:contain;}
+#app .fj-d4-register-copy{min-width:0;}
+#app .fj-d4-register-kicker{font:700 9px/1.5 Georgia,serif;letter-spacing:.8px;color:var(--d4-muted);}
+#app .fj-d4-register-copy h3{font:700 clamp(18px,2vw,23px)/1.25 Georgia,serif;margin:2px 0;color:var(--d4-ink);}
+#app .fj-d4-register-copy p{font:italic 12px/1.45 Georgia,serif;color:var(--d4-muted);margin:2px 0;}
+#app .fj-d4-register-nav{display:flex;flex-wrap:wrap;gap:6px;padding-top:9px;border-top:1px solid var(--d4-edge);}
+#app .fj-d4-register-link{display:flex;align-items:center;gap:7px;min-height:44px;min-width:0;
+ padding:8px 11px;font:700 12px/1.35 Georgia,serif;color:var(--d4-ink);
+ background:linear-gradient(155deg,#bd8f4e18,transparent),var(--d4-panel);
+ border:1px solid var(--d4-edge);border-radius:4px;cursor:pointer;overflow-wrap:anywhere;}
+#app .fj-d4-register-link:hover{border-color:var(--d4-brass);background:var(--d4-wood);}
+#app .fj-d4-register-link:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+#app .fj-d4-register-number{font:700 10px Georgia,serif;color:var(--d4-brass);white-space:nowrap;}
+/* Existing production workstations: no changed structures, imaginary equipment or new scenes. */
+#app .fj-d4-production .fj-d4-section{
+ position:relative;min-width:0;scroll-margin-top:12px;overflow:hidden;
+ border:1px solid var(--d4-edge)!important;border-top:3px double var(--d4-brass)!important;
+ border-radius:5px!important;
+ background:linear-gradient(130deg,#a87c4011,transparent 49%),var(--d4-panel)!important;
+ box-shadow:0 3px 12px var(--d4-shadow),inset 0 0 0 1px #e3b77c12;
+}
+#app .fj-d4-production .fj-d4-section::after{content:'';position:absolute;right:8px;top:8px;width:27px;height:27px;
+ background:url('brass-corner.svg') center/contain no-repeat;opacity:.2;pointer-events:none;transform:rotate(90deg);}
+#app .fj-d4-production .fj-d4-section-heading{
+ color:var(--d4-ink)!important;font:700 clamp(16px,1.8vw,19px)/1.4 Georgia,serif!important;
+ margin-bottom:11px!important;border-bottom:2px double var(--d4-edge);padding:0 27px 9px 0;
+}
+#app .fj-d4-production .fj-d4-station .fj-material-heading .sec-title{margin:0!important;border:0;padding:0!important;}
+#app .fj-d4-production .fj-d4-station .fj-d4-notes{
+ color:var(--d4-muted)!important;font-size:12px!important;line-height:1.5!important;overflow-wrap:anywhere;
+}
+#app .fj-d4-production .fj-d4-station .fj-d4-notes[style*="background"]{
+ background:var(--d4-paper)!important;border:1px solid var(--d4-edge);
+ padding:8px!important;
+}
+#app .fj-d4-production .fj-d4-station .fj-worksite-card{border-color:var(--d4-edge);}
+#app .fj-d4-production .fj-d4-station .fj-worksite-copy,
+#app .fj-d4-production .fj-d4-station .fj-worksite-copy p{color:var(--d4-muted)!important;}
+#app .fj-d4-production .fj-d4-station .fj-worksite-copy h3{color:var(--d4-ink)!important;}
+#app .fj-d4-production .fj-d4-section .fj-material-picture{max-width:100%;}
+/* Readable historical recipe slips, still the original live recipe DOM. */
+#app .fj-d4-production .fj-d4-product-grid{
+ min-width:0;gap:9px!important;align-items:stretch;opacity:1!important;
+}
+#app .fj-d4-production .fj-d4-product{
+ position:relative;min-width:0;opacity:1!important;overflow:hidden;gap:7px!important;
+ padding:12px!important;border:1px solid var(--d4-edge)!important;
+ border-left:3px solid var(--d4-edge)!important;border-radius:5px!important;
+ background:linear-gradient(150deg,#b1834920,transparent 72%),var(--d4-paper)!important;
+ box-shadow:0 2px 9px #0002,inset 0 1px #e9c59316;
+ color:var(--d4-ink)!important;
+}
+#app .fj-d4-production .fj-d4-product[data-available="true"]{
+ border-left-color:var(--d4-brass)!important;border-color:var(--d4-brass)!important;
+}
+#app .fj-d4-production .fj-d4-product[data-available="false"]{
+ border-left-style:dashed!important;
+}
+#app .fj-d4-production .fj-d4-product-head{
+ min-width:0;flex-wrap:wrap;gap:5px 10px;margin:0!important;
+ padding-bottom:7px;border-bottom:1px solid var(--d4-edge);
+}
+#app .fj-d4-production .fj-d4-product-head>span:first-child{
+ min-width:0;flex:1 1 130px;color:var(--d4-ink)!important;
+ font:700 13px/1.4 Georgia,serif!important;overflow-wrap:anywhere;
+}
+#app .fj-d4-production .fj-d4-product-head>span:last-child{
+ margin-left:auto;color:var(--d4-brass)!important;
+ font:700 12px/1.35 Georgia,serif!important;white-space:nowrap;
+}
+#app .fj-d4-production .fj-d4-product-art{
+ width:100%;height:115px;min-height:0;flex-shrink:0;border:1px solid #987a4c35;
+ border-radius:4px;background:radial-gradient(ellipse at 50% 52%,#bd975a23,transparent 75%);
+}
+#app .fj-d4-production .fj-d4-product-art .fj-product-sprite{max-width:100%;max-height:100%;}
+#app .fj-d4-production .fj-d4-product>div:not(.fj-product-picture):not(.fj-d4-product-head){
+ color:var(--d4-muted)!important;line-height:1.45!important;overflow-wrap:anywhere;
+}
+#app .fj-d4-production .fj-d4-product>div:not(.fj-product-picture) span{
+ overflow-wrap:anywhere;
+}
+#app .fj-d4-production .fj-d4-product .fj-glass-options{gap:5px!important;}
+#app .fj-d4-production .fj-d4-product .fj-glass-choice{
+ min-height:44px!important;padding:7px!important;opacity:1!important;white-space:normal;
+ background:var(--d4-wood)!important;color:var(--d4-ink)!important;
+ border:1px solid var(--d4-edge)!important;border-radius:4px;
+ font-size:12px!important;
+}
+#app .fj-d4-production .fj-d4-product .fj-glass-choice.btn-active{
+ background:linear-gradient(140deg,#986337,#724524)!important;color:#fff0d4!important;
+ border-color:#bf9053!important;
+}
+#app .fj-d4-production .fj-d4-product .fj-d4-craft-action,
+#app .fj-d4-production .fj-d4-product .batch-btn{
+ min-height:44px!important;font-size:13px!important;opacity:1!important;
+ border-radius:4px!important;line-height:1.4!important;
+}
+#app .fj-d4-production .fj-d4-product[data-available="false"] .fj-d4-craft-action{
+ color:var(--d4-muted)!important;background:var(--d4-wood)!important;
+ border:1px solid var(--d4-edge)!important;cursor:not-allowed;
+}
+#app .fj-d4-production .fj-d4-product-grid[data-d4-unassigned="true"] .fj-d4-product{
+ border-left-style:dashed!important;
+}
+/* Readable specialist captions and old hard-coded status texts. */
+#app .fj-d4-production .fj-d4-section>div[style*="color"]:not(.fj-d4-product-grid):not(.fj-worksite-card){
+ color:var(--d4-muted)!important;line-height:1.5!important;
+}
+#app .fj-d4-production .fj-d4-blowing .fj-d4-product-grid,
+#app .fj-d4-production .fj-d4-grinding .fj-d4-product-grid,
+#app .fj-d4-production .fj-d4-engraving .fj-d4-product-grid{margin-bottom:12px!important;}
+#app .fj-d4-production .fj-d4-special>.fj-d4-product+.fj-d4-product{margin-top:11px;}
+:root[data-fajrum-theme="dark"] #app .fj-d4-production .fj-d4-product>div:not(.fj-product-picture):not(.fj-d4-product-head){color:#d7c8b0!important;}
+@media(min-width:700px){
+ #app .fj-d4-production .fj-d4-product-grid{grid-template-columns:repeat(auto-fit,minmax(205px,1fr))!important;}
+ #app .fj-d4-register-nav{gap:7px;}
+}
+@media(max-width:699px){
+ #app .fj-d4-register-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+ #app .fj-d4-register-link{font-size:11px;justify-content:flex-start;padding-inline:7px;}
+ #app .fj-d4-production .fj-d4-product-grid{grid-template-columns:minmax(0,1fr)!important;}
+ #app .fj-d4-production .fj-d4-product-art{height:108px;}
+ #app .fj-d4-register-link{flex:1 1 145px;justify-content:flex-start;}
+}
+@media(max-width:360px){
+ #app .fj-d4-register{padding:10px;margin-inline:8px;}
+ #app .fj-d4-register-brand{gap:8px;}
+ #app .fj-d4-register-emblem{flex-basis:42px;height:42px;}
+ #app .fj-d4-register-emblem img{width:38px;height:38px;}
+ #app .fj-d4-register-kicker{font-size:8px;letter-spacing:.35px;}
+ #app .fj-d4-register-link{font-size:11px;}
+ #app .fj-d4-production .fj-d4-product{padding:9px!important;}
+}
+@media(max-height:500px) and (orientation:landscape){
+ #app .fj-d4-register{padding:9px 12px;}
+ #app .fj-d4-register-emblem{flex-basis:40px;height:40px;}
+ #app .fj-d4-register-emblem img{width:35px;height:35px;}
+}
+@media(prefers-reduced-motion:reduce){#app .fj-d4-production *{scroll-behavior:auto!important;}}
