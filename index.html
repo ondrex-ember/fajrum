@@ -3868,6 +3868,7 @@ function workerAssessment(w,L){
 }
 
 function autoSave(){
+  if(saveguardPauseAutosave)return;
   try{
     localStorage.setItem("sh_v9",JSON.stringify({...G,_savedAt:Date.now()}));
   }catch(e){console.warn("AutoSave failed:",e);}
@@ -6477,7 +6478,131 @@ function getProfLabel(w, lang){
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── new game / restart ──
-function restoreGameState(saved){Object.assign(G,initState(),saved);}
+// E1d-H1 SAVEGUARD — validate before activating, never overwrite a valid autosave on failed import.
+const SAVEGUARD_KEY = "sh_v9";                // Existing slot remains compatible
+const SAVEGUARD_PREIMPORT = "sh_v9_preimport_backup"; // Last autosave before an external import
+let saveguardPauseAutosave = false;
+function saveguardIsObject(value){
+  return value!==null && typeof value==="object" && !Array.isArray(value);
+}
+function saveguardAssertSafe(value,depth=0){
+  if(depth>32)throw new Error("Save is nested too deeply");
+  if(value===null || typeof value!=="object")return;
+  for(const key of Object.keys(value)){
+    if(key==="__proto__"||key==="prototype"||key==="constructor")throw new Error("Unsafe save key");
+    saveguardAssertSafe(value[key],depth+1);
+  }
+}
+function validateGameSave(saved){
+  if(!saveguardIsObject(saved))throw new Error("Save must be an object");
+  saveguardAssertSafe(saved);
+  const defaults=initState();
+  if(!Number.isSafeInteger(saved.season)||saved.season<1||saved.season>100000)
+    throw new Error("Invalid season");
+  if(saved.round!==undefined&&(!Number.isSafeInteger(saved.round)||saved.round<0||saved.round>1000))
+    throw new Error("Invalid round");
+  if(saved.phase!==undefined&&!["intro","playing","event","summary","interseason","interseasonPhase","game_over"].includes(saved.phase))
+    throw new Error("Invalid phase");
+  const nested=["res","additives","wa","furnace","fama","endgame","audio"];
+  const nullableObjects=["summary","curEvt","interseason","baranOffer","_strikeQueue"];
+  for(const [key,value] of Object.entries(saved)){
+    if(!(key in defaults))continue; // preserve unknown legacy/future data without changing game rules
+    const expected=defaults[key];
+    if(nested.includes(key)){
+      if(!saveguardIsObject(value))throw new Error("Invalid "+key);
+      for(const [part,item] of Object.entries(value)){
+        if(part in expected && typeof expected[part]==="number" && (typeof item!=="number"||!Number.isFinite(item)))
+          throw new Error("Invalid "+key+"."+part);
+        if(part in expected && typeof expected[part]==="boolean" && typeof item!=="boolean")
+          throw new Error("Invalid "+key+"."+part);
+        if(part in expected && typeof expected[part]==="string" && typeof item!=="string")
+          throw new Error("Invalid "+key+"."+part);
+      }
+    }else if(Array.isArray(expected)){
+      if(!Array.isArray(value))throw new Error("Invalid "+key+" array");
+    }else if(nullableObjects.includes(key)){
+      if(value!==null&&!saveguardIsObject(value))throw new Error("Invalid "+key);
+    }else if(key==="furnSlotPanev"){
+      if(value!==null&&!Array.isArray(value))throw new Error("Invalid crucibles");
+    }else if(expected===null){
+      // Other legacy nullable runtime flags can remain null or structured JSON.
+    }else if(typeof expected==="number"){
+      if(typeof value!=="number"||!Number.isFinite(value))throw new Error("Invalid "+key);
+    }else if(typeof expected==="string"||typeof expected==="boolean"){
+      if(typeof value!==typeof expected)throw new Error("Invalid "+key);
+    }else if(saveguardIsObject(expected)){
+      if(!saveguardIsObject(value))throw new Error("Invalid "+key);
+    }
+  }
+  if(saved.furnace?.type!==undefined && !Object.prototype.hasOwnProperty.call(FURNACE_TYPES,saved.furnace.type))
+    throw new Error("Unknown furnace type");
+  if(saved.workers!==undefined){
+    for(const worker of saved.workers){
+      if(!saveguardIsObject(worker) || typeof worker.id!=="string" || typeof worker.prof!=="string")
+        throw new Error("Invalid worker");
+      if(worker.name!==undefined && typeof worker.name!=="string")throw new Error("Invalid worker name");
+      for(const key of ["xp","lv","fat","mood","loyalty","wageMod"])
+        if(worker[key]!==undefined&&(typeof worker[key]!=="number"||!Number.isFinite(worker[key])))
+          throw new Error("Invalid worker "+key);
+      if(worker.contract!==undefined && worker.contract!==null && !saveguardIsObject(worker.contract))
+        throw new Error("Invalid worker contract");
+    }
+  }
+  if(saved.log!==undefined && saved.log.some(line=>typeof line!=="string"))
+    throw new Error("Invalid chronicle");
+  if(saved.activeBatches!==undefined && saved.activeBatches.some(item=>!saveguardIsObject(item)))
+    throw new Error("Invalid melting batch");
+  if(saved.furnSlotPanev && saved.furnSlotPanev.some(item=>item!==null&&!saveguardIsObject(item)))
+    throw new Error("Invalid crucible entry");
+  // Keep all known fields and any future data, while filling old missing fields safely.
+  const merged={...defaults,...saved};
+  for(const key of nested)merged[key]={...defaults[key],...(saved[key]||{})};
+  return merged;
+}
+function restoreGameState(saved){
+  G=validateGameSave(saved);
+}
+function saveguardLoad(saved,backupBeforeImport=false){
+  const previousState=G;
+  let previousRaw;
+  const previousPause=saveguardPauseAutosave;
+  try{
+    const prepared=validateGameSave(saved); // no mutation or disk writes before validation
+    previousRaw=localStorage.getItem(SAVEGUARD_KEY);
+    if(backupBeforeImport && previousRaw!==null){
+      // A failed backup write blocks the import. Never risk the only good copy.
+      localStorage.setItem(SAVEGUARD_PREIMPORT,previousRaw);
+    }
+    saveguardPauseAutosave=true;
+    G=prepared;
+    render(); // may throw: autosave is deliberately paused until the view succeeds
+    const committed=JSON.stringify({...G,_savedAt:Date.now()});
+    localStorage.setItem(SAVEGUARD_KEY,committed);
+    return true;
+  }catch(error){
+    saveguardPauseAutosave=true; // rollback must never change even the timestamp of the last good save
+    console.warn("Saveguard rejected game save:",error);
+    G=previousState;
+    // If a storage implementation throws after a write, restore the previous raw value.
+    if(previousRaw!==undefined){
+      try{
+        if(localStorage.getItem(SAVEGUARD_KEY)!==previousRaw){
+          if(previousRaw===null)localStorage.removeItem(SAVEGUARD_KEY);
+          else localStorage.setItem(SAVEGUARD_KEY,previousRaw);
+        }
+      }catch(e){console.error("Saveguard rollback failed:",e);}
+    }
+    try{render();}catch(e){console.error("Failed to repaint previous game:",e);}
+    const cs=previousState?.lang!=="en";
+    if(typeof alert==="function")alert(cs?
+      "Uložení není platné nebo se nepodařilo bezpečně načíst. Dosavadní hra zůstala zachována.":
+      "The save is invalid or could not be loaded safely. Your previous game was preserved.");
+    return false;
+  }finally{
+    saveguardPauseAutosave=previousPause;
+  }
+}
+
 
 function startGame(diff){
   const name=G.huteName;
@@ -7138,9 +7263,10 @@ function renderOriginal(){
               if(s){
                 const sv=JSON.parse(s);
                 if(sv&&sv.season){
-                  const dt=sv._savedAt?new Date(sv._savedAt).toLocaleString("cs-CZ",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+                  validateGameSave(sv);
+                  const dt=Number.isFinite(sv._savedAt)?new Date(sv._savedAt).toLocaleString("cs-CZ",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
                   return h("button",{class:"btn",style:{borderColor:"#c9952b",color:"#c9952b"},
-                    onClick:()=>{restoreGameState(sv);render();}},
+                    onClick:()=>{saveguardLoad(sv);}},
                     `▶ ${L==="cs"?"Pokračovat":"Continue"}${dt?` · ${dt}`:""}`);
                 }
               }
@@ -11944,7 +12070,8 @@ function renderOriginal(){
     // Uložit do localStorage
     const lsRow=h("div",{class:"settings-row"});
     const lsSaved=localStorage.getItem("sh_v9");
-    const lsDate=lsSaved?new Date(JSON.parse(lsSaved)._savedAt||0).toLocaleString("cs-CZ"):null;
+    let lsDate=null;
+    try{if(lsSaved){const stamp=JSON.parse(lsSaved)._savedAt;if(Number.isFinite(stamp))lsDate=new Date(stamp).toLocaleString("cs-CZ");}}catch(e){}
     lsRow.append(
       h("span",{class:"settings-label"},
         L==="cs"?"Rychlé uložení (prohlížeč)":"Quick save (browser)",
@@ -11967,10 +12094,29 @@ function renderOriginal(){
           onClick:()=>{
             try{
               const saved=JSON.parse(localStorage.getItem("sh_v9"));
-              if(saved){restoreGameState(saved);render();}
+              saveguardLoad(saved);
             }catch(e){alert(L==="cs"?"Chyba načtení":"Load error");}
           }},L==="cs"?"📂 Načíst":"📂 Load"));
       saveSec.append(lsLoadRow);
+    }
+
+    // Poslední funkční pozice před importem — samostatná pojistka, ne ruční quick-save slot.
+    const preImportBackup=localStorage.getItem(SAVEGUARD_PREIMPORT);
+    if(preImportBackup){
+      let backupValid=false;
+      try{validateGameSave(JSON.parse(preImportBackup));backupValid=true;}catch(e){}
+      if(backupValid){
+        const backupRow=h("div",{class:"settings-row"});
+        backupRow.append(
+          h("span",{class:"settings-label"},L==="cs"?"Záloha před posledním importem":"Backup before last import"),
+          h("button",{class:"btn btn-s",onClick:()=>{
+            if(!confirm(L==="cs"?"Obnovit uloženou pozici před posledním importem?":"Restore the game from before the last import?"))return;
+            try{saveguardLoad(JSON.parse(localStorage.getItem(SAVEGUARD_PREIMPORT)),false);}
+            catch(e){alert(L==="cs"?"Záloha je nečitelná":"Backup cannot be read");}
+          }},L==="cs"?"↶ Obnovit zálohu":"↶ Restore backup")
+        );
+        saveSec.append(backupRow);
+      }
     }
 
     // Načíst ze souboru
@@ -11978,14 +12124,16 @@ function renderOriginal(){
     const fileInput=h("input",{type:"file",accept:".json",style:{display:"none"},
       onChange:e=>{
         const file=e.target.files[0];if(!file)return;
+        e.target.value=""; // selecting the same save again must trigger onChange
+        if(file.size>25*1024*1024){alert(L==="cs"?"Soubor je příliš velký":"File is too large");return;}
         const reader=new FileReader();
         reader.onload=ev=>{
-          try{
-            const saved=JSON.parse(ev.target.result);
-            if(saved&&saved.season){restoreGameState(saved);render();}
-            else alert(L==="cs"?"Neplatný soubor":"Invalid file");
-          }catch(err){alert(L==="cs"?"Chyba čtení souboru":"File read error");}
+          let saved;
+          try{saved=JSON.parse(ev.target.result);}
+          catch(err){alert(L==="cs"?"Chybný JSON soubor":"Invalid JSON file");return;}
+          saveguardLoad(saved,true);
         };
+        reader.onerror=()=>alert(L==="cs"?"Chyba čtení souboru":"File read error");
         reader.readAsText(file);
       }});
     fileRow.append(
@@ -12820,14 +12968,15 @@ function endgamePlaceholder(imgId, icon, label){
 
 // ── INIT ──
 G=initState();
+let _saveguardStarted=false;
 try{
-  const saved=localStorage.getItem("sh_v9");
-  if(saved){
-    const parsed=JSON.parse(saved);
-    if(parsed&&parsed.season){restoreGameState(parsed);}
+  const stored=localStorage.getItem(SAVEGUARD_KEY);
+  if(stored){
+    const parsed=JSON.parse(stored);
+    _saveguardStarted=saveguardLoad(parsed,false);
   }
-}catch(e){}
-render();
+}catch(e){console.warn("Saved game could not be read:",e);}
+if(!_saveguardStarted)render();
 
 // ── PWA INSTALL PROMPT ──────────────────────────────────────
 let _installPrompt=null;
