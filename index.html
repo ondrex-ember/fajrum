@@ -840,6 +840,7 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 <script src="ui/fajrum-d1-market.js"></script>
 <link rel="stylesheet" href="ui/fajrum-d2-accounts.css">
 <script src="ui/fajrum-d2-accounts.js"></script>
+<link rel="stylesheet" href="ui/fajrum-h1-contrast.css">
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -4144,7 +4145,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
   const curInfo=SEASON_TIERS[curTier];
 
   const panel=h("div",{
-    class:"sec",
+    class:"sec fj-season-upgrades",
     style:{
       marginTop:"14px",
       background:"linear-gradient(135deg, rgba(201,149,43,.06) 0%, rgba(139,94,52,.04) 100%)",
@@ -4155,7 +4156,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
   });
 
   // Title & Header
-  const hdr=h("div",{
+  const hdr=h("div",{class:"fj-season-upgrades-head",
     style:{
       display:"flex",
       justifyContent:"space-between",
@@ -4168,7 +4169,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
     }
   });
   
-  const titleBox=h("div",null,
+  const titleBox=h("div",{class:"fj-season-upgrades-title"},
     h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#8b5e34",display:"flex",alignItems:"center",gap:"6px"}},
       "🏛️ "+(L==="cs"?"Stavební rozvoj & Rozšíření sezóny":"Building Expansion & Season Tiers")),
   	h("div",{style:{fontSize:"11px",color:"#543714",marginTop:"2px"}},
@@ -4197,7 +4198,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
   panel.append(hdr);
 
   // Motivational Info Box
-  panel.append(h("div",{
+  panel.append(h("div",{class:"fj-season-upgrades-intro",
     style:{
       fontSize:"10px",
       color:"#8b5e34",
@@ -4214,7 +4215,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
     : "💡 Extending the foundry season unlocks production and sales outside traditional summer months. Each Tier introduces new building materials (quarry stone, dry wood, firebricks, pitch), higher profits, and better furnace retention."));
 
   // Tiers Grid
-  const tiersList=h("div",{style:{display:"flex",flexDirection:"column",gap:"8px"}});
+  const tiersList=h("div",{class:"fj-season-tier-list",style:{display:"flex",flexDirection:"column",gap:"8px"}});
 
   [1, 2, 3].forEach(tNum=>{
     const info=SEASON_TIERS[tNum];
@@ -4222,7 +4223,8 @@ function renderSeasonUpgrades(container, isInterseason=false){
     const isNext=curTier===(tNum-1);
     const isLocked=curTier<(tNum-1);
 
-    const tCard=h("div",{
+    const tCard=h("div",{class:"fj-season-tier-card",
+      "data-tier-state":isCurrentOrPast?"completed":isNext?"available":"locked",
       style:{
         background:isCurrentOrPast?"rgba(74,122,58,.06)":isNext?"rgba(255,255,255,.7)":"rgba(0,0,0,.02)",
         border:`1px solid ${isCurrentOrPast?"rgba(74,122,58,.3)":isNext?"rgba(201,149,43,.4)":"rgba(0,0,0,.08)"}`,
@@ -4233,7 +4235,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
     });
 
     // Card Header
-    const tHeader=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}});
+    const tHeader=h("div",{class:"fj-season-tier-header",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}});
     tHeader.append(
       h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}},
         h("span",{style:{fontSize:"15px"}},info.icon),
@@ -4252,12 +4254,12 @@ function renderSeasonUpgrades(container, isInterseason=false){
     tCard.append(tHeader);
 
     // Description & Months
-    tCard.append(h("div",{style:{fontSize:"10px",color:"#543714",marginBottom:"4px",lineHeight:"1.35"}},
+    tCard.append(h("div",{class:"fj-season-tier-description",style:{fontSize:"10px",color:"#543714",marginBottom:"4px",lineHeight:"1.35"}},
       L==="cs"?info.desc_cs:info.desc_en
     ));
 
     // Benefits Highlight
-    tCard.append(h("div",{
+    tCard.append(h("div",{class:"fj-season-tier-benefit",
       style:{
         fontSize:"9px",
         color:"#4a7a3a",
@@ -4296,7 +4298,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
         grose: {cs:"Groše", en:"Groats", icon:"💰"}
       };
 
-      const costChips=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
+      const costChips=h("div",{class:"fj-season-tier-costs",style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
       let canAfford=isNext && missing.length===0;
 
       for(const [resKey, needed] of Object.entries(info.cost)){
@@ -4306,7 +4308,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
           canAfford=false;
           missing.push(`${needed-have}× ${costLabels[resKey]?costLabels[resKey].icon:""}`);
         }
-        costChips.append(h("span",{
+        costChips.append(h("span",{class:"fj-season-tier-cost "+(ok?"is-sufficient":"is-missing"),
           style:{
             fontSize:"9px",
             padding:"2px 6px",
@@ -4322,7 +4324,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
       // Upgrade Action Button
       if(isNext){
         const btn=h("button",{
-          class:"btn btn-s"+(canAfford?" btn-p":""),
+          class:"btn btn-s fj-season-upgrade-action "+(canAfford?"is-ready btn-p":"is-blocked"),
           style:{
             width:"100%",
             opacity:canAfford?1:0.6,

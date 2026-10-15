@@ -1,0 +1,131 @@
+/* FAJRUM H1 — Contrast fix for Building Expansion / Season Tiers.
+   Dark-theme only. No change to game logic, costs, unlocks, or the light theme.
+   Real-world style: worn wood, ink and aged paper, not modern instrumentation. */
+
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades {
+  background:linear-gradient(145deg,#32291f,#27231d 70%) !important;
+  border:1px solid #846441 !important;
+  color:#ebdfcc;
+  box-shadow:inset 0 1px 0 #caa57518,0 3px 12px #0003;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-head {
+  border-bottom-color:#886b49 !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-title>div:first-child {
+  color:#f0d2a1 !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-title>div:nth-child(2),
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-title>div:nth-child(2)>strong {
+  color:#e7d8c0 !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-title>div:nth-child(2)>span {
+  color:#bcd9a1 !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrades-intro {
+  color:#e3d3b9 !important;
+  background:#403628 !important;
+  border:1px solid #80603d !important;
+  font-style:italic;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card {
+  opacity:1 !important; /* The previous 0.55 opacity made locked tiers unreadable. */
+  background:#302921 !important;
+  border:1px solid #69533a !important;
+  box-shadow:inset 0 1px 0 #efd1a012;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="available"] {
+  background:#3b3024 !important;
+  border-color:#b78b52 !important;
+  box-shadow:inset 3px 0 0 #bd8a4e,0 2px 10px #0002;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="completed"] {
+  background:#2c3328 !important;
+  border-color:#64774f !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="locked"] {
+  background:#29251f !important;
+  border-color:#66543f !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-header {
+  display:flex;flex-wrap:wrap;gap:6px 10px;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-header>div:first-child {
+  min-width:0;flex:1 1 170px;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-header strong {
+  color:#f0e2cd !important;
+  font-size:12px !important;
+  line-height:1.4;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-header>span:last-child {
+  color:#f3c98b !important;
+  font-size:10px !important;
+  line-height:1.5;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="completed"] .fj-season-tier-header>span:last-child {
+  color:#c5e3ac !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="locked"] .fj-season-tier-header>span:last-child {
+  color:#cdbb9f !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-description {
+  color:#e2d3bd !important;
+  font-size:11px !important;
+  line-height:1.5 !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-benefit {
+  color:#d4e7b8 !important;
+  background:#34412d !important;
+  border:1px solid #526b45;
+  font-size:10px !important;
+  line-height:1.5;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-card[data-tier-state="locked"] .fj-season-tier-benefit {
+  background:#303829 !important;
+  color:#cad9ad !important;
+  border-color:#48573d;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-cost {
+  font-size:10px !important;
+  line-height:1.45;
+  padding:4px 7px !important;
+  white-space:normal;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-cost.is-sufficient {
+  background:#34432e !important;
+  border:1px solid #607a50 !important;
+  color:#d7f0ba !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-tier-cost.is-missing {
+  background:#4d3029 !important;
+  border:1px solid #985c49 !important;
+  color:#ffd3bb !important;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrade-action.is-blocked {
+  opacity:1 !important;
+  color:#f5dfc1 !important;
+  background:linear-gradient(180deg,#514436,#403529) !important;
+  border:1px solid #8a6c4b !important;
+  cursor:not-allowed;
+  line-height:1.5;
+  font-size:11px !important;
+  min-height:44px;
+  white-space:normal;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrade-action.is-ready {
+  opacity:1 !important;
+  color:#fff1d9 !important;
+  line-height:1.5;
+  font-size:11px !important;
+  min-height:44px;
+  white-space:normal;
+}
+:root[data-fajrum-theme="dark"] #app .fj-season-upgrade-action:focus-visible {
+  outline:3px solid #eac891;
+  outline-offset:2px;
+}
+@media(max-width:400px){
+ :root[data-fajrum-theme="dark"] #app .fj-season-upgrades {padding:10px !important;}
+ :root[data-fajrum-theme="dark"] #app .fj-season-tier-card {padding:9px !important;}
+ :root[data-fajrum-theme="dark"] #app .fj-season-tier-header strong{font-size:11px !important;}
+}
