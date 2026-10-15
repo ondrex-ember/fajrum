@@ -8,54 +8,54 @@
  const icon=(name)=>{const frame=el('span','fj-d2-glyph');frame.setAttribute('aria-hidden','true');const img=el('img');img.src='img/ui/'+name+'.webp';img.alt='';img.width=72;img.height=72;img.decoding='async';img.loading='lazy';img.addEventListener('error',()=>{img.remove();frame.textContent='❖';},{once:true});frame.append(img);return frame;};
  const t=(state,cs,en)=>state.lang==='en'?en:cs;
  const fmt=(value,state)=>new Intl.NumberFormat(state.lang==='en'?'en-US':'cs-CZ').format(finite(value));
- function metric(label,value,kind,note){
-  const item=el('div','fj-d2-metric');item.dataset.kind=kind;
-  item.append(el('span','fj-d2-metric-label',label),el('strong','fj-d2-metric-value',value));
-  if(note)item.append(el('span','fj-d2-metric-note',note));
-  return item;
+ // Historical accounting desk: manuscript entries, never a fictional instrument.
+ function entry(label,value,kind){
+  const line=el('div','fj-d2-ledger-entry');line.dataset.kind=kind;
+  line.append(el('dt','fj-d2-ledger-label',label),el('dd','fj-d2-ledger-value',value));
+  return line;
  }
  function makeHeader(state){
+  // Mirror the game's existing next-round expense calculation without changing rules.
   const workers=Array.isArray(state.workers)?state.workers:[];
-  const salary=workers.reduce((sum,w)=>sum+2+finite(w.wageMod),0);
+  const wages=workers.reduce((sum,w)=>sum+2+finite(w.wageMod),0);
   const beer=([0,1,2,4][finite(state.beer)]||0)*Math.ceil(workers.length/3);
-  const outflow=salary+beer,cash=finite(state.grose),debt=finite(state.debt);
+  const outflow=wages+beer, cash=finite(state.grose),debt=finite(state.debt);
   const active=(Array.isArray(state.contracts)?state.contracts.length:0)+(Array.isArray(state.repContracts)?state.repContracts.length:0);
-  const funds=outflow<=0||cash>=outflow;
-  const wrap=el('header','fj-d2-book-header');wrap.dataset.solvency=funds?'enough':'short';
+  const funds=cash>=outflow;
+  const wrap=el('section','fj-d2-book-header');wrap.dataset.solvency=funds?'enough':'short';
+  wrap.setAttribute('aria-label',t(state,'Zápis v hutní účetní knize','Entry in the glassworks account ledger'));
   const lead=el('div','fj-d2-book-lead');lead.append(icon('nav-accounts'));
-  const copy=el('div','fj-d2-book-title');copy.append(
-   el('span','fj-d2-kicker',t(state,'LESNÍ HUŤ · HLAVNÍ KNIHA','FOREST GLASSWORKS · MASTER LEDGER')),
+  const copy=el('div','fj-d2-book-title');
+  copy.append(
+   el('span','fj-d2-kicker',t(state,'LESNÍ SKLÁŘSKÁ HUŤ · HLAVNÍ KNIHA','FOREST GLASSWORKS · ACCOUNT BOOK')),
    el('h2','',t(state,'Hutní účty','Foundry accounts')),
-   el('p','',t(state,'Pokladna, závazky a důvěra odběratelů','Treasury, liabilities and buyers’ trust'))
+   el('p','',t(state,'Zápis pokladny, pohledávek a závazků','Record of cash, contracts and debts'))
   );lead.append(copy);
-  const stamp=el('span','fj-d2-book-seal',t(state,'SCHULDENBUCH','SCHULDENBUCH'));stamp.setAttribute('aria-hidden','true');
+  const year=1679+(finite(state.season)||1);
+  const stamp=el('span','fj-d2-book-seal','Anno '+year);stamp.setAttribute('aria-hidden','true');
   const top=el('div','fj-d2-book-top');top.append(lead,stamp);
-  const stats=el('div','fj-d2-metrics');
-  stats.append(
-   metric(t(state,'V pokladně','In treasury'),fmt(cash,state)+' g','cash'),
-   metric(t(state,'Dluh faktorovi','Debt to factor'),fmt(debt,state)+' g','debt'),
-   metric(t(state,'Mzdy + pivo / kolo','Wages + beer / round'),fmt(outflow,state)+' g','outflow'),
-   metric(t(state,'Běžící zakázky','Active contracts'),fmt(active,state),'contracts')
+  const book=el('div','fj-d2-ledger-sheet');
+  const heading=el('div','fj-d2-ledger-heading');
+  heading.append(el('span','',t(state,'Soupis nynějšího stavu','Present balance')),
+   el('span','',t(state,'groše · g','groats · g')));
+  const list=el('dl','fj-d2-ledger-entries');
+  list.append(
+   entry(t(state,'Hotovost v pokladně','Cash in hand'),fmt(cash,state)+' g','cash'),
+   entry(t(state,'Dluh faktorovi Weissovi','Debt to factor Weiss'),fmt(debt,state)+' g','debt'),
+   entry(t(state,'Mzdy a příděl na další kolo','Wages and rations, next round'),fmt(outflow,state)+' g','outflow'),
+   entry(t(state,'Přijaté zakázky','Accepted contracts'),fmt(active,state),'contracts')
   );
-  if(debt>0)stats.querySelector('[data-kind="debt"]').dataset.alert='true';
-  if(!funds)stats.querySelector('[data-kind="outflow"]').dataset.alert='true';
-  const footer=el('div','fj-d2-financial-warning');footer.dataset.ok=String(funds);
-  const marker=el('span','fj-d2-warning-medallion',funds?'✓':'!');marker.setAttribute('aria-hidden','true');
-  const status=el('div','fj-d2-warning-copy');
-  status.append(
-   el('strong','',funds?
-    t(state,'Hotovost pokrývá běžné mzdy a příděl','Current cash covers wages and rations'):
-    t(state,'Hotovost nepokrývá běžné mzdy a příděl','Current cash does not cover wages and rations')),
-   el('span','',outflow<=0?t(state,'Pro toto kolo nejsou evidovány mzdové výdaje.','No wage expenses are listed for this round.'):
-    funds?t(state,'Porovnání je orientační, bez dalších plateb a příjmů.','This is a guide only, before other payments and income.'):
-    t(state,`Rozdíl ${fmt(outflow-cash,state)} g. Bez očekávaných příjmů či dalších plateb.`,`Shortfall ${fmt(outflow-cash,state)} g. Before expected income or other payments.`))
-  );footer.append(marker,status);
-  const gauge=el('div','fj-d2-cover-gauge');gauge.setAttribute('role','progressbar');
-  gauge.setAttribute('aria-label',t(state,'Krytí mezd a piva dostupnou hotovostí','Coverage of wages and beer with available cash'));
-  gauge.setAttribute('aria-valuemin','0');gauge.setAttribute('aria-valuemax','100');
-  const coverage=outflow<=0?100:clamp(Math.round(cash/outflow*100));gauge.setAttribute('aria-valuenow',String(coverage));
-  const fill=el('span','fj-d2-cover-fill');fill.style.width=coverage+'%';gauge.append(fill);
-  wrap.append(top,stats,footer,gauge);return wrap;
+  if(debt>0)list.querySelector('[data-kind="debt"]').dataset.alert='true';
+  if(!funds)list.querySelector('[data-kind="outflow"]').dataset.alert='true';
+  const foot=el('p','fj-d2-ledger-note');
+  if(outflow<=0)foot.textContent=t(state,'Pro příští kolo nejsou evidovány mzdy ani příděly.','No wages or rations are listed for the next round.');
+  else if(funds)foot.textContent=t(state,'Pokladna vystačí na běžné mzdy a příděl. Další příjmy a platby nezapočítány.','Cash covers ordinary wages and rations. Other receipts and payments are not included.');
+  else foot.textContent=t(state,
+    'Na běžné mzdy a příděl schází '+fmt(outflow-cash,state)+' g. Další příjmy a platby nezapočítány.',
+    'Short of ordinary wages and rations by '+fmt(outflow-cash,state)+' g. Other receipts and payments are not included.');
+  foot.dataset.status=funds?'enough':'short';
+  book.append(heading,list,foot);wrap.append(top,book);
+  return wrap;
  }
  function decorateAccountsArt(content){
   const scene=content.querySelector('.fj-section-art[data-art-tab="accounts"]');
@@ -100,9 +100,10 @@
      const card=grid.children[i];if(!card)continue;
      card.classList.add('fj-d2-reputation-card');card.dataset.faction=key;
      const val=clamp(finite((state.fama||{})[key]));
-     const rail=card.children[1];if(rail){rail.setAttribute('role','progressbar');rail.setAttribute('aria-valuemin','0');rail.setAttribute('aria-valuemax','100');rail.setAttribute('aria-valuenow',String(val));
-      rail.setAttribute('aria-label',t(state,{church:'Reputace církve',noble:'Reputace šlechty',trade:'Reputace kupců'}[key],{church:'Church reputation',noble:'Noble reputation',trade:'Merchant reputation'}[key]));
-      rail.classList.add('fj-d2-fama-track');
+     // The actual Fama value is already printed in the original game card.
+     // Hide the modern-style bar; preserve the numeric text and milestones.
+     const rail=card.children[1];if(rail){
+      rail.classList.add('fj-d2-fama-track');rail.setAttribute('aria-hidden','true');
      }
     }
    }

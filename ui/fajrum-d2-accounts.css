@@ -1,5 +1,5 @@
 /* FAJRUM D2 — the foundry's accounting book, real figures / original actions.
-   Matches C2b furnace's hand-finished soot, brass and instrument treatment. */
+   Preserves the existing forest-glassworks art and original game actions. */
 #app .fj-d2-accounts{
   --d2-brass:#b88a50;--d2-brass-edge:rgba(173,128,77,.48);
   --d2-shadow:rgba(11,8,4,.26);--d2-danger:#c45e45;
@@ -20,80 +20,8 @@
   url('brass-corner.svg') right top / 40px 40px no-repeat;
   box-shadow:inset 0 0 0 2px #140d071a;
 }
-/* Master accounting header: four metal counters and a hand-built balance indicator. */
-#app .fj-d2-book-header{
-  position:relative;isolation:isolate;overflow:hidden;margin:10px 10px 12px;
-  border:1px solid var(--fj-edge);border-top:3px solid var(--d2-brass);
-  border-radius:6px;padding:14px 15px 13px;background:
-  linear-gradient(115deg,#b78d4e18,transparent 41%,#24110812),var(--card);
-  box-shadow:0 5px 18px var(--d2-shadow),inset 0 0 0 1px #dcac7220;
-}
-#app .fj-d2-book-header::before{
-  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:url('../img/ui/surface-sootwood.webp') center/480px auto;
-  opacity:.19;mix-blend-mode:soft-light;
-}
-#app .fj-d2-book-header::after{
-  content:'';position:absolute;right:11px;top:10px;pointer-events:none;
-  width:45px;height:45px;opacity:.34;
-  background:url('brass-corner.svg') center/contain no-repeat;transform:rotate(90deg);
-}
-#app .fj-d2-book-top{display:flex;align-items:center;justify-content:space-between;gap:11px;min-width:0;margin-bottom:14px;}
-#app .fj-d2-book-lead{display:flex;align-items:center;gap:12px;min-width:0;}
-#app .fj-d2-glyph{
-  display:grid;place-items:center;flex:0 0 61px;width:61px;height:61px;
-  border:1px solid #a6814f;border-radius:50%;background:
-  radial-gradient(circle at 38% 25%,#d4a85b33,transparent 70%),var(--fj-surface);
-  box-shadow:inset 0 0 0 4px #b6905b15,inset 0 0 0 5px #c5a57755,0 2px 5px #0002;
-  color:var(--d2-brass);font:700 29px/1 Georgia,serif;
-}
-#app .fj-d2-glyph img{display:block;width:47px;height:47px;object-fit:contain;filter:drop-shadow(0 2px 3px #0004);}
-#app .fj-d2-book-title{min-width:0;}
-#app .fj-d2-kicker{display:block;color:var(--fj-muted);letter-spacing:1.25px;font:700 9px/1.5 Georgia,serif;}
-#app .fj-d2-book-title h2{color:var(--ink);font:700 clamp(22px,2.4vw,29px)/1.14 Georgia,serif;margin:3px 0 5px;}
-#app .fj-d2-book-title p{color:var(--fj-muted);font:italic 12px/1.45 Georgia,serif;margin:0;}
-#app .fj-d2-book-seal{
-  position:relative;z-index:1;display:grid;place-items:center;flex:0 0 76px;
-  width:76px;height:76px;border:2px double #966d44;border-radius:50%;
-  background:radial-gradient(circle,#84502621,transparent 70%);
-  color:var(--d2-brass);font:700 10px/1.2 Georgia,serif;letter-spacing:1px;
-  text-align:center;transform:rotate(-9deg);box-shadow:inset 0 0 0 5px var(--card),inset 0 0 0 6px #a87e5566;
-}
-#app .fj-d2-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
-#app .fj-d2-metric{
-  display:flex;flex-direction:column;justify-content:center;min-width:0;gap:3px;
-  border:1px solid var(--d2-brass-edge);border-bottom:2px solid #89623c;
-  border-radius:4px;padding:11px 12px;min-height:77px;
-  background:linear-gradient(155deg,#a97b411c,transparent 76%),var(--fj-surface);
-  box-shadow:inset 0 1px #ffffff0b,0 2px 8px #0001;
-}
-#app .fj-d2-metric-label{font:600 10px/1.35 Georgia,serif;color:var(--fj-muted);}
-#app .fj-d2-metric-value{font:700 clamp(18px,2.2vw,27px)/1.13 Georgia,serif;letter-spacing:.1px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;}
-#app .fj-d2-metric[data-kind="cash"] .fj-d2-metric-value{color:var(--ok);}
-#app .fj-d2-metric[data-alert="true"] .fj-d2-metric-value{color:var(--danger);}
-#app .fj-d2-financial-warning{
-  display:flex;align-items:center;gap:10px;margin-top:11px;padding:8px 10px;
-  border:1px solid color-mix(in srgb,var(--ok),transparent 66%);
-  border-radius:4px;background:color-mix(in srgb,var(--ok),transparent 94%);min-width:0;
-}
-#app .fj-d2-financial-warning[data-ok="false"]{border-color:color-mix(in srgb,var(--danger),transparent 53%);background:color-mix(in srgb,var(--danger),transparent 92%);}
-#app .fj-d2-warning-medallion{
-  display:grid;place-items:center;flex:0 0 27px;width:27px;height:27px;border-radius:50%;
-  border:1px solid currentColor;color:var(--ok);font:700 17px/1 Georgia,serif;
-}
-#app .fj-d2-financial-warning[data-ok="false"] .fj-d2-warning-medallion{color:var(--danger);}
-#app .fj-d2-warning-copy{display:flex;flex-wrap:wrap;gap:3px 10px;align-items:baseline;min-width:0;line-height:1.4;}
-#app .fj-d2-warning-copy strong{font-size:12px;color:var(--ink);}
-#app .fj-d2-warning-copy span{font-size:11px;color:var(--fj-muted);}
-#app .fj-d2-cover-gauge{
-  height:5px;overflow:hidden;margin-top:8px;border-radius:4px;border:1px solid #9c7c5630;
-  background:color-mix(in srgb,var(--fj-muted),transparent 87%);
-}
-#app .fj-d2-cover-fill{display:block;height:100%;border-radius:4px;width:0;
-  background:linear-gradient(90deg,#6f8646,var(--ok));}
-#app .fj-d2-book-header[data-solvency="short"] .fj-d2-cover-fill{
-  background:linear-gradient(90deg,#945030,var(--danger));
-}
+/* D2R replaces the early experimental counters with a paper account ledger.
+   The book layout and texture are defined in the historical correction below. */
 /* Original UI: nothing is cloned, action buttons stay connected. */
 #app .fj-d2-ledger-section{
   position:relative;isolation:isolate;overflow:hidden;
@@ -232,3 +160,220 @@
  #app .fj-d2-metric{min-height:60px;padding:8px;}
 }
 @media(prefers-reduced-motion:reduce){#app .fj-d2-accounts *{transition:none!important;}}
+
+/* ── D2R (1680): historical correction, 15 Oct 2026 ───────────────────
+   The real accounts.webp scene is THE art. This UI is a handwritten
+   accounting register, not a brass dashboard or an invented machine.
+   Scope all additions to Accounts to avoid touching Furnace/Market. */
+#app .fj-d2-accounts{
+  --d2r-ink:#372619;
+  --d2r-faded:#765c45;
+  --d2r-rule:rgba(96,66,40,.35);
+  --d2r-paper:#eadcc3;
+  --d2r-wax:#8d4838;
+}
+#app .fj-d2-accounts .fj-d2-book-header{
+  margin:10px 10px 13px;
+  padding:0;
+  overflow:hidden;
+  border:1px solid var(--fj-edge);
+  border-left:4px solid #8b6740;
+  border-top:1px solid var(--fj-edge);
+  border-radius:3px 7px 7px 3px;
+  background:var(--d2r-paper);
+  box-shadow:4px 6px 15px #0002, inset 5px 0 0 #4f331a17;
+}
+#app .fj-d2-accounts .fj-d2-book-header::before{
+  background:url('../img/ui/surface-paper.webp') center/560px auto repeat;
+  opacity:.5;
+  mix-blend-mode:multiply;
+}
+#app .fj-d2-accounts .fj-d2-book-header::after{
+  display:none;
+}
+#app .fj-d2-accounts .fj-d2-book-top{
+  position:relative;
+  margin:0;
+  padding:14px 17px 12px;
+  gap:10px;
+  border-bottom:3px double var(--d2r-rule);
+  background:linear-gradient(90deg,#6b482112,transparent 38%,#8f612411);
+}
+#app .fj-d2-accounts .fj-d2-book-lead{align-items:center;gap:12px;}
+#app .fj-d2-accounts .fj-d2-glyph{
+  flex:0 0 53px;width:53px;height:53px;
+  border:1px solid #876844;
+  border-radius:2px;
+  background:#d8c29b;
+  box-shadow:inset 0 0 0 3px #ead6b5;
+}
+#app .fj-d2-accounts .fj-d2-glyph img{
+  width:47px;height:47px;
+  filter:sepia(.45) contrast(.95);
+}
+#app .fj-d2-accounts .fj-d2-kicker{
+  color:var(--d2r-faded);
+  letter-spacing:.65px;
+  font:700 9px/1.4 Georgia,serif;
+}
+#app .fj-d2-accounts .fj-d2-book-title h2{
+  color:var(--d2r-ink);
+  font:700 clamp(22px,2.3vw,29px)/1.2 Georgia,serif;
+  margin:2px 0 3px;
+}
+#app .fj-d2-accounts .fj-d2-book-title p{
+  color:var(--d2r-faded);
+  font:italic 12px/1.5 Georgia,serif;
+}
+#app .fj-d2-accounts .fj-d2-book-seal{
+  display:block;
+  flex:0 0 auto;
+  width:auto;height:auto;
+  padding:5px 8px;
+  border:1px solid var(--d2r-rule);
+  border-radius:1px;
+  color:var(--d2r-faded);
+  background:transparent;
+  box-shadow:none;
+  font:italic 12px/1.35 Georgia,serif;
+  letter-spacing:.1px;
+  transform:none;
+  white-space:nowrap;
+}
+#app .fj-d2-accounts .fj-d2-ledger-sheet{
+  position:relative;
+  padding:15px 18px 14px;
+  background:linear-gradient(150deg,#fff9ec27,transparent 65%);
+}
+#app .fj-d2-accounts .fj-d2-ledger-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:8px;
+  padding:0 0 8px;
+  border-bottom:1px solid var(--d2r-rule);
+  color:var(--d2r-faded);
+  font:italic 12px/1.3 Georgia,serif;
+}
+#app .fj-d2-accounts .fj-d2-ledger-heading span:last-child{
+  font-size:10px;
+}
+#app .fj-d2-accounts .fj-d2-ledger-entries{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 20px;
+  margin:0;
+  padding:2px 0;
+  color:var(--d2r-ink);
+}
+#app .fj-d2-accounts .fj-d2-ledger-entry{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  min-width:0;
+  padding:12px 0;
+  border-bottom:1px solid var(--d2r-rule);
+  background:none;
+}
+#app .fj-d2-accounts .fj-d2-ledger-label{
+  min-width:0;
+  color:var(--d2r-ink);
+  font:normal 13px/1.35 Georgia,serif;
+}
+#app .fj-d2-accounts .fj-d2-ledger-value{
+  flex:0 0 auto;
+  margin:0;
+  color:var(--d2r-ink);
+  font:700 clamp(17px,2vw,22px)/1.25 Georgia,serif;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+#app .fj-d2-accounts .fj-d2-ledger-entry[data-alert="true"] .fj-d2-ledger-value{
+  color:var(--d2r-wax);
+}
+#app .fj-d2-accounts .fj-d2-ledger-note{
+  position:relative;
+  margin:10px 0 0;
+  padding:10px 0 0 18px;
+  color:var(--d2r-faded);
+  font:italic 12px/1.5 Georgia,serif;
+}
+#app .fj-d2-accounts .fj-d2-ledger-note::before{
+  content:'✒';position:absolute;left:0;top:9px;
+  font-size:12px;
+}
+#app .fj-d2-accounts .fj-d2-ledger-note[data-status="short"]{
+  color:var(--d2r-wax);
+}
+/* The remaining entries are parchment leaves and contracts, not controls on
+   a dashboard. Retain the original accounting actions and their handlers. */
+#app .fj-d2-accounts .fj-d2-ledger-section{
+  border-top:2px solid #917048;
+  border-left:1px solid var(--d2-brass-edge);
+  border-right:1px solid var(--d2-brass-edge);
+  background:linear-gradient(120deg,#95754512,transparent 45%),var(--fj-surface);
+  box-shadow:0 3px 12px #00000016;
+}
+#app .fj-d2-accounts .fj-d2-ledger-columns>div{
+  border-top:2px solid #9d794c;
+  background:linear-gradient(155deg,#b48a4917,transparent 55%),var(--card);
+  box-shadow:0 2px 7px #0001;
+}
+#app .fj-d2-accounts :is(.fj-d2-cash-panel,.fj-d2-expenditure-panel,.fj-d2-projection-panel,.fj-d2-repayment-panel,.fj-d2-factor-panel){
+  border:1px solid var(--d2-brass-edge)!important;
+  border-left:3px solid #917047!important;
+  background:linear-gradient(120deg,#a78a5712,transparent 65%),var(--fj-surface)!important;
+  box-shadow:0 2px 6px #00000010;
+}
+#app .fj-d2-accounts :is(.fj-d2-repayment-panel,.fj-d2-projection-panel){
+  border-left-color:#955346!important;
+}
+#app .fj-d2-accounts .fj-d2-factor-panel{
+  background:linear-gradient(100deg,#fff6df12,transparent 70%),var(--fj-surface)!important;
+}
+#app .fj-d2-accounts .fj-d2-account-action{
+  border-radius:2px!important;
+  background:var(--card)!important;
+  box-shadow:inset 0 -1px #61452215!important;
+}
+#app .fj-d2-accounts .fj-d2-reputation{
+  border-top:2px double var(--d2-brass-edge)!important;
+}
+#app .fj-d2-accounts .fj-d2-reputation-card{
+  border:1px solid var(--d2-brass-edge)!important;
+  border-left:3px solid #9a7447!important;
+  border-top:1px solid var(--d2-brass-edge)!important;
+  border-radius:2px!important;
+  background:linear-gradient(130deg,#ac864915,transparent 75%),var(--card)!important;
+}
+#app .fj-d2-accounts .fj-d2-reputation-card>div:first-child>span:last-child{
+  font-family:Georgia,serif;
+  color:var(--ink)!important;
+}
+/* The numerical Fama percentage and actual threshold text remain on screen.
+   The bar and its bright modern step indicators are hidden only in Accounts. */
+#app .fj-d2-accounts .fj-d2-fama-track{display:none!important;}
+#app .fj-d2-accounts .fj-d2-reputation-card>div:last-child:not(:first-child){
+  /* Existing tiny decorative achievement dots should resemble ink marks. */
+  opacity:.62;
+}
+#app .fj-d2-accounts .fj-d2-accounts-art .fj-section-art-figure{
+  /* Source image is unchanged; preserve its framing. */
+  background-color:#211a12;
+}
+@media (max-width:620px){
+ #app .fj-d2-accounts .fj-d2-ledger-entries{grid-template-columns:minmax(0,1fr);}
+ #app .fj-d2-accounts .fj-d2-ledger-entry{padding:10px 0;}
+ #app .fj-d2-accounts .fj-d2-ledger-sheet{padding:12px 14px;}
+ #app .fj-d2-accounts .fj-d2-book-top{padding:12px 13px 10px;}
+ #app .fj-d2-accounts .fj-d2-book-header{margin:10px 8px 12px;}
+}
+@media (max-width:350px){
+ #app .fj-d2-accounts .fj-d2-ledger-label{font-size:12px;}
+ #app .fj-d2-accounts .fj-d2-ledger-value{font-size:19px;}
+ #app .fj-d2-accounts .fj-d2-book-seal{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+ #app .fj-d2-accounts .fj-d2-ledger-entry{transition:none!important;}
+}
