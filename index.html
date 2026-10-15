@@ -849,6 +849,8 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 <script src="ui/fajrum-d5-chronicle.js"></script>
 <link rel="stylesheet" href="ui/fajrum-d6-archive.css">
 <script src="ui/fajrum-d6-archive.js"></script>
+<link rel="stylesheet" href="ui/fajrum-d7-shell.css">
+<script src="ui/fajrum-d7-shell.js"></script>
 </head>
 <body>
 	<!-- Google Tag Manager (noscript) -->
@@ -6884,6 +6886,7 @@ function render(){
   if(window.FajrumD4)FajrumD4.finish(app,G);
   if(window.FajrumD5)FajrumD5.finish(app,G);
   if(window.FajrumD6)FajrumD6.finish(app,G);
+  if(window.FajrumD7)FajrumD7.finish(app,G);
   if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
   return result;
 }

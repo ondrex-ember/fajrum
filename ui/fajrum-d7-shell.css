@@ -1,0 +1,149 @@
+/* FAJRUM D7 — existing controls, historical paper and wood, no new sceneries.
+   The finished Huť/Pec/Trh and their established dialogs are left untouched. */
+#app .fj-d7-settings{
+  --d7-paper:#2b261f;--d7-paper-alt:#342b22;--d7-ink:#f0e3d0;
+  --d7-muted:#d5bfa2;--d7-border:#846746;--d7-accent:#dfb47d;
+  --d7-green:#c8dda9;--d7-warn:#f4b9a1;
+  color:var(--d7-ink);min-width:0;
+}
+:root[data-fajrum-theme="light"] #app .fj-d7-settings{
+  --d7-paper:#f1e7d4;--d7-paper-alt:#e6d6ba;--d7-ink:#33271d;
+  --d7-muted:#644c36;--d7-border:#aa8862;--d7-accent:#744c29;
+  --d7-green:#425e32;--d7-warn:#943b2f;
+}
+#app .fj-d7-heading{
+  position:relative;isolation:isolate;overflow:hidden;margin:10px 10px 12px;
+  border:1px solid var(--d7-border);border-top:3px double var(--d7-accent);
+  border-radius:5px;background:linear-gradient(145deg,#b1864a15,transparent 65%),var(--d7-paper);
+  box-shadow:0 4px 16px #0003,inset 0 0 0 1px #d3b17b1a;padding:14px;
+}
+#app .fj-d7-heading-lead{display:flex;gap:12px;align-items:center;min-width:0;}
+#app .fj-d7-heading-emblem{
+  flex:0 0 64px;width:64px;height:64px;display:grid;place-items:center;
+  border:1px solid var(--d7-border);border-radius:4px;
+  background:var(--d7-paper-alt);box-shadow:inset 0 0 0 3px #a27c3a18;
+}
+#app .fj-d7-heading-emblem img{display:block;width:55px;height:55px;object-fit:contain;}
+#app .fj-d7-heading-copy{min-width:0;}
+#app .fj-d7-kicker{display:block;font:700 10px/1.4 Georgia,serif;letter-spacing:.7px;color:var(--d7-muted);}
+#app .fj-d7-heading h2{font:700 clamp(21px,2.5vw,27px)/1.2 Georgia,serif;color:var(--d7-ink);margin:3px 0 4px;}
+#app .fj-d7-heading p{font:italic 12px/1.5 Georgia,serif;color:var(--d7-muted);margin:0;}
+#app .fj-d7-folio-corner{position:absolute;inset:7px 8px auto auto;width:31px;height:31px;opacity:.24;
+  background:url('brass-corner.svg') center/contain no-repeat;transform:rotate(90deg);pointer-events:none;}
+#app .fj-d7-settings-index{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px;padding-top:12px;border-top:1px solid var(--d7-border);}
+#app .fj-d7-settings-index .fj-d7-index-link{
+  min-height:44px;padding:8px 12px;border:1px solid var(--d7-border);border-radius:3px;
+  color:var(--d7-ink);background:var(--d7-paper-alt);font:700 12px/1.4 Georgia,serif;cursor:pointer;
+}
+#app .fj-d7-settings-index .fj-d7-index-link:hover{border-color:var(--d7-accent);}
+#app .fj-d7-settings-index .fj-d7-index-link:focus-visible{outline:3px solid var(--d7-accent);outline-offset:2px;}
+#app .fj-d7-settings>.fj-d7-settings-panel{
+  position:relative;isolation:isolate;overflow:hidden;margin-top:12px;
+  background:linear-gradient(125deg,#a1773510,transparent 50%),var(--d7-paper)!important;
+  color:var(--d7-ink);border:1px solid var(--d7-border);border-top:3px double var(--d7-border);
+  border-radius:5px;box-shadow:0 3px 12px #0002,inset 0 0 0 1px #bba07512;
+  scroll-margin-top:12px;
+}
+#app .fj-d7-settings-panel>.fj-d7-panel-title{
+  padding:0 32px 10px 0;margin:0 0 8px!important;border-bottom:2px double var(--d7-border);
+  color:var(--d7-ink)!important;font:700 18px/1.4 Georgia,serif!important;
+}
+#app .fj-d7-setting-row{
+  display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap;
+  padding:12px 2px!important;border-bottom:1px solid var(--d7-border)!important;
+}
+#app .fj-d7-setting-row:last-child{border-bottom:0!important;}
+#app .fj-d7-setting-row .settings-label{
+  color:var(--d7-ink)!important;font-size:13px!important;line-height:1.5;min-width:0;
+  overflow-wrap:anywhere;flex:1 1 175px;
+}
+#app .fj-d7-setting-row .settings-label>div,
+#app .fj-d7-setting-row .settings-val,
+#app .fj-d7-setting-row>div:not(.settings-label){color:var(--d7-muted)!important;}
+#app .fj-d7-setting-row .settings-val{flex:0 0 43px;font-size:13px;}
+#app .fj-d7-settings-panel .fj-d7-setting-button{
+  min-height:44px!important;padding:8px 12px!important;flex-shrink:0;
+  border:1px solid var(--d7-border)!important;border-radius:4px;
+  background:linear-gradient(#b2894e12,transparent),var(--d7-paper-alt)!important;
+  color:var(--d7-ink)!important;box-shadow:0 1px 4px #0001;
+  font:600 12px/1.35 Georgia,serif!important;
+}
+#app .fj-d7-settings-panel .fj-d7-setting-button:is(.btn-p,.btn-active){
+  background:linear-gradient(170deg,#966438,#734a28)!important;border-color:#bb8d59!important;color:#fff2df!important;
+}
+#app .fj-d7-settings-panel .fj-d7-setting-button.btn-danger,
+#app .fj-d7-danger-row .fj-d7-setting-button{
+  background:linear-gradient(#813e31,#5e3027)!important;color:#fff0e2!important;border-color:#ae6755!important;
+}
+#app .fj-d7-danger-row{background:color-mix(in srgb,var(--d7-warn),transparent 92%);padding:10px!important;border:1px dashed var(--d7-border)!important;border-radius:3px;}
+#app .fj-d7-danger-row .settings-label{color:var(--d7-warn)!important;font-weight:700;}
+#app .fj-d7-settings-panel .fj-d7-range{
+  accent-color:var(--d7-accent);flex:1 1 130px;min-width:110px;height:32px!important;
+}
+#app .fj-d7-settings-panel button:focus-visible,
+#app .fj-d7-settings-panel input:focus-visible{outline:3px solid var(--d7-accent);outline-offset:2px;}
+#app .fj-d7-settings-panel[data-d7-group="audio"] [style*="opacity: 0.4"]{
+  opacity:.75!important;
+}
+#app .fj-d7-settings-panel[data-d7-group="language"]>.sec-title+div{display:flex;flex-wrap:wrap;gap:8px!important;}
+#app .fj-d7-about :is(div,strong,em,span)[style*="color"]{color:var(--d7-muted)!important;}
+#app .fj-d7-about :is(div,strong)[style*="font-weight"]{color:var(--d7-ink)!important;}
+#app .fj-d7-about a{color:var(--d7-accent)!important;overflow-wrap:anywhere;}
+#app .fj-d7-settings-panel[data-d7-group="audio"] .hotkey-badge{
+  display:inline-flex;padding:3px 6px;border:1px solid var(--d7-border);border-radius:3px;
+  color:var(--d7-ink)!important;background:var(--d7-paper-alt);
+}
+/* The original mobile More sheet is styled in place, without moving its actions. */
+#app .fj-sheet{
+  border:1px solid #9c7549;border-top:3px double #c19a63;
+  background:linear-gradient(145deg,#b88b3c0d,transparent 65%),var(--card2);
+  box-shadow:0 -12px 40px #0009,inset 0 1px #f9d0a11d;
+}
+#app .fj-sheet-heading{border-bottom:2px double var(--fj-edge);padding-bottom:10px;}
+#app .fj-sheet-heading h2{font:700 22px/1.25 Georgia,serif;color:var(--ink);}
+#app .fj-sheet-close{border-color:var(--fj-edge);background:var(--fj-surface);color:var(--ink);}
+#app .fj-more-entry{
+  border:1px solid var(--fj-edge);border-left:3px solid #9b7548;
+  background:linear-gradient(115deg,#a1794417,transparent 72%),var(--fj-surface);
+  color:var(--ink);font:700 14px/1.4 Georgia,serif;min-height:54px;
+}
+#app .fj-more-entry .fj-nav-art{flex-shrink:0;}
+#app .fj-theme-control,#app .fj-reference{
+  background:linear-gradient(150deg,#af875115,transparent 72%),var(--fj-surface);
+  border:1px solid var(--fj-edge);
+}
+#app .fj-theme-control h3,#app .fj-reference h3{color:var(--ink);font:700 16px/1.3 Georgia,serif;}
+#app .fj-theme-choice{min-height:48px;background:var(--card);color:var(--ink);border:1px solid var(--fj-edge);}
+#app .fj-theme-choice[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);}
+/* Existing non-market overlays: period material, minimum 12px type, proper theme contrast. */
+#app .fj-d7-dialog{
+  color:var(--ink);background:linear-gradient(120deg,#a7783d10,transparent 72%),var(--card)!important;
+  border:2px solid var(--fj-edge);border-top:3px double var(--gold);box-shadow:0 16px 46px #0009;
+  font-size:13px;line-height:1.55;
+}
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="rgb(58, 42, 20)"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="rgb(139, 94, 52)"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="rgb(90, 58, 26)"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="rgb(84, 55, 20)"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="rgb(107, 58, 16)"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="color:#3a2a14"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="color: #3a2a14"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="color:#543714"],
+#app .fj-d7-dialog :is(div,span,p,em,strong)[style*="color:#8b5e34"]{color:var(--ink)!important;}
+#app .fj-d7-dialog .fj-d7-dialog-heading{font:700 19px/1.35 Georgia,serif;color:var(--ink)!important;}
+#app .fj-d7-dialog button{min-height:44px;}
+#app .fj-d7-dialog button:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
+@media(max-width:450px){
+  #app .fj-d7-heading{padding:11px;margin:8px 8px 10px;}
+  #app .fj-d7-heading-emblem{width:47px;height:47px;flex-basis:47px;}
+  #app .fj-d7-heading-emblem img{width:41px;height:41px;}
+  #app .fj-d7-kicker{font-size:9px;letter-spacing:.3px;}
+  #app .fj-d7-heading h2{font-size:21px;}
+  #app .fj-d7-settings-index{gap:5px;}
+  #app .fj-d7-settings-index .fj-d7-index-link{flex:1 1 85px;padding:8px 6px;}
+  #app .fj-d7-setting-row .settings-label{flex-basis:145px;}
+  #app .fj-d7-setting-row{gap:7px;}
+  #app .fj-d7-settings-panel>.fj-d7-panel-title{font-size:17px!important;}
+}
+@media(max-height:500px) and (orientation:landscape){#app .fj-d7-heading{padding:9px;}#app .fj-d7-heading-emblem{height:43px;width:43px;flex-basis:43px;}#app .fj-d7-heading-emblem img{width:37px;height:37px;}}
+@media(prefers-reduced-motion:reduce){#app .fj-d7-settings *{scroll-behavior:auto!important;transition:none!important;}}
