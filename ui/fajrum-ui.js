@@ -218,10 +218,15 @@
     ]) {
       const node = button(labels[key], glyph, action);
       if (key === 'market') {
-        const count = (state.avail || []).length + (state.contracts || []).length;
+        // Oznamujeme nové nabídky, nikoliv součet nabídek a přijatých zakázek.
+        // Přijaté zakázky jsou stále dostupné v Trhu bez notifikačního čísla.
+        const count = Array.isArray(state.avail) ? state.avail.length : 0;
         if (count) {
           node.append(el('span', 'fj-nav-count', count));
-          node.setAttribute('aria-label', `${labels[key]} · ${count} ${cs(state)?'zakázky':'contracts'}`);
+          const countLabel = cs(state)
+            ? (count === 1 ? 'nová nabídka' : count <= 4 ? 'nové nabídky' : 'nových nabídek')
+            : (count === 1 ? 'new offer' : 'new offers');
+          node.setAttribute('aria-label', `${labels[key]} · ${count} ${countLabel}`);
         }
       }
       if (key === current) { node.classList.add('is-current'); node.setAttribute('aria-current','page'); }

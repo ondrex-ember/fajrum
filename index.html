@@ -8770,9 +8770,11 @@ function renderOriginal(){
     hrac:L==="cs"?"Deník":"Journal",
     archiv:L==="cs"?"Archiv":"Archive"};
   [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
-    const hasContracts=k==="market"&&(p.avail.length>0||p.contracts.length>0);
+    // Číslo u Trhu oznamuje pouze NOVÉ nabídky; přijaté kontrakty
+    // zůstávají v Trhu jako aktivní, ale už nejsou notifikací.
+    const newOffers=k==="market"&&Array.isArray(p.avail)?p.avail.length:0;
     const isActive=p.tab===k;
-    const labelText=tabLabels[k]+(hasContracts?` 📜${p.avail.length+p.contracts.length}`:"");
+    const labelText=tabLabels[k]+(newOffers?` 📜${newOffers}`:"");
     const btn=h("button",{class:"tab"+(isActive?" active":""),onClick:()=>{G.tab=k;render();}});
     btn.append(e);
     btn.append(h("span",{class:"tab-label"},labelText));

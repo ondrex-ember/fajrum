@@ -14,7 +14,7 @@
 // Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
 // skipWaiting při instalaci a žádný automatický reload.
 
-const CORE = 'sklarska-hut-woodland-v1.21-e1d-h1-saveguard';
+const CORE = 'sklarska-hut-woodland-v1.22-market-badge';
 const MEDIA = 'sklarska-hut-woodland-v1';
 const PREFIX = 'sklarska-hut-';
 
