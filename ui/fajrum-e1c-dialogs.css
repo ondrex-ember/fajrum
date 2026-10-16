@@ -117,3 +117,622 @@
   #app .fj-e1c-dialog{max-height:calc(100dvh - 12px)!important;}
 }
 @media(prefers-reduced-motion:reduce){#app .fj-e1c-dialog *{transition:none!important;}}
+
+/* ========================================================================
+   E2 — PEC-STYLE COHESION
+   Appended here intentionally so current index.html does not need a change.
+   ======================================================================== */
+
+/* ==========================================================================
+   FAJRUM E2 — PEC-STYLE COHESION / UNIFICATION v1
+   --------------------------------------------------------------------------
+   Goal: bring Přehled, Výroba/Dílna, Kronika and Archiv up to the established
+   visual standard of Pec, WITHOUT changing game logic, handlers, saves,
+   content, art sources, production rules, prices or state.
+
+   Existing artwork only. No new scenery. Works in dark/light and desktop/mobile.
+   Loaded AFTER E1/E1b/E1c so it can be the final visual polish layer.
+   ========================================================================== */
+
+#app {
+  --e2-line: var(--fj-edge);
+  --e2-gold: var(--gold);
+  --e2-paper: var(--card);
+  --e2-paper-2: var(--fj-surface);
+  --e2-ink: var(--ink);
+  --e2-muted: var(--fj-muted);
+  --e2-shadow: rgba(8, 5, 2, .30);
+  --e2-soft-gold: color-mix(in srgb, var(--gold) 38%, transparent);
+  --e2-soot: color-mix(in srgb, #17100a 28%, transparent);
+}
+
+/* ==========================================================================
+   1. SHARED HERO FRAME — Dílna / Kronika / Archiv
+   Same physical grammar as Pec: stronger edge, brass inset, paper side.
+   ========================================================================== */
+
+#app .content > .fj-section-art:is(
+  [data-art-tab="production"],
+  [data-art-tab="log"],
+  [data-art-tab="archiv"]
+) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--e2-line) 84%, var(--e2-gold)) !important;
+  border-top-color: var(--e2-gold) !important;
+  border-radius: 7px !important;
+  background: var(--e2-paper) !important;
+  box-shadow:
+    0 7px 20px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 24%, transparent) !important;
+}
+
+/* fine inner brass stitching, like the furnace hearth */
+#app .content > .fj-section-art:is(
+  [data-art-tab="production"],
+  [data-art-tab="log"],
+  [data-art-tab="archiv"]
+) .fj-section-art-figure::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--e2-gold) 42%, transparent);
+  border-radius: 2px;
+  background:
+    url("brass-corner.svg") left top / 34px 34px no-repeat,
+    url("brass-corner.svg") right top / 34px 34px no-repeat;
+  box-shadow: inset 0 0 0 2px rgba(19, 10, 4, .13);
+}
+
+/* keep the approved original 3:2 scene visible in full */
+#app .content > .fj-section-art:is(
+  [data-art-tab="production"],
+  [data-art-tab="log"],
+  [data-art-tab="archiv"]
+) .fj-section-art-image {
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #1d1712;
+}
+
+/* right / lower book leaf */
+#app .content > .fj-section-art:is(
+  [data-art-tab="production"],
+  [data-art-tab="log"],
+  [data-art-tab="archiv"]
+) .fj-section-art-detail {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  min-width: 0;
+  min-height: 72px;
+  padding: 14px 17px !important;
+  border-color: var(--e2-line) !important;
+  background:
+    linear-gradient(130deg,
+      color-mix(in srgb, var(--e2-gold) 8%, var(--e2-paper)) 0%,
+      var(--e2-paper-2) 72%) !important;
+  color: var(--e2-ink) !important;
+  font: italic 600 14px/1.5 Georgia, "Palatino Linotype", serif !important;
+  box-shadow: inset 0 0 0 7px color-mix(in srgb, var(--e2-gold) 4%, transparent);
+}
+
+/* small round emblem — deliberately close to Pec's instrument plate */
+#app .content > .fj-section-art:is(
+  [data-art-tab="production"],
+  [data-art-tab="log"],
+  [data-art-tab="archiv"]
+) .fj-section-art-detail::before {
+  content: "✥" !important;
+  display: grid !important;
+  place-items: center;
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  border: 1px solid var(--e2-soft-gold) !important;
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle at 40% 30%,
+      color-mix(in srgb, var(--e2-gold) 15%, transparent),
+      transparent 74%) !important;
+  color: var(--e2-gold) !important;
+  font: normal 25px/1 Georgia, serif !important;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--e2-gold) 5%, transparent) !important;
+  text-shadow: none !important;
+}
+
+/* ==========================================================================
+   2. PŘEHLED — turn the page into a proper control ledger
+   ========================================================================== */
+
+/* "Tvoje huť" gets the same physical weight as Pec's furnace hero */
+#app .content.fj-overview-page .fj-hut-hero {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--e2-line) 84%, var(--e2-gold)) !important;
+  border-top-color: var(--e2-gold) !important;
+  border-radius: 7px !important;
+  box-shadow:
+    0 7px 20px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 24%, transparent) !important;
+}
+
+#app .content.fj-overview-page .fj-hut-hero .fj-art-figure {
+  border-right-color: var(--e2-line);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 18%, transparent);
+}
+
+#app .content.fj-overview-page .fj-hut-hero .fj-art-foot {
+  position: relative;
+  min-width: 0;
+  background:
+    linear-gradient(132deg,
+      color-mix(in srgb, var(--e2-gold) 8%, var(--e2-paper)) 0%,
+      var(--e2-paper-2) 72%) !important;
+  border-left: 1px solid var(--e2-line);
+  box-shadow: inset 0 0 0 7px color-mix(in srgb, var(--e2-gold) 4%, transparent);
+}
+
+/* small visual anchor on the summary side, no new game content */
+#app .content.fj-overview-page .fj-hut-hero .fj-art-foot::before {
+  content: "✥";
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--e2-soft-gold);
+  border-radius: 50%;
+  color: var(--e2-gold);
+  font: 24px/1 Georgia, serif;
+  background: color-mix(in srgb, var(--e2-gold) 5%, transparent);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--e2-gold) 5%, transparent);
+}
+
+/* main overview cards */
+#app .content.fj-overview-page :is(
+  .fj-overview-ledger,
+  .fj-overview-operations,
+  .fj-overview-roster,
+  .fj-overview-specialists
+) {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--e2-line) !important;
+  border-top: 3px solid var(--e2-gold) !important;
+  border-radius: 5px !important;
+  background:
+    linear-gradient(128deg,
+      color-mix(in srgb, var(--e2-gold) 7%, transparent),
+      transparent 46%),
+    var(--e2-paper) !important;
+  box-shadow:
+    0 5px 17px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 10%, transparent) !important;
+}
+
+#app .content.fj-overview-page .fj-overview-card-head {
+  min-height: 48px;
+  padding-bottom: 10px;
+  border-bottom: 2px double var(--e2-line) !important;
+}
+
+#app .content.fj-overview-page .fj-overview-card-head h3,
+#app .content.fj-overview-page .fj-overview-toggle .sec-title {
+  color: var(--e2-ink) !important;
+  font-family: Georgia, "Palatino Linotype", serif !important;
+  letter-spacing: .01em;
+}
+
+/* inside the Dřevo / Pec card use furnace-like bordered readouts */
+#app .content.fj-overview-page :is(.fj-overview-allocations,.fj-overview-furnace) {
+  position: relative;
+  border: 1px solid var(--e2-line) !important;
+  border-radius: 4px !important;
+  background:
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--e2-gold) 6%, transparent),
+      transparent 70%),
+    var(--e2-paper-2) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 8%, transparent),
+    0 2px 8px rgba(0,0,0,.12);
+}
+
+#app .content.fj-overview-page .attention-banner {
+  border: 1px solid var(--e2-line) !important;
+  border-left: 3px solid var(--e2-gold) !important;
+  border-radius: 4px !important;
+}
+
+#app .content.fj-overview-page .fj-overview-hint {
+  border-top: 1px solid var(--e2-line);
+  border-bottom: 1px solid var(--e2-line);
+  background: color-mix(in srgb, var(--e2-gold) 5%, var(--e2-paper-2)) !important;
+}
+
+/* ==========================================================================
+   3. VÝROBA / DÍLNA — stronger registry and workstation framing
+   ========================================================================== */
+
+#app .content.fj-d4-production .fj-d4-original-scene {
+  border: 2px solid color-mix(in srgb, var(--e2-line) 84%, var(--e2-gold)) !important;
+  border-top-color: var(--e2-gold) !important;
+  box-shadow:
+    0 7px 20px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 24%, transparent) !important;
+}
+
+#app .content.fj-d4-production .fj-d4-register {
+  border: 1px solid var(--e2-line) !important;
+  border-top: 3px solid var(--e2-gold) !important;
+  border-left: 1px solid var(--e2-line) !important;
+  box-shadow:
+    0 5px 17px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 9%, transparent) !important;
+}
+
+#app .content.fj-d4-production .fj-d4-register-brand {
+  padding-bottom: 10px;
+  border-bottom: 2px double var(--e2-line);
+}
+
+#app .content.fj-d4-production .fj-d4-section {
+  border: 1px solid var(--e2-line) !important;
+  border-top: 3px solid var(--e2-gold) !important;
+  border-radius: 5px !important;
+  box-shadow:
+    0 5px 16px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 8%, transparent) !important;
+}
+
+#app .content.fj-d4-production .fj-d4-section-heading {
+  border-bottom: 2px double var(--e2-line) !important;
+  padding-bottom: 10px !important;
+}
+
+/* recipes feel like entries in the same workshop register */
+#app .content.fj-d4-production .fj-d4-product {
+  box-shadow:
+    0 3px 9px rgba(0,0,0,.18),
+    inset 0 1px color-mix(in srgb, var(--e2-gold) 8%, transparent) !important;
+}
+
+/* ==========================================================================
+   4. KRONIKA — make the historical book a first-class framed screen
+   ========================================================================== */
+
+#app .fj-d5-chronicle {
+  margin: 10px !important;
+  padding: 14px !important;
+  border: 1px solid var(--e2-line) !important;
+  border-top: 3px solid var(--e2-gold) !important;
+  border-radius: 5px !important;
+  box-shadow:
+    0 6px 18px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 9%, transparent) !important;
+}
+
+#app .fj-d5-chronicle > .fj-d5-title {
+  padding-bottom: 11px !important;
+  border-bottom: 2px double var(--e2-line) !important;
+}
+
+#app .fj-d5-chronicle .fj-d5-register {
+  padding: 10px 0 !important;
+  margin: 3px 0 12px !important;
+  border-top: 1px solid var(--e2-line) !important;
+  border-bottom: 1px solid var(--e2-line) !important;
+  background: color-mix(in srgb, var(--e2-gold) 3%, transparent);
+}
+
+#app .fj-d5-chronicle .fj-d5-register-item {
+  min-height: 42px;
+  padding-inline: 10px;
+  border-right-color: var(--e2-line) !important;
+}
+
+#app .fj-d5-chronicle .fj-d5-pages {
+  border: 1px solid var(--e2-line) !important;
+  border-left: 5px double var(--e2-gold) !important;
+  box-shadow:
+    inset 0 1px 13px rgba(0,0,0,.14),
+    0 2px 7px rgba(0,0,0,.10) !important;
+}
+
+/* ==========================================================================
+   5. ARCHIV — stronger book / catalogue shell
+   ========================================================================== */
+
+#app .fj-d6-archive-view .fj-d6-archive-scene {
+  border: 2px solid color-mix(in srgb, var(--e2-line) 84%, var(--e2-gold)) !important;
+  border-top-color: var(--e2-gold) !important;
+  box-shadow:
+    0 7px 20px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 24%, transparent) !important;
+}
+
+#app .fj-d6-archive {
+  margin: 10px !important;
+  border: 1px solid var(--e2-line) !important;
+  border-top: 3px solid var(--e2-gold) !important;
+  border-radius: 5px !important;
+  box-shadow:
+    0 6px 18px var(--e2-shadow),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 9%, transparent) !important;
+}
+
+#app .fj-d6-archive > .sec-title {
+  border-bottom: 2px double var(--e2-line) !important;
+}
+
+#app .fj-d6-register {
+  border: 1px solid var(--e2-line) !important;
+  border-top: 2px solid var(--e2-gold) !important;
+  border-left: 1px solid var(--e2-line) !important;
+  box-shadow:
+    0 3px 10px rgba(0,0,0,.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 7%, transparent);
+}
+
+#app .fj-d6-register-cell {
+  border-color: var(--e2-line) !important;
+  box-shadow: inset 0 1px color-mix(in srgb, var(--e2-gold) 6%, transparent);
+}
+
+#app .fj-d6-tabs .fj-d6-tab {
+  border-color: var(--e2-line) !important;
+  box-shadow:
+    inset 0 1px color-mix(in srgb, var(--e2-gold) 7%, transparent),
+    0 2px 5px rgba(0,0,0,.10) !important;
+}
+
+#app .fj-d6-tabs .fj-d6-tab.active {
+  border-color: var(--e2-gold) !important;
+  box-shadow:
+    inset 0 -3px 0 var(--e2-gold),
+    inset 0 0 0 1px color-mix(in srgb, var(--e2-gold) 8%, transparent),
+    0 3px 8px rgba(0,0,0,.14) !important;
+}
+
+/* ==========================================================================
+   6. DESKTOP — same rhythm as Pec
+   ========================================================================== */
+
+@media (min-width: 960px) and (min-height: 500px) {
+  #app.desktop .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) {
+    display: grid;
+    grid-template-columns: minmax(250px, .95fr) minmax(0, 2.05fr);
+  }
+
+  #app.desktop .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-figure {
+    height: auto !important;
+    min-height: 188px;
+    aspect-ratio: 3 / 2;
+    border-right: 1px solid var(--e2-line);
+  }
+
+  #app.desktop .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-detail {
+    min-height: 188px !important;
+    padding: 22px 28px !important;
+    border-left: 0 !important;
+    font-size: clamp(16px, 1.45vw, 20px) !important;
+  }
+
+  #app.desktop .content.fj-overview-page .fj-overview-columns {
+    gap: 12px !important;
+  }
+
+  #app.desktop .content.fj-overview-page :is(
+    .fj-overview-ledger,
+    .fj-overview-operations
+  ) {
+    min-height: 100%;
+  }
+
+  #app.desktop .content.fj-d4-production .fj-d4-register,
+  #app.desktop .fj-d5-chronicle,
+  #app.desktop .fj-d6-archive {
+    margin-inline: 10px !important;
+  }
+}
+
+/* ==========================================================================
+   7. MOBILE / TABLET — same richness, not a stripped-down version
+   ========================================================================== */
+
+@media (max-width: 959px) {
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) {
+    margin: 8px !important;
+    border-width: 1px !important;
+    border-top-width: 2px !important;
+  }
+
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-figure {
+    height: 148px !important;
+    border-bottom: 1px solid var(--e2-line);
+  }
+
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-detail {
+    min-height: 64px !important;
+    gap: 10px;
+    padding: 11px 12px !important;
+    border-left: 0 !important;
+    font-size: 13px !important;
+  }
+
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-detail::before {
+    flex-basis: 34px !important;
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 21px !important;
+  }
+
+  #app .content.fj-overview-page .fj-hut-hero {
+    margin: 8px !important;
+    border-width: 1px !important;
+    border-top-width: 2px !important;
+  }
+
+  #app .content.fj-overview-page .fj-hut-hero .fj-art-foot {
+    border-left: 0;
+    border-top: 1px solid var(--e2-line);
+    padding: 11px 12px !important;
+  }
+
+  #app .content.fj-overview-page .fj-hut-hero .fj-art-foot::before {
+    flex-basis: 33px;
+    width: 33px;
+    height: 33px;
+    font-size: 20px;
+  }
+
+  #app .content.fj-overview-page .fj-overview-columns {
+    gap: 9px !important;
+    padding-inline: 8px !important;
+  }
+
+  #app .content.fj-overview-page :is(
+    .fj-overview-ledger,
+    .fj-overview-operations,
+    .fj-overview-roster,
+    .fj-overview-specialists
+  ) {
+    padding: 11px !important;
+    border-top-width: 2px !important;
+  }
+
+  #app .content.fj-overview-page .fj-overview-resource-columns {
+    gap: 8px !important;
+  }
+
+  #app .content.fj-d4-production .fj-d4-register {
+    margin: 8px !important;
+    padding: 11px !important;
+    border-top-width: 2px !important;
+  }
+
+  #app .content.fj-d4-production .fj-d4-section {
+    border-top-width: 2px !important;
+  }
+
+  #app .fj-d5-chronicle,
+  #app .fj-d6-archive {
+    margin: 8px !important;
+    padding: 11px !important;
+    border-top-width: 2px !important;
+  }
+
+  #app .fj-d5-chronicle .fj-d5-register {
+    padding-block: 8px !important;
+  }
+
+  #app .fj-d5-chronicle .fj-d5-register-item {
+    padding-inline: 5px;
+    font-size: 11px;
+  }
+
+  #app .fj-d6-register {
+    gap: 9px;
+    padding: 10px !important;
+  }
+
+  #app .fj-d6-register-counts {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  #app .fj-d6-register-cell {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-figure {
+    height: 126px !important;
+  }
+
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-caption h2 {
+    font-size: 20px !important;
+  }
+
+  #app .content.fj-overview-page :is(.fj-overview-allocations,.fj-overview-furnace) {
+    padding: 9px !important;
+  }
+
+  #app .fj-d6-register-counts {
+    grid-template-columns: minmax(0,1fr);
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-figure {
+    min-height: 108px !important;
+    height: 108px !important;
+    aspect-ratio: auto;
+  }
+
+  #app .content > .fj-section-art:is(
+    [data-art-tab="production"],
+    [data-art-tab="log"],
+    [data-art-tab="archiv"]
+  ) .fj-section-art-detail {
+    min-height: 108px !important;
+    padding: 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app .content.fj-overview-page *,
+  #app .content.fj-d4-production *,
+  #app .fj-d5-chronicle *,
+  #app .fj-d6-archive * {
+    transition: none !important;
+  }
+}
