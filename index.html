@@ -7039,11 +7039,15 @@ function renderOriginal(){
   if(isDesktop){app.classList.add("desktop");}else{app.classList.remove("desktop");}
 
   // Intro = scrollovatelný, hra = fixed height
+  // Intro: #app nesmí být scroll kontejner, scrolluje dokument (novější Blink jinak neřetězí scroll na dokument).
+  // overflow-x:clip ořezává vodorovně bez vzniku scroll kontejneru.
   if(p.phase==="intro"){
     app.style.maxHeight="none";
-    app.style.overflowY="auto";
+    app.style.overflowX="clip";
+    app.style.overflowY="visible";
   } else {
     app.style.maxHeight="100vh";
+    app.style.overflowX="hidden";
     app.style.overflowY="hidden";
   }
 
