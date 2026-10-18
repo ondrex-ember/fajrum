@@ -37,11 +37,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible {
   width:100%; max-width:100%; border-radius:0;
   background-color:var(--card2);
   background-image:var(--fj-grain),radial-gradient(ellipse at top right,#0000000b,transparent 70%);
-  box-shadow:none; overscroll-behavior:none;
+  box-shadow:none;
 }
 #app:not([data-fajrum-phase="intro"]) {
   height:var(--fj-viewport-height,100dvh);
   max-height:var(--fj-viewport-height,100dvh)!important;
+  overscroll-behavior:none;
 }
 #app[data-fajrum-phase="intro"] {min-height:100dvh; padding-bottom:env(safe-area-inset-bottom,0px);}
 .hdr {
