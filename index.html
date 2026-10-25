@@ -2615,6 +2615,7 @@ function processRound(){
   const evts=[]; // deklarujeme brzy — crack handler ho potřebuje před sekci "Náhodné události"
   const con=[...p.contracts];
   const log=[...p.log];
+  const roundLogStart=log.length; // log je kopie celé historie — řádky tohoto kola jsou až od tohoto indexu
 
 
   // Výpočet aktuální účinnosti pece
@@ -3701,6 +3702,13 @@ function processRound(){
   const prodW=tW-p.tW, prodC=tC-p.tC;
   const newContractsDone=done-(p.done||0);
 
+  // Produkce tohoto kola pro monthly summary (řez logu od začátku kola; p.workers je tu ještě původní seznam)
+  const roundProdLines=log.slice(roundLogStart).filter(l=>l.startsWith("__PROD__")).map(l=>l.replace("__PROD__",""));
+  const roundWorkerNames=p.workers.map(w=>w.name+":");
+  const roundWorkerProd=roundProdLines.filter(l=>roundWorkerNames.some(n=>l.includes(n)));
+  const roundReadyLine=roundProdLines.find(l=>l.includes("pánev dozrálo")||l.includes("crucible ready"));
+  const roundNewPanve=roundReadyLine?(parseInt((roundReadyLine.match(/(\d+)×/)||[])[1],10)||0):0;
+
   Object.assign(G,{
     round:nr, res:r, log:[...log,...logAdditions], morale:mor, forest, grose, debt,
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
@@ -3720,7 +3728,10 @@ function processRound(){
       groseDelta:grose-p.grose,
       groseAfter:grose, debtAfter:debt,
       workerWages:[...workerWages],
-      contractIncome:contractIncomeTick
+      contractIncome:contractIncomeTick,
+      prodW, prodC, newPanve:roundNewPanve,
+      furnTemp:(fA?fT:null),
+      workerProd:roundWorkerProd
     },
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
@@ -3741,56 +3752,6 @@ function processRound(){
   });
   checkAchievements();
 
-  // Toast — kompaktní delta přehled kola
-  const toastTitle=`${(L==="cs"?MONTHS_CS:MONTHS_EN)[round]} · ${isP?(L==="cs"?"Příprava":"Prep"):(L==="cs"?"Kampaň":"Campaign")}`;
-  const tL=[];
-
-  // Produkce (kampaň)
-  const newWg=prodW, newCr=prodC;
-  if(newWg>0)tL.push(`🔥 +${newWg}× waldglas`);
-  if(newCr>0)tL.push(`✨ +${newCr}× křišťál`);
-  // Pec stav (kampaň)
-  if(isC&&fA)tL.push(`🌡️ ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
-
-  // Les + suroviny — delta
-  const fCut=p.forest-forest;
-  if(fCut>0)tL.push(`🌲 ${forest}/${p.forestMax||INIT_FOREST} (-${fCut})`);
-  // Suroviny delta — ukáže co přibylo/ubylo
-  const resDelta=[
-    {icon:"🪵",k:"wood"},{icon:"🏖️",k:"sand"},{icon:"🌿",k:"potash"},
-    {icon:"🪨",k:"limestone"},{icon:"💧",k:"water"},{icon:"🧱",k:"clay"},
-    {icon:"🍞",k:"food"},{icon:"🌳",k:"formy"}
-  ];
-  const resDeltaLines=[];
-  resDelta.forEach(({icon,k})=>{
-    const before=p.res[k]||0;
-    const after=r[k]||0;
-    const d=after-before;
-    if(d!==0) resDeltaLines.push(`${icon}${d>0?"+":""}${d} (${after})`);
-  });
-  if(resDeltaLines.length) tL.push(resDeltaLines.join(" · "));
-
-  // Pánve — dozrálé nebo prasklé
-  const crackedLog=log.filter(l=>l.includes("💔")).length;
-  if(crackedLog>0)tL.push(`💔 pánev praskla ×${crackedLog}`);
-  const rdyPanveCount=log.filter(l=>l.includes("pánev dozrálo")||l.includes("crucible ready")).length;
-  if(rdyPanveCount>0)tL.push(`🏺 +${rdyPanveCount}× pánev hotová`);
-
-  // Ekonomika — delta
-  const groseDelta=grose-p.grose;
-  tL.push(`💰 ${grose}g (${groseDelta>=0?"+":""}${groseDelta}g)`);
-  if(wages>0||bCost>0)tL.push(`💸 -${wages+bCost}g (mzdy+pivo${dPay?"+dluh":""})`);
-  if(wagesDeficit>0)tL.push(`⚠️ nezaplaceno ${wagesDeficit}g → dluh`);
-
-  // Morálka — jen pokud se výrazně změnila
-  const morDelta=mor-p.morale;
-  if(Math.abs(morDelta)>=5)tL.push(`😊 ${mor} (${morDelta>=0?"+":""}${morDelta})`);
-
-  // Eventy
-  const evtLog=log.filter(l=>l.includes("❄️")||l.includes("⭐")||l.includes("👋")||l.includes("🧱"));
-  evtLog.slice(0,2).forEach(l=>tL.push(l.replace(/__EVT__/g,"").replace(/__EVT__/g,"").trim().slice(0,50)));
-
-  showToast(toastTitle, tL);
   autoSave();
   render();
 }
@@ -7779,7 +7740,7 @@ function renderOriginal(){
 
     // ── STAV HUTĚ ──
     body.append(
-      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}% · ${L==="cs"?"zaběhnutost":"run-in"} ${p.furnace.runIn}%`),
+      h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🔥 ${L==="cs"?"Pec":"Furnace"}: eff ${sd.fEff}%${sd.furnTemp!=null?" · 🌡️ "+sd.furnTemp+"%":""} · ${L==="cs"?"zaběhnutost":"run-in"} ${p.furnace.runIn}%`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"3px"}},`🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${p.forestMax||INIT_FOREST}${sd.fCut?" (-"+sd.fCut+")":""}`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"8px"}},`🏺 ${L==="cs"?"Pánve":"Crucibles"}: ${p.pReady} + ${p.pAging.length} ${L==="cs"?"zrají":"aging"} · ${L==="cs"?"kval.":"qual."} ${stars(p.panevQuality)}`));
 
@@ -7791,6 +7752,16 @@ function renderOriginal(){
     if(newWgS>0||newCrS>0){
       prodBox.append(h("div",{style:{fontSize:"11px",marginBottom:"3px",color:"#3a2a14"}},
         `🔥 ${newWgS}× waldglas${newCrS>0?" · ✨ "+newCrS+"× křišťál":""} ${L==="cs"?"na skladě":"in stock"}`));
+    }
+    // Přírůstek produkce tohoto kola (starší save ve fázi summary tato pole nemá)
+    const sumGainW=sd.prodW||0, sumGainC=sd.prodC||0, sumGainP=sd.newPanve||0;
+    if(sumGainW>0||sumGainC>0||sumGainP>0){
+      const gainParts=[];
+      if(sumGainW>0)gainParts.push(`🔥 +${sumGainW}× waldglas`);
+      if(sumGainC>0)gainParts.push(`✨ +${sumGainC}× ${L==="cs"?"křišťál":"crystal"}`);
+      if(sumGainP>0)gainParts.push(`🏺 +${sumGainP}× ${L==="cs"?"pánev hotová":"crucible ready"}`);
+      prodBox.append(h("div",{style:{fontSize:"11px",fontWeight:"700",marginBottom:"4px",color:"#4a7a3a"}},
+        `${L==="cs"?"Přírůstek":"Gained"}: ${gainParts.join(" · ")}`));
     }
     // Suroviny delta
     const resReport=[
@@ -7809,6 +7780,16 @@ function renderOriginal(){
       }
     });
     prodBox.append(resGrid);
+
+    // Práce dělníků v tomto kole (řádky __PROD__ z logu kola)
+    const sumWorkerProd=sd.workerProd||[];
+    if(sumWorkerProd.length>0){
+      const wpBox=h("div",{style:{marginTop:"6px",paddingTop:"5px",borderTop:"1px solid rgba(74,122,58,.2)"}});
+      wpBox.append(h("div",{style:{fontSize:"9px",fontWeight:"700",color:"#4a7a3a",marginBottom:"3px"}},
+        L==="cs"?"👷 PRÁCE V TOMTO KOLE":"👷 WORK THIS ROUND"));
+      sumWorkerProd.slice(0,14).forEach(t=>wpBox.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",marginBottom:"2px",lineHeight:"1.4"}},t)));
+      prodBox.append(wpBox);
+    }
 
     // Hint co dělat dál — pouze pokud není vypnuté v settings
     const showHints=p.showHints!==false; // default: zapnuto
