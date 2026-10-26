@@ -1178,7 +1178,8 @@ const COLOR_RECIPES={
     furnaceMin:60, // min teplota %
     unlock_item:"smolka", // odemkne až Baranovský přiveze šmolku
     sell_cs:14, sell_en:14,
-    latin:"In vase vitreo — kobaltová modrá"
+    latin:"In vase vitreo — kobaltová modrá",
+    latinEn:"In vase vitreo — cobalt blue"
   },
   smaragd:{
     cs:"Smaragdová zeleň",   en:"Emerald Green",
@@ -1190,7 +1191,8 @@ const COLOR_RECIPES={
     furnaceMin:65,
     unlock_item:"aesUstum",
     sell_cs:16, sell_en:16,
-    latin:"Ignis mutat res — měď v ohni"
+    latin:"Ignis mutat res — měď v ohni",
+    latinEn:"Ignis mutat res — copper in the fire"
   },
   lattimo:{
     cs:"Mléčné sklo (Lattimo)", en:"Milk Glass (Lattimo)",
@@ -1202,7 +1204,8 @@ const COLOR_RECIPES={
     furnaceMin:70,
     unlock_item:"cin",
     sell_cs:22, sell_en:22,
-    latin:"Corpus fit vitrum — čistá bílá hmota"
+    latin:"Corpus fit vitrum — čistá bílá hmota",
+    latinEn:"Corpus fit vitrum — pure white matter"
   },
   rubin:{
     cs:"Zlatý rubín (Kunckel)",  en:"Gold Ruby (Kunckel)",
@@ -1214,7 +1217,8 @@ const COLOR_RECIPES={
     furnaceMin:75,
     unlock_item:"zlato",
     sell_cs:50, sell_en:50,
-    latin:"Donec fiat vitrum pellucidum — zlatý rubín"
+    latin:"Donec fiat vitrum pellucidum — zlatý rubín",
+    latinEn:"Donec fiat vitrum pellucidum — golden ruby"
   },
   zlut:{
     cs:"Stříbrná žluť (lazura)", en:"Silver Stain (glaze)",
@@ -1226,7 +1230,8 @@ const COLOR_RECIPES={
     furnaceMin:0, mufle:true, wood:2, // vlastní muflová pec — nezávisí na hlavní peci, spálí 2 dřeva
     unlock_item:"stribro",
     sell_cs:30, sell_en:30,
-    latin:"Clarior e tenebris — stříbro v ohni"
+    latin:"Clarior e tenebris — stříbro v ohni",
+    latinEn:"Clarior e tenebris — silver in the fire"
   }
 };
 
@@ -1448,6 +1453,206 @@ function workerTier(lv){
   return              {cs:"Ucen",   de:"Lehrling"};
 }
 
+// Úvodní obrazovka: úvodní text a popisy obtížností (čte i Android)
+const INTRO_TEXT={
+  intro:{cs:"Rok 1680. Otec ti zanechal recept, dluh a starou pec v Arnsdorfu. Kolem šumí hvozd — tvůj poklad i prokletí. Každý strom, co pokácíš, ti dá dřevo. Ale les pomalu dorůstá zpět.",
+         en:"Year 1680. Your father left you a recipe, a debt, and an old furnace in Arnsdorf. The forest is your treasure and your curse. Every tree gives wood — and it slowly grows back."},
+  easy:{cs:"🕯️ Štědré dědictví: pec zaběhnutá, 140 grošů v pokladně, nízký dluh 30g, plná spižírna i sklad. Zlevněné zimní mzdy, vyšší výkupní ceny (+20%) a zakázkový bonus (+25%). Klidný čas na učení sklářského umění.",
+        en:"🕯️ Generous inheritance: run-in furnace, 140 coins in treasury, low debt 30g, full pantry and store. Discounted winter wages, higher selling prices (+20%), and contract bonuses (+25%). Relaxed time to master glassmaking."},
+  normal:{cs:"⚔️ Vyvážený start: otcova stará huť, 65 grošů na rozběh, dluh 40g, skromné zásoby na zimu. Vhodné pro strategickou správu lesa a pece.",
+          en:"⚔️ Balanced start: father's old foundry, 65 coins to start, 40g debt, modest winter stores. Ideal for strategic management of woods and furnace."}
+};
+
+// Deník hráče (záložka Deník): ranky Tomislava Břeťánka + schopnosti ranku
+const ABOUT_INFO={
+ "place": "Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680",
+ "intro": {
+  "cs": "Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách.",
+  "en": "A historical resource management game set in the world of 17th century forest glassworks in northern Bohemia."
+ },
+ "systemsTitle": {
+  "cs": "Herní systémy:",
+  "en": "Game systems:"
+ },
+ "systems": [
+  {
+   "icon": "🗓️",
+   "cs": "12 kol · 5 příprava (listopad–březen) · 7 kampaň (duben–říjen)",
+   "en": "12 rounds · 5 prep (Nov–Mar) · 7 campaign (Apr–Oct)"
+  },
+  {
+   "icon": "🔥",
+   "cs": "Dynamická pec — zaběhnutost, šamot, 3 typy (primitivní/zděná/mistrovská)",
+   "en": "Dynamic furnace — run-in, shamot, 3 types (primitive/brick/master)"
+  },
+  {
+   "icon": "🌲",
+   "cs": "Hvozd — konečný zdroj, zalesňování, vyčerpání hvozdu",
+   "en": "Forest — finite resource, reforestation, depletion"
+  },
+  {
+   "icon": "🏺",
+   "cs": "Výroba pánví — zrání 6 měsíců, kvalita závisí na pánvaři",
+   "en": "Crucible system — 6 month curing, quality by crucible-maker"
+  },
+  {
+   "icon": "🎨",
+   "cs": "Barevné sklo — 6 receptur (jantar/modrá/smaragd/lattimo/rubín/stříbrná žluť · Neri 1612, Kunckel 1679)",
+   "en": "Coloured glass — 6 recipes (amber/blue/emerald/lattimo/ruby/silver stain · Neri 1612, Kunckel 1679)"
+  },
+  {
+   "icon": "👷",
+   "cs": "Dělníci — foukači, formaři, brusiči, rytec · 10 levelů · traity",
+   "en": "Workers — blowers, moulders, grinders, engraver · 10 levels · traits"
+  },
+  {
+   "icon": "🍺",
+   "cs": "Pivovar · pivo jako naturální mzda · opilost snižuje kvalitu",
+   "en": "Brewery · beer as natural wage · drunkenness lowers quality"
+  },
+  {
+   "icon": "📜",
+   "cs": "Zakázky — 18 kontraktů, 4 kupci, termíny, progress",
+   "en": "Contracts — 18 contracts, 4 buyers, deadlines, progress"
+  },
+  {
+   "icon": "🗣️",
+   "cs": "Baranovský — obchodník s přísadami · progression barev",
+   "en": "Baranovský — additives trader · colour progression"
+  },
+  {
+   "icon": "📖",
+   "cs": "Kronika · historické události · alchymistické citáty (Kunckel, Neri, Baranovský)",
+   "en": "Chronicle · historical events · alchemical quotes (Kunckel, Neri, Baranovský)"
+  }
+ ],
+ "creatorTitle": {
+  "cs": "Tvůrce & konzultace",
+  "en": "Creator & Consultation"
+ },
+ "creator": [
+  {
+   "cs": "Ondřej Panuška — design, kód, herní mechaniky",
+   "en": "Ondřej Panuška — design, kód, herní mechaniky"
+  },
+  {
+   "cs": "Jaromír Panuška - tatínek — historická a technologická konzultace (technolog skla)",
+   "en": "Father — historical & technical consultation (glass technologist)"
+  }
+ ],
+ "email": "ondrej.panuska@gmail.com",
+ "thanks": {
+  "cs": "Hra čerpá z Kunckelovy Ars Vitraria Experimentalis (1679), Neriho L'Arte Vetraria (1612) a dobových sklářských privilegií severních Čech.",
+  "en": "The game draws on Kunckel's Ars Vitraria Experimentalis (1679), Neri's L'Arte Vetraria (1612) and period glassmaking privileges of northern Bohemia."
+ },
+ "links": [
+  {
+   "icon": "🔥",
+   "label": "Ember PA",
+   "url": "https://ember-pa.cz/"
+  },
+  {
+   "icon": "📜",
+   "label": "Scriptorium",
+   "url": "https://myscriptorium.cz/"
+  },
+  {
+   "icon": "📰",
+   "label": "Jouza News&Radio 📻",
+   "url": "https://newsandradio.cz"
+  },
+  {
+   "icon": "⛧",
+   "label": "Occultix",
+   "url": "https://occultix.app"
+  },
+  {
+   "icon": "🧩",
+   "label": "Fractout",
+   "url": "https://fractout.com/"
+  },
+  {
+   "icon": "🔮",
+   "label": "Oracoolio",
+   "url": "https://oracoolio.com"
+  }
+ ],
+ "made": "Vyvíjeno s ❤️ v Novém Boru · Ondrex",
+ "aboutLink": {
+  "cs": "O hře — about.html →",
+  "en": "About the game →"
+ }
+};
+const HRAC_RANKS=[
+  {id:"pomocnik",  cs:"Pomocník",    en:"Helper",       minSeason:0,  minGrose:0,    icon:"🪓",
+   desc_cs:"Přišel jsem do hutě s prázdnýma rukama. Kunc mi dá šanci — ale jen jednu.",
+   desc_en:"I came to the foundry empty-handed. Kunc gives me a chance — but only one."},
+  {id:"ucen",      cs:"Učeň",        en:"Apprentice",   minSeason:1,  minGrose:50,   icon:"🔥",
+   desc_cs:"Začínám rozumět ohni. Pánev praská méně. Kunc mě přestává hlídat každý krok.",
+   desc_en:"I'm starting to understand the fire. Crucibles crack less. Kunc stops watching every step."},
+  {id:"tovarys",   cs:"Tovaryš",     en:"Journeyman",   minSeason:2,  minGrose:200,  icon:"💨",
+   desc_cs:"Umím foukat základní tvary. Lidé v huti mi říkají Tomáš, ne 'ten nový'.",
+   desc_en:"I can blow basic shapes. People in the foundry call me Tomáš, not 'the new one'."},
+  {id:"mistr",     cs:"Mistr hutě",  en:"Foundry Master",minSeason:4, minGrose:600,  icon:"⚗️",
+   desc_cs:"Huť je moje. Křišťál teče z pece jako voda. Baranovský mi nabízí zakázku pro Harrache.",
+   desc_en:"The foundry is mine. Crystal flows from the furnace like water. Baranovský offers a Harrach commission."},
+  {id:"velmistr",  cs:"Velmistr",    en:"Glasmaster",   minSeason:8,  minGrose:2000, icon:"💎",
+   desc_cs:"Jméno Břeťánek zní po celém Novoborsku. Rubín, filigrán, zrcadla — vše.",
+   desc_en:"The name Břeťánek rings across all of Novoborsko. Ruby, filigree, mirrors — all of it."},
+];
+const RANK_ABILITIES={
+  pomocnik:{cs:"Ještě žádné schopnosti. Přežij první sezónu.",en:"No abilities yet. Survive the first season."},
+  ucen:    {cs:"⚡ Morale +2/kolo — Tomislav aktivně pomáhá v huti.",en:"⚡ Morale +2/round — Tomislav actively helps in the foundry."},
+  tovarys: {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign a mentor to any worker."},
+  mistr:   {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.\n🎯 Boost — brzy: jednou za kolo posílit výstup jednoho dělníka.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign mentor.\n🎯 Boost — soon: once per round boost one worker's output."},
+  velmistr:{cs:"⚡ Morale +2/kolo\n💰 Prodejní ceny +5% — jméno Břeťánek otevírá dveře.\n📖 Mentor & 🎯 Boost odemčeny.",en:"⚡ Morale +2/round\n💰 Sell prices +5% — the Břeťánek name opens doors.\n📖 Mentor & 🎯 Boost unlocked."},
+};
+
+// Codex (záložka Archiv): statické sekce, názvy glass klíčů a štítky specializací
+const CODEX_GLASS_CS={waldglas:"lesní sklo",crystal:"křišťál",modra:"tmavá modř",
+  smaragd:"smaragd",lattimo:"lattimo",rubin:"rubín",jantar:"jantar"};
+const CODEX_SPEC={foukat_kristal:{cs:"foukač křišťálu",en:"crystal blower"},foukat_dekor:{cs:"foukač dekor",en:"decor blower"},foukat_formy:{cs:"formař",en:"mould-blower"},brusic_hrana:{cs:"hranař",en:"edge-cutter"},brusic_kulic:{cs:"kulič",en:"sphere-grinder"}};
+const CODEX_STATIC={
+  melt:{
+    title_cs:"🔥 Sklovina — surové sklo", title_en:"🔥 Glass melt — raw glass",
+    items:[
+      {icon:"🟫",cs:"Lesní sklo (Waldglas)",en:"Forest glass (Waldglas)",price:"~3.5g/★",
+       recipe_cs:"3× písek + 2× potaš + 1× vápenec → pánev → tavení",
+       recipe_en:"3× sand + 2× potash + 1× limestone → crucible → smelting",
+       note_cs:"Základní surovina. Nazelenalá barva od Fe a S. Potaš černá/modrá postačí.",
+       note_en:"Base material. Greenish colour from Fe and S. Black/blue potash sufficient."},
+      {icon:"✨",cs:"Křišťál (čiré sklo)",en:"Crystal (clear glass)",price:"~9g/★",
+       recipe_cs:"3× čistý písek + 2× čistá potaš + 1× vápenec + 1× uhlí → pánev → tavení (65%+ fTemp)",
+       recipe_en:"3× pure sand + 2× refined potash + 1× limestone + 1× charcoal → crucible → smelting (65%+ fTemp)",
+       note_cs:"Samostatná receptura, ne vyčištěný waldglas. Burel (čeření) zlepší příští dávku. Technologický přelom ~1680, Müller 1683.",
+       note_en:"A recipe of its own, not purified waldglas. Burel (fining) improves the next batch. Tech turning point ~1680, Müller 1683."},
+    ]
+  },
+  special:{
+    title_cs:"🪟 Okenní sklo & speciální výrobky", title_en:"🪟 Window glass & special items",
+    items:[
+      {key:"tercik",icon:"🪟",cs:"Okenní terčík",en:"Window disc",
+       price:"6g/★ · výplně 2g · žebrové 9g", price_en:"6g/★ · fillers 2g · ribbed 9g",
+       recipe_cs:"2× lesní sklo → foukání → Ø8–10 cm. Kval.≤2 → výplně, kval.≥4 → žebrové.",
+       recipe_en:"2× waldglas → blowing → Ø8–10 cm. Qual.≤2 → fillers, qual.≥4 → ribbed.",
+       note_cs:"Hromadný odbyt každé hutě. Kláštery, měšťanské domy, Haida trh. (CP_13II2015)",
+       note_en:"Bulk product of every foundry. Monasteries, townhouses, Haida market. (CP_13II2015)"},
+      {key:"zrcadlo",icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
+       price:"~65g",
+       recipe_cs:"2× křišťál + 1× rtuť + 1× cín + hranař",
+       recipe_en:"2× crystal + 1× mercury + 1× tin + edge-cutter",
+       note_cs:"Amalgám rtuti+cínu na zadní stranu. Rtuť z Idrie = import. Vzácný luxus pro šlechtu.",
+       note_en:"Mercury-tin amalgam on reverse. Mercury from Idrija = import. Rare noble luxury."},
+      {key:"alembik",icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
+       price:"~55g",
+       recipe_cs:"2× křišťál + 1× arsen (As₂O₃) + foukač křišťálu",
+       recipe_en:"2× crystal + 1× arsenic (As₂O₃) + crystal blower",
+       note_cs:"Destilační helma. Nejstarší nález stř. Evropy: klarisy Bratislava ~1290. (Sedláčková 2021)",
+       note_en:"Distillation helmet. Oldest Central European find: Poor Clares Bratislava ~1290. (Sedláčková 2021)"},
+    ]
+  }
+};
+
 // Tomislavův rank — globálně dostupná funkce, stejná logika jako v UI Deníku
 function getTomislavRank(p){
   const mins=[
@@ -1461,6 +1666,40 @@ function getTomislavRank(p){
   mins.forEach((m,i)=>{if((p.season||1)>=m.s&&(p.grose||0)>=m.g)idx=i;});
   return mins[idx].id;
 }
+
+// Co odemykají levely jednotlivých profesí (záložka Parta → Rozvoj); index = level (0 nepoužit)
+const PROF_UNLOCKS={
+  tavic:{cs:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
+         en:[null,"Crystal melting","Lower wood consumption","Quality bonus +1","Master smelter — ruby glass"]},
+  drvorubc:{cs:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
+         en:[null,"Logging +1 wood/round","Charcoal kiln — faster charcoal","Forest plot bonus","Forest expert — 0% loss"]},
+  panvar:{cs:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
+         en:[null,"Crucible quality 2","Crucible quality 3","Special crucible (+2 batches)","Master crucible"]},
+  popelar:{cs:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
+         en:[null,"Potash +1/round","Better leaching","Potash from leaves","Pure potash — glass bonus"]},
+  foukat_lesni:{cs:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
+         en:[null,"Blowing bowls","Blowing bottles","Blowing decor","Master shaping"]},
+  foukat_kristal:{cs:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
+         en:[null,"Clear vessels","Blowing goblets","Thin walls","Set of 6"]},
+  foukat_dekor:{cs:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
+         en:[null,"Thread decoration","Coloured rings","Filigree basics","Venetian thread"]},
+  foukat_formy:{cs:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
+         en:[null,"Moulds+1","Shape series","Fast moulds","Master mould"]},
+  brusic_hrana:{cs:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
+         en:[null,"Facet","Edge+1","Geometric cuts","Chandelier cut"]},
+  brusic_kulic:{cs:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
+         en:[null,"Sphere","Vase profile","Deep bowl","Master shaping"]},
+  rytec:{cs:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
+         en:[null,"Plain pattern","Plant motif","Coat of arms/initials","Master engraving"]},
+  hornik:{cs:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
+         en:[null,"Ore mining","Rare ores","Deep shaft","Full shaft"]},
+  obchodnik:{cs:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
+         en:[null,"Price +5%","New buyer","Foreign contact","Export network"]},
+  formar:{cs:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"],
+         en:[null,"Mould+1 slot","Sturdier moulds","Mould series","Master mould"]},
+  _default:{cs:[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"],
+         en:[null,"Experience +1","Bonus efficiency","Special ability","Master"]}
+};
 
 // Traity dělníků
 const TRAITS={
@@ -2123,7 +2362,7 @@ function craftBlown(itemKey, inputColor){
   const specialists=p.workers.filter(w=>w.prof===it.spec);
   const anyBlower=p.workers.filter(w=>["foukat_lesni","foukat_kristal","foukat_dekor","foukat_formy","tavic"].includes(w.prof));
   if(it.specOnly&&specialists.length===0){
-    G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje specializovaného foukače":"Requires specialist glassblower"}: ${PROF_CS[it.spec]}`);
+    G.log.push(`__EVT__⛔ ${L==="cs"?"Vyžaduje specializovaného foukače":"Requires specialist glassblower"}: ${L==="cs"?PROF_CS[it.spec]:PROF_EN[it.spec]}`);
     render(); return;
   }
   if(!it.specOnly&&anyBlower.length===0){
@@ -2165,7 +2404,7 @@ function craftBlown(itemKey, inputColor){
     const goodCount=G[stateKey].length-(G[stateKey].length-actualCount+(outQ<=2?actualCount:0));
     const fillCount=outQ<=2?actualCount:0;
     const goodActual=actualCount-fillCount;
-    G.log.push(`__PROD__🪟 ${goodActual>0?goodActual+"× terčík "+stars(outQ):""}${fillCount>0?(goodActual>0?" + ":"")+fillCount+"× výplň ★★":""}${isSpec?" (spec)":""}`);
+    G.log.push(`__PROD__🪟 ${goodActual>0?goodActual+"× "+(L==="cs"?"terčík":"window disc")+" "+stars(outQ):""}${fillCount>0?(goodActual>0?" + ":"")+fillCount+"× "+(L==="cs"?"výplň":"filler")+" ★★":""}${isSpec?(L==="cs"?" (spec)":" (special)"):""}`);
     spawnFloatText(`+${goodActual} 🪟 ${stars(outQ)}`, null, "pos");
   }else{
     G.log.push(`__PROD__${it.icon} ${actualCount}× ${L==="cs"?it.cs:it.en}${colorLabel} ${stars(outQ)}${isSpec?" (spec ×"+actualCount+")":""}`);
@@ -2276,8 +2515,8 @@ function craftEngrave(inputKey){
   const outKey="rytina_"+inputKey;
   if(!G[outKey])G[outKey]=[];
   G[outKey].push(q);
-  const srcName=GROUND_ITEMS[inputKey]?.cs||BLOWN_ITEMS[inputKey]?.cs||STAINED_ITEMS[inputKey]?.cs||COLORED_ENGRAVE_ITEMS[inputKey]?.cs||inputKey;
-  G.log.push(`__PROD__✂️ ${L==="cs"?"Rytina na":"Engraved"} ${srcName} ${stars(q)} (+${Math.round((engraveBonus(inputKey)-1)*100)}% cena)`);
+  const srcName=L==="cs"?(GROUND_ITEMS[inputKey]?.cs||BLOWN_ITEMS[inputKey]?.cs||STAINED_ITEMS[inputKey]?.cs||COLORED_ENGRAVE_ITEMS[inputKey]?.cs||inputKey):(GROUND_ITEMS[inputKey]?.en||BLOWN_ITEMS[inputKey]?.en||STAINED_ITEMS[inputKey]?.en||COLORED_ENGRAVE_ITEMS[inputKey]?.en||inputKey);
+  G.log.push(`__PROD__✂️ ${L==="cs"?"Rytina na":"Engraved"} ${srcName} ${stars(q)} (+${Math.round((engraveBonus(inputKey)-1)*100)}% ${L==="cs"?"cena":"price"})`);
   render();
 }
 
@@ -2368,22 +2607,46 @@ const CHRON_HUMOR_CS=[
   "Kunc učil Táborského jak poznat správnou teplotu pece bez teploměru. ‚Podíváš se na barvu.' ‚A jaká má být?' ‚Taková... správná.' ‚A jak vypadá správná?' Kunc se zamyslel. ‚Jako když je správná. To pochopíš za pět let.' Táborský si zapsal do zápisníku: správná = pět let."
 ];
 
+// EN twin of CHRON_HUMOR_CS (same order: the random index picks the same joke in both languages)
+const CHRON_HUMOR_EN=[
+  "Ferda Táborský was carrying a tub of beer from the brewery to the furnace. On the way he tripped over a crucible somebody had left on the floor. The tub flew, and the beer spread across the whole workshop. Uncle Káninský came in from the other side, looked down at his feet and said: ‘Well, that is a fine pickling of the floor. But next time, let it be crystal.’",
+  "Milan Komár mixed up the bucket of mould-cooling water with the bucket of Máňa’s pea soup. He poured it straight onto the glowing crucible. The furnace made a sound like an angry boar and a green cloud shot out of the chimney. Kunc did not even turn away from the melt: ‘Pea day. It will make a fine batch.’",
+  "Uncle Baranovský brought a ‘special additive for bluing the glass’ from Haida. Eight groschen for it. Smelter Kunc sniffed it, tasted it and said: ‘That is smalt. And I sold you the same stuff last year.’ Baranovský smiled: ‘Yes, but I brought this from Dresden. That makes a difference.’",
+  "Tonda Smrkovský fell asleep standing up by the charcoal kiln. Nobody noticed for an hour, because Smrkovský looks the same whether he sleeps or not. Ferda Táborský finally called him to breakfast. Smrkovský opened his eyes and said: ‘Hmm.’ He closed them and slept on.",
+  "Uncle Káninský insisted the crucible must dry for exactly twenty-four hours, not twenty-three or twenty-five. He kept an hourglass for it. Ferda Táborský accidentally used the hourglass as a paperweight for waxed paper. Káninský found out after two days. ‘Hmm,’ said Smrkovský, for once.",
+  "Máňa cooked goulash for the whole hut. It could be eaten straight from the furnace — hot as molten glass. Milan Komár ate three portions and then asked what it was. ‘Hare,’ said Máňa. Komár nodded. ‘The one that ate our cabbage?’ ‘The very one.’ ‘Serves him right.’",
+  "Ferda Táborský came to Kunc with a question: ‘Master, how do I know the batch is mixed right?’ Kunc looked at Ferda, then at the batch, then at Ferda again. ‘The way you have mixed it, you will know by throwing it out right away and starting over.’",
+  "Baranovský brought a new batch of potash to the hut and claimed it was first-class, from Bavaria. Káninský tasted a fingertip of it, thought for a moment and said: ‘This is from Weiss at the next hut. Price?’ ‘Twelve groschen.’ ‘Weiss sells it for six.’ Baranovský: ‘But I brought it personally. That has value.’",
+  "During the night shift Táborský forgot to lock the food store. In the morning a whole loaf of bread and half a cheese were missing. The tracks led to the doghouse. The dog looked content. Káninský proposed docking the dog’s pay. Máňa explained that dogs do not get paid. ‘Then he should keep better watch next time,’ said Káninský.",
+  "Kunc was teaching Táborský how to read the right furnace temperature without a thermometer. ‘You look at the colour.’ ‘And what should it be?’ ‘The... right one.’ ‘And what does the right one look like?’ Kunc thought. ‘Like when it is right. You will understand in five years.’ Táborský wrote in his notebook: right = five years."
+];
+
 // Poškozující výkon (5) — alkohol → chyba u práce, efekt: -kvalita nebo -surovina
 const CHRON_HUMOR_BAD=[
-  {cs:"Ferda Táborský si spletl sáček s burelem za sáček s pepřem co Máňa nechala v nářaďovně. Nasypat do taveniny. Barva skla: hnědá. Strejda Kunc na to přišel až při odpichu. Várka znehodnocena.", effect:"varka", val:-1},
-  {cs:"Komár se po druhém džbánu rozhodl ‚zkusit foukat'. Vzal trubici foukače, foukl usilovně — baňka vylétla přes werkštat a rozbila se o Káninského novou pánev co právě donesl ze sušárny. Káninský neřekl nic. Ale ještě čtyři dny na Komára nekoukal.", effect:"panev", val:-1},
-  {cs:"Strejda Baranovský po slavnostním přídělu otevřel špatný sklad. Místo potaše nabral půlku zásoby soli co Máňa chystala na zabijačku. Nasypali to do kmene. Kunc si toho všiml až při tavenině. Potaš je potaš, sůl je sůl. Dnes ne.", effect:"potash", val:-2},
-  {cs:"Smrkovský po druhém džbánu zapomněl zavřít milíř. Ráno — místo uhlí hromada popela. Smrkovský se podíval, řekl ‚Hmm' a šel na snídani. Dvě kola výroby uhlí ztraceny.", effect:"charcoal", val:-3},
-  {cs:"Táborský vysvětloval Komárovi jak se míchá kmen, gestikuloval, shodil celý připravený Gemenge z váhy na podlahu. Kunc přišel, podíval se, odešel. Vrátil se s novou pánví a řekl pouze: ‚Znova.' Suroviny ztraceny.", effect:"sand", val:-2}
+  {cs:"Ferda Táborský si spletl sáček s burelem za sáček s pepřem co Máňa nechala v nářaďovně. Nasypat do taveniny. Barva skla: hnědá. Strejda Kunc na to přišel až při odpichu. Várka znehodnocena.",
+   en:"Ferda Táborský mixed up a bag of manganese with a bag of pepper that Máňa had left in the tool shed. He tipped it into the melt. Glass colour: brown. Uncle Kunc noticed only at the tapping. Batch ruined.", effect:"varka", val:-1},
+  {cs:"Komár se po druhém džbánu rozhodl ‚zkusit foukat'. Vzal trubici foukače, foukl usilovně — baňka vylétla přes werkštat a rozbila se o Káninského novou pánev co právě donesl ze sušárny. Káninský neřekl nic. Ale ještě čtyři dny na Komára nekoukal.",
+   en:"After his second tankard Komár decided to ‘try blowing’. He took the blower’s pipe and puffed hard — the glass bulb flew across the workshop and smashed against Káninský’s new crucible, which he had just brought from the drying shed. Káninský said nothing. But for four more days he would not look at Komár.", effect:"panev", val:-1},
+  {cs:"Strejda Baranovský po slavnostním přídělu otevřel špatný sklad. Místo potaše nabral půlku zásoby soli co Máňa chystala na zabijačku. Nasypali to do kmene. Kunc si toho všiml až při tavenině. Potaš je potaš, sůl je sůl. Dnes ne.",
+   en:"After the festive ration Uncle Baranovský opened the wrong store. Instead of potash he scooped half of the salt Máňa had been saving for the pig slaughter. They tipped it into the batch. Kunc noticed only at the melt. Potash is potash, salt is salt. Not today.", effect:"potash", val:-2},
+  {cs:"Smrkovský po druhém džbánu zapomněl zavřít milíř. Ráno — místo uhlí hromada popela. Smrkovský se podíval, řekl ‚Hmm' a šel na snídani. Dvě kola výroby uhlí ztraceny.",
+   en:"After his second tankard Smrkovský forgot to close the charcoal kiln. In the morning — instead of charcoal, a heap of ash. Smrkovský looked, said ‘Hmm’ and went to breakfast. Two rounds of charcoal production lost.", effect:"charcoal", val:-3},
+  {cs:"Táborský vysvětloval Komárovi jak se míchá kmen, gestikuloval, shodil celý připravený Gemenge z váhy na podlahu. Kunc přišel, podíval se, odešel. Vrátil se s novou pánví a řekl pouze: ‚Znova.' Suroviny ztraceny.",
+   en:"Táborský was explaining to Komár how to mix the batch, gesticulated and knocked the whole prepared Gemenge off the scale onto the floor. Kunc came, looked, left. He came back with a fresh crucible and said only: ‘Again.’ Materials lost.", effect:"sand", val:-2}
 ];
 
 // Zvyšující výkon (5) — alkohol → uvolněnost → nadstandard
 const CHRON_HUMOR_GOOD=[
-  {cs:"Po druhém džbánu začal Kunc zpívat starou sklářskou píseň u pece. Celá huť se přidala. Rytmus písně se trefil přesně do tempa míchání skloviny — nejlepší várka týdne. Pec zpívala s nimi.", effect:"morale", val:8},
-  {cs:"Komár po slavnostním přídavku piva porazil sám o sobě tři stromy navíc ‚protože to šlo'. Zásoby dřeva přibyly. Ráno si ničeho nepamatoval. Dřevo zůstalo.", effect:"wood", val:6},
-  {cs:"Máňa po dvou džbánech vymyslela zkratku mezi milířem a loužírnou přes zadní dvůr. Ušetří čtvrt hodiny na každé směně. Káninský ji odmítl pochválit, ale příští den tu zkratku používal jako první.", effect:"morale", val:6},
-  {cs:"Baranovský — uvolněný po pivě — zapomněl obchodní taktiku a řekl kramáři z Haidy skutečnou výkupní cenu skla. Kramář byl tak překvapen upřímností že dal o dva groše víc. Baranovský si myslí že vyjednal výborně.", effect:"grose", val:4},
-  {cs:"Táborský se po slavnostním přídělu vsadil s Komárem kdo nanosí víc jílu za hodinu. Přinesli dvojnásobek denní normy. Druhý den si oba stěžovali na záda, ale zásoby jílu byly plné.", effect:"clay", val:4}
+  {cs:"Po druhém džbánu začal Kunc zpívat starou sklářskou píseň u pece. Celá huť se přidala. Rytmus písně se trefil přesně do tempa míchání skloviny — nejlepší várka týdne. Pec zpívala s nimi.",
+   en:"After the second tankard Kunc began to sing an old glassmakers’ song by the furnace. The whole hut joined in. The rhythm of the song hit exactly the tempo of stirring the melt — the best batch of the week. The furnace sang along.", effect:"morale", val:8},
+  {cs:"Komár po slavnostním přídavku piva porazil sám o sobě tři stromy navíc ‚protože to šlo'. Zásoby dřeva přibyly. Ráno si ničeho nepamatoval. Dřevo zůstalo.",
+   en:"Komár, after the festive extra of beer, felled three extra trees all by himself ‘because it was going well’. The wood stock grew. In the morning he remembered nothing. The wood stayed.", effect:"wood", val:6},
+  {cs:"Máňa po dvou džbánech vymyslela zkratku mezi milířem a loužírnou přes zadní dvůr. Ušetří čtvrt hodiny na každé směně. Káninský ji odmítl pochválit, ale příští den tu zkratku používal jako první.",
+   en:"After two tankards Máňa came up with a shortcut between the charcoal kiln and the lye house across the back yard. It saves a quarter of an hour on every shift. Káninský refused to praise her, but the next day he was the first to use the shortcut.", effect:"morale", val:6},
+  {cs:"Baranovský — uvolněný po pivě — zapomněl obchodní taktiku a řekl kramáři z Haidy skutečnou výkupní cenu skla. Kramář byl tak překvapen upřímností že dal o dva groše víc. Baranovský si myslí že vyjednal výborně.",
+   en:"Baranovský — relaxed after beer — forgot his sales tactics and told the pedlar from Haida the real purchase price of glass. The pedlar was so surprised by the honesty that he paid two groschen more. Baranovský thinks he negotiated brilliantly.", effect:"grose", val:4},
+  {cs:"Táborský se po slavnostním přídělu vsadil s Komárem kdo nanosí víc jílu za hodinu. Přinesli dvojnásobek denní normy. Druhý den si oba stěžovali na záda, ale zásoby jílu byly plné.",
+   en:"After the festive ration Táborský bet Komár who could carry more clay in an hour. They brought double the daily quota. The next day both complained about their backs, but the clay stock was full.", effect:"clay", val:4}
 ];
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -2431,11 +2694,12 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
   if(roll<beerChance){
     const r2=Math.random();
     if(r2<0.4){
-      const h=CHRON_HUMOR_CS[Math.floor(Math.random()*CHRON_HUMOR_CS.length)];
+      const hi=Math.floor(Math.random()*CHRON_HUMOR_CS.length);
+      const h=L==="cs"?CHRON_HUMOR_CS[hi]:CHRON_HUMOR_EN[hi];
       humorLine=`__FLAVOR__😄 ${h}`;
     }else if(r2<0.7){
       const ev=CHRON_HUMOR_BAD[Math.floor(Math.random()*CHRON_HUMOR_BAD.length)];
-      humorLine=`__FLAVOR__🍺😬 ${ev.cs}`;
+      humorLine=`__FLAVOR__🍺😬 ${L==="cs"?ev.cs:ev.en}`;
       if(G){
         if(ev.effect==="morale")G.morale=Math.max(0,G.morale+ev.val);
         else if(ev.effect==="panev")G.pReady=Math.max(0,G.pReady+ev.val);
@@ -2446,7 +2710,7 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
       }
     }else{
       const ev=CHRON_HUMOR_GOOD[Math.floor(Math.random()*CHRON_HUMOR_GOOD.length)];
-      humorLine=`__FLAVOR__🍺😄 ${ev.cs}`;
+      humorLine=`__FLAVOR__🍺😄 ${L==="cs"?ev.cs:ev.en}`;
       if(G){
         if(ev.effect==="morale")G.morale=Math.min(100,G.morale+ev.val);
         else if(ev.effect==="wood")G.res.wood+=ev.val;
@@ -2656,7 +2920,7 @@ function processRound(){
       if(woodForPotash>=WOOD_PER_POTASH){
         const m=Math.floor(woodForPotash/WOOD_PER_POTASH);
         r.wood-=m*WOOD_PER_POTASH; r.potash+=m;
-        log.push(`__PROD__🌿 ${w.name}: -${m*WOOD_PER_POTASH} 🪵 → +${m} potaš`);
+        log.push(`__PROD__🌿 ${w.name}: -${m*WOOD_PER_POTASH} 🪵 → +${m} ${L==="cs"?"potaš":"potash"}`);
       }else log.push(`__EVT__🌿 ${w.name}: ${L==="cs"?"málo dřeva pro potaš":"not enough wood for potash"}`);
     }else if(w.task==="panev"&&isP){
       if(r.clay>=2&&r.food>=1){
@@ -2668,7 +2932,7 @@ function processRound(){
         const winterBonus=WINTER_PANEV_BONUS[round]||0;
         const pNewQ=clamp(panvarLv+kovakBonus+pedantBonus+winterBonus+Math.floor(Math.random()*2),1,5);
         pA.push({cr:round,rdy:round+PANEV_AGE,q:pNewQ});
-        const winterNote=winterBonus>0?` ❄️ (mráz čistí jíl +1)`:"";
+        const winterNote=winterBonus>0?` ❄️ (${L==="cs"?"mráz čistí jíl":"frost clears clay"} +1)`:"";
         log.push(`__PROD__🏺 ${w.name}: ${L==="cs"?"pánev kvality":"crucible quality"} ${stars(pNewQ)}${winterNote}`);
       }else log.push(`__EVT__🏺 ${w.name}: ${L==="cs"?"chybí jíl nebo jídlo":"need clay or food"}`);
     }else if(w.task==="formar"){
@@ -2796,7 +3060,7 @@ function processRound(){
         }else{
           // Bez waldglas — vyrábí formy
           r.formy=(r.formy||0)+1;
-          log.push(`__PROD__🪚 ${w.name}: +1 forma (verštat)`);
+          log.push(`__PROD__🪚 ${w.name}: +1 ${L==="cs"?"forma (verštat)":"mould (workshop)"}`);
         }
       }else if(wProf==="brusic_hrana"||wProf==="brusic_kulic"){
         // Brusič — spotřebuje crystal + water, vyrobí broušený kus
@@ -2837,7 +3101,7 @@ function processRound(){
           const outQ=clamp(q+qLvBonus,1,5);
           G[outKey].push(outQ);
           r.food=Math.max(0,r.food-1);
-          log.push(`__PROD__✂️ ${w.name}: rytina na ${engraveAvail} ${stars(outQ)} (-1🍞)`);
+          log.push(`__PROD__✂️ ${w.name}: ${L==="cs"?"rytina na":"engraved"} ${engraveAvail} ${stars(outQ)} (-1🍞)`);
         }else if(!engraveAvail){
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"rytírna — nic k rytí":"workshop — nothing to engrave"}`);
         }else{
@@ -2865,7 +3129,7 @@ function processRound(){
           const agentGain=finingAgent==="arsen"?2:1;
           if(finingAgent==="arsen"){G._arsenFined=true;w.fat=Math.min(1,(w.fat||0)+0.15);} // jedovatý: tavič je víc unavený
           G._cerenBonus=Math.min(2,cerStock+agentGain+kuncBonus);
-          const agentLabel=finingAgent==="burel"?"burel (MnO₂)":finingAgent==="arsen"?"arsen (As₂O₃) ☠️":"antimon";
+          const agentLabel=L==="cs"?(finingAgent==="burel"?"burel (MnO₂)":finingAgent==="arsen"?"arsen (As₂O₃) ☠️":"antimon"):(finingAgent==="burel"?"burel (MnO₂)":finingAgent==="arsen"?"arsenic (As₂O₃) ☠️":"antimony");
           log.push(`__PROD__🫧 ${w.name}: ${L==="cs"?"čeření — příští křišťál +★":"fining — next crystal +★"} (${G._cerenBonus}) (-1 ${agentLabel})`);
         }else{
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"čeření — chybí burel, antimon nebo arsen":"fining — no burel, antimony or arsenic"}`);
@@ -3084,7 +3348,7 @@ function processRound(){
       };
       evts.push("crack");
       G.totalCracks=(G.totalCracks||0)+crackedSlots.length;
-      const lossStr=[lostWg.length?lostWg.length+"× waldglas":"",lostCr.length?lostCr.length+"× křišťál":""].filter(Boolean).join(", ");
+      const lossStr=[lostWg.length?lostWg.length+"× waldglas":"",lostCr.length?lostCr.length+"× "+(L==="cs"?"křišťál":"crystal"):""].filter(Boolean).join(", ");
       log.push(`__EVT__💔 ${L==="cs"?"Pánev praskla (slot "+crackedSlots.map(c=>c.si+1).join(",")+")":"Crucible cracked (slot "+crackedSlots.map(c=>c.si+1).join(",")+")"} · ${lossStr||"—"} · ${L==="cs"?"teplota -"+(crackedSlots.length*8)+"%":"temp -"+(crackedSlots.length*8)+"%"}`);
     }
     // Sync pQ = průměrná kvalita aktivních slotů (pro calcFurnaceEff)
@@ -3691,11 +3955,11 @@ function processRound(){
 
   // Sestavit toast a kronikový zápis
   const prodLines=[], ecoLines=[], evtLines=[];
-  if(isC&&wg.length>p.waldglas.length)prodLines.push(`🔥 ${wg.length-p.waldglas.length}× waldglas uvařeno`);
-  if(isC&&cr.length>p.crystal.length)prodLines.push(`✨ ${cr.length-p.crystal.length}× křišťál uvařen`);
-  if(isC&&fA)prodLines.push(`Pec: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
-  ecoLines.push(`💰 ${grose}g`+(debt>0?` · dluh ${debt}g`:""));
-  ecoLines.push(`💸 mzdy ${wagesPaid}g${wagesDeficit>0?` · ⚠️ nezaplaceno ${wagesDeficit}g`:""} · pivo ${bCost}g`+(dPay?` · dluh -${dPay}g`:""));
+  if(isC&&wg.length>p.waldglas.length)prodLines.push(`🔥 ${wg.length-p.waldglas.length}× ${L==="cs"?"waldglas uvařeno":"waldglas melted"}`);
+  if(isC&&cr.length>p.crystal.length)prodLines.push(`✨ ${cr.length-p.crystal.length}× ${L==="cs"?"křišťál uvařen":"crystal melted"}`);
+  if(isC&&fA)prodLines.push(`${L==="cs"?"Pec":"Furnace"}: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
+  ecoLines.push(`💰 ${grose}g`+(debt>0?` · ${L==="cs"?"dluh":"debt"} ${debt}g`:""));
+  ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${wagesPaid}g${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${wagesDeficit}g`:""} · ${L==="cs"?"pivo":"beer"} ${bCost}g`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${dPay}g`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
   // Produkce tohoto kola (musí se spočítat PŘED Object.assign — potom je p===G a rozdíl by byl 0)
@@ -3782,19 +4046,12 @@ function signContract(workerId,months){
   // Odstranit z retention queue
   G._retentionPending=(G._retentionPending||[]).filter(id=>id!==workerId);
   const L=G.lang||"cs";
-  G.log.push(`__ECO__📜 ${w.name} ${L==="cs"?"podepsal kontrakt na":"signed contract for"} ${months} ${L==="cs"?"měs.":"mo."} (-${cost}g, +loaj.)`);
+  G.log.push(`__ECO__📜 ${w.name} ${L==="cs"?"podepsal kontrakt na":"signed contract for"} ${months} ${L==="cs"?"měs.":"mo."} (-${cost}g, +${L==="cs"?"loaj.":"loy."})`);
   render();
 }
 
-// Osobní hodnocení hutmistra — statická báze + dynamika
-function workerAssessment(w,L){
-  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
-  const tier=workerTier(w.lv);
-  const seasons=w.seasonsInFoundry||0;
-  const incidents=w.incidents||0;
-  const loyalty=w.loyalty||75;
-  // Statická báze per NPC
-  const bases={
+// Osobní hodnocení hutmistra — statická báze per NPC (používá workerAssessment)
+const NPC_ASSESS={
     npc_kunc:    {cs:"Kunc nepotřebuje pochvalu. Pec mluví za něj.",         en:"Kunc needs no praise. The furnace speaks for him."},
     npc_komar:   {cs:"Komár padá stromy jako stroje. Přemýšlet mu moc nejde.",en:"Komár fells trees like a machine. Thinking isn't his forte."},
     npc_kanin:   {cs:"Káninský ví o pánvích víc než kdokoliv v kraji.",       en:"Káninský knows more about crucibles than anyone in the region."},
@@ -3814,7 +4071,16 @@ function workerAssessment(w,L){
     npc_kulic1:  {cs:"Kuličková je vytrvalá. Nikdy si nestěžuje, nikdy nepřestane.",en:"Kuličková is relentless. Never complains, never stops."},
     npc_rytec1:  {cs:"Rytíř rytím žije. Všechno ostatní je jen čekání.",      en:"Rytíř lives for engraving. Everything else is just waiting."},
   };
-  const base=bases[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
+
+// Osobní hodnocení hutmistra — statická báze + dynamika
+function workerAssessment(w,L){
+  const npc=NPC_ROSTER.find(n=>n.id===w.npcId);
+  const tier=workerTier(w.lv);
+  const seasons=w.seasonsInFoundry||0;
+  const incidents=w.incidents||0;
+  const loyalty=w.loyalty||75;
+  // Statická báze per NPC → NPC_ASSESS
+  const base=NPC_ASSESS[w.npcId]||(L==="cs"?{cs:"Dobrý dělník. Spolehlivý."}:{en:"Good worker. Reliable."});
   const baseText=L==="cs"?base.cs:base.en;
   // Dynamická část
   const parts=[];
@@ -4009,7 +4275,7 @@ function craftColorGlass(recipeKey){
   const archKey="arch_"+recipeKey;
   if(!G.unlockedRecipes.includes(archKey)){
     G.unlockedRecipes.push(archKey);
-    G.log.push(`__EVT__📚 „${rec.latin}"`);
+    G.log.push(`__EVT__📚 „${G.lang==="cs"?rec.latin:(rec.latinEn||rec.latin)}"`);
   }
   G.log.push(`__PROD__${rec.icon} ${G.lang==="cs"?rec.cs:rec.en} ${["★","★★","★★★","★★★★","★★★★★"][q-1]}`);
   render();
@@ -4043,7 +4309,7 @@ function repairShamot(){
   }
   G.res.clay-=cost.clay; G.res.limestone-=cost.limestone; G.grose-=cost.grose;
   G.furnace.shamotWear=Math.max(0,G.furnace.shamotWear-70);
-  G.log.push(`__ECO__🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${cost.grose}g, -${cost.clay} jíl)`);
+  G.log.push(`__ECO__🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${cost.grose}g, -${cost.clay} ${G.lang==="cs"?"jíl":"clay"})`);
   render();
 }
 
@@ -4486,6 +4752,26 @@ function marketSaleQuote(type,n){
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
   const total=selling.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*mul)),0);
   return {count:cnt,total,rest,base:bp,multiplier:mul};
+}
+// Display name of an inventory key for the chronicle (never the raw key): blown (+colour), ground, engraved, stained, special, colour glass.
+function logItemName(key,lang){
+  const cs=(lang||G.lang)==="cs";
+  if(key==="waldglas")return"waldglas";
+  if(key==="crystal")return cs?"křišťál":"crystal";
+  const nm=it=>it?(cs?it.cs:it.en):null;
+  if(key.startsWith("rytina_"))return logItemName(key.slice(7),lang)+(cs?" (rytina)":" (engraved)");
+  const direct=nm(BLOWN_ITEMS[key])||nm(GROUND_ITEMS[key])||nm(STAINED_ITEMS[key])||nm(COLORED_ENGRAVE_ITEMS[key])||nm(SPECIAL_ITEMS[key])||nm(COLOR_RECIPES[key]);
+  if(direct)return direct;
+  for(const k of BLOWN_TYPES){
+    if(key.startsWith(k+"_")){const col=key.slice(k.length+1);return nm(BLOWN_ITEMS[k])+(COLOR_ICON[col]?" "+COLOR_ICON[col]:"");}
+  }
+  return key;
+}
+// Sale / engraving log lines carry the raw inventory key (the achievements read them); the chronicle shows the item name instead.
+function chronShow(entry){
+  return entry
+    .replace(/^(__ECO__💰 \d+× )([a-z_]+)( → )/,(m,a,k,b)=>a+logItemName(k)+b)
+    .replace(/^(__PROD__✂️ [^:]+: (?:rytina na|engraved) )([a-z_]+)( )/,(m,a,k,b)=>a+logItemName(k)+b);
 }
 function sellItems(type,n){
   if(!G[type].length)return;
@@ -6716,7 +7002,7 @@ function resolveRubyStrike(){
     G.rubin.push(sq.q);
     if(!G.unlockedRecipes.includes(archKey)){
       G.unlockedRecipes.push(archKey);
-      G.log.push(`__EVT__📚 „Donec fiat vitrum pellucidum — zlatý rubín"`);
+      G.log.push(`__EVT__📚 „${L==="cs"?"Donec fiat vitrum pellucidum — zlatý rubín":"Donec fiat vitrum pellucidum — golden ruby"}"`);
     }
     G.log.push(`__PROD__🔴 ${L==="cs"?"Zlatý rubín (Kunckel)":"Gold Ruby (Kunckel)"} ${["★","★★","★★★","★★★★","★★★★★"][sq.q-1]}`);
     G.log.push(`__EVT__🔴 ${L==="cs"?"Strike! Rubínová barva se projevila. Kunckelova metoda funguje!":"Strike! The ruby colour has struck. Kunckel's method works!"}`);
@@ -6748,7 +7034,7 @@ function takeLoan(amt,loanRate){
   const totalDebt=amt+Math.round(amt*loanRate);
   const loanRatePct=Math.round(loanRate*100);
   G.grose+=amt; G.debt+=totalDebt;
-  G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g (dluh +"+totalDebt+"g, "+loanRatePct+"%)");
+  G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g ("+(L==="cs"?"dluh":"debt")+" +"+totalDebt+"g, "+loanRatePct+"%)");
   render();
 }
 function moratoriumCost(){return (G.debtReputation||0)>=50?0:3;}
@@ -6861,7 +7147,7 @@ function retentionPayDebt(wId){
   const ww=G.workers.find(x=>x.id===wId);
   if(ww){ww.unpaidDebt=0;ww.loyalty=Math.min(100,(ww.loyalty||50)+15);ww.mood=Math.min(100,(ww.mood||60)+8);}
   G._retentionPending=(G._retentionPending||[]).filter(id=>id!==wId);
-  G.log.push(`__ECO__💸 ${rw.name} ${L==="cs"?"— dluh splacen, zůstává":"— debt paid, staying"} (+15 loaj.)`);
+  G.log.push(`__ECO__💸 ${rw.name} ${L==="cs"?"— dluh splacen, zůstává":"— debt paid, staying"} (+15 ${L==="cs"?"loaj.":"loy."})`);
   render();
 }
 function retentionPromise(wId){
@@ -7017,9 +7303,7 @@ function renderOriginal(){
     FurnaceAudio.stop();
 
     // SVG logo (původní)
-    const intro=L==="cs"
-      ?"Rok 1680. Otec ti zanechal recept, dluh a starou pec v Arnsdorfu. Kolem šumí hvozd — tvůj poklad i prokletí. Každý strom, co pokácíš, ti dá dřevo. Ale les pomalu dorůstá zpět."
-      :"Year 1680. Your father left you a recipe, a debt, and an old furnace in Arnsdorf. The forest is your treasure and your curse. Every tree gives wood — and it slowly grows back.";
+    const intro=INTRO_TEXT.intro[L==="cs"?"cs":"en"];
     const introLogoDiv=document.createElement("div");
     introLogoDiv.style.cssText="margin:10px auto 18px;display:block;width:320px;max-width:100%;cursor:pointer;";
     introLogoDiv.onclick=(e)=>{
@@ -7212,13 +7496,7 @@ function renderOriginal(){
               L==="cs"?"🕯️ Lehký start":"🕯️ Easy start")),
           h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"4px",fontStyle:"italic",lineHeight:"1.5",
             padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"3px",borderLeft:"2px solid #8b5e34"}},
-            G.difficulty==="easy"
-              ?(L==="cs"
-                ?"🕯️ Štědré dědictví: pec zaběhnutá, 140 grošů v pokladně, nízký dluh 30g, plná spižírna i sklad. Zlevněné zimní mzdy, vyšší výkupní ceny (+20%) a zakázkový bonus (+25%). Klidný čas na učení sklářského umění."
-                :"🕯️ Generous inheritance: run-in furnace, 140 coins in treasury, low debt 30g, full pantry and store. Discounted winter wages, higher selling prices (+20%), and contract bonuses (+25%). Relaxed time to master glassmaking.")
-              :(L==="cs"
-                ?"⚔️ Vyvážený start: otcova stará huť, 65 grošů na rozběh, dluh 40g, skromné zásoby na zimu. Vhodné pro strategickou správu lesa a pece."
-                :"⚔️ Balanced start: father's old foundry, 65 coins to start, 40g debt, modest winter stores. Ideal for strategic management of woods and furnace."))),
+            INTRO_TEXT[G.difficulty==="easy"?"easy":"normal"][L==="cs"?"cs":"en"])),
         h("div",{style:{display:"flex",gap:"8px",justifyContent:"center",flexWrap:"wrap"}},
           h("button",{class:"btn btn-p",onClick:()=>{startGame(G.difficulty||"normal");}},
             L==="cs"?"Vstoupit do hutě →":"Enter the Foundry →"),
@@ -10771,6 +11049,7 @@ function renderOriginal(){
     }else{
       // Renderuj strukturované záznamy
       p.log.forEach(entry=>{
+        entry=chronShow(entry);
         if(entry.startsWith("__SEASON__")){
           const parts=entry.replace("__SEASON__","").split("·");
           const div=h("div",{class:"log-season-hdr"},`⸻ ${L==="cs"?"Sezóna":"Season"} ${parts[0].trim()} · ${parts[1]?.trim()||""} ⸻`);
@@ -11329,23 +11608,7 @@ function renderOriginal(){
           }
           modal.append(xpTrack);
           // Co odemyká
-          const unlocks={
-            tavic:[null,"Tavení křišťálu","Snižuje spotřebu dřeva","Bonus kvalita +1","Mistrovský tavič — rubínové sklo"],
-            drvorubc:[null,"Těžba +1 dřevo/kolo","Milíř — rychlejší uhlí","Bonus parcela lesa","Lesní znalec — 0% ztráta"],
-            panvar:[null,"Pánev kvality 2","Pánev kvality 3","Speciální pánev (+2 várky)","Mistrovská pánev"],
-            popelar:[null,"Potaš +1/kolo","Lepší loužení","Potaš z listí","Čistá potaš — bonus sklu"],
-            foukat_lesni:[null,"Foukání misek","Foukání lahví","Foukání dekor","Mistrovský tvar"],
-            foukat_kristal:[null,"Čiré nádoby","Foukání číší","Tenké stěny","Sada 6ks"],
-            foukat_dekor:[null,"Dekor niťování","Barevné prstence","Filigrán základ","Benátská niť"],
-            foukat_formy:[null,"Formy+1","Tvarové série","Rychlé formy","Mistrovská forma"],
-            brusic_hrana:[null,"Fazeta","Hrana+1","Geometrické řezy","Lustrový řez"],
-            brusic_kulic:[null,"Koule","Váza profil","Mísa hluboká","Mistrovský tvar"],
-            rytec:[null,"Hladký vzor","Rostlinný motiv","Erb/iniciály","Mistrovská rytina"],
-            hornik:[null,"Těžba rud","Vzácné rudy","Hlubinná šachta","Plná šachta"],
-            obchodnik:[null,"Cena +5%","Nový odběratel","Zahraniční kontakt","Exportní síť"],
-            formar:[null,"Forma+1 slot","Odolnější formy","Série forem","Mistrovská forma"]
-          };
-          const lvlList=unlocks[w.prof]||[null,"Zkušenost +1","Bonusová efektivita","Speciální schopnost","Mistr"];
+          const lvlList=(PROF_UNLOCKS[w.prof]||PROF_UNLOCKS._default)[L==='cs'?'cs':'en'];
           const nextLvl=lvlList[curLv];
           const box=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px",marginBottom:"8px"}});
           box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"600",marginBottom:"4px"}},
@@ -11582,24 +11845,6 @@ function renderOriginal(){
     const hracSec=h("div",{class:"sec"});
     hracSec.append(h("div",{class:"sec-title"},"📓 "+(L==="cs"?"Deník — Tomislav Břeťánek":"Journal — Tomislav Břeťánek")));
 
-    // ── Rank system ──
-    const HRAC_RANKS=[
-      {id:"pomocnik",  cs:"Pomocník",    en:"Helper",       minSeason:0,  minGrose:0,    icon:"🪓",
-       desc_cs:"Přišel jsem do hutě s prázdnýma rukama. Kunc mi dá šanci — ale jen jednu.",
-       desc_en:"I came to the foundry empty-handed. Kunc gives me a chance — but only one."},
-      {id:"ucen",      cs:"Učeň",        en:"Apprentice",   minSeason:1,  minGrose:50,   icon:"🔥",
-       desc_cs:"Začínám rozumět ohni. Pánev praská méně. Kunc mě přestává hlídat každý krok.",
-       desc_en:"I'm starting to understand the fire. Crucibles crack less. Kunc stops watching every step."},
-      {id:"tovarys",   cs:"Tovaryš",     en:"Journeyman",   minSeason:2,  minGrose:200,  icon:"💨",
-       desc_cs:"Umím foukat základní tvary. Lidé v huti mi říkají Tomáš, ne 'ten nový'.",
-       desc_en:"I can blow basic shapes. People in the foundry call me Tomáš, not 'the new one'."},
-      {id:"mistr",     cs:"Mistr hutě",  en:"Foundry Master",minSeason:4, minGrose:600,  icon:"⚗️",
-       desc_cs:"Huť je moje. Křišťál teče z pece jako voda. Baranovský mi nabízí zakázku pro Harrache.",
-       desc_en:"The foundry is mine. Crystal flows from the furnace like water. Baranovský offers a Harrach commission."},
-      {id:"velmistr",  cs:"Velmistr",    en:"Glasmaster",   minSeason:8,  minGrose:2000, icon:"💎",
-       desc_cs:"Jméno Břeťánek zní po celém Novoborsku. Rubín, filigrán, zrcadla — vše.",
-       desc_en:"The name Břeťánek rings across all of Novoborsko. Ruby, filigree, mirrors — all of it."},
-    ];
 
     // Určení aktuálního ranku
     const hracGrose=p.grose||0;
@@ -11634,14 +11879,6 @@ function renderOriginal(){
     idCard.append(idInfo);
     hracSec.append(idCard);
 
-    // ── Aktivní schopnosti ranku ──
-    const RANK_ABILITIES={
-      pomocnik:{cs:"Ještě žádné schopnosti. Přežij první sezónu.",en:"No abilities yet. Survive the first season."},
-      ucen:    {cs:"⚡ Morale +2/kolo — Tomislav aktivně pomáhá v huti.",en:"⚡ Morale +2/round — Tomislav actively helps in the foundry."},
-      tovarys: {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign a mentor to any worker."},
-      mistr:   {cs:"⚡ Morale +2/kolo\n📖 Mentor — brzy možnost ručně přiřadit mentora dělníkovi.\n🎯 Boost — brzy: jednou za kolo posílit výstup jednoho dělníka.",en:"⚡ Morale +2/round\n📖 Mentor — soon: manually assign mentor.\n🎯 Boost — soon: once per round boost one worker's output."},
-      velmistr:{cs:"⚡ Morale +2/kolo\n💰 Prodejní ceny +5% — jméno Břeťánek otevírá dveře.\n📖 Mentor & 🎯 Boost odemčeny.",en:"⚡ Morale +2/round\n💰 Sell prices +5% — the Břeťánek name opens doors.\n📖 Mentor & 🎯 Boost unlocked."},
-    };
     const abilText=RANK_ABILITIES[currentRank.id]?.[L]||"";
     const abilDiv=h("div",{style:{marginBottom:"12px",padding:"8px 10px",borderRadius:"6px",
       background:"rgba(74,122,58,.06)",border:"1px solid rgba(74,122,58,.18)"}});
@@ -11862,31 +12099,14 @@ function renderOriginal(){
           ?"📋 Codex — přehled všeho co lze v huti vyrobit a prodat. Ceny jsou orientační (závisí na kvalitě a sezóně)."
           :"📋 Codex — overview of everything you can produce and sell. Prices are indicative (depends on quality and season)."));
 
-      const csGlassMap={waldglas:"lesní sklo",crystal:"křišťál",modra:"tmavá modř",
-        smaragd:"smaragd",lattimo:"lattimo",rubin:"rubín",jantar:"jantar"};
-
       const codexSections=[
-        {
-          title_cs:"🔥 Sklovina — surové sklo", title_en:"🔥 Glass melt — raw glass",
-          items:[
-            {icon:"🟫",cs:"Lesní sklo (Waldglas)",en:"Forest glass (Waldglas)",price:"~3.5g/★",
-             recipe_cs:"3× písek + 2× potaš + 1× vápenec → pánev → tavení",
-             recipe_en:"3× sand + 2× potash + 1× limestone → crucible → smelting",
-             note_cs:"Základní surovina. Nazelenalá barva od Fe a S. Potaš černá/modrá postačí.",
-             note_en:"Base material. Greenish colour from Fe and S. Black/blue potash sufficient."},
-            {icon:"✨",cs:"Křišťál (čiré sklo)",en:"Crystal (clear glass)",price:"~9g/★",
-             recipe_cs:"3× čistý písek + 2× čistá potaš + 1× vápenec + 1× uhlí → pánev → tavení (65%+ fTemp)",
-             recipe_en:"3× pure sand + 2× refined potash + 1× limestone + 1× charcoal → crucible → smelting (65%+ fTemp)",
-             note_cs:"Samostatná receptura, ne vyčištěný waldglas. Burel (čeření) zlepší příští dávku. Technologický přelom ~1680, Müller 1683.",
-             note_en:"A recipe of its own, not purified waldglas. Burel (fining) improves the next batch. Tech turning point ~1680, Müller 1683."},
-          ]
-        },
+        CODEX_STATIC.melt,
         {
           title_cs:"💨 Foukané — základní (všichni foukači)", title_en:"💨 Blown — basic (all blowers)",
           items: Object.entries(BLOWN_ITEMS).filter(([,v])=>!v.specOnly).map(([k,v])=>({
             key:k,glass:v.inputs[0],icon:v.icon, cs:v.cs, en:v.en,
             price:`~${v.base}g${v.inputs.length>1?" (waldglas)":""}`,
-            recipe_cs:`${v.qty}× ${v.inputs.map(i=>csGlassMap[i]||i).join(" / ")} → foukání`,
+            recipe_cs:`${v.qty}× ${v.inputs.map(i=>CODEX_GLASS_CS[i]||i).join(" / ")} → foukání`,
             recipe_en:`${v.qty}× ${v.inputs.join(" / ")} → blowing`,
             note_cs:v.bulkNote_cs||"", note_en:v.bulkNote_en||"",
           }))
@@ -11894,14 +12114,12 @@ function renderOriginal(){
         {
           title_cs:"💨 Foukané — specializované", title_en:"💨 Blown — specialist",
           items: Object.entries(BLOWN_ITEMS).filter(([,v])=>v.specOnly).map(([k,v])=>{
-            const specLabel={foukat_kristal:"foukač křišťálu",foukat_dekor:"foukač dekor",foukat_formy:"formař"};
-            const specLabelEn={foukat_kristal:"crystal blower",foukat_dekor:"decor blower",foukat_formy:"mould-blower"};
             return {
               key:k,glass:v.inputs[0],icon:v.icon,
-              cs:`${v.cs} (${specLabel[v.spec]||v.spec})`,
-              en:`${v.en} (${specLabelEn[v.spec]||v.spec})`,
+              cs:`${v.cs} (${CODEX_SPEC[v.spec]?.cs||v.spec})`,
+              en:`${v.en} (${CODEX_SPEC[v.spec]?.en||v.spec})`,
               price:`~${v.base}g`,
-              recipe_cs:`${v.qty}× ${v.inputs.map(i=>csGlassMap[i]||i).join(" / ")} → foukání`,
+              recipe_cs:`${v.qty}× ${v.inputs.map(i=>CODEX_GLASS_CS[i]||i).join(" / ")} → foukání`,
               recipe_en:`${v.qty}× ${v.inputs.join(" / ")} → blowing`,
               note_cs:v.bulkNote_cs||"", note_en:v.bulkNote_en||"",
             };
@@ -11910,12 +12128,10 @@ function renderOriginal(){
         {
           title_cs:"💎 Broušené (hranař / kulič)", title_en:"💎 Ground wares (edge-cutter / sphere-grinder)",
           items: Object.entries(GROUND_ITEMS).map(([k,v])=>{
-            const sL={brusic_hrana:"hranař",brusic_kulic:"kulič"};
-            const sE={brusic_hrana:"edge-cutter",brusic_kulic:"sphere-grinder"};
             return {
               key:k,glass:v.input,icon:v.icon,
-              cs:`${v.cs} (${sL[v.spec]||v.spec})`,
-              en:`${v.en} (${sE[v.spec]||v.spec})`,
+              cs:`${v.cs} (${CODEX_SPEC[v.spec]?.cs||v.spec})`,
+              en:`${v.en} (${CODEX_SPEC[v.spec]?.en||v.spec})`,
               price:`~${v.base}g`,
               recipe_cs:"1× křišťál → broušení",
               recipe_en:"1× crystal → grinding",
@@ -11941,26 +12157,9 @@ function renderOriginal(){
           })
         },
         {
-          title_cs:"🪟 Okenní sklo & speciální výrobky", title_en:"🪟 Window glass & special items",
+          title_cs:CODEX_STATIC.special.title_cs, title_en:CODEX_STATIC.special.title_en,
           items:[
-            {key:"tercik",icon:"🪟",cs:"Okenní terčík",en:"Window disc",
-             price:"6g/★ · výplně 2g · žebrové 9g",
-             recipe_cs:"2× lesní sklo → foukání → Ø8–10 cm. Kval.≤2 → výplně, kval.≥4 → žebrové.",
-             recipe_en:"2× waldglas → blowing → Ø8–10 cm. Qual.≤2 → fillers, qual.≥4 → ribbed.",
-             note_cs:"Hromadný odbyt každé hutě. Kláštery, měšťanské domy, Haida trh. (CP_13II2015)",
-             note_en:"Bulk product of every foundry. Monasteries, townhouses, Haida market. (CP_13II2015)"},
-            {key:"zrcadlo",icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
-             price:"~65g",
-             recipe_cs:"2× křišťál + 1× rtuť + 1× cín + hranař",
-             recipe_en:"2× crystal + 1× mercury + 1× tin + edge-cutter",
-             note_cs:"Amalgám rtuti+cínu na zadní stranu. Rtuť z Idrie = import. Vzácný luxus pro šlechtu.",
-             note_en:"Mercury-tin amalgam on reverse. Mercury from Idrija = import. Rare noble luxury."},
-            {key:"alembik",icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
-             price:"~55g",
-             recipe_cs:"2× křišťál + 1× arsen (As₂O₃) + foukač křišťálu",
-             recipe_en:"2× crystal + 1× arsenic (As₂O₃) + crystal blower",
-             note_cs:"Destilační helma. Nejstarší nález stř. Evropy: klarisy Bratislava ~1290. (Sedláčková 2021)",
-             note_en:"Distillation helmet. Oldest Central European find: Poor Clares Bratislava ~1290. (Sedláčková 2021)"},
+            ...CODEX_STATIC.special.items,
             {key:"hodiny",glass:"waldglas",icon:"⏳",cs:SPECIAL_ITEMS.hodiny.cs,en:SPECIAL_ITEMS.hodiny.en,
              price:"~"+SPECIAL_ITEMS.hodiny.base+"g/★",
              recipe_cs:"",recipe_en:"",note_cs:SPECIAL_ITEMS.hodiny.desc_cs,note_en:SPECIAL_ITEMS.hodiny.desc_en},
@@ -11982,7 +12181,7 @@ function renderOriginal(){
           const topRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:"4px",flexWrap:"wrap"}});
           topRow.append(
             h("span",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14"}},L==="cs"?it.cs:it.en),
-            h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700",flexShrink:"0"}},it.price));
+            h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700",flexShrink:"0"}},L==="cs"?it.price:(it.price_en||it.price)));
           txt.append(topRow);
           txt.append(h("div",{class:"fj-codex-recipe",style:{fontSize:"9px",color:"#6a4830",marginTop:"1px"}},
             L==="cs"?it.recipe_cs:it.recipe_en));
@@ -12282,10 +12481,8 @@ function renderOriginal(){
       h("div",{class:"sec-title"},L==="cs"?"O hře":"About"),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.8",marginBottom:"8px"}},
         h("strong",{style:{color:"#3a2a14",fontSize:"13px"}},"Sklářská Huť · v8.0"),h("br",null),
-        h("em",null,"Haida, Arnsdorf, Blottendorf · Novoborsko · Anno Domini 1680"),h("br",null),
-        L==="cs"
-          ?"Historická resource management hra zasazená do světa lesních sklářských hutí 17. století v severních Čechách."
-          :"A historical resource management game set in the world of 17th century forest glassworks in northern Bohemia."),
+        h("em",null,ABOUT_INFO.place),h("br",null),
+        ABOUT_INFO.intro[L==="cs"?"cs":"en"]),
       // Novinky v8.0
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px",marginTop:"8px"}},
         L==="cs"?"✨ Novinky v8.0:":"✨ What's new in v8.0:"),
@@ -12309,48 +12506,31 @@ function renderOriginal(){
         "🔧 "+(L==="cs"?"Oprava vyplácení kontraktů + waldglas jako vstup receptury":"Contract payout fix + waldglas as recipe input")),
       // Herní systémy v7.x
       h("div",{style:{fontSize:"10px",color:"#3a2a14",fontWeight:"700",marginBottom:"4px"}},
-        L==="cs"?"Herní systémy:":"Game systems:"),
+        ABOUT_INFO.systemsTitle[L==="cs"?"cs":"en"]),
       h("div",{style:{fontSize:"10px",color:"#8b5e34",lineHeight:"1.9"}},
-        "🗓️ "+(L==="cs"?"12 kol · 5 příprava (listopad–březen) · 7 kampaň (duben–říjen)":"12 rounds · 5 prep (Nov–Mar) · 7 campaign (Apr–Oct)"),h("br",null),
-        "🔥 "+(L==="cs"?"Dynamická pec — zaběhnutost, šamot, 3 typy (primitivní/zděná/mistrovská)":"Dynamic furnace — run-in, shamot, 3 types (primitive/brick/master)"),h("br",null),
-        "🌲 "+(L==="cs"?"Hvozd — konečný zdroj, zalesňování, vyčerpání hvozdu":"Forest — finite resource, reforestation, depletion"),h("br",null),
-        "🏺 "+(L==="cs"?"Výroba pánví — zrání 6 měsíců, kvalita závisí na pánvaři":"Crucible system — 6 month curing, quality by crucible-maker"),h("br",null),
-        "🎨 "+(L==="cs"?"Barevné sklo — 6 receptur (jantar/modrá/smaragd/lattimo/rubín/stříbrná žluť · Neri 1612, Kunckel 1679)":"Coloured glass — 6 recipes (amber/blue/emerald/lattimo/ruby/silver stain · Neri 1612, Kunckel 1679)"),h("br",null),
-        "👷 "+(L==="cs"?"Dělníci — foukači, formaři, brusiči, rytec · 10 levelů · traity":"Workers — blowers, moulders, grinders, engraver · 10 levels · traits"),h("br",null),
-        "🍺 "+(L==="cs"?"Pivovar · pivo jako naturální mzda · opilost snižuje kvalitu":"Brewery · beer as natural wage · drunkenness lowers quality"),h("br",null),
-        "📜 "+(L==="cs"?"Zakázky — 18 kontraktů, 4 kupci, termíny, progress":"Contracts — 18 contracts, 4 buyers, deadlines, progress"),h("br",null),
-        "🗣️ "+(L==="cs"?"Baranovský — obchodník s přísadami · progression barev":"Baranovský — additives trader · colour progression"),h("br",null),
-        "📖 "+(L==="cs"?"Kronika · historické události · alchymistické citáty (Kunckel, Neri, Baranovský)":"Chronicle · historical events · alchemical quotes (Kunckel, Neri, Baranovský)")),
+        ...ABOUT_INFO.systems.flatMap((s,i)=>[...(i?[h("br",null)]:[]),s.icon+" "+s[L==="cs"?"cs":"en"]])),
       // Autorství
       h("div",{style:{marginTop:"10px",paddingTop:"8px",borderTop:"1px solid rgba(42,26,10,.1)",
         fontSize:"11px",color:"#8b5e34",lineHeight:"1.8"}},
         h("div",{style:{fontWeight:"700",color:"#3a2a14",marginBottom:"4px"}},
-          L==="cs"?"Tvůrce & konzultace":"Creator & Consultation"),
-        h("div",null,"Ondřej Panuška — design, kód, herní mechaniky"),
-        h("div",null,L==="cs"?"Jaromír Panuška - tatínek — historická a technologická konzultace (technolog skla)":"Father — historical & technical consultation (glass technologist)"),
-        h("a",{href:"mailto:ondrej.panuska@gmail.com",style:{color:"#c9952b"}},
-          "ondrej.panuska@gmail.com")),
+          ABOUT_INFO.creatorTitle[L==="cs"?"cs":"en"]),
+        ...ABOUT_INFO.creator.map(c=>h("div",null,c[L==="cs"?"cs":"en"])),
+        h("a",{href:"mailto:"+ABOUT_INFO.email,style:{color:"#c9952b"}},
+          ABOUT_INFO.email)),
       // Poděkování
       h("div",{style:{marginTop:"8px",fontSize:"10px",color:"#8b5e34",lineHeight:"1.6",
         fontStyle:"italic",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"8px"}},
-        L==="cs"
-          ?"Hra čerpá z Kunckelovy Ars Vitraria Experimentalis (1679), Neriho L'Arte Vetraria (1612) a dobových sklářských privilegií severních Čech."
-          :"The game draws on Kunckel's Ars Vitraria Experimentalis (1679), Neri's L'Arte Vetraria (1612) and period glassmaking privileges of northern Bohemia."),
+        ABOUT_INFO.thanks[L==="cs"?"cs":"en"]),
       // Footer
       h("div",{style:{marginTop:"12px",paddingTop:"10px",borderTop:"1px solid rgba(42,26,10,.15)",
         fontSize:"10px",color:"#8b5e34",lineHeight:"2",textAlign:"center"}},
         h("div",null,
-          h("span",null,"🔥 "),h("a",{href:"https://ember-pa.cz/",style:{color:"#c9952b"}},"Ember PA"),
-          h("span",null," · 📜 "),h("a",{href:"https://myscriptorium.cz/",style:{color:"#c9952b"}},"Scriptorium"),
-		  h("span",null," · 📰 "),h("a",{href:"https://newsandradio.cz",style:{color:"#c9952b"}},"Jouza News&Radio 📻"),
-		  h("span",null," · ⛧ "),h("a",{href:"https://occultix.app",style:{color:"#c9952b"}},"Occultix"),
-		  h("span",null," · 🧩 "),h("a",{href:"https://fractout.com/",style:{color:"#c9952b"}},"Fractout"),
-          h("span",null," · 🔮 "),h("a",{href:"https://oracoolio.com",style:{color:"#c9952b"}},"Oracoolio")),
+          ...ABOUT_INFO.links.flatMap((l,i)=>[h("span",null,(i?" · ":"")+l.icon+" "),h("a",{href:l.url,style:{color:"#c9952b"}},l.label)])),
         h("div",{style:{marginTop:"4px",fontSize:"10px",color:"#aaa"}},
-          `Vyvíjeno s ❤️ v Novém Boru · Ondrex · v8.0 · ${new Date().getFullYear()}`),
+          `${ABOUT_INFO.made} · v8.0 · ${new Date().getFullYear()}`),
         h("div",{style:{marginTop:"8px"}},
           h("a",{href:"/about.html",target:"_blank",style:{fontSize:"11px",color:"#c9952b",textDecoration:"none",letterSpacing:"0.5px"}},
-            "📖 "+(L==="cs"?"O hře — about.html →":"About the game →")))));
+            "📖 "+ABOUT_INFO.aboutLink[L==="cs"?"cs":"en"]))));
     content.append(iSec);
   }
 
@@ -12879,7 +13059,7 @@ function checkAchievements(){
 
   // Terčíkář — první terčík ve skladu nebo prodán
   const hasTercik=(G.tercik?.length>0||G.tercik_vyplne?.length>0||
-    G.log?.some(l=>l.includes("terčík")||l.includes("tercik")));
+    G.log?.some(l=>l.includes("terčík")||l.includes("tercik")||l.includes("window disc")));
   if(hasTercik&&!ach.includes("tercikár")) add("tercikár");
 
   // Speculum — první zrcadlo
@@ -12900,7 +13080,7 @@ function checkAchievements(){
   // Kobaltová série — celkem ≥15 kobaltových kusů
   const kobaltTotal=(G.modra?.length||0)+(G.cise_modra?.length||0)
     +(G.dzban_modra?.length||0)+(G.pohar_modra?.length||0)+(G.dekantr_modra?.length||0)
-    +(G.log?.filter(l=>l.includes("modra")||l.includes("kobalt")).length||0);
+    +(G.log?.filter(l=>l.includes("modra")||l.includes("kobalt")||l.includes("cobalt")).length||0);
   if(kobaltTotal>=15&&!ach.includes("kobaltova_serie")) add("kobaltova_serie");
 
   // À la façon de Venise — endgame trade splněn
