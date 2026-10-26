@@ -1890,6 +1890,10 @@ function fireWorker(workerId){
   if(!w||w.traits?.includes("houzevatny"))return;
   G.workers=G.workers.filter(x=>x.id!==workerId);
   G.log.push(`__ECO__👋 ${w.name} ${G.lang==="cs"?"odešel z hutě":"left the foundry"}`);
+  if((w.unpaidDebt||0)>0){   // propuštěný dělník si nárok na nevyplacené mzdy odnáší → kniha pohledávek
+    (G.exCrewClaims=G.exCrewClaims||[]).push({id:"c"+G.season+"_"+G.round+"_"+w.id,name:w.name,npcId:w.npcId||null,amount:w.unpaidDebt,season:G.season,round:G.round,reason:"fired"});
+    G.log.push(`__ECO__📒 ${G.lang==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${w.unpaidDebt}g zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${w.unpaidDebt}g recorded in the ledger`}`);
+  }
   render();
 }
 
@@ -2766,6 +2770,7 @@ function initState(){
     phase:"intro", lang:"cs",
     season:1, round:0,
     grose:65, debt:40, morale:65, beer:1,
+    _dm:2, exCrewClaims:[], // _dm = verze účetního modelu dluhů (2 = dluh partě odděleně od Weisse); exCrewClaims = pohledávky bývalých zaměstnanců [{id,name,npcId,amount,season,round,reason}]
     debtMoratorium:0, totalDone:0, totalW:0, totalC:0, failureReason:null, failureStats:null,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
     seasonTier:0, noblePrivilege:false,
@@ -2884,6 +2889,7 @@ function processRound(){
   const evts=[]; // deklarujeme brzy — crack handler ho potřebuje před sekci "Náhodné události"
   const con=[...p.contracts];
   const log=[...p.log];
+  const newClaims=[]; // pohledávky odcházejících dělníků s nevyplacenou mzdou (→ G.exCrewClaims)
   const roundLogStart=log.length; // log je kopie celé historie — řádky tohoto kola jsou až od tohoto indexu
 
 
@@ -3475,13 +3481,15 @@ function processRound(){
   });
   // Kolik reálně zaplatíme — pokud grose nestačí, platíme co jde (zbytek = dluh)
   const wagesAvail=Math.max(0,grose); // nemůžeme platit z ničeho
-  const wagesPaid=Math.min(wages,wagesAvail);
+  const wagesPaid=Math.min(wages,Math.floor(wagesAvail)); // celé groše → schodek je vždy celé číslo
   const wagesDeficit=wages-wagesPaid;
   grose-=wagesPaid;
   // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Weisse (p.debt) — jsou to dvě oddělené entity.
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
-  workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
+  // Schodek se rozpočítá na celé groše metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádný groš se neztratí ani nevytvoří).
+  const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit);
+  workerWages.forEach((ww,i)=>{ ww.paid=payRatio>=1; ww.shortfall=shortfalls[i]; });
 
   // 6. Splácení dluhu u Faktora Weisse (standardní auto-splátka, pokud není aktivní odklad)
   let dPay=0;
@@ -3952,11 +3960,15 @@ function processRound(){
           ?"si sbalila ranec a odešla z huti — z prázdných hrnců a nezaplacené práce se žít nedá."
           :"packed up and left the foundry — one cannot live on empty pots and unpaid labor.";
       }else if(newUnpaid>0){
-        reason=L==="cs"?`odešel — ${newUnpaid}g dluhu mu huť nikdy nesplatila.`:`left — foundry owed him ${newUnpaid}g.`;
+        reason=L==="cs"?`odešel — huť mu dluží ${newUnpaid}g.`:`left — the foundry owes him ${newUnpaid}g.`;
       }else{
         reason=L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low.";
       }
       log.push(`__EVT__👋 ${w.name} ${reason}`);
+      if(newUnpaid>0){   // dluh neodchází s dělníkem: zapíše se do knihy pohledávek bývalých zaměstnanců
+        newClaims.push({id:"c"+p.season+"_"+(round+1)+"_"+w.id,name:w.name,npcId:w.npcId||null,amount:newUnpaid,season:p.season,round:round+1,reason:"left"});
+        log.push(`__ECO__📒 ${L==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${newUnpaid}g zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${newUnpaid}g recorded in the ledger`}`);
+      }
       return null;
     }
     // Nálada — plynule (30 %/kolo) směřuje k cílové hodnotě: osobní báze NPC ± morálka hutě, únava, hlad, nevyplacené mzdy, kontrakt, tenze s kolegy
@@ -3987,7 +3999,7 @@ function processRound(){
   if(isC&&tW>p.tW)prodLines.push(`🔥 ${tW-p.tW}× ${L==="cs"?"waldglas uvařeno":"waldglas melted"}`);
   if(isC&&tC>p.tC)prodLines.push(`✨ ${tC-p.tC}× ${L==="cs"?"křišťál uvařen":"crystal melted"}`);
   if(isC&&fA)prodLines.push(`${L==="cs"?"Pec":"Furnace"}: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
-  const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+  const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal({exCrewClaims:[...(p.exCrewClaims||[]),...newClaims]});
   ecoLines.push(`💰 ${grose}g`+(debt>0?` · ${L==="cs"?"dluh Weissovi":"debt to Weiss"} ${debt}g`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${crewDebtNow}g`:""));
   ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${wagesPaid}g${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${wagesDeficit}g`:""} · ${L==="cs"?"pivo":"beer"} ${bCost}g`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${dPay}g`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
@@ -4029,6 +4041,7 @@ function processRound(){
     },
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
+    exCrewClaims:[...(p.exCrewClaims||[]),...newClaims],
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
@@ -6841,7 +6854,22 @@ function validateGameSave(saved){
   // Keep all known fields and any future data, while filling old missing fields safely.
   const merged={...defaults,...saved};
   for(const key of nested)merged[key]={...defaults[key],...(saved[key]||{})};
+  if(!Array.isArray(merged.exCrewClaims))merged.exCrewClaims=[];
+  migrateDebtModel(merged,saved._dm);
   return merged;
+}
+// Jednorázová migrace účetního modelu dluhů (_dm: 1 → 2). Staré savy (bez _dm) připisovaly nevyplacené mzdy dvakrát:
+// do G.debt (Weiss) i do w.unpaidDebt (parta). Převod: ze starého G.debt se odečte právě tolik, kolik je dluh partě
+// (nejvýš celý G.debt) — nic dalšího se nepřepisuje ani neodpouští. Nové savy mají _dm=2 a migrací neprojdou.
+function migrateDebtModel(state,savedVersion){
+  if(savedVersion>=2){state._dm=savedVersion;return;}
+  const crew=(state.workers||[]).reduce((s,w)=>s+Math.max(0,w.unpaidDebt||0),0);
+  const credit=Math.max(0,Math.min(state.debt||0,crew));
+  state.debt=(state.debt||0)-credit;
+  state._dm=2;
+  if(credit>0&&Array.isArray(state.log)){
+    state.log=[...state.log,`__ECO__📒 ${state.lang==="en"?`Ledger unified: ${credit}g of unpaid wages was counted twice (Weiss + crew). Weiss debt reduced by ${credit}g; the crew debt is unchanged.`:`Sjednocení účtů: ${credit}g nevyplacených mezd se počítalo dvakrát (Weiss + parta). Dluh u Weisse snížen o ${credit}g; dluh partě zůstává beze změny.`}`];
+  }
 }
 function restoreGameState(saved){
   G=validateGameSave(saved);
@@ -7145,21 +7173,36 @@ function quickSellAll(){
 }
 
 // ── workers: debts, loyalty modals, retention, market hire ──
-function totalWorkerDebt(){return G.workers.filter(w=>(w.unpaidDebt||0)>0).reduce((s,w)=>s+(w.unpaidDebt||0),0);}
+// Rozpočítání schodku mezd na celé groše (metoda největšího zbytku): podíl_i = floor(w_i*D/W), zbylé groše dostanou
+// největší zbytky (při shodě nižší index). Σ == D přesně, každý podíl ≤ w_i. Čistě celočíselné, deterministické.
+function allocateShortfalls(wageList,deficit){
+  const n=wageList.length,total=wageList.reduce((s,x)=>s+x,0),D=Math.max(0,Math.min(total,Math.round(deficit)));
+  const out=new Array(n).fill(0);
+  if(!(D>0)||!(total>0))return out;
+  const rem=[];let given=0;
+  for(let i=0;i<n;i++){const num=wageList[i]*D;out[i]=Math.floor(num/total);given+=out[i];rem.push({i,r:num-out[i]*total});}
+  rem.sort((a,b)=>b.r-a.r||a.i-b.i);
+  for(let k=0;k<D-given;k++)out[rem[k].i]++;
+  return out;
+}
+function claimsTotal(p){return(p.exCrewClaims||[]).reduce((s,c)=>s+(c.amount||0),0);}   // pohledávky bývalých zaměstnanců
+function totalWorkerDebt(){return G.workers.filter(w=>(w.unpaidDebt||0)>0).reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal(G);}
 // Dvě oddělené entity dluhu: Weiss (G.debt, úvěr + úrok, auto-splátka) a parta (součet w.unpaidDebt = nevyplacené mzdy).
-function liabilities(p){const weiss=p.debt||0,crew=(p.workers||[]).reduce((s,w)=>s+(w.unpaidDebt||0),0);return{weiss,crew,total:weiss+crew};}
+function liabilities(p){const weiss=p.debt||0,crewNow=(p.workers||[]).reduce((s,w)=>s+(w.unpaidDebt||0),0),claims=claimsTotal(p),crew=crewNow+claims;return{weiss,crew,crewNow,claims,total:weiss+crew};}
 // month summary: "Clear worker debts"
 function payWorkerDebtsSummary(){
   const L=G.lang, totalUnpaid=totalWorkerDebt();
   if(!(totalUnpaid>0&&G.grose>=totalUnpaid))return;   // UI gate
   G.workers.forEach(w=>{if(w.unpaidDebt>0){G.grose-=w.unpaidDebt;w.unpaidDebt=0;}});
+  G.grose-=claimsTotal(G);G.exCrewClaims=[];   // pohledávky bývalých dělníků se splácejí spolu s ostatními
   G.log.push("__ECO__💸 "+(L==="cs"?"Dluhy dělníkům splaceny: -"+totalUnpaid+"g":"Worker debts cleared: -"+totalUnpaid+"g"));
   render();
 }
 // loyalty modal (after the summary, workers with unpaid wages)
 function loyaltyModalPayAll(){
   const L=G.lang;
-  if(!(totalWorkerDebt()>0&&G.grose>=totalWorkerDebt()))return;   // UI gate
+  const owedNow=liabilities(G).crewNow;   // modal se týká jen dělníků, kteří v huti zůstali; pohledávky bývalých se platí zvlášť
+  if(!(owedNow>0&&G.grose>=owedNow))return;   // UI gate
   G.workers.forEach(w=>{if(w.unpaidDebt>0){G.grose-=w.unpaidDebt;w.unpaidDebt=0;w.loyalty=Math.min(100,w.loyalty+15);}});
   G.log.push("__ECO__💚 "+(L==="cs"?"Dluhy splaceny — dělníci zůstávají (+loajalita)":"Debts paid — workers staying (+loyalty)"));
   G._loyaltyModalPending=false;
@@ -7207,8 +7250,10 @@ function dropStaleRetention(wId){G._retentionPending=(G._retentionPending||[]).f
 function payAllOwedWages(){
   const L=G.lang;
   const debtedNow=G.workers.filter(w=>(w.unpaidDebt||0)>0);
-  const totalOwed=debtedNow.reduce((s,w)=>s+(w.unpaidDebt||0),0);
-  if(!(debtedNow.length&&G.grose>=totalOwed))return;   // UI gate
+  const claimsOwed=claimsTotal(G);
+  const totalOwed=debtedNow.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsOwed;
+  if(!((debtedNow.length||claimsOwed>0)&&G.grose>=totalOwed))return;   // UI gate
+  G.grose-=claimsOwed;G.exCrewClaims=[];   // bývalí dělníci: jen splacení, bez bonusu loajality/nálady
   G.workers.forEach(w=>{
     if((w.unpaidDebt||0)>0){
       G.grose-=w.unpaidDebt;
@@ -7218,6 +7263,16 @@ function payAllOwedWages(){
     }
   });
   G.log.push(`__ECO__💸 ${L==="cs"?"Dluhy dělníkům splaceny":"Worker debts cleared"}: -${totalOwed}g`);
+  render();
+}
+// Pohledávka bývalého zaměstnance: zaplatí se celá; mimo vyúčtování žádný další efekt (háček pro příběhové události/pověst později).
+function payExClaim(claimId){
+  const L=G.lang;
+  const c=(G.exCrewClaims||[]).find(x=>x.id===claimId);
+  if(!c||!(c.amount>0)||G.grose<c.amount)return;   // UI gate
+  G.grose-=c.amount;
+  G.exCrewClaims=G.exCrewClaims.filter(x=>x.id!==claimId);
+  G.log.push(`__ECO__💸 ${L==="cs"?"Splacena pohledávka bývalého dělníka":"Former worker's claim paid"} ${c.name}: -${c.amount}g`);
   render();
 }
 function payWorkerWage(wId,amt){
@@ -8174,6 +8229,8 @@ function renderOriginal(){
       debtStatusCard.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"11px",marginTop:"3px"}},
         h("span",{style:{fontWeight:"600",color:"#8b5e34"}},"👥 "+(L==="cs"?"Dluh partě (nevyplacené mzdy):":"Owed to the crew (unpaid wages):")),
         h("strong",{style:{fontSize:"12px",color:lb.crew>0?"#a03020":"#4a7a3a"}},lb.crew>0?(lb.crew+"g"):"✅ 0g")));
+      if(lb.claims>0)debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"1px",paddingLeft:"14px"}},
+        (L==="cs"?"z toho bývalí zaměstnanci: ":"of which former employees: ")+lb.claims+"g"));
       if(lb.weiss>0&&lb.crew>0)debtStatusCard.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"3px",paddingTop:"3px",borderTop:"1px dashed rgba(42,26,10,.2)"}},
         h("span",{style:{fontWeight:"700",color:"#8b5e34"}},L==="cs"?"Závazky celkem:":"Total liabilities:"),
         h("strong",{style:{color:"#a03020"}},lb.total+"g")));
@@ -8218,8 +8275,8 @@ function renderOriginal(){
     });
     // Možnost splatit dluhy dělníkům
     const indebted=p.workers.filter(w=>(w.unpaidDebt||0)>0);
-    if(indebted.length>0){
-      const totalUnpaid=indebted.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+    if(indebted.length>0||claimsTotal(p)>0){
+      const totalUnpaid=indebted.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal(p);
       const canPay=p.grose>=totalUnpaid;
       workerBox.append(h("div",{style:{marginTop:"6px"}},
         h("button",{class:"btn btn-s"+(canPay?" btn-p":""),
@@ -11405,7 +11462,7 @@ function renderOriginal(){
     const partaSec=h("div",{class:"sec"});
 
     // ── Globální souhrn ──
-    const totalDebt=p.workers.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+    const totalDebt=liabilities(p).crew;   // aktuální dělníci + pohledávky bývalých
     const avgMood=p.workers.length?Math.round(p.workers.reduce((s,w)=>s+(w.mood||60),0)/p.workers.length):0;
     const moodCol=avgMood>=65?"#4a7a3a":avgMood>=40?"#c89628":"#a03020";
     const sumRow=h("div",{class:"parta-summary"});
@@ -11464,9 +11521,11 @@ function renderOriginal(){
 
     // ── Hromadné vyplacení dlužných mezd ──
     const debtedNow=p.workers.filter(w=>(w.unpaidDebt||0)>0);
-    if(debtedNow.length){
-      const totalOwed=debtedNow.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+    const claimsNow=p.exCrewClaims||[];
+    if(debtedNow.length||claimsNow.length){
+      const totalOwed=debtedNow.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal(p);
       const canPayAll=p.grose>=totalOwed;
+      const nPeople=debtedNow.length+claimsNow.length;
       const payAllBtn=h("div",{style:{marginBottom:"10px"}});
       payAllBtn.append(h("button",{
         class:"btn",
@@ -11477,12 +11536,28 @@ function renderOriginal(){
           if(!canPayAll) return;
           payAllOwedWages();
         }},
-        L==="cs"?`💸 Vyplatit dlužné mzdy · ${totalOwed}g (${debtedNow.length} ${debtedNow.length===1?"osoba":"osoby/osob"})`
-               :`💸 Pay owed wages · ${totalOwed}g (${debtedNow.length} ${debtedNow.length===1?"worker":"workers"})`
+        L==="cs"?`💸 Vyplatit dlužné mzdy · ${totalOwed}g (${nPeople} ${nPeople===1?"osoba":"osoby/osob"})`
+               :`💸 Pay owed wages · ${totalOwed}g (${nPeople} ${nPeople===1?"person":"people"})`
       ));
       if(!canPayAll) payAllBtn.append(h("div",{style:{fontSize:"9px",color:"#a03020",marginTop:"3px",textAlign:"center"}},
         L==="cs"?`Chybí ${totalOwed-p.grose}g do pokladny.`:`Need ${totalOwed-p.grose}g more in treasury.`));
       partaSec.append(payAllBtn);
+    }
+    // ── Kniha pohledávek bývalých zaměstnanců ──
+    if((p.exCrewClaims||[]).length){
+      const claimsBox=h("div",{class:"parta-claims",style:{marginBottom:"10px",padding:"6px 8px",border:"1px solid rgba(42,26,10,.25)",borderRadius:"6px",background:"rgba(139,94,52,.08)"}});
+      claimsBox.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#8b5e34",marginBottom:"4px"}},
+        "📒 "+(L==="cs"?"Pohledávky bývalých zaměstnanců":"Former employees' claims")+" · "+claimsTotal(p)+"g"));
+      p.exCrewClaims.forEach(c=>{
+        const canPayC=p.grose>=c.amount;
+        claimsBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"6px",fontSize:"11px",padding:"2px 0"}},
+          h("span",{},`${c.name} · ${L==="cs"?"sezóna":"season"} ${c.season}, ${L==="cs"?"kolo":"round"} ${c.round} · `,h("strong",{style:{color:"#a03020"}},c.amount+"g")),
+          h("button",{class:"btn btn-s"+(canPayC?" btn-p":""),style:{fontSize:"10px",opacity:canPayC?1:0.5,cursor:canPayC?"pointer":"not-allowed"},
+            onClick:()=>{if(canPayC)payExClaim(c.id);}},L==="cs"?"💸 Splatit":"💸 Pay")));
+      });
+      claimsBox.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"3px",fontStyle:"italic"}},
+        L==="cs"?"Dluh odešlého dělníka zůstává v knize — nezmizí a počítá se do závazků i skóre.":"A departed worker's debt stays on the books — it does not vanish and counts toward liabilities and score."));
+      partaSec.append(claimsBox);
     }
 
     // ── Mřížka postav ──
