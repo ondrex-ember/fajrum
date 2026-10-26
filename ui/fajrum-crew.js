@@ -44,7 +44,7 @@
    const bonds=app.querySelector('.fj-crew-bonds');
    if(bonds){const details=el('details','fj-crew-bonds-disclosure');details.open=bondsOpen;
     const summary=el('summary','',L==='cs'?'Vazby a mentorství party':'Crew bonds and mentorship');details.append(summary);bonds.replaceWith(details);details.append(bonds);details.addEventListener('toggle',()=>{bondsOpen=details.open;});}
-   const resting=state.workers.filter(w=>w.task==='idle').length,owed=state.workers.reduce((n,w)=>n+(w.unpaidDebt||0),0);
+   const resting=state.workers.filter(w=>w.task==='idle').length,owed=state.workers.reduce((n,w)=>n+(w.unpaidDebt||0),0)+(state.exCrewClaims||[]).reduce((n,c)=>n+(c.amount||0),0);
    const summary=el('div','fj-crew-summary',L==='cs'?`${state.workers.length} řemeslníků · ${resting} odpočívá · dlužné mzdy ${owed}g`:`${state.workers.length} workers · ${resting} resting · owed wages ${owed}g`);grid.before(summary);
    for(const card of grid.querySelectorAll('.parta-card')){
     const w=state.workers.find(x=>x.id===card.dataset.workerId);if(!w)continue;
