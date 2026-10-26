@@ -885,7 +885,7 @@ const WINTER_LOG_MULT=[1.5,1.5,1.5,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0];
 // Bonus kvality pánví vyrobených v zimě (mrznutí jílu čistí)
 const WINTER_PANEV_BONUS=[1,1,1,0,0,0,0,0,0,0,0,0];
 // Trh: Listopad zavřen, Prosinec otevřen (vánoční), Leden+Únor zavřeny, Březen+ otevřen
-const MARKET_CLOSED=[true,false,true,true,false,false,false,false,false,false,false,false];
+const MARKET_CLOSED=[true,false,false,true,false,false,false,false,false,false,false,false];   // leden = Tříkrálový trh (kupec přijíždí, KUPEC_ROUNDS)
 // Speciální kupec: Prosinec(1), Tři králové=Leden(2), Velikonoce≈Duben(5)
 const KUPEC_ROUNDS=[1,2,5];
 
@@ -1761,6 +1761,11 @@ const NPC_BONDS=[
    desc_cs:"Strejda jí nedůvěřuje. Kateřinina loajalita klesá o 1 za kolo pokud Káninský velí.",
    desc_en:"Old man doesn't trust her. Kateřina's loyalty drops 1/round when Káninský leads."},
 ];
+// Aktivní vazba = oba členové jsou v huti a nesedí na odpočinku (task!=="idle") — stejná podmínka jako u afinity Josef+Kateřina.
+function bondActive(p,a,b){return p.workers.some(w=>w.npcId===a&&w.task!=="idle")&&p.workers.some(w=>w.npcId===b&&w.task!=="idle");}
+// Osobní nálada (0–100): vyvíjí se každé kolo (viz processRound), neutrální 60 = výkon beze změny; ±1 % výkonu za každých 5 bodů.
+const MOOD_NEUTRAL=60;
+function moodEffMult(w){return 1+((w.mood==null?MOOD_NEUTRAL:w.mood)-MOOD_NEUTRAL)/500;}
 
 const NPC_ROSTER=[
   // ── STARTOVNÍ PARTA (kolo 1) ──────────────────────────────────────────────
@@ -2761,7 +2766,7 @@ function initState(){
     phase:"intro", lang:"cs",
     season:1, round:0,
     grose:65, debt:40, morale:65, beer:1,
-    debtMoratorium:0, totalDone:0, failureReason:null, failureStats:null,
+    debtMoratorium:0, totalDone:0, totalW:0, totalC:0, failureReason:null, failureStats:null,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
     seasonTier:0, noblePrivilege:false,
     res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0,stone:0,dryWood:0,firebrick:0,pitch:0},
@@ -2888,8 +2893,14 @@ function processRound(){
 
   // 1. Dělníci
   let reforestCount=0; // kolik dělníků sází stromy
+  const incidentIds=new Set(); // dělníci, kteří měli v tomto kole nehodu (karta dělníka: "Incidenty")
   for(const w of p.workers){
-    const eff=1+w.lv*.3-w.fat*.2;
+    const eff=(1+w.lv*.3-w.fat*.2)*moodEffMult(w);
+    // Vazba Komár × Káninský (tenze): Komár ignoruje pokyny — 10 % šance na chybu, kolo bez výsledku
+    if(w.npcId==="npc_komar"&&w.task!=="idle"&&bondActive(p,"npc_komar","npc_kanin")&&Math.random()<0.10){
+      log.push(`__EVT__⚠️ ${w.name}: ${L==="cs"?"ignoroval Káninského pokyny — chyba v práci, kolo bez výsledku":"ignored Káninský's instructions — work error, nothing done this round"}`);
+      continue;
+    }
     if(w.task==="logging"){
       if(forest<=0){
         log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"les vyčerpán — přesuňte na výsadbu":"forest depleted — reassign to reforest"}!`);
@@ -2977,12 +2988,13 @@ function processRound(){
       if(accTriggered){
         // Najdi první dostupný výstupní kus workera a odstraň ho (rozbil ho)
         const accKeys=["waldglas","crystal","jantar","zlut","modra","smaragd","lattimo","rubin","rubin_raw"];
-        const accKey=accKeys.find(k=>(G[k]||[]).length>0);
+        incidentIds.add(w.id);
+        const accInv=k=>k==="waldglas"?wg:k==="crystal"?cr:(G[k]||[]);   // waldglas/crystal = lokální kopie kola (jinak by se rozbitý kus vrátil)
+        const accKey=accKeys.find(k=>accInv(k).length>0);
         if(accKey){
-          const accStock=[...(G[accKey]||[])];
-          accStock.splice(0,1);
-          G[accKey]=accStock;
-          log.push(`__EVT__🍺 ${w.name}: ${L==="cs"?"rozjařený — rozbil kus "+accKey+"!":"too merry — smashed a "+accKey+"!"}`);
+          if(accKey==="waldglas"||accKey==="crystal") accInv(accKey).splice(0,1);
+          else {const accStock=[...(G[accKey]||[])]; accStock.splice(0,1); G[accKey]=accStock;}
+          log.push(`__EVT__🍺 ${w.name}: ${L==="cs"?"rozjařený — rozbil kus "+logItemName(accKey,L)+"!":"too merry — smashed a "+logItemName(accKey,L)+"!"}`);
         } else {
           // Žádný kus k rozbití — jen log
           log.push(`__EVT__🍺 ${w.name}: ${L==="cs"?"rozjařený — naštěstí nic nerozbil.":"too merry — luckily nothing to break."}`);
@@ -2999,12 +3011,11 @@ function processRound(){
         // Tavič/Foukač lesní — fouká waldglas nádoby
         const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_lesni"&&!BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         const waldglasAvail=(r.waldglas||[]).length||G.waldglas?.length;
-        const waldStock=[...(G.waldglas||[])];
+        const waldStock=wg;   // kolo pracuje s lokální kopií skladu; zápis zpět dělá konec kola (jinak by se spotřebované sklo vrátilo)
         if(waldStock.length>=1&&(r.formy||0)>=1){
           const key=blownKeys[Math.floor(Math.random()*blownKeys.length)]||"cise";
           const it=BLOWN_ITEMS[key];
           const used=waldStock.splice(0,1);
-          G.waldglas=waldStock;
           r.formy=Math.max(0,(r.formy||0)-1);
           const outQ=clamp(used[0]+qLvBonus+(Math.random()>.6?1:0),1,5);
           if(!G[key])G[key]=[];
@@ -3016,13 +3027,12 @@ function processRound(){
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"verštat — chybí waldglas":"workshop — no waldglas"}`);
         }
       }else if(wProf==="foukat_kristal"){
-        const crystalStock=[...(G.crystal||[])];
+        const crystalStock=cr;   // viz waldStock — lokální kopie skladu kola
         const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_kristal"&&BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         if(crystalStock.length>=1){
           const key=blownKeys[Math.floor(Math.random()*blownKeys.length)]||"pohar";
           const it=BLOWN_ITEMS[key];
           const used=crystalStock.splice(0,1);
-          G.crystal=crystalStock;
           const outQ=clamp(used[0]+qLvBonus+(Math.random()>.5?1:0),1,5);
           if(!G[key])G[key]=[];
           G[key].push(outQ);
@@ -3031,13 +3041,12 @@ function processRound(){
           log.push(`__PROD__⚒️ ${w.name}: ${L==="cs"?"verštat — chybí křišťál":"workshop — no crystal"}`);
         }
       }else if(wProf==="foukat_dekor"){
-        const waldStock=[...(G.waldglas||[])];
+        const waldStock=wg;   // kolo pracuje s lokální kopií skladu; zápis zpět dělá konec kola (jinak by se spotřebované sklo vrátilo)
         const blownKeys=Object.keys(BLOWN_ITEMS).filter(k=>BLOWN_ITEMS[k].spec==="foukat_dekor"&&BLOWN_ITEMS[k].specOnly&&!BLOWN_ITEMS[k].manualOnly);
         if(waldStock.length>=1){
           const key=blownKeys[Math.floor(Math.random()*blownKeys.length)]||"koule";
           const it=BLOWN_ITEMS[key];
           const used=waldStock.splice(0,1);
-          G.waldglas=waldStock;
           const outQ=clamp(used[0]+qLvBonus+(Math.random()>.5?1:0),1,5);
           if(!G[key])G[key]=[];
           G[key].push(outQ);
@@ -3047,12 +3056,11 @@ function processRound(){
         }
       }else if(wProf==="foukat_formy"){
         // Foukač forem — vyrábí formy nebo foukané do forem
-        const waldStock=[...(G.waldglas||[])];
+        const waldStock=wg;   // kolo pracuje s lokální kopií skladu; zápis zpět dělá konec kola (jinak by se spotřebované sklo vrátilo)
         if(waldStock.length>=1){
           const key="dzban_forma";
           const it=BLOWN_ITEMS[key];
           const used=waldStock.splice(0,1);
-          G.waldglas=waldStock;
           const outQ=clamp(used[0]+qLvBonus+(Math.random()>.5?1:0),1,5);
           if(!G[key])G[key]=[];
           G[key].push(outQ);
@@ -3064,7 +3072,7 @@ function processRound(){
         }
       }else if(wProf==="brusic_hrana"||wProf==="brusic_kulic"){
         // Brusič — spotřebuje crystal + water, vyrobí broušený kus
-        const crystalStock=[...(G.crystal||[])];
+        const crystalStock=cr;   // viz waldStock — lokální kopie skladu kola
         const groundKeys=Object.keys(GROUND_ITEMS).filter(k=>GROUND_ITEMS[k].spec===wProf&&!GROUND_ITEMS[k].manualOnly);
         if(crystalStock.length>=1&&r.water>=1){
           const key=groundKeys[Math.floor(Math.random()*groundKeys.length)];
@@ -3072,7 +3080,6 @@ function processRound(){
           const qty=it.qty||1;
           if(crystalStock.length>=qty){
             const used=crystalStock.splice(0,qty);
-            G.crystal=crystalStock;
             r.water=Math.max(0,r.water-1);
             r.food=Math.max(0,r.food-1); // brusič spotřebuje jídlo
             const avgQ=Math.round(used.reduce((s,q)=>s+q,0)/qty);
@@ -3217,6 +3224,9 @@ function processRound(){
     if(!p.furnAtm||p.furnAtm.length!==furnSlots)p.furnAtm=Array(furnSlots).fill("ox");
     const atmCfg=p.furnAtm;
     const znalecPresent=p.workers.some(w=>w.traits?.includes("znalec")&&w.task!=="idle");
+    // Vazby: Kunc + Máňa → +5 % kvalita tavení; Káninský + Hranař → nová pánev vydrží o 1 várku déle
+    const meltBond=bondActive(p,"npc_kunc","npc_mana")?1.05:1;
+    const panevBond=bondActive(p,"npc_kanin","npc_hrana1");
     let usedSlots=0;
     let noMoreCrucibles=false;
 
@@ -3228,9 +3238,9 @@ function processRound(){
     // Doplnit prázdné sloty z dostupných pánví (pR)
     for(let si=0;si<furnSlots;si++){
       if(slotPanev[si]===null&&pR>0){
-        slotPanev[si]={uses:PANEV_DUR, quality:pQ};
+        slotPanev[si]={uses:PANEV_DUR+(panevBond?1:0), quality:pQ};
         pR--;
-        log.push(`__PROD__🏺 ${L==="cs"?"Slot "+(si+1)+": nová pánev vsazena ("+stars(pQ)+")":"Slot "+(si+1)+": new crucible loaded ("+stars(pQ)+")"}`);
+        log.push(`__PROD__🏺 ${L==="cs"?"Slot "+(si+1)+": nová pánev vsazena ("+stars(pQ)+")":"Slot "+(si+1)+": new crucible loaded ("+stars(pQ)+")"}`+(panevBond?` 🤝 ${L==="cs"?"Hranař dohlíží chlazení: +1 várka":"Hranař oversees cooling: +1 melt"}`:""));
       }
     }
 
@@ -3256,7 +3266,7 @@ function processRound(){
         }
         r.pureSand-=3;r.refinedPotash-=2;r.limestone-=1;r.charcoal-=1;usedSlots++;
         const slotPQ_c=slotPanev[si].quality;
-        let qc=clamp(qRoll(tAcc(fT),fEff*3,mor,slotPQ_c+1)+(znalecPresent?1:0),1,5);
+        let qc=clamp(qRoll(tAcc(fT),fEff*3*meltBond,mor,slotPQ_c+1)+(znalecPresent?1:0),1,5);
         let qcNote="";
         if((G._cerenBonus||0)>0){qc=clamp(qc+1,1,5);G._cerenBonus--;qcNote+=` (${L==="cs"?"čeřeno":"fined"} +★)`;}
         if(atmCfg[si]==="red"){qc=clamp(qc-1,1,5);r.wood=Math.max(0,r.wood-1);qcNote+=` (${L==="cs"?"kouřivý žár −★, −1🪵":"smoky fire −★, −1🪵"})`;}
@@ -3288,7 +3298,7 @@ function processRound(){
         }
         r.sand-=3;r.potash-=2;r.limestone-=1;r.water-=1;usedSlots++;
         const slotPQ_w=slotPanev[si].quality;
-        let qw=qRoll(tAcc(fT),fEff*3,mor,slotPQ_w);
+        let qw=qRoll(tAcc(fT),fEff*3*meltBond,mor,slotPQ_w);
         let qwNote="";
         if(atmCfg[si]==="red"){qw=clamp(qw-1,1,5);r.wood=Math.max(0,r.wood-1);qwNote=` (${L==="cs"?"kouřivý žár −★, −1🪵":"smoky fire −★, −1🪵"})`;}
         wg.push(qw);tW++;tQS+=qw;tQN++;
@@ -3401,13 +3411,11 @@ function processRound(){
         log.push(`__EVT__🧊 ${L==="cs"?"Tovaryši roztopili oheň pod zamrzlým náhonem stoupy (-1🪵).":"Journeymen lit a thaw fire under the frozen flume (-1🪵)."}`);
       }else{
         log.push(`__EVT__🧊 ${L==="cs"?"Náhon stoupy zamrzl! Tovaryši museli sekat led (+únava).":"Water flume froze! Workers had to chop ice with axes (+fatigue)."}`);
-        p.workers.forEach(w=>{if(w.task==="quarry")w.fat=Math.min(10,(w.fat||0)+1);});
+        p.workers.forEach(w=>{if(w.task==="quarry"){w.fat=Math.min(10,(w.fat||0)+1);incidentIds.add(w.id);}});
       }
     }
 
-    const winterCashBonus=15;
-    grose+=winterCashBonus;
-    log.push(`__ECO__👑 ${L==="cs"?`Zimní dodávky: Šlechta a Faktor Weiss vyplatili prémii +${winterCashBonus}g za vzácné zimní sklo!`:`Winter delivery: Nobility and Weiss paid a +${winterCashBonus}g bonus for winter glassware!`}`);
+    // Zimní prémie (Tier 3): +25 % k odměně SPLNĚNÝCH zakázek v prosinci–únoru — viz sekce 7 (žádná pevná částka bez dodávky).
   }
 
   // 4. Pivo
@@ -3470,8 +3478,7 @@ function processRound(){
   const wagesPaid=Math.min(wages,wagesAvail);
   const wagesDeficit=wages-wagesPaid;
   grose-=wagesPaid;
-  // Deficit jde do dluhu hutě
-  if(wagesDeficit>0){debt+=wagesDeficit;}
+  // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Weisse (p.debt) — jsou to dvě oddělené entity.
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
   workerWages.forEach(ww=>{ ww.paid=payRatio>=1; ww.shortfall=Math.round(ww.wage*(1-payRatio)); });
@@ -3496,6 +3503,9 @@ function processRound(){
   }
   // 7. Zakázky
   let contractIncomeTick=0;
+  // Celoroční huť (Tier 3): zimní dodávky (prosinec–únor) mají +25 % prémii k odměně — platí jen za skutečně splněnou zakázku
+  const winterDelivery=(p.seasonTier||0)>=3&&(round===1||round===2||round===3);
+  const WINTER_PREMIUM=0.25;
   for(let i=con.length-1;i>=0;i--){
     const c=con[i];
     // Resolve inventory by item type — support all product types
@@ -3508,10 +3518,11 @@ function processRound(){
     if(inv.length>=c.qty&&round<=c.due){
       for(let j=0;j<c.qty;j++)inv.pop();
       const diffRewardBonus = p.difficulty === "easy" ? Math.round(c.reward * 0.25) : 0;
-      const actualReward = c.reward + diffRewardBonus;
+      const winterBonus = winterDelivery ? Math.round(c.reward * WINTER_PREMIUM) : 0;
+      const actualReward = c.reward + diffRewardBonus + winterBonus;
       grose+=actualReward; done++; contractIncomeTick+=actualReward;
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
-      const bonusStr = diffRewardBonus > 0 ? ` (+${diffRewardBonus}g bonus)` : "";
+      const bonusStr = (diffRewardBonus > 0 ? ` (+${diffRewardBonus}g bonus)` : "") + (winterBonus > 0 ? ` (+${winterBonus}g ${L==="cs"?"zimní prémie":"winter premium"} 👑)` : "");
       log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${actualReward}g${bonusStr}`);
       // Fama gain při splnění zakázky
       const famaCatDone=BUYER_FAMA[c.buyer];
@@ -3587,8 +3598,10 @@ function processRound(){
     else inv=[];
     if(inv.length>=rc.qty&&round<=rc.due){
       for(let j=0;j<rc.qty;j++)inv.pop();
-      grose+=rc.reward; contractIncomeTick+=rc.reward; repContractIncome+=rc.reward;
-      log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${rc.reward}g`);
+      const rcWinter = winterDelivery ? Math.round(rc.reward * WINTER_PREMIUM) : 0;
+      const rcPay = rc.reward + rcWinter;
+      grose+=rcPay; contractIncomeTick+=rcPay; repContractIncome+=rcPay;
+      log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${rcPay}g`+(rcWinter>0?` (+${rcWinter}g ${L==="cs"?"zimní prémie":"winter premium"} 👑)`:""));
       if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+REP_FAMA_GAIN);
       repCon.splice(i,1);
     } else if(round>rc.due){
@@ -3766,21 +3779,25 @@ function processRound(){
     const isIdle=w.task==="idle";
     // Foukač/brusič na Verštatu se unaví na ≥75% → automaticky přepnout na Odpočinek
     const autoIdle=isWerkstat&&(w.fat||0)>=0.75;
-    const effectiveIdle=isIdle||isWerkstat; // werkstat = nulová únava
+    // VERŠTAT = nulová únava: dílna únavu nepřidává, ale ani neubírá (není to odpočinek) — zdraví ani loajalita se tu nereguluje jako při odpočinku.
+    // Hook pro budoucí rozšíření: WERKSTAT_FATIGUE>0 by přidalo únavu verštatu.
+    const WERKSTAT_FATIGUE=0;
     const fatBase=w.traits?.includes("vytrvalec")?0.07:w.traits?.includes("mlady")?0.115:w.traits?.includes("pedant")?0.08:0.1;
-    const newFat=effectiveIdle?Math.max(0,w.fat-0.5):Math.min(1,w.fat+fatBase);
+    const newFat=isIdle?Math.max(0,w.fat-0.5):isWerkstat?Math.min(1,w.fat+WERKSTAT_FATIGUE):Math.min(1,w.fat+fatBase);
     const newTask=autoIdle?"idle":w.task;
     // Zdraví — klesá při dlouhé únavě, roste při odpočinku a jídle
     const hasFood=r.food>0;
     let newHealth=w.health||100;
-    if(newFat>0.8&&!effectiveIdle) newHealth=Math.max(0,newHealth-3); // přepracování
-    if(effectiveIdle) newHealth=Math.min(100,newHealth+5); // odpočinek regeneruje
+    if(newFat>0.8&&!isIdle&&!isWerkstat) newHealth=Math.max(0,newHealth-3); // přepracování
+    if(isIdle) newHealth=Math.min(100,newHealth+5); // odpočinek regeneruje
     if(hasFood&&newHealth<100) newHealth=Math.min(100,newHealth+1); // jídlo pomáhá
     // Loajalita — sdílí směr s morálkou hutě + penalizace za neplacení
     let newLoyalty=w.loyalty||75;
     const moraleDir=mor>60?1:mor>40?0:-1;
     newLoyalty=Math.max(0,Math.min(100,newLoyalty+moraleDir));
-    if(effectiveIdle) newLoyalty=Math.min(100,newLoyalty+1);
+    if(isIdle) newLoyalty=Math.min(100,newLoyalty+1);
+    // Vazba Káninský × Kateřina (tenze): nedůvěra — loajalita -1 za kolo, dokud Káninský velí
+    if(w.npcId==="npc_foukac4"&&bondActive(p,"npc_kanin","npc_foukac4")) newLoyalty=Math.max(0,newLoyalty-1);
     // Neplacení — skokový pád loajality
     const wageEntry=workerWages.find(x=>x.id===w.id);
     const newUnpaid=(w.unpaidDebt||0)+(wageEntry?.shortfall||0);
@@ -3942,8 +3959,20 @@ function processRound(){
       log.push(`__EVT__👋 ${w.name} ${reason}`);
       return null;
     }
+    // Nálada — plynule (30 %/kolo) směřuje k cílové hodnotě: osobní báze NPC ± morálka hutě, únava, hlad, nevyplacené mzdy, kontrakt, tenze s kolegy
+    const moodNow=w.mood==null?MOOD_NEUTRAL:w.mood;
+    let moodTarget=(NPC_ROSTER.find(n=>n.id===w.npcId)?.mood??MOOD_NEUTRAL)+Math.round((mor-50)*0.3);
+    if(newFat>0.7) moodTarget-=15; else if(newFat>0.4) moodTarget-=5;
+    if(!hasFood) moodTarget-=10;
+    if(newUnpaid>0) moodTarget-=Math.min(25,10+newUnpaid);
+    if(contractActive) moodTarget+=5;
+    if(w.npcId==="npc_foukac3"&&bondActive(p,"npc_foukac2","npc_foukac3")) moodTarget-=10;   // tenze Hanns × Josef: -10 nálady
+    const newMood=clamp(Math.round(moodNow+(moodTarget-moodNow)*0.3),0,100);
+    // Incidenty: nehoda v kole (pivo, zamrzlý náhon) nebo začátek přepracování (únava přes 80 %)
+    const overworkStart=newFat>0.8&&!isIdle&&!isWerkstat&&(w.fat||0)<=0.8;
+    const newIncidents=(w.incidents||0)+(incidentIds.has(w.id)?1:0)+(overworkStart?1:0);
     const healthPenalty=newHealth<50?0.15:newHealth<30?0.3:0;
-    return{...w,task:newTask,fat:newFat,xp:newLv>w.lv?0:newXp,lv:newLv,
+    return{...w,task:newTask,fat:newFat,mood:newMood,incidents:newIncidents,xp:newLv>w.lv?0:newXp,lv:newLv,
       traits:newTraits,
       health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
       unpaidDebt:newUnpaid,mentorId:newMentorId,mentorRounds:newMentorRounds,
@@ -3955,10 +3984,11 @@ function processRound(){
 
   // Sestavit toast a kronikový zápis
   const prodLines=[], ecoLines=[], evtLines=[];
-  if(isC&&wg.length>p.waldglas.length)prodLines.push(`🔥 ${wg.length-p.waldglas.length}× ${L==="cs"?"waldglas uvařeno":"waldglas melted"}`);
-  if(isC&&cr.length>p.crystal.length)prodLines.push(`✨ ${cr.length-p.crystal.length}× ${L==="cs"?"křišťál uvařen":"crystal melted"}`);
+  if(isC&&tW>p.tW)prodLines.push(`🔥 ${tW-p.tW}× ${L==="cs"?"waldglas uvařeno":"waldglas melted"}`);
+  if(isC&&tC>p.tC)prodLines.push(`✨ ${tC-p.tC}× ${L==="cs"?"křišťál uvařen":"crystal melted"}`);
   if(isC&&fA)prodLines.push(`${L==="cs"?"Pec":"Furnace"}: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
-  ecoLines.push(`💰 ${grose}g`+(debt>0?` · ${L==="cs"?"dluh":"debt"} ${debt}g`:""));
+  const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0);
+  ecoLines.push(`💰 ${grose}g`+(debt>0?` · ${L==="cs"?"dluh Weissovi":"debt to Weiss"} ${debt}g`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${crewDebtNow}g`:""));
   ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${wagesPaid}g${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${wagesDeficit}g`:""} · ${L==="cs"?"pivo":"beer"} ${bCost}g`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${dPay}g`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
@@ -4000,6 +4030,7 @@ function processRound(){
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
     totalDone:(G.totalDone||0)+newContractsDone,
+    totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
     failureReason:wk.length===0?"abandoned":((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8?"ruined":null)),
     failureStats:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))?{
@@ -4158,6 +4189,8 @@ function startInterseason(){
       ?"Dobrá pověst hutě přitáhla brusičské mistry. Hlásí se o práci."
       :"The foundry's good name has drawn grinding masters. They are inquiring about work."}`);
   }
+  // Kariéra: každý, kdo dokončil sezónu v huti, má o sezónu víc (karta dělníka "Sezóny v huti", hodnocení hutmistra)
+  G.workers=G.workers.map(w=>({...w,seasonsInFoundry:(w.seasonsInFoundry||0)+1}));
   G.interseason={
     shamotNeedRepair:furnace.shamotWear>=60,
     shamotCritical:furnace.shamotWear>=80,
@@ -4629,9 +4662,13 @@ function startNewSeason(){
   });
 
   G._contractModalPending=true;
+  // Sezónní statistiky (skóre sezóny) se s novou sezónou nulují; celoherní součty zůstávají v totalW/totalC/totalDone.
+  // Staré savy: tW/tC byly dosud kumulativní → převedeme je do celoherních součtů.
+  const carryTotalW=Math.max(G.totalW||0,G.tW||0), carryTotalC=Math.max(G.totalC||0,G.tC||0);
   Object.assign(G,{
     season:newSeason,
     round:0,
+    tW:0, tC:0, tQS:0, tQN:0, done:0, totalW:carryTotalW, totalC:carryTotalC,
     phase:"playing",
     interseason:null,
     // sklo se přenáší, jen nedozrálé pánve propadají
@@ -4693,7 +4730,7 @@ function calcSeasonScore(){
     quality:p.tQN?Math.round((p.tQS/p.tQN)*10):0,
     contracts:p.done*20,
     grose:Math.round(p.grose*1.5),
-    debt:Math.max(0,(50-p.debt)*2),
+    debt:Math.max(0,(50-p.debt-totalWorkerDebt())*2),   // skóre počítá oba závazky: Weiss + parta
     morale:Math.round(p.morale*.8),
     forest:p.forest*3,
     furnaceRunIn:Math.round(p.furnace.runIn*.5)
@@ -7109,6 +7146,8 @@ function quickSellAll(){
 
 // ── workers: debts, loyalty modals, retention, market hire ──
 function totalWorkerDebt(){return G.workers.filter(w=>(w.unpaidDebt||0)>0).reduce((s,w)=>s+(w.unpaidDebt||0),0);}
+// Dvě oddělené entity dluhu: Weiss (G.debt, úvěr + úrok, auto-splátka) a parta (součet w.unpaidDebt = nevyplacené mzdy).
+function liabilities(p){const weiss=p.debt||0,crew=(p.workers||[]).reduce((s,w)=>s+(w.unpaidDebt||0),0);return{weiss,crew,total:weiss+crew};}
 // month summary: "Clear worker debts"
 function payWorkerDebtsSummary(){
   const L=G.lang, totalUnpaid=totalWorkerDebt();
@@ -8013,7 +8052,8 @@ function renderOriginal(){
       h("div",{style:{padding:"8px",background:"rgba(139,94,52,.08)",borderRadius:"4px"}},
         h("div",{style:{fontSize:"10px",color:"#8b5e34",fontWeight:"700"}},L==="cs"?"EKONOMIKA":"ECONOMY"),
         h("div",{style:{fontSize:"18px",fontWeight:"700"}},"💰 "+p.grose+"g"),
-        p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+p.debt+"g"):null));
+        p.debt>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"📜 "+(L==="cs"?"Weiss ":"Weiss ")+p.debt+"g"):null,
+        liabilities(p).crew>0?h("div",{style:{fontSize:"11px",color:"#a03020"}},"👥 "+(L==="cs"?"parta ":"crew ")+liabilities(p).crew+"g"):null));
     body.append(grid);
 
     // ── STAV HUTĚ ──
@@ -8129,6 +8169,18 @@ function renderOriginal(){
       h("strong",{style:{fontSize:"12px",color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?(p.debt+"g"):(L==="cs"?"✅ 0g (Bez dluhu)":"✅ 0g (No debt)"))
     );
     debtStatusCard.append(dHeader);
+    {
+      const lb=liabilities(p);
+      debtStatusCard.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"11px",marginTop:"3px"}},
+        h("span",{style:{fontWeight:"600",color:"#8b5e34"}},"👥 "+(L==="cs"?"Dluh partě (nevyplacené mzdy):":"Owed to the crew (unpaid wages):")),
+        h("strong",{style:{fontSize:"12px",color:lb.crew>0?"#a03020":"#4a7a3a"}},lb.crew>0?(lb.crew+"g"):"✅ 0g")));
+      if(lb.weiss>0&&lb.crew>0)debtStatusCard.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginTop:"3px",paddingTop:"3px",borderTop:"1px dashed rgba(42,26,10,.2)"}},
+        h("span",{style:{fontWeight:"700",color:"#8b5e34"}},L==="cs"?"Závazky celkem:":"Total liabilities:"),
+        h("strong",{style:{color:"#a03020"}},lb.total+"g")));
+      debtStatusCard.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"3px",fontStyle:"italic"}},
+        L==="cs"?"Dvě oddělené věci: dluh u Weisse (úvěr, auto-splátka) a dluh partě (nevyplacené mzdy — platí se v záložce Parta, jinak klesá loajalita)."
+                :"Two separate things: debt to Weiss (loan, auto-repayment) and debt to the crew (unpaid wages — paid in the Crew tab, otherwise loyalty drops)."));
+    }
     if(p.debtMoratorium>0){
       debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#4a7a3a",marginTop:"3px",fontWeight:"600"}},
         "⏳ "+(L==="cs"?`Aktivní odklad splátek: zbývá ${p.debtMoratorium} kol bez automatických srážek.`:`Active moratorium: ${p.debtMoratorium} rounds left without auto-deductions.`)));
@@ -8138,8 +8190,8 @@ function renderOriginal(){
     }
     if(sd.wagesDeficit>0){
       debtStatusCard.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginTop:"4px",fontWeight:"700",background:"rgba(160,48,32,.08)",padding:"3px 5px",borderRadius:"3px"}},
-        L==="cs"?`⚠️ Huť dluží na mzdách ${sd.wagesDeficit}g! Zvyšuje se dluh a klesá loajalita dělníků. Sjednej odklad u Weisse nebo prodej sklo.`
-                :`⚠️ Foundry owes ${sd.wagesDeficit}g in wages! Debt increased and loyalty drops. Defer debt at Weiss or sell glass.`));
+        L==="cs"?`⚠️ Huť dluží partě na mzdách ${sd.wagesDeficit}g! Roste dluh partě a klesá loajalita dělníků. Prodej sklo a vyplať mzdy (záložka Parta).`
+                :`⚠️ Foundry owes the crew ${sd.wagesDeficit}g in wages! Crew debt grows and loyalty drops. Sell glass and pay the wages (Crew tab).`));
     }
     ecoBox.append(debtStatusCard);
     body.append(ecoBox);
@@ -8760,7 +8812,8 @@ function renderOriginal(){
           h("span",null,p.grose+"g"))),
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Dluhy: ":"Debts: "),
-        h("strong",{style:{color:p.debt>0?"#a03020":"#4a7a3a"}},p.debt>0?"📜 "+p.debt+"g":"✓")))));
+        h("strong",{style:{color:(p.debt>0||liabilities(p).crew>0)?"#a03020":"#4a7a3a"}},
+          (p.debt>0||liabilities(p).crew>0)?((p.debt>0?"📜 "+p.debt+"g":"")+(p.debt>0&&liabilities(p).crew>0?" · ":"")+(liabilities(p).crew>0?"👥 "+liabilities(p).crew+"g":"")):"✓")))));
   const pips=h("div",{style:{display:"flex",gap:"2px",width:"100%"}});
   for(let i=0;i<ROUNDS;i++){
     const cur=i===p.round, done2=i<p.round;
@@ -8971,7 +9024,7 @@ function renderOriginal(){
     h("div",{style:{flex:1}},
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${p.forestMax||INIT_FOREST}`),
       bar(p.forest,p.forestMax||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
-  if(p.debt>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},"📜"+p.debt+"g"));
+  if(p.debt>0||liabilities(p).crew>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},(p.debt>0?"📜"+p.debt+"g":"")+(liabilities(p).crew>0?" 👥"+liabilities(p).crew+"g":"")));
 
   // Reputace mini-widget
   const fama=p.fama||{church:0,noble:0,trade:0};
@@ -10099,7 +10152,8 @@ function renderOriginal(){
     ecoSec.append(h("div",{class:"sec-title"},L==="cs"?"💰 Ekonomika & huť":"💰 Economy & foundry"));
     const ecoItems=[
       {icon:"💰",label:L==="cs"?"Groše":"Groats",val:p.grose+"g",color:p.grose<5?"#a03020":"#3a2a14"},
-      {icon:"📜",label:L==="cs"?"Dluh":"Debt",val:p.debt>0?p.debt+"g":"—",color:p.debt>0?"#a03020":"#8b5e34"},
+      {icon:"📜",label:L==="cs"?"Dluh Weissovi":"Debt to Weiss",val:p.debt>0?p.debt+"g":"—",color:p.debt>0?"#a03020":"#8b5e34"},
+      {icon:"👥",label:L==="cs"?"Dluh partě":"Crew debt",val:liabilities(p).crew>0?liabilities(p).crew+"g":"—",color:liabilities(p).crew>0?"#a03020":"#8b5e34"},
       {icon:"😊",label:L==="cs"?"Nálada":"Morale",val:p.morale+"%",color:p.morale>60?"#4a7a3a":p.morale>35?"#c9952b":"#a03020"},
       {icon:"🌲",label:L==="cs"?"Parcely lesa":"Forest parcels",val:`${p.forest}/${p.forestMax||INIT_FOREST}`,color:p.forest<=FOREST_WARN?"#a03020":"#3a2a14"},
       {icon:"🏺",label:L==="cs"?"Pánve hotové":"Crucibles ready",val:p.pReady+"×",color:p.pReady<1&&isC?"#a03020":"#3a2a14"},
@@ -10947,7 +11001,7 @@ function renderOriginal(){
         ?`Groše vždy najdu, jen se vrátíte s úrokem. Aktuálně ${loanRatePct}% — splácejte a podmínky se zlepší.`
         :`I always have coin — return with interest. Current rate ${loanRatePct}% — repay well and terms improve.`));
     if(p.debt>0)faktorSec.append(h("div",{style:{fontSize:"10px",color:"#a03020",marginBottom:"6px"}},
-      (L==="cs"?"Aktuální dluh: ":"Current debt: ")+p.debt+"g"));
+      (L==="cs"?"Aktuální dluh u Weisse: ":"Current debt to Weiss: ")+p.debt+"g"));
     const fLoanRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
     [15,25,40].forEach(amt=>{
       const totalDebt=amt+Math.round(amt*loanRate);
@@ -11202,7 +11256,12 @@ function renderOriginal(){
         h("strong",{style:{fontSize:"13px",color:p.debt>0?"#a03020":"#4a7a3a"}},
           p.debt>0?p.debt+"g":(L==="cs"?"✅ Splaceno":"✅ Clear"))),
       p.debt>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
-        L==="cs"?"Auto-splátka: až 5g/kolo je-li hotovost nad 5g":"Auto-payment: up to 5g/round when cash above 5g"):h("span",{})
+        L==="cs"?"Auto-splátka: až 5g/kolo je-li hotovost nad 5g":"Auto-payment: up to 5g/round when cash above 5g"):h("span",{}),
+      liabilities(p).crew>0?h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:"4px"}},
+        h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Dluh partě (mzdy):":"Owed to crew (wages):"),
+        h("strong",{style:{fontSize:"13px",color:"#a03020"}},liabilities(p).crew+"g")):h("span",{}),
+      liabilities(p).crew>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
+        L==="cs"?"Dluh partě se neplatí automaticky ani Weissovi — vyplácí se v záložce Parta.":"Crew debt is not auto-repaid and not part of Weiss's loan — pay it in the Crew tab."):h("span",{})
     );
     rightCol.append(nowBox);
     // Ruční splacení
@@ -11743,7 +11802,7 @@ function renderOriginal(){
           );
           // Statistiky
           assessBox.append(h("div",{style:{marginTop:"5px",fontStyle:"normal",color:"#8b5e34",fontSize:"9px"}},
-            `${L==="cs"?"Sezóny v huti":"Seasons here"}: ${w.seasonsInFoundry||0} · ${L==="cs"?"Incidenty":"Incidents"}: ${w.incidents||0}`));
+            `${L==="cs"?"Sezóny v huti":"Seasons here"}: ${w.seasonsInFoundry||0} · ${L==="cs"?"Incidenty":"Incidents"}: ${w.incidents||0} · ${L==="cs"?"Nálada":"Mood"}: ${Math.round(w.mood==null?MOOD_NEUTRAL:w.mood)}`));
           modal.append(assessBox);
           // Nabídka kontraktu
           if(!contract||contract.roundsLeft===0){
@@ -13036,8 +13095,8 @@ function checkAchievements(){
   const addW=(id)=>{ if(!wiki.includes(id)) wiki.push(id); };
 
   // Wikis — automaticky podle stavu
-  if(G.waldglas?.length>0||G.tW>0){ addW("waldglas"); }
-  if(G.crystal?.length>0||G.tC>0){ addW("crystal"); }
+  if(G.waldglas?.length>0||G.tW>0||G.totalW>0){ addW("waldglas"); }
+  if(G.crystal?.length>0||G.tC>0||G.totalC>0){ addW("crystal"); }
   if(G.modra?.length>0){ addW("modra"); }
   if(G.smaragd?.length>0){ addW("smaragd"); }
   if(G.lattimo?.length>0){ addW("lattimo"); }
@@ -13045,7 +13104,7 @@ function checkAchievements(){
   if(G.jantar?.length>0){ addW("jantar"); }
   if(G.zlut?.length>0){ addW("zlut"); }
   if((G.additives?.arsen||0)>0||G._arsenFined){ addW("arsen"); }
-  if((G.res?.potash||0)>0||G.tW>0){ addW("potash"); }
+  if((G.res?.potash||0)>0||G.tW>0||G.totalW>0){ addW("potash"); }
   if(G.pReady>0||G.pAging?.length>0){ addW("panev"); }
   if(G.furnace){ addW("pec_primitive"); addW("have_furnace"); }
   if(G.baranOffer!==undefined){ addW("baranovsky"); }
@@ -13055,7 +13114,7 @@ function checkAchievements(){
 
   // Achievements — triggery na stav
   // Ignis mutat res — první várka
-  if((G.tW>0||G.tC>0)&&!ach.includes("ignis_mutat_res")) add("ignis_mutat_res");
+  if((G.tW>0||G.tC>0||G.totalW>0||G.totalC>0)&&!ach.includes("ignis_mutat_res")) add("ignis_mutat_res");
 
   // Terčíkář — první terčík ve skladu nebo prodán
   const hasTercik=(G.tercik?.length>0||G.tercik_vyplne?.length>0||
