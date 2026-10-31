@@ -61,6 +61,8 @@
 #app .fj-d7-setting-row .settings-val,
 #app .fj-d7-setting-row>div:not(.settings-label){color:var(--d7-muted)!important;}
 #app .fj-d7-setting-row .settings-val{flex:0 0 43px;font-size:13px;}
+/* řádek se sloupcovým směrem (inline flex-direction:column): flex-basis popisku by se jinak uplatnil jako výška */
+#app .fj-d7-setting-row[style*="flex-direction: column"] .settings-label{flex:0 0 auto;}
 #app .fj-d7-settings-panel .fj-d7-setting-button{
   min-height:44px!important;padding:8px 12px!important;flex-shrink:0;
   border:1px solid var(--d7-border)!important;border-radius:4px;
