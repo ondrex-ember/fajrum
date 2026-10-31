@@ -1,0 +1,10 @@
+{
+  "files.eol": "\n",
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": false,
+  "files.exclude": { "**/.git": true },
+  "search.exclude": { "index.html": true },
+  "liveServer.settings.root": "/",
+  "liveServer.settings.file": "index.html"
+}

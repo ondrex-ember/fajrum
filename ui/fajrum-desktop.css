@@ -75,6 +75,8 @@
  #app.desktop .content[data-desktop-tab=settings]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;align-content:start;}
  #app.desktop .content[data-desktop-tab=settings]>.fj-theme-control,
  #app.desktop .content[data-desktop-tab=settings]>.sec:last-child{grid-column:1/-1;}
+ #app.desktop .content[data-desktop-tab=settings]{grid-auto-rows:max-content;}
+ #app.desktop .content[data-desktop-tab=settings]>.fj-d7-heading{grid-column:1/-1;}
  #app.desktop .fj-desktop-codex-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:12px;align-items:start;}
  #app.desktop .fj-desktop-codex-group>.fj-codex-row{margin:0!important;}
  #app.desktop .fj-desktop-codex-group>div:not(.fj-codex-row){grid-column:1/-1;}
