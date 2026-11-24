@@ -7,26 +7,12 @@ function renderTabOverview(ctx){
 
   // ── ATTENTION BANNER — kritické akce ──
   const attItems=[];
-  if(p.res.potash===0) attItems.push({critical:true,
-    text:L==="cs"?"🌿 Potaš: 0":"🌿 Potash: 0",
-    action:L==="cs"?"→ Přiřaď dělníka na Loužírnu (6🪵→1 potaš)":"→ Assign worker to Potash (6🪵→1 potash)"});
-  else if(p.res.potash<2&&isC) attItems.push({critical:false,
-    text:L==="cs"?`🌿 Potaš: ${p.res.potash} — brzy dojde`:`🌿 Potash: ${p.res.potash} — running low`,
-    action:L==="cs"?"→ Loužírna potřebuje dřevo a dělníka":"→ Potash station needs wood and worker"});
-  if(p.res.wood<5) attItems.push({critical:true,
-    text:L==="cs"?`🪵 Dřevo: ${p.res.wood} — kriticky málo`:`🪵 Wood: ${p.res.wood} — critically low`,
-    action:L==="cs"?"→ Pošli Komára kácet (Kácení)":"→ Send Komár to logging"});
+  // Zásoby (potaš, dřevo, jídlo, pánve, …) tu už nejsou: hlídá je panel „📦 Zásoby“ níže (core/stock.js)
   const atRiskWorkers=p.workers.filter(w=>(w.loyalty||75)<40&&!w.contract);
   if(atRiskWorkers.length) attItems.push({critical:atRiskWorkers.some(w=>(w.loyalty||75)<25),
     text:L==="cs"?`👋 ${atRiskWorkers.map(w=>w.name.split(" ")[0]).join(", ")} — nízká loajalita`
                  :`👋 ${atRiskWorkers.map(w=>w.name.split(" ")[0]).join(", ")} — low loyalty`,
     action:L==="cs"?"→ Party tab → Kontrakt nebo splať dluh":"→ Party tab → Contract or pay debt"});
-  if(p.pReady<1&&isC) attItems.push({critical:true,
-    text:L==="cs"?"🏺 Žádné pánve — tavení stojí":"🏺 No crucibles — smelting halted",
-    action:L==="cs"?"→ Přiřaď Káninského na Pánvař":"→ Assign Káninský to Crucible"});
-  if(p.res.food<2) attItems.push({critical:true,
-    text:L==="cs"?`🍞 Jídlo: ${p.res.food} — hrozí únava`:`🍞 Food: ${p.res.food} — fatigue risk`,
-    action:L==="cs"?"→ Políčko nebo koupit na trhu":"→ Field task or buy at market"});
 
   // ── LEVÝ SLOUPEC: attention banner + hint (se stránkováním) + pivovar ──
   const leftOverview=h("div",{class:"sec fj-overview-ledger",style:{display:"flex",flexDirection:"column",gap:"6px"}});
@@ -70,7 +56,7 @@ function renderTabOverview(ctx){
     "🍺 "+(L==="cs"?"Pivovar":"Brewery")));
   const beerCostR=BEER[p.beer].cost*Math.ceil(p.workers.length/3);
   leftOverview.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-    `💰 ${L==="cs"?"Náklad":"Cost"}: ${beerCostR>0?beerCostR+"g/"+(L==="cs"?"kolo":"round"):"zdarma"} · ${L==="cs"?"nálada":"mood"} ${BEER[p.beer].m>=0?"+":""}${BEER[p.beer].m}`));
+    `💰 ${L==="cs"?"Náklad":"Cost"}: ${beerCostR>0?mny(beerCostR)+"/"+(L==="cs"?"kolo":"round"):"zdarma"} · ${L==="cs"?"nálada":"mood"} ${BEER[p.beer].m>=0?"+":""}${BEER[p.beer].m}`));
   const bRowR=h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap",marginBottom:"4px"}});
   [L==="cs"?"Žádné":"None",L==="cs"?"1 džbán":"1 mug",L==="cs"?"2 džbány":"2 mugs",L==="cs"?"3+ džb.":"3+ mugs"].forEach((lb,i)=>{
     bRowR.append(h("button",{class:"btn btn-s"+(p.beer===i?" btn-active":""),
@@ -92,7 +78,7 @@ function renderTabOverview(ctx){
         const roundsLeft=Math.max(0,c.due-p.round);
         const urgent=contractUrgent(roundsLeft);
         const inv=c.item==="crystal"?p.crystal:c.item==="waldglas"?p.waldglas:(p[c.item]||[]);
-        const have=Math.min(inv.length,c.qty);
+        const have=Math.min(contractHave(inv,c),c.qty);
         conWidget.append(h("div",{style:{fontSize:"10px",color:urgent?"#a03020":"#5a3a1a",
           marginBottom:"2px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
           h("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,
@@ -106,7 +92,7 @@ function renderTabOverview(ctx){
     if((p.avail||[]).length>0&&(p.contracts||[]).length<3){
       conWidget.append(h("div",{style:{fontSize:"10px",color:"#c9952b",marginTop:"3px",
         cursor:"pointer",textDecoration:"underline"},
-        onClick:()=>{G.tab="market";render();}},
+        onClick:()=>{goTab("market","contracts");}},
         L==="cs"?"→ "+p.avail.length+"× nová zakázka na Trhu":"→ "+p.avail.length+"× new contract at Market"));
     }
     leftOverview.append(conWidget);
@@ -187,6 +173,8 @@ function renderTabOverview(ctx){
   rightOverview.append(quickRow);
   topCols.append(rightOverview);
 
+  {const gc=guideCard();if(gc)content.append(gc);}
+  {const sp=stockPanelEl();if(sp)content.append(sp);}
   content.append(topCols);
 
   // Dělníci — collapsible
@@ -221,13 +209,16 @@ function renderTabOverview(ctx){
       const isActive=w.task===t;
       const icon=TASK_ICON[t]||"";
       const label=ovLabel||(icon+" "+(L==="cs"?TASK_CS[t]:TASK_EN[t]));
+      // zešedlý čip (alfa .5) zůstává klepnutelný: místo přidělení otevře bublinu s důvodem (core/task-block.js)
+      const blk=taskBlock(w,t), veiled=!!disabled||!!blk;
       const btn=h("button",{
-        class:"btn btn-s"+(isActive?" btn-active":""),
+        class:"btn btn-s"+(isActive?" btn-active":"")+(veiled?" is-veiled":""),
         style:{fontSize:"9px",padding:"3px 4px",width:"100%",textAlign:"left",
-          lineHeight:"1.3",...(disabled?{opacity:.35,cursor:"not-allowed"}:{})},
+          lineHeight:"1.3",...(veiled?{opacity:.5}:{})},
         title:(L==="cs"?TASK_INFO_CS[t]:TASK_INFO_EN[t])||"",
+        ...(veiled?{"aria-disabled":"true"}:{}),
         onClick:(evt)=>{
-          if(disabled)return;
+          if(veiled&&taskBlockClick(w,t,!!disabled))return;
           spawnPills(evt,t);
           setWorkerTask(w.id,t);
         }},label);
@@ -295,7 +286,7 @@ function renderTabOverview(ctx){
         marginTop:"3px",padding:"2px 5px",borderRadius:"3px",
         background:"rgba(160,0,0,.12)",border:"1px solid rgba(160,0,0,.3)",
         fontSize:"8px",color:"#a03020",fontWeight:"700"}},
-        "💸 "+(L==="cs"?"dluh":"owed")+": "+unpaid+"g"));
+        "💸 "+(L==="cs"?"dluh":"owed")+": "+mny(unpaid)));
     }
     topRow.append(colInfo);
     card.append(topRow);
@@ -329,9 +320,10 @@ function renderTabOverview(ctx){
     remainTasks.forEach((t,i)=>{
       const col=i<half?col2:col3;
       if(t==="__panev_ghost__"){
-        col.append(h("button",{class:"btn btn-s",
-          style:{fontSize:"9px",padding:"3px 4px",width:"100%",opacity:.35,cursor:"not-allowed"},
-          title:L==="cs"?"Jen v přípravě":"Prep only"},
+        col.append(h("button",{class:"btn btn-s is-veiled","aria-disabled":"true",
+          style:{fontSize:"9px",padding:"3px 4px",width:"100%",opacity:.5},
+          title:L==="cs"?"Jen v přípravě":"Prep only",
+          onClick:()=>{taskBlockClick(w,"panev",true);}},
           "🏺 "+(L==="cs"?TASK_CS["panev"]:TASK_EN["panev"])));
       }else{
         col.append(makeTaskBtn(t));
@@ -344,6 +336,7 @@ function renderTabOverview(ctx){
 
     taskGrid.append(col0,col1,col2,col3);
     card.append(taskGrid);
+    {const aw=taskActiveWarn(w);if(aw)card.append(h("div",{class:"fj-task-warn",role:"status"},aw));}
     wGrid.append(card);
     }); // end workers.forEach
     wSec.append(wGrid);

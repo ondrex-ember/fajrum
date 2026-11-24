@@ -14,11 +14,19 @@
   const choices=[...opts.primary,...(opts.werkstat?[opts.werkstat]:[]),...opts.others.map(t=>({t,disabled:false})),...(opts.panevGhost?[{t:'panev',disabled:true,ghost:true}]:[]),...(opts.idleExtra?[opts.idleExtra]:[])];
   for(const choice of choices){
    const b=button(`${TASK_ICON[choice.t]||''} ${labels[choice.t]||choice.t}`,'fj-crew-task-choice'+(worker.task===choice.t?' is-current':''),()=>context.assign(worker.id,choice.t));
-   b.dataset.task=choice.t;b.disabled=!!choice.disabled;
+   // zešedlý úkol zůstává klepnutelný: bublina s důvodem (core/task-block.js); bez toho starý disabled
+   const blk=context.taskBlock?context.taskBlock(worker,choice.t):null,veiled=!!choice.disabled||!!blk;
+   b.dataset.task=choice.t;
+   if(context.taskBlockClick){
+    if(veiled){b.setAttribute('aria-disabled','true');b.classList.add('is-veiled');
+     b.onclick=event=>{event.stopPropagation();if(!context.taskBlockClick(worker,choice.t,!!choice.disabled))context.assign(worker.id,choice.t);};}
+   }else b.disabled=!!choice.disabled;
    if(worker.task===choice.t)b.setAttribute('aria-current','true');
    b.append(el('span','fj-crew-task-description',info[choice.t]||''));
    if(window.FajrumWorksites)FajrumWorksites.decorateTask(b,choice.t,worker,L);
-   if(choice.disabled){
+   if(blk){
+    b.append(el('span','fj-crew-task-reason',blk.reason));
+   }else if(choice.disabled){
     const reason=choice.ghost?(L==='cs'?'Jen v přípravě':'Preparation only'):choice.t==='idle'?(L==='cs'?'Dostupné od 25 % únavy':'Available from 25% fatigue'):(L==='cs'?'Příliš vysoká únava pro verštat':'Too fatigued for workshop');
     b.append(el('span','fj-crew-task-reason',reason));
    }
@@ -45,11 +53,12 @@
    if(bonds){const details=el('details','fj-crew-bonds-disclosure');details.open=bondsOpen;
     const summary=el('summary','',L==='cs'?'Vazby a mentorství party':'Crew bonds and mentorship');details.append(summary);bonds.replaceWith(details);details.append(bonds);details.addEventListener('toggle',()=>{bondsOpen=details.open;});}
    const resting=state.workers.filter(w=>w.task==='idle').length,owed=state.workers.reduce((n,w)=>n+(w.unpaidDebt||0),0)+(state.exCrewClaims||[]).reduce((n,c)=>n+(c.amount||0),0);
-   const summary=el('div','fj-crew-summary',L==='cs'?`${state.workers.length} řemeslníků · ${resting} odpočívá · dlužné mzdy ${owed}g`:`${state.workers.length} workers · ${resting} resting · owed wages ${owed}g`);grid.before(summary);
+   const summary=el('div','fj-crew-summary',L==='cs'?`${state.workers.length} řemeslníků · ${resting} odpočívá · dlužné mzdy ${moneyStr(owed,true)}`:`${state.workers.length} workers · ${resting} resting · owed wages ${moneyStr(owed,false)}`);grid.before(summary);
    for(const card of grid.querySelectorAll('.parta-card')){
     const w=state.workers.find(x=>x.id===card.dataset.workerId);if(!w)continue;
     const info=card.querySelector('.parta-info');statusBars(info,w,L);
     const task=el('div','fj-crew-current-task',`${L==='cs'?'Práce':'Work'}: ${labels[w.task]||(L==='cs'?'Nepřiděleno':'Unassigned')}`);info.append(task);
+    const warn=context.activeWarn?context.activeWarn(w):null;if(warn)info.append(el('div','fj-task-warn',warn));
     const actions=el('div','fj-crew-actions');
     const profile=button(L==='cs'?'Profil':'Profile','btn fj-crew-profile-button',()=>context.profile(w.id));profile.setAttribute('aria-label',(L==='cs'?'Profil · ':'Profile · ')+w.name);
     const assign=button(L==='cs'?'Změnit práci':'Change work','btn btn-p fj-crew-assign',()=>taskSheet(w,state,context,app));assign.setAttribute('aria-label',(L==='cs'?'Změnit práci · ':'Change work · ')+w.name);

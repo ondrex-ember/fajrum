@@ -3,6 +3,42 @@
 // Jedno místo pro: limit slotů, přijetí, stav plnění, vykreslení karty.
 // ════════════════════════════════════════════════════════════
 
+// ── Etapa 1b-1: minimální kvalita kusů, nejnižší vyhovující kus, Fama podle odměny, druhá vlna nabídek ──
+// Zakázka bez `minQ` (starý save) bere jakékoli kusy jako dřív; bez tabulky CONTRACT_RULES platí staré chování (3 nabídky, Fama +3).
+function contractMinQ(c){return c&&c.minQ?c.minQ:0;}
+// Kusy ve skladu, které zakázka uzná (hvězdy ≥ minQ).
+function contractHave(inv,c){
+  const m=contractMinQ(c);
+  return m<=0?inv.length:inv.filter(q=>typeof q!=="number"||q>=m).length;
+}
+// Odevzdá qty kusů. Bez minQ jdou poslední kusy (jako dřív); s minQ nejnižší vyhovující, lepší zůstanou na prodej.
+function contractTake(inv,c){
+  const m=contractMinQ(c);
+  if(m<=0){for(let j=0;j<c.qty;j++)inv.pop();return;}
+  const idx=inv.map((q,i)=>i).filter(i=>typeof inv[i]!=="number"||inv[i]>=m)
+    .sort((a,b)=>(typeof inv[a]==="number"?inv[a]:99)-(typeof inv[b]==="number"?inv[b]:99)).slice(0,c.qty);
+  idx.sort((a,b)=>b-a).forEach(i=>inv.splice(i,1));
+}
+function contractOffers(){return typeof CONTRACT_RULES!=="undefined"?CONTRACT_RULES.offers:3;}
+// Fama za splněnou tržní zakázku: famaBase + floor(reward / famaPer), max famaMax.
+function contractFamaGain(c){
+  if(typeof CONTRACT_RULES==="undefined"||!(CONTRACT_RULES.famaPer>0))return FAMA_CONTRACT_GAIN;
+  const g=CONTRACT_RULES.famaBase+Math.floor(c.reward/CONTRACT_RULES.famaPer);
+  return Math.min(g,CONTRACT_RULES.famaMax);
+}
+// Druhá vlna nabídek při zpracování kola wave2Round (po vyhodnocení aktivních zakázek). Losuje stejným způsobem jako freshContracts.
+function contractWave(log,L){
+  if(typeof CONTRACT_RULES==="undefined")return;
+  const r=CONTRACT_RULES;
+  if(!(r.wave2Offers>0)||G.round!==r.wave2Round)return;
+  const taken=new Set([...(G.avail||[]),...(G.contracts||[])].map(x=>x.id));
+  const pool=CONTRACT_POOL.filter(c=>!taken.has(c.id)&&c.due>=G.round+r.wave2MinLeft&&contractFeasible(c,G));
+  if(!pool.length)return;
+  const picked=[...pool].sort(()=>Math.random()-.5).slice(0,r.wave2Offers);
+  G.avail=[...(G.avail||[]),...picked.map(c=>({...c}))];
+  log.push(`__EVT__📜 ${L==="cs"?"Kupci přinesli další zakázky.":"Buyers brought new contracts."}`);
+}
+
 function canAcceptContract(){return (G.contracts||[]).length<MAX_CONTRACTS;}
 
 // Jediné místo, kde se zakázka přijímá (Trh, Huť i modal nové sezóny)
@@ -12,7 +48,7 @@ function acceptContract(id){
   const L=G.lang;
   G.contracts.push({...c});
   G.avail=G.avail.filter(x=>x.id!==id);
-  G.log.push(`__ECO__📜 ${L==="cs"?"Zakázka přijata: ":"Contract accepted: "}${L==="cs"?c.cs:c.en} (+${c.reward}g)`);
+  G.log.push(`__ECO__📜 ${L==="cs"?"Zakázka přijata: ":"Contract accepted: "}${L==="cs"?c.cs:c.en} (+${mny(c.reward)})`);
   Fx.render();
   return true;
 }
@@ -54,9 +90,9 @@ function contractLines(c){
   const L=G.lang;
   const src=(c.isEndgame&&c.components)?c.components:[{item:c.item,qty:c.qty}];
   return src.map(x=>{
-    const have=contractInv(x.item).length;
+    const have=contractHave(contractInv(x.item),c);
     const flavor=L==="cs"?x.cs:x.en;
-    return {item:x.item,need:x.qty,have:have,done:have>=x.qty,
+    return {item:x.item,need:x.qty,have:have,done:have>=x.qty,minQ:contractMinQ(c),
       label:flavor||(x.qty+"× "+contractItemName(x.item,L))};
   });
 }
@@ -85,14 +121,14 @@ function contractStatus(c){
 }
 
 function contractReward(c,kind){
-  if(kind==="market"&&G.difficulty==="easy")return c.reward+Math.round(c.reward*0.25);
+  if(kind==="market"&&G.difficulty==="easy")return c.reward+Math.round(inZl(c.reward)*0.25)*KR;
   return c.reward;
 }
 
 function contractFamaInfo(c,kind){
   if(kind==="endgame")return {cat:c.cat,gain:EG_FAMA_GAIN,loss:EG_FAMA_LOSS};
   if(kind==="rep")return {cat:c.cat,gain:REP_FAMA_GAIN,loss:REP_FAMA_LOSS};
-  return {cat:BUYER_FAMA[c.buyer],gain:FAMA_CONTRACT_GAIN,loss:FAMA_CONTRACT_EXPIRE};
+  return {cat:BUYER_FAMA[c.buyer],gain:contractFamaGain(c),loss:FAMA_CONTRACT_EXPIRE};
 }
 
 function contractDueText(due){

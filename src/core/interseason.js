@@ -29,9 +29,9 @@ function startInterseason(){
     const pick=pool[Math.floor(Math.random()*pool.length)];
     baranOffer={...pick};
     if(baran){
-      G.log.push(`__EVT__🗣️ ${baran.name}: "${G.lang==="cs"?pick.cs:pick.en}" (${pick.qty}× ${ADDITIVES[pick.item]?.icon||"?"} za ${pick.price}g)`);
+      G.log.push(`__EVT__🗣️ ${baran.name}: "${G.lang==="cs"?pick.cs:pick.en}" (${pick.qty}× ${ADDITIVES[pick.item]?.icon||"?"} za ${mny(pick.price)})`);
     }else{
-      G.log.push(`__EVT__✉️ ${G.lang==="cs"?"Dopis od Baranovského":"Letter from Baranovský"}: "${G.lang==="cs"?pick.cs:pick.en}" (${pick.qty}× ${ADDITIVES[pick.item]?.icon||"?"} za ${pick.price}g)`);
+      G.log.push(`__EVT__✉️ ${G.lang==="cs"?"Dopis od Baranovského":"Letter from Baranovský"}: "${G.lang==="cs"?pick.cs:pick.en}" (${pick.qty}× ${ADDITIVES[pick.item]?.icon||"?"} za ${mny(pick.price)})`);
     }
   }
   G.baranOffer=baranOffer;
@@ -82,7 +82,7 @@ function buyBaranOffer(){
       G.log.push(`__EVT__📜 ${G.lang==="cs"?"Nový recept odemčen":"New recipe unlocked"}: ${G.lang==="cs"?rec.cs:rec.en}!`);
     }
   });
-  G.log.push(`__ECO__🛒 ${G.lang==="cs"?"Koupeno":"Bought"}: ${o.qty}× ${ADDITIVES[o.item]?.icon} ${G.lang==="cs"?ADDITIVES[o.item]?.cs:ADDITIVES[o.item]?.en} (-${o.price}g)`);
+  G.log.push(`__ECO__🛒 ${G.lang==="cs"?"Koupeno":"Bought"}: ${o.qty}× ${ADDITIVES[o.item]?.icon} ${G.lang==="cs"?ADDITIVES[o.item]?.cs:ADDITIVES[o.item]?.en} (-${mny(o.price)})`);
   G.baranOffer=null;
   Fx.render();
 }
@@ -197,14 +197,14 @@ function strikeRuby(){
 }
 
 function repairShamot(){
-  const cost={clay:4,limestone:2,grose:8};
+  const cost={clay:4,limestone:2,grose:800};
   if(G.res.clay<cost.clay||G.res.limestone<cost.limestone||G.grose<cost.grose){
     G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek surovin pro opravu šamotu":"Not enough materials to repair shamot"}`);
     Fx.render(); return;
   }
   G.res.clay-=cost.clay; G.res.limestone-=cost.limestone; G.grose-=cost.grose;
   G.furnace.shamotWear=Math.max(0,G.furnace.shamotWear-70);
-  G.log.push(`__ECO__🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${cost.grose}g, -${cost.clay} ${G.lang==="cs"?"jíl":"clay"})`);
+  G.log.push(`__ECO__🧱 ${G.lang==="cs"?"Šamot opraven":"Shamot repaired"} (-${mny(cost.grose)}, -${cost.clay} ${G.lang==="cs"?"jíl":"clay"})`);
   Fx.render();
 }
 

@@ -8,28 +8,18 @@ function renderSeasonPanel(ctx){
   // SitRep: kritické věci dle fáze (max 4 položky)
   const sitRep=[];
   if(isP){
-    if(p.res.wood<10) sitRep.push({warn:true, text:`🪵 ${L==="cs"?"Málo dřeva":"Low wood"}: ${p.res.wood}`});
-    if(p.pReady<2&&p.pAging.length<2) sitRep.push({warn:true, text:`🏺 ${L==="cs"?"Málo pánví":"Low crucibles"}: ${p.pReady}`});
-    if(p.res.potash<4) sitRep.push({warn:p.res.potash<2, text:`🌿 ${L==="cs"?"Potaš":"Potash"}: ${p.res.potash}`});
-    if(p.res.sand<6) sitRep.push({warn:p.res.sand<3, text:`🏖️ ${L==="cs"?"Písek":"Sand"}: ${p.res.sand}`});
+    // zásoby (dřevo, pánve, potaš, písek, jídlo) hlídá panel „📦 Zásoby“ na Přehledu (core/stock.js), ne tento seznam
     if(p.round===PREP-1) sitRep.push({warn:false, text:`⛽ ${L==="cs"?"Zásoby paliva na kampaň!":"Stock fuel for campaign!"}`});
-    if(p.res.food<3) sitRep.push({warn:true, text:`🍞 ${L==="cs"?"Jídlo":"Food"}: ${p.res.food}`});
   }else{
     {const fNeed=fuelNeedPerRound(p.round,ft), fGot=Math.floor((p.res.wood||0)*p.wa.fuel/100);
      if(fGot<fNeed&&(p.res.wood||0)>=fNeed) sitRep.push({warn:true,
        text:`🔥 ${L==="cs"?`Palivo: při podílu ${p.wa.fuel} % vyjde ${fGot} 🪵, pec potřebuje ${fNeed} → zvyš podíl Palivo`:`Fuel: ${p.wa.fuel}% share gives ${fGot} 🪵, furnace needs ${fNeed} → raise the Fuel share`}`});}
     if(!p.fActive) sitRep.push({warn:true, text:`🔥 ${L==="cs"?"Pec nehoří! Přidej palivo.":"Furnace out! Add fuel."}`});
     if(p.fTemp>85) sitRep.push({warn:true, text:`⚠️ ${L==="cs"?"Přetopeno! Ubeř palivo.":"Overheated! Reduce fuel."}`});
-    if(p.pReady<1) sitRep.push({warn:true, text:`🏺 ${L==="cs"?"Žádné pánve! Tavení stojí.":"No crucibles! Halted."}`});
-    if(p.res.sand<3) sitRep.push({warn:true, text:`🏖️ ${L==="cs"?"Dochází písek":"Low sand"}: ${p.res.sand}`});
-    if(p.res.potash<2) sitRep.push({warn:true, text:`🌿 ${L==="cs"?"Dochází potaš":"Low potash"}: ${p.res.potash}`});
-    if(p.res.wood<8) sitRep.push({warn:true, text:`🪵 ${L==="cs"?"Málo dřeva":"Low wood"}: ${p.res.wood}`});
   }
   // Dřevo a potaš: přebytek potaše = zbytečně spálené dřevo; hvozd je konečný
   if(p.res.potash>=12&&p.wa.potash>=30) sitRep.push({warn:false,
     text:`🌿 ${L==="cs"?`Potaše máš na ${Math.floor(p.res.potash/2)} várek — dřevo se jen mění v nepotřebnou potaš → sniž podíl Potaš nebo přesuň dělníka z Loužírny`:`Potash for ${Math.floor(p.res.potash/2)} batches in stock — wood is just turning into unneeded potash → lower the Potash share or move the worker off Potash`}`});
-  if(p.forest<=20) sitRep.push({warn:p.forest<=8,
-    text:`🌲 ${L==="cs"?`Hvozd: zbývá ${p.forest} parcel (1 parcela = 4 🪵) → nekácej do zásoby, pošli dělníka na Výsadbu`:`Forest: ${p.forest} parcels left (1 parcel = 4 🪵) → stop logging into stock, send a worker to Reforest`}`});
   if(p.morale<35) sitRep.push({warn:true, text:`😟 ${L==="cs"?"Nálada kritická":"Morale critical"}: ${p.morale}%`});
 
   // Blokátory — co brání dělníkům pracovat
@@ -49,8 +39,8 @@ function renderSeasonPanel(ctx){
   });
   // Neprodané zboží
   const unsold=(p.waldglas?.length||0)+(p.crystal?.length||0)+(p.colorGlass?.length||0);
-  if(unsold>3&&p.grose<10) sitRep.push({warn:true,
-    text:`💰 ${L==="cs"?`${unsold}× neprodané sklo — pokladna: ${p.grose}g`:`${unsold}× unsold glass — cash: ${p.grose}g`}`,
+  if(unsold>3&&p.grose<1000) sitRep.push({warn:true,
+    text:`💰 ${L==="cs"?`${unsold}× neprodané sklo — pokladna: ${mny(p.grose)}`:`${unsold}× unsold glass — cash: ${mny(p.grose)}`}`,
     action:L==="cs"?"→ Jdi na Trh a prodej zásoby":"→ Go to Market and sell stock"});
 
   const sp=h("div",{class:"season-panel",style:{padding:"0"}});
@@ -117,7 +107,7 @@ function renderSeasonPanel(ctx){
     h("div",{style:{flex:1}},
       h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"2px"}},`🌲 ${p.forest}/${p.forestMax||INIT_FOREST}`),
       bar(p.forest,p.forestMax||INIT_FOREST,p.forest>12?"#3a6a2a":p.forest>6?"#c9952b":"#a03020")));
-  if(p.debt>0||liabilities(p).crew>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},(p.debt>0?"📜"+p.debt+"g":"")+(liabilities(p).crew>0?" 👥"+liabilities(p).crew+"g":"")));
+  if(p.debt>0||liabilities(p).crew>0)bars.append(h("div",{style:{fontSize:"10px",color:"#a03020",alignSelf:"center",whiteSpace:"nowrap"}},(p.debt>0?"📜"+mny(p.debt):"")+(liabilities(p).crew>0?" 👥"+mny(liabilities(p).crew):"")));
 
   // Reputace mini-widget
   const fama=p.fama||{church:0,noble:0,trade:0};

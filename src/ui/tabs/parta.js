@@ -14,7 +14,7 @@ function renderTabParta(ctx){
     h("div",{class:"parta-sum-pill"},`👥 ${p.workers.length} ${L==="cs"?"v partě":"in crew"}`),
     h("div",{class:"parta-sum-pill",style:{color:moodCol}},`😊 ${L==="cs"?"Nálada":"Mood"}: ${avgMood}%`),
     totalDebt>0
-      ?h("div",{class:"parta-sum-pill",style:{color:"#a03020"}},`💸 ${L==="cs"?"Dluhy":"Owed"}: ${totalDebt}g`)
+      ?h("div",{class:"parta-sum-pill",style:{color:"#a03020"}},`💸 ${L==="cs"?"Dluhy":"Owed"}: ${mny(totalDebt)}`)
       :h("div",{class:"parta-sum-pill",style:{color:"#4a7a3a"}},`✅ ${L==="cs"?"Vše splaceno":"All paid"}`)
   );
   partaSec.append(sumRow);
@@ -80,22 +80,22 @@ function renderTabParta(ctx){
         if(!canPayAll) return;
         payAllOwedWages();
       }},
-      L==="cs"?`💸 Vyplatit dlužné mzdy · ${totalOwed}g (${nPeople} ${nPeople===1?"osoba":"osoby/osob"})`
-             :`💸 Pay owed wages · ${totalOwed}g (${nPeople} ${nPeople===1?"person":"people"})`
+      L==="cs"?`💸 Vyplatit dlužné mzdy · ${mny(totalOwed)} (${nPeople} ${nPeople===1?"osoba":"osoby/osob"})`
+             :`💸 Pay owed wages · ${mny(totalOwed)} (${nPeople} ${nPeople===1?"person":"people"})`
     ));
     if(!canPayAll) payAllBtn.append(h("div",{style:{fontSize:"9px",color:"#a03020",marginTop:"3px",textAlign:"center"}},
-      L==="cs"?`Chybí ${totalOwed-p.grose}g do pokladny.`:`Need ${totalOwed-p.grose}g more in treasury.`));
+      L==="cs"?`Chybí ${mny(totalOwed-p.grose)} do pokladny.`:`Need ${mny(totalOwed-p.grose)} more in treasury.`));
     partaSec.append(payAllBtn);
   }
   // ── Kniha pohledávek bývalých zaměstnanců ──
   if((p.exCrewClaims||[]).length){
     const claimsBox=h("div",{class:"parta-claims",style:{marginBottom:"10px",padding:"6px 8px",border:"1px solid rgba(42,26,10,.25)",borderRadius:"6px",background:"rgba(139,94,52,.08)"}});
     claimsBox.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#8b5e34",marginBottom:"4px"}},
-      "📒 "+(L==="cs"?"Pohledávky bývalých zaměstnanců":"Former employees' claims")+" · "+claimsTotal(p)+"g"));
+      "📒 "+(L==="cs"?"Pohledávky bývalých zaměstnanců":"Former employees' claims")+" · "+mny(claimsTotal(p))));
     p.exCrewClaims.forEach(c=>{
       const canPayC=p.grose>=c.amount;
       claimsBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"6px",fontSize:"11px",padding:"2px 0"}},
-        h("span",{},`${c.name} · ${L==="cs"?"sezóna":"season"} ${c.season}, ${L==="cs"?"kolo":"round"} ${c.round} · `,h("strong",{style:{color:"#a03020"}},c.amount+"g")),
+        h("span",{},`${c.name} · ${L==="cs"?"sezóna":"season"} ${c.season}, ${L==="cs"?"kolo":"round"} ${c.round} · `,h("strong",{style:{color:"#a03020"}},mny(c.amount))),
         h("button",{class:"btn btn-s"+(canPayC?" btn-p":""),style:{fontSize:"10px",opacity:canPayC?1:0.5,cursor:canPayC?"pointer":"not-allowed"},
           onClick:()=>{if(canPayC)payExClaim(c.id);}},L==="cs"?"💸 Splatit":"💸 Pay")));
     });
@@ -127,7 +127,7 @@ function renderTabParta(ctx){
       if(svg){const d=document.createElement("div");d.className="parta-portrait-svg";d.innerHTML=svg;portBox.appendChild(d);}
     };
     portBox.appendChild(imgEl);
-    if(unpaid>0) portBox.append(h("div",{class:"parta-debt-badge"},`💸${unpaid}g`));
+    if(unpaid>0) portBox.append(h("div",{class:"parta-debt-badge"},`💸${mny(unpaid)}`));
     card.append(portBox);
 
     // Info pod portrétem
@@ -267,7 +267,7 @@ function renderTabParta(ctx){
         // Mzda
         const wage=2+(w.wageMod||0);
         modal.append(h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
-          `💰 ${L==="cs"?"Mzda":"Wage"}: ${wage}g/${L==="cs"?"kolo":"round"}`));
+          `💰 ${L==="cs"?"Mzda":"Wage"}: ${mny(wage)}/${L==="cs"?"kolo":"round"}`));
       }
 
       // ── SUBTAB: ROZVOJ ──
@@ -395,7 +395,7 @@ function renderTabParta(ctx){
             h("div",{style:{fontSize:"13px",fontWeight:"700",color:"#2a5a1a",marginBottom:"3px"}},
               `${contract.months} ${L==="cs"?"měsíců":"months"} · ${L==="cs"?"zbývá":"remaining"}: ${contract.roundsLeft} ${L==="cs"?"kol":"rounds"}`),
             h("div",{style:{fontSize:"10px",color:"#5a8a4a"}},
-              `${L==="cs"?"Zaplaceno":"Paid"}: ${contract.paid}g · ${L==="cs"?"Loajalita chráněna (min 30%)":"Loyalty protected (min 30%)"}`)
+              `${L==="cs"?"Zaplaceno":"Paid"}: ${mny(contract.paid)} · ${L==="cs"?"Loajalita chráněna (min 30%)":"Loyalty protected (min 30%)"}`)
           );
           // Progress bar
           const pct=Math.round((1-contract.roundsLeft/contract.months)*100);
@@ -438,8 +438,8 @@ function renderTabParta(ctx){
             btn.append(
               h("span",{style:{fontWeight:"600"}},lbl),
               h("div",{style:{display:"flex",gap:"8px",fontSize:"9px",color:"#8b5e34",marginTop:"1px"}},
-                h("span",{},`${cost}g záloha`),
-                h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?"✓ dost grošů":"✗ chybí grošů"),
+                h("span",{},`${mny(cost)} záloha`),
+                h("span",{style:{color:canAfford?"#4a7a3a":"#a03020"}},canAfford?"✓ dost peněz":"✗ chybí peněz"),
                 h("span",{},`+20 loaj.`)
               )
             );
@@ -456,17 +456,17 @@ function renderTabParta(ctx){
             h("div",{style:{textAlign:"center",padding:"20px",color:"#4a7a3a",fontSize:"13px",fontWeight:"700"}},"✅ "+
               (L==="cs"?"Všechny mzdy splaceny.":"All wages paid.")),
             h("div",{style:{textAlign:"center",fontSize:"10px",color:"#8b5e34",marginTop:"4px"}},
-              `${L==="cs"?"Aktuální mzda":"Current wage"}: ${wage}g/${L==="cs"?"kolo":"round"}`)
+              `${L==="cs"?"Aktuální mzda":"Current wage"}: ${mny(wage)}/${L==="cs"?"kolo":"round"}`)
           );
         } else {
           const canPayAll=p.grose>=unpaid;
-          const canPay5=p.grose>=5;
-          const canPay10=p.grose>=10;
+          const canPay5=p.grose>=500;
+          const canPay10=p.grose>=1000;
           modal.append(
             h("div",{style:{background:"rgba(160,48,32,.07)",borderRadius:"4px",padding:"10px",marginBottom:"10px",
               border:"1px solid rgba(160,48,32,.2)"}},
               h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"4px"}},L==="cs"?"Dlužné mzdy:":"Wages owed:"),
-              h("div",{style:{fontSize:"20px",fontWeight:"700",color:"#a03020"}},unpaid+"g"),
+              h("div",{style:{fontSize:"20px",fontWeight:"700",color:"#a03020"}},mny(unpaid)),
               h("div",{style:{fontSize:"9px",color:"#8b5e34",marginTop:"3px",fontStyle:"italic"}},
                 L==="cs"?"Nastřádáno z kol, kdy huť nestačila platit."
                         :"Accumulated from rounds when the foundry couldn't pay.")
@@ -474,9 +474,9 @@ function renderTabParta(ctx){
           );
           const payRow=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"8px"}});
           [
-            {amt:5,lbl:"5g"},
-            {amt:10,lbl:"10g"},
-            {amt:unpaid,lbl:(L==="cs"?"Vše ("+unpaid+"g)":"All ("+unpaid+"g)")}
+            {amt:500,lbl:mny(500)},
+            {amt:1000,lbl:mny(1000)},
+            {amt:unpaid,lbl:(L==="cs"?"Vše ("+mny(unpaid)+")":"All ("+mny(unpaid)+")")}
           ].forEach(({amt,lbl})=>{
             if(amt<=0) return;
             const can=p.grose>=amt;
@@ -496,7 +496,7 @@ function renderTabParta(ctx){
         // Příští mzda
         modal.append(h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",
           borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
-          `⏭️ ${L==="cs"?"Příští mzda":"Next wage"}: ${wage}g — ${L==="cs"?"kasa":"cash"}: ${p.grose}g`));
+          `⏭️ ${L==="cs"?"Příští mzda":"Next wage"}: ${mny(wage)} — ${L==="cs"?"kasa":"cash"}: ${mny(p.grose)}`));
       }
       else if(stab==="onem"){
         const bioDiv=h("div",{style:{padding:"4px 2px",lineHeight:"1.7",fontSize:"11px",color:"#4a2e18"}});

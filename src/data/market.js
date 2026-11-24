@@ -1,9 +1,9 @@
 // market.js — market goods, prices and seasonal offers.
 // Verbatim data moved out of core/ (no logic). Classic script: plain top-level consts in the shared global scope; load order is fixed by build.js.
 
-const MERCH={sand:{b:2,e:"🏖️"},limestone:{b:2,e:"🟩"},clay:{b:2,e:"🧱"},pureSand:{b:5,e:"✨"},
-  refinedPotash:{b:4,e:"🌿"},charcoal:{b:3,e:"⚫"},wood:{b:WOOD_EMERGENCY_PRICE,e:"🌲"},water:{b:1,e:"💧"},
-  food:{b:2,e:"🍞"},stone:{b:2,e:"🪨"},dryWood:{b:3,e:"🔥"},firebrick:{b:4,e:"🧱"},pitch:{b:3,e:"🌲"}};
+const MERCH={sand:{b:200,e:"🏖️"},limestone:{b:200,e:"🟩"},clay:{b:200,e:"🧱"},pureSand:{b:500,e:"✨"},
+  refinedPotash:{b:400,e:"🌿"},charcoal:{b:300,e:"⚫"},wood:{b:WOOD_EMERGENCY_PRICE,e:"🌲"},water:{b:100,e:"💧"},
+  food:{b:200,e:"🍞"},stone:{b:200,e:"🪨"},dryWood:{b:300,e:"🔥"},firebrick:{b:400,e:"🧱"},pitch:{b:300,e:"🌲"}};
 
 // Názvy a popisky zboží kramáře Weisse (CS/EN) — jedno místo pro Trh i kroniku
 const MERCH_INFO={
@@ -25,18 +25,18 @@ const MERCH_INFO={
 // Baranovský — nabídky dle sezóny
 const BARAN_OFFERS=[
   // Sezóna 1-2: základní přísady
-  {season:1, item:"burel",     qty:2, price:10, cs:"Přivezl jsem burel z Čech. Jen se ptejte.", en:"Brought burel from Bohemia. Just ask."},
-  {season:1, item:"crocusMartis",qty:2,price:8, cs:"Crocus Martis — ze saských dolů.", en:"Crocus Martis from Saxon mines."},
+  {season:1, item:"burel",     qty:2, price:1000, cs:"Přivezl jsem burel z Čech. Jen se ptejte.", en:"Brought burel from Bohemia. Just ask."},
+  {season:1, item:"crocusMartis",qty:2,price:800, cs:"Crocus Martis — ze saských dolů.", en:"Crocus Martis from Saxon mines."},
   // Sezóna 2: vzácnější
-  {season:2, item:"smolka",    qty:1, price:22, cs:"Šmolka ze Saska — stojí to za to.", en:"Zaffre from Saxony — worth every penny."},
-  {season:2, item:"aesUstum",  qty:1, price:16, cs:"Pálená měď — sám jsem ji připravil.", en:"Burnt copper — prepared it myself."},
-  {season:2, item:"cin",       qty:2, price:14, cs:"Cín čistý. Lattimo uděláte jako Benátčani.", en:"Pure tin. You'll make lattimo like Venice."},
-  {season:2, item:"arsen",    qty:1, price:26, cs:"Arsenová běl z Krušných hor. Opatrně s ní — jed, ale čeří jako nic jiného.", en:"White arsenic from the Ore Mountains. Careful — poison, but nothing fines like it."},
-  {season:2, item:"stribro",   qty:2, price:20, cs:"Stříbro z Kutné Hory. Na křišťál se žlutou lazurou — rytci po ní šílí.", en:"Silver from Kutná Hora. For crystal with a yellow stain — engravers go mad for it."},
+  {season:2, item:"smolka",    qty:1, price:2200, cs:"Šmolka ze Saska — stojí to za to.", en:"Zaffre from Saxony — worth every penny."},
+  {season:2, item:"aesUstum",  qty:1, price:1600, cs:"Pálená měď — sám jsem ji připravil.", en:"Burnt copper — prepared it myself."},
+  {season:2, item:"cin",       qty:2, price:1400, cs:"Cín čistý. Lattimo uděláte jako Benátčani.", en:"Pure tin. You'll make lattimo like Venice."},
+  {season:2, item:"arsen",    qty:1, price:2600, cs:"Arsenová běl z Krušných hor. Opatrně s ní — jed, ale čeří jako nic jiného.", en:"White arsenic from the Ore Mountains. Careful — poison, but nothing fines like it."},
+  {season:2, item:"stribro",   qty:2, price:2000, cs:"Stříbro z Kutné Hory. Na křišťál se žlutou lazurou — rytci po ní šílí.", en:"Silver from Kutná Hora. For crystal with a yellow stain — engravers go mad for it."},
   // Sezóna 3: exkluzivní
-  {season:3, item:"olovo",     qty:2, price:12, cs:"Olovo z Krumlova. První třídy.", en:"Lead from Krumlov. First class."},
-  {season:3, item:"antimon",   qty:1, price:18, cs:"Antimon — vzácné. Kunckelova věc.", en:"Antimony — rare. Kunckel's thing."},
-  {season:3, item:"rtut",      qty:1, price:22, cs:"Rtuť z Idrie. Drahá, ale bez ní zrcadlo neuděláte.", en:"Mercury from Idrija. Costly, but no mirror without it."},
+  {season:3, item:"olovo",     qty:2, price:1200, cs:"Olovo z Krumlova. První třídy.", en:"Lead from Krumlov. First class."},
+  {season:3, item:"antimon",   qty:1, price:1800, cs:"Antimon — vzácné. Kunckelova věc.", en:"Antimony — rare. Kunckel's thing."},
+  {season:3, item:"rtut",      qty:1, price:2200, cs:"Rtuť z Idrie. Drahá, ale bez ní zrcadlo neuděláte.", en:"Mercury from Idrija. Costly, but no mirror without it."},
   // Sezóna 4: zlatý prach
-  {season:4, item:"zlato",     qty:1, price:45, cs:"Zlatý prach. Za tuhle cenu vám ho nikdo jiný nedá.", en:"Gold dust. Nobody else will give it this cheap."}
+  {season:4, item:"zlato",     qty:1, price:4500, cs:"Zlatý prach. Za tuhle cenu vám ho nikdo jiný nedá.", en:"Gold dust. Nobody else will give it this cheap."}
 ];

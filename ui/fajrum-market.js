@@ -100,9 +100,9 @@
    [...actions.querySelectorAll('button')].forEach((button,i)=>{
     const q=options.quote(key,i===0?1:999);
     const label=i===0?(cs?'Prodat 1 ks':'Sell 1 pc'):(cs?`Vše (${q.count})`:`All (${q.count})`);
-    button.replaceChildren(el('span','',label),el('strong','',q.total+' g'));
+    button.replaceChildren(el('span','',label),el('strong','',moneyStr(q.total,cs)));
     button.dataset.saleCount=q.count;button.dataset.saleTotal=q.total;
-    button.setAttribute('aria-label',`${label} · ${title} · ${q.total} g`);
+    button.setAttribute('aria-label',`${label} · ${title} · ${moneyStr(q.total,cs)}`);
     button.dataset.affectsContracts=String(reserved>0&&q.count>free);
    });
    row.dataset.raw=String(raw.has(key));row.dataset.search=norm(title);
@@ -139,9 +139,9 @@
   let units=0,value=0;for(const key of Object.keys(options.prices()))if(Array.isArray(state[key])&&state[key].length){units+=state[key].length;value+=options.quote(key,state[key].length).total;}
   const summary=el('div','fj-market-summary');
   for(const [label,total,detail]of [
-   [cs?'Hotovost':'Cash',state.grose+' g',cs?`Dluh ${state.debt} g`:`Debt ${state.debt} g`],
+   [cs?'Pokladna':'Treasury',moneyStr(state.grose,cs),cs?`Dluh ${moneyStr(state.debt,true)}`:`Debt ${moneyStr(state.debt,false)}`],
    [cs?'Aktivní zakázky':'Active contracts',active,cs?`${ready} ze současné zásoby`:`${ready} from current stock`],
-   [cs?'Sklad k prodeji':'Sale stock',units+(cs?' ks':' pcs'),cs?`Tržní hodnota ${value} g`:`Market value ${value} g`]
+   [cs?'Sklad k prodeji':'Sale stock',units+(cs?' ks':' pcs'),cs?`Tržní hodnota ${moneyStr(value,true)}`:`Market value ${moneyStr(value,false)}`]
   ]){const cell=el('div','fj-market-summary-cell');cell.append(el('span','',label),el('strong','',total),el('small','',detail));summary.append(cell);}
   const status=content.querySelector('.fj-market-status');if(status)status.append(summary);
   const nav=el('nav','fj-market-nav');nav.setAttribute('aria-label',cs?'Části trhu':'Market sections');
@@ -156,7 +156,7 @@
    if(affected&&!state.quickSellUsed)quick.append(el('p','fj-market-note is-warning',cs?'Výkup odveze i kusy potřebné pro aktivní zakázky.':'Buyout also takes pieces needed for active contracts.'));
   }
   for(const b of content.querySelectorAll('.fj-market-buy-item')){
-   const key=b.dataset.resource;b.setAttribute('aria-label',(cs?'Koupit 1× ':'Buy 1× ')+merchName(key,L)+' · '+state.shop[key].price+' g');
+   const key=b.dataset.resource;b.setAttribute('aria-label',(cs?'Koupit 1× ':'Buy 1× ')+merchName(key,L)+' · '+moneyStr(state.shop[key].price,cs));
    b.append(el('span','fj-shop-own',cs?`Máš ${state.res[key]||0}`:`Have ${state.res[key]||0}`));
   }
  }

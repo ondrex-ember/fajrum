@@ -31,7 +31,7 @@ function hireFromMarket(candidate){
   G.grose-=candidate.hireCost;
   G.workers.push({...candidate,id:"w"+Date.now()});
   G.trhuNPC=(G.trhuNPC||[]).filter(c=>c.id!==candidate.id);
-  G.log.push(`__ECO__👷 ${candidate.name} ${G.lang==="cs"?"přijat do hutě":"hired"} (-${candidate.hireCost}g)`);
+  G.log.push(`__ECO__👷 ${candidate.name} ${G.lang==="cs"?"přijat do hutě":"hired"} (-${mny(candidate.hireCost)})`);
   render();
 }
 
@@ -55,12 +55,12 @@ function buildCandidateCard(c,body,p,L){
     class:"btn btn-s"+(canHire?" btn-p":""),
     style:{opacity:canHire?1:.4,flexShrink:0,marginLeft:"8px"},
     onClick:()=>{if(canHire)hireWorker(c);}},
-    `${L==="cs"?"Najmout":"Hire"} ${c.hireCost}g`);
+    `${L==="cs"?"Najmout":"Hire"} ${mny(c.hireCost)}`);
   topRow.append(nameBlock,hireBtn);
   card.append(topRow);
   if(c.wageMod!==0){
     card.append(h("div",{style:{fontSize:"10px",color:c.wageMod<0?"#4a7a3a":"#a03020"}},
-      `${L==="cs"?"Mzda":"Wage"}: ${c.wageMod>0?"+":""}${c.wageMod}g/kolo`));
+      `${L==="cs"?"Mzda":"Wage"}: ${c.wageMod>0?"+":""}${mny(c.wageMod)}/kolo`));
   }
   body.append(card);
 }

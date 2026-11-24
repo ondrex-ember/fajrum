@@ -17,14 +17,14 @@ function renderRoundBar(ctx){
       h("span",{style:{fontSize:"10px",padding:"1px 6px",borderRadius:"6px",background:"rgba(201,149,43,.15)",color:"#8b5e34",fontWeight:"600"}},tierBadgeText)),
     h("div",{style:{display:"flex",gap:"8px",fontSize:"11px",alignItems:"center"}},
       h("span",null,
-        h("span",{style:{color:"#8b5e34"}},L==="cs"?"Groše: ":"Groats: "),
-        h("strong",{class:"fj-money-value",style:{color:p.grose<20?"#a03020":"#3a2a14",fontSize:"13px"}},
+        h("span",{style:{color:"#8b5e34"}},L==="cs"?"Pokladna: ":"Treasury: "),
+        h("strong",{class:"fj-money-value",style:{color:p.grose<2000?"#a03020":"#3a2a14",fontSize:"13px"}},
           window.FajrumUI?.resourceIcon?FajrumUI.resourceIcon("coins","💰"):"💰 ",
-          h("span",null,p.grose+"g"))),
+          h("span",null,mny(p.grose)))),
       h("span",null,
         h("span",{style:{color:"#8b5e34"}},L==="cs"?"Dluhy: ":"Debts: "),
         h("strong",{style:{color:(p.debt>0||liabilities(p).crew>0)?"#a03020":"#4a7a3a"}},
-          (p.debt>0||liabilities(p).crew>0)?((p.debt>0?"📜 "+p.debt+"g":"")+(p.debt>0&&liabilities(p).crew>0?" · ":"")+(liabilities(p).crew>0?"👥 "+liabilities(p).crew+"g":"")):"✓")))));
+          (p.debt>0||liabilities(p).crew>0)?((p.debt>0?"📜 "+mny(p.debt):"")+(p.debt>0&&liabilities(p).crew>0?" · ":"")+(liabilities(p).crew>0?"👥 "+mny(liabilities(p).crew):"")):"✓")))));
   const pips=h("div",{style:{display:"flex",gap:"2px",width:"100%"}});
   for(let i=0;i<ROUNDS;i++){
     const cur=i===p.round, done2=i<p.round;

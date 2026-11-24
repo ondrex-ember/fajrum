@@ -83,15 +83,43 @@ function validateGameSave(saved){
     throw new Error("Invalid melting batch");
   if(saved.furnSlotPanev && saved.furnSlotPanev.some(item=>item!==null&&!saveguardIsObject(item)))
     throw new Error("Invalid crucible entry");
+  // Old saves (no _cur) count in groats: convert once to krejcary on a copy (the loaded object is never mutated).
+  let src=saved;
+  if((saved._cur||0)<2){src=JSON.parse(JSON.stringify(saved));migrateCurrency(src);}
   // Keep all known fields and any future data, while filling old missing fields safely.
-  const merged={...defaults,...saved};
-  for(const key of nested)merged[key]={...defaults[key],...(saved[key]||{})};
+  const merged={...defaults,...src};
+  for(const key of nested)merged[key]={...defaults[key],...(src[key]||{})};
   if(!Array.isArray(merged.exCrewClaims))merged.exCrewClaims=[];
-  migrateDebtModel(merged,saved._dm);
+  if(!merged.guide||typeof merged.guide!=="object"||Array.isArray(merged.guide))merged.guide={on:false,done:[],snooze:{}};
+  else{merged.guide={on:merged.guide.on===true,done:Array.isArray(merged.guide.done)?merged.guide.done.filter(x=>typeof x==="string"):[],snooze:(merged.guide.snooze&&typeof merged.guide.snooze==="object"&&!Array.isArray(merged.guide.snooze))?merged.guide.snooze:{}};}
+  if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
+  migrateDebtModel(merged,src._dm);
   return merged;
 }
+// Jednorázová migrace měny (_cur: bez značky → 2). Save bez `_cur` počítá v grošiích (1 g = 100 kr): peněžní pole se vynásobí ×100.
+// `interseason.seasonScore.grose` zůstává ve zlatnících (skóre, ne peníze). Běží PŘED doplněním výchozích hodnot (ty už jsou v krejcarech)
+// a PŘED migrateDebtModel (ten už pracuje v krejcarech).
+function migrateCurrency(state){
+  if((state._cur||0)>=2)return;
+  const sc=(o,...keys)=>{if(!o||typeof o!=="object")return;for(const k of keys)if(typeof o[k]==="number")o[k]*=KR;};
+  const scAll=(a,...keys)=>{if(Array.isArray(a))a.forEach(x=>sc(x,...keys));};
+  sc(state,"grose","debt","totalGrose","totalDebtPaid");
+  for(const list of ["workers","trhuNPC"]){
+    scAll(state[list],"hireCost","wageMod","unpaidDebt");
+    if(Array.isArray(state[list]))state[list].forEach(w=>sc(w&&w.contract,"paid"));
+  }
+  scAll(state.interseason&&state.interseason.candidates,"hireCost","wageMod");
+  for(const list of ["contracts","avail","repContracts"])scAll(state[list],"reward");
+  if(state.shop&&typeof state.shop==="object")Object.values(state.shop).forEach(v=>sc(v,"b","price"));
+  sc(state.baranOffer,"price");
+  scAll(state.exCrewClaims,"amount");
+  sc(state.summary,"bCost","contractIncome","dPay","debtAfter","groseAfter","groseDelta","wages","wagesDeficit","wagesPaid");
+  scAll(state.summary&&state.summary.workerWages,"wage","shortfall");
+  sc(state.failureStats,"debtPaid");
+  state._cur=2;
+}
 // Jednorázová migrace účetního modelu dluhů (_dm: 1 → 2). Staré savy (bez _dm) připisovaly nevyplacené mzdy dvakrát:
-// do G.debt (Weiss) i do w.unpaidDebt (parta). Převod: ze starého G.debt se odečte právě tolik, kolik je dluh partě
+// do G.debt (Reichel) i do w.unpaidDebt (parta). Převod: ze starého G.debt se odečte právě tolik, kolik je dluh partě
 // (nejvýš celý G.debt) — nic dalšího se nepřepisuje ani neodpouští. Nové savy mají _dm=2 a migrací neprojdou.
 function migrateDebtModel(state,savedVersion){
   if(savedVersion>=2){state._dm=savedVersion;return;}
@@ -100,7 +128,8 @@ function migrateDebtModel(state,savedVersion){
   state.debt=(state.debt||0)-credit;
   state._dm=2;
   if(credit>0&&Array.isArray(state.log)){
-    state.log=[...state.log,`__ECO__📒 ${state.lang==="en"?`Ledger unified: ${credit}g of unpaid wages was counted twice (Weiss + crew). Weiss debt reduced by ${credit}g; the crew debt is unchanged.`:`Sjednocení účtů: ${credit}g nevyplacených mezd se počítalo dvakrát (Weiss + parta). Dluh u Weisse snížen o ${credit}g; dluh partě zůstává beze změny.`}`];
+    const cm=moneyStr(credit,state.lang!=="en");   // migrateCurrency už proběhla → hodnoty jsou v krejcarech
+    state.log=[...state.log,`__ECO__📒 ${state.lang==="en"?`Ledger unified: ${cm} of unpaid wages was counted twice (Reichel + crew). Reichel debt reduced by ${cm}; the crew debt is unchanged.`:`Sjednocení účtů: ${cm} nevyplacených mezd se počítalo dvakrát (Reichel + parta). Dluh u Reichela snížen o ${cm}; dluh partě zůstává beze změny.`}`];
   }
 }
 function restoreGameState(saved){

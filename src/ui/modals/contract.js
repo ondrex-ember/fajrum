@@ -36,7 +36,7 @@ function renderContractModal(ctx){
       h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#3a2a14",marginBottom:"3px"}},
         buyerIcon+" "+(L==="cs"?c.cs:c.en)),
       h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"4px"}},
-        h("span",{style:{fontSize:"10px",color:"#4a7a3a",fontWeight:"700"}},"+"+c.reward+"g"),
+        h("span",{style:{fontSize:"10px",color:"#4a7a3a",fontWeight:"700"}},"+"+mny(c.reward)),
         alreadyAccepted
           ?h("span",{style:{fontSize:"10px",color:"#4a7a3a"}},L==="cs"?"✓ Přijato":"✓ Accepted")
           :h("button",{class:"btn btn-s"+(canAccept?" btn-p":""),

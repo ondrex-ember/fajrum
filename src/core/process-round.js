@@ -607,32 +607,33 @@ function processRound(){
   });
   // Kolik reálně zaplatíme — pokud grose nestačí, platíme co jde (zbytek = dluh)
   const wagesAvail=Math.max(0,grose); // nemůžeme platit z ničeho
-  const wagesPaid=Math.min(wages,Math.floor(wagesAvail)); // celé groše → schodek je vždy celé číslo
+  const wagesPaid=Math.min(wages,Math.floor(inZl(wagesAvail))*KR); // celé zlatníky → schodek je vždy celý počet zlatníků
   const wagesDeficit=wages-wagesPaid;
   grose-=wagesPaid;
-  // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Weisse (p.debt) — jsou to dvě oddělené entity.
+  // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Reichela (p.debt) — jsou to dvě oddělené entity.
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
-  // Schodek se rozpočítá na celé groše metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádný groš se neztratí ani nevytvoří).
+  // Schodek se rozpočítá na celé zlatníky metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádný zlatník se neztratí ani nevytvoří).
   const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit);
   workerWages.forEach((ww,i)=>{ ww.paid=payRatio>=1; ww.shortfall=shortfalls[i]; });
 
-  // 6. Splácení dluhu u Faktora Weisse (standardní auto-splátka, pokud není aktivní odklad)
+  // 6. Splácení dluhu u Faktora Reichela (standardní auto-splátka, pokud není aktivní odklad)
   let dPay=0;
-  if(debt>0 && grose>5 && !p.debtMoratorium){
-    dPay=Math.min(5, grose-2, debt);
+  if(debt>0 && grose>500 && !p.debtMoratorium){
+    dPay=Math.min(500, grose-200, debt);
     grose-=dPay;
     debt-=dPay;
     // Reputace dlužníka roste při splácení
     if(dPay>0){
       p.totalDebtPaid=(p.totalDebtPaid||0)+dPay;
-      p.debtReputation=Math.min(100,Math.floor((p.totalDebtPaid||0)/(isEasyDiff?2:3)));
+      p.debtReputation=Math.min(100,Math.floor((p.totalDebtPaid||0)/(isEasyDiff?200:300)));
+      partnerEvent("reichel","autopay",dPay); if(debt<=0)partnerEvent("reichel","cleared");
     }
   }
   if(p.debtMoratorium && p.debtMoratorium>0){
     p.debtMoratorium--;
     if(p.debtMoratorium===0){
-      log.push(`__ECO__📜 ${L==="cs"?"Odklad splátek u Faktora Weisse vypršel — obnoveno běžné splácení.":"Debt moratorium with Factor Weiss has expired — regular repayment resumed."}`);
+      log.push(`__ECO__📜 ${L==="cs"?"Odklad splátek u Faktora Reichela vypršel — obnoveno běžné splácení.":"Debt moratorium with Factor Reichel has expired — regular repayment resumed."}`);
     }
   }
   // 7. Zakázky
@@ -649,24 +650,26 @@ function processRound(){
     else if(p[c.item]&&Array.isArray(p[c.item])) inv=p[c.item];
     else inv=[];
     // Splnění: máme dost kusů A ještě jsme v termínu (round <= due)
-    if(inv.length>=c.qty&&round<=c.due){
-      for(let j=0;j<c.qty;j++)inv.pop();
-      const diffRewardBonus = p.difficulty === "easy" ? Math.round(c.reward * 0.25) : 0;
-      const winterBonus = winterDelivery ? Math.round(c.reward * WINTER_PREMIUM) : 0;
+    if(contractHave(inv,c)>=c.qty&&round<=c.due){
+      contractTake(inv,c);
+      const diffRewardBonus = p.difficulty === "easy" ? Math.round(inZl(c.reward) * 0.25) * KR : 0;
+      const winterBonus = winterDelivery ? Math.round(inZl(c.reward) * WINTER_PREMIUM) * KR : 0;
       const actualReward = c.reward + diffRewardBonus + winterBonus;
       grose+=actualReward; done++; contractIncomeTick+=actualReward;
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
-      const bonusStr = (diffRewardBonus > 0 ? ` (+${diffRewardBonus}g bonus)` : "") + (winterBonus > 0 ? ` (+${winterBonus}g ${L==="cs"?"zimní prémie":"winter premium"} 👑)` : "");
-      log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${actualReward}g${bonusStr}`);
+      const bonusStr = (diffRewardBonus > 0 ? ` (+${mny(diffRewardBonus)} bonus)` : "") + (winterBonus > 0 ? ` (+${mny(winterBonus)} ${L==="cs"?"zimní prémie":"winter premium"} 👑)` : "");
+      log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${mny(actualReward)}${bonusStr}`);
+      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractDone",actualReward);}
       // Fama gain při splnění zakázky
       const famaCatDone=BUYER_FAMA[c.buyer];
       if(famaCatDone&&p.fama){
-        p.fama[famaCatDone]=Math.min(FAMA_MAX,(p.fama[famaCatDone]||0)+FAMA_CONTRACT_GAIN);
+        p.fama[famaCatDone]=Math.min(FAMA_MAX,(p.fama[famaCatDone]||0)+contractFamaGain(c));
       }
       con.splice(i,1);
     } else if(round>c.due){
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       log.push(`__EVT__📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}${buyerStr}`);
+      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractExpired");}
       // Fama loss při prpadlé zakázce
       const famaCatExp=BUYER_FAMA[c.buyer];
       if(famaCatExp&&p.fama){
@@ -675,6 +678,7 @@ function processRound(){
       con.splice(i,1);
     }
   }
+  contractWave(log,L);   // 1b-1: druhá vlna nabídek (kolo wave2Round)
 
   // 7b. Reputační zakázky — zpracovat aktivní repContracts
   const repCon=[...(p.repContracts||[])];
@@ -716,7 +720,7 @@ function processRound(){
         if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+EG_FAMA_GAIN);
         const egDef=ENDGAME_CONTRACTS[rc.cat];
         const completionMsg=egDef?(L==="cs"?egDef.completionText_cs:egDef.completionText_en):"";
-        log.push(`__EVT__🏆 ${L==="cs"?"ENDGAME SPLNĚN":"ENDGAME COMPLETE"} ${FAMA_ICON[rc.cat]} +${rc.reward}g`);
+        log.push(`__EVT__🏆 ${L==="cs"?"ENDGAME SPLNĚN":"ENDGAME COMPLETE"} ${FAMA_ICON[rc.cat]} +${mny(rc.reward)}`);
         if(completionMsg) log.push(`__EVT__💬 ${completionMsg}`);
         log.push(`__EVT__📜 ${L==="cs"?"Pravidelné dodávky aktivovány":"Regular deliveries activated"} ${FAMA_ICON[rc.cat]}`);
         repCon.splice(i,1);
@@ -732,10 +736,10 @@ function processRound(){
     else inv=[];
     if(inv.length>=rc.qty&&round<=rc.due){
       for(let j=0;j<rc.qty;j++)inv.pop();
-      const rcWinter = winterDelivery ? Math.round(rc.reward * WINTER_PREMIUM) : 0;
+      const rcWinter = winterDelivery ? Math.round(inZl(rc.reward) * WINTER_PREMIUM) * KR : 0;
       const rcPay = rc.reward + rcWinter;
       grose+=rcPay; contractIncomeTick+=rcPay; repContractIncome+=rcPay;
-      log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${rcPay}g`+(rcWinter>0?` (+${rcWinter}g ${L==="cs"?"zimní prémie":"winter premium"} 👑)`:""));
+      log.push(`__ECO__⭐ ${L==="cs"?"Reputační zakázka splněna":"Rep contract done"} (${rc.cat==="church"?"🕊️":rc.cat==="noble"?"⚔️":"🌍"}): +${mny(rcPay)}`+(rcWinter>0?` (+${mny(rcWinter)} ${L==="cs"?"zimní prémie":"winter premium"} 👑)`:""));
       if(p.fama) p.fama[rc.cat]=Math.min(FAMA_MAX,(p.fama[rc.cat]||0)+REP_FAMA_GAIN);
       repCon.splice(i,1);
     } else if(round>rc.due){
@@ -774,7 +778,7 @@ function processRound(){
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
   if(forest<=0&&!evts.includes("forestDepleted"))evts.push("forestDepleted");
   // Kupec přijíždí na Vánoce, Tři králové, Velikonoce
-  if(KUPEC_ROUNDS.includes(round)&&Math.random()<.8){evts.push("merchant");mB=true;}
+  if(KUPEC_ROUNDS.includes(round)&&Math.random()<.8){evts.push("merchant");mB=true;partnerEvent("weiss","visit");}
 
   // Přirozená progression barev — kramář/event bez Baranovského
   const hasBaran=p.workers.some(w=>w.npcId==="npc_baran");
@@ -820,9 +824,9 @@ function processRound(){
     p.additives.smolka=(p.additives.smolka||0)+1;
     unl.push("modra");
     log.push(`__EVT__🔵 ${L==="cs"
-      ?"Saský kramář zastavil u hutě. Prodal hrst šmolky za 3 groše. Recept na modrou je váš!"
-      :"A Saxon peddler stopped at the foundry. Sold a handful of zaffre for 3 groats. Blue recipe unlocked!"}`);
-    grose=Math.max(0,grose-3);
+      ?`Saský kramář zastavil u hutě. Prodal hrst šmolky za ${mny(300)}. Recept na modrou je váš!`
+      :`A Saxon peddler stopped at the foundry. Sold a handful of zaffre for ${mny(300)}. Blue recipe unlocked!`}`);
+    grose=Math.max(0,grose-300);
   }
   // Příští sezóna (season>=2, kolo 6=Květen) → aesUstum → smaragd
   if(p.season>=2&&round===6&&!unl.includes("smaragd")){
@@ -937,7 +941,7 @@ function processRound(){
     const newUnpaid=(w.unpaidDebt||0)+(wageEntry?.shortfall||0);
     if(newUnpaid>0){
       // Čím víc dluží, tím rychleji klesá loajalita
-      const loyPenalty=Math.min(20, Math.ceil(newUnpaid/2)*4);
+      const loyPenalty=Math.min(20, Math.ceil(inZl(newUnpaid)/2)*4);
       newLoyalty=Math.max(0,newLoyalty-loyPenalty);
       // Lakomec reaguje 1.5× silněji
       if(w.traits?.includes("lakomec")) newLoyalty=Math.max(0,newLoyalty-Math.ceil(loyPenalty*0.5));
@@ -970,7 +974,7 @@ function processRound(){
     // Houževnatí dělníci (Kunc, Máňa) mají pevnou věrnost huti, ale při totálním zanedbání (loyalty <= 0 a hlad/dluhy) nakonec také odejdou
     const leaveThreshold=isHouzevatny?0:20;
     const leaveChance=isHouzevatny
-      ?(newLoyalty<=0&&(newUnpaid>=8||newHealth<35||mor<=10)?(isKunc?0.45:0.6):0)
+      ?(newLoyalty<=0&&(newUnpaid>=800||newHealth<35||mor<=10)?(isKunc?0.45:0.6):0)
       :(newLoyalty<leaveThreshold?0.35:newLoyalty<35?0.12:0);
     // At-risk warning: loajalita klesla pod 40 → přidat do retention queue (nezávisle na willLeave)
     if(newLoyalty<40&&!contractActive&&!(G._retentionPending||[]).includes(w.id)){
@@ -1086,14 +1090,14 @@ function processRound(){
           ?"si sbalila ranec a odešla z huti — z prázdných hrnců a nezaplacené práce se žít nedá."
           :"packed up and left the foundry — one cannot live on empty pots and unpaid labor.";
       }else if(newUnpaid>0){
-        reason=L==="cs"?`odešel — huť mu dluží ${newUnpaid}g.`:`left — the foundry owes him ${newUnpaid}g.`;
+        reason=L==="cs"?`odešel — huť mu dluží ${mny(newUnpaid)}.`:`left — the foundry owes him ${mny(newUnpaid)}.`;
       }else{
         reason=L==="cs"?"odešel — nálada v huti byla příliš nízká.":"left — morale was too low.";
       }
       log.push(`__EVT__👋 ${w.name} ${reason}`);
       if(newUnpaid>0){   // dluh neodchází s dělníkem: zapíše se do knihy pohledávek bývalých zaměstnanců
         newClaims.push({id:"c"+p.season+"_"+(round+1)+"_"+w.id,name:w.name,npcId:w.npcId||null,amount:newUnpaid,season:p.season,round:round+1,reason:"left"});
-        log.push(`__ECO__📒 ${L==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${newUnpaid}g zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${newUnpaid}g recorded in the ledger`}`);
+        log.push(`__ECO__📒 ${L==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${mny(newUnpaid)} zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${mny(newUnpaid)} recorded in the ledger`}`);
       }
       return null;
     }
@@ -1102,7 +1106,7 @@ function processRound(){
     let moodTarget=(NPC_ROSTER.find(n=>n.id===w.npcId)?.mood??MOOD_NEUTRAL)+Math.round((mor-50)*0.3);
     if(newFat>0.7) moodTarget-=15; else if(newFat>0.4) moodTarget-=5;
     if(!hasFood) moodTarget-=10;
-    if(newUnpaid>0) moodTarget-=Math.min(25,10+newUnpaid);
+    if(newUnpaid>0) moodTarget-=Math.min(25,10+inZl(newUnpaid));
     if(contractActive) moodTarget+=5;
     if(w.npcId==="npc_foukac3"&&bondActive(p,"npc_foukac2","npc_foukac3")) moodTarget-=10;   // tenze Hanns × Josef: -10 nálady
     const newMood=clamp(Math.round(moodNow+(moodTarget-moodNow)*0.3),0,100);
@@ -1126,8 +1130,8 @@ function processRound(){
   if(isC&&tC>p.tC)prodLines.push(`✨ ${tC-p.tC}× ${L==="cs"?"křišťál uvařen":"crystal melted"}`);
   if(isC&&fA)prodLines.push(`${L==="cs"?"Pec":"Furnace"}: ${zone(fT).l} ${fT}% · eff ${Math.round(calcFurnaceEff(furnace,pQ)*100)}%`);
   const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal({exCrewClaims:[...(p.exCrewClaims||[]),...newClaims]});
-  ecoLines.push(`💰 ${grose}g`+(debt>0?` · ${L==="cs"?"dluh Weissovi":"debt to Weiss"} ${debt}g`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${crewDebtNow}g`:""));
-  ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${wagesPaid}g${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${wagesDeficit}g`:""} · ${L==="cs"?"pivo":"beer"} ${bCost}g`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${dPay}g`:""));
+  ecoLines.push(`💰 ${mny(grose)}`+(debt>0?` · ${L==="cs"?"dluh Reichelovi":"debt to Reichel"} ${mny(debt)}`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${mny(crewDebtNow)}`:""));
+  ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${mny(wagesPaid)}${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${mny(wagesDeficit)}`:""} · ${L==="cs"?"pivo":"beer"} ${mny(bCost)}`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${mny(dPay)}`:""));
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
   // Produkce tohoto kola (musí se spočítat PŘED Object.assign — potom je p===G a rozdíl by byl 0)
@@ -1171,8 +1175,8 @@ function processRound(){
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
-    failureReason:wk.length===0?"abandoned":((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8?"ruined":null)),
-    failureStats:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))?{
+    failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
+    failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
       season:p.season, round:nr,
       batches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
       sold:(G.totalSold||0),
@@ -1180,7 +1184,7 @@ function processRound(){
       debtPaid:(G.totalDebtPaid||0)+dPay,
       maxFama:Math.max(p.fama?.church||0, p.fama?.noble||0, p.fama?.trade||0)
     }:null,
-    phase:(wk.length===0||((debt>=160&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=180&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<8))
+    phase:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))
       ?"game_over"
       :(evts[0]?"event":(isLastRound?"interseasonPhase":"summary"))
   });

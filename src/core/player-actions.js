@@ -9,8 +9,8 @@ function startGame(diff){
     G.panevQuality=3;
     G.pReady=4;
     G.formy=2;
-    G.grose=140;
-    G.debt=30;
+    G.grose=14000;
+    G.debt=3000;
     G.morale=75;
     G.res.wood=70;
     G.res.sand=35;
@@ -21,8 +21,8 @@ function startGame(diff){
     G.res.shamot=14;
     G.res.food=20;
   }else{
-    G.grose=65;
-    G.debt=40;
+    G.grose=6500;
+    G.debt=4000;
     G.morale=65;
     G.res.wood=50;
     G.res.sand=20;
@@ -33,6 +33,7 @@ function startGame(diff){
     G.res.shamot=10;
     G.res.food=12;
   }
+  guideInitForDifficulty(diff);   // Easy: průvodce zapnutý; Normal: vypnutý (nabídka v úvodním modálu)
   G.phase="playing";
   Fx.render();
 }
@@ -43,6 +44,7 @@ function restartAfterFall(){
   G=initState();
   G.huteName=hName;
   G.difficulty=diff;
+  guideInitForDifficulty(diff);
   G.phase="playing";
   Fx.render();
 }
@@ -101,8 +103,8 @@ function setWorkerTask(workerId,t){
     const rate=baseWageRateFor(isP,G.difficulty==="easy");
     const wIdle=workerWageFor(w,rate,"idle"), wWork=workerWageFor(w,rate,"work");
     Fx.toast("😴 "+w.name,L==="cs"
-      ?["Odpočívá — nic nevyrábí.","Mzda "+wIdle+"g/kolo (při práci "+wWork+"g), únava −50 %."]
-      :["Resting — produces nothing.","Wage "+wIdle+"g/round (working: "+wWork+"g), fatigue −50%."]);
+      ?["Odpočívá — nic nevyrábí.","Mzda "+mny(wIdle)+"/kolo (při práci "+mny(wWork)+"), únava −50 %."]
+      :["Resting — produces nothing.","Wage "+mny(wIdle)+"/round (working: "+mny(wWork)+"), fatigue −50%."]);
   }
   Fx.render();
 }
@@ -178,19 +180,21 @@ function loanRateAccounts(){
 }
 function takeLoan(amt,loanRate){
   const L=G.lang;
-  const totalDebt=amt+Math.round(amt*loanRate);
+  const totalDebt=amt+Math.round(inZl(amt)*loanRate)*KR;
   const loanRatePct=Math.round(loanRate*100);
   G.grose+=amt; G.debt+=totalDebt;
-  G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Weisse":"Loan from Factor Weiss")+": +"+amt+"g ("+(L==="cs"?"dluh":"debt")+" +"+totalDebt+"g, "+loanRatePct+"%)");
+  partnerEvent("reichel","loan",amt);
+  G.log.push("__ECO__🪙 "+(L==="cs"?"Půjčka od Faktora Reichela":"Loan from Factor Reichel")+": +"+mny(amt)+" ("+(L==="cs"?"dluh":"debt")+" +"+mny(totalDebt)+", "+loanRatePct+"%)");
   Fx.render();
 }
-function moratoriumCost(){return (G.debtReputation||0)>=50?0:3;}
+function moratoriumCost(){return (G.debtReputation||0)>=50?0:300;}
 function negotiateMoratorium(){
   const L=G.lang, moraCost=moratoriumCost();
   if(G.grose>=moraCost&&moraCost>0){ G.grose-=moraCost; }
-  else if(moraCost>0){ G.debt+=4; }
+  else if(moraCost>0){ G.debt+=400; }
   G.debtMoratorium=2;
-  G.log.push(`__ECO__⏳ ${L==="cs"?"Sjednán odklad splátek na 2 kola u Faktora Weisse.":"Negotiated 2-round debt moratorium with Factor Weiss."}`);
+  partnerEvent("reichel","moratorium");
+  G.log.push(`__ECO__⏳ ${L==="cs"?"Sjednán odklad splátek na 2 kola u Faktora Reichela.":"Negotiated 2-round debt moratorium with Factor Reichel."}`);
   Fx.render();
 }
 function clearAllDebt(){
@@ -199,7 +203,8 @@ function clearAllDebt(){
   const pay=G.debt;
   G.grose-=pay; G.debt=0;
   G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
-  G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
+  G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/300));
+  partnerEvent("reichel","repay",pay); partnerEvent("reichel","cleared");
   G.log.push("__ECO__📜 "+(L==="cs"?"Dluh splacen":"Debt cleared"));
   Fx.render();
 }
@@ -209,19 +214,20 @@ function repayDebt(amt){
   const pay=Math.min(amt,G.debt);
   G.grose-=pay; G.debt=Math.max(0,G.debt-pay);
   G.totalDebtPaid=(G.totalDebtPaid||0)+pay;
-  G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/3));
-  G.log.push("__ECO__📜 "+(L==="cs"?"Splácení dluhu":"Debt payment")+": -"+pay+"g");
+  G.debtReputation=Math.min(100,Math.floor((G.totalDebtPaid||0)/300));
+  partnerEvent("reichel","repay",pay); if(G.debt<=0)partnerEvent("reichel","cleared");
+  G.log.push("__ECO__📜 "+(L==="cs"?"Splácení dluhu":"Debt payment")+": -"+mny(pay));
   Fx.render();
 }
 function emergencyWoodPrice(){return WOOD_EMERGENCY_PRICE*5;}
 function buyEmergencyWood(){
   const L=G.lang, woodPrice=emergencyWoodPrice();
   if(G.grose<woodPrice)return;   // UI gate
-  G.grose-=woodPrice;G.res.wood+=5;G.log.push(`__ECO__🌳 +5 ${L==="cs"?"nouzové dřevo":"emergency wood"} (-${woodPrice}g)`);Fx.render();
+  G.grose-=woodPrice;G.res.wood+=5;partnerEvent("weiss","woodBought",woodPrice);G.log.push(`__ECO__🌳 +5 ${L==="cs"?"nouzové dřevo":"emergency wood"} (-${mny(woodPrice)})`);Fx.render();
 }
 // "Rychlý výkup": merchant Weiss buys all waldglas / crystal / blown stock once per season
 function quickSellQuote(){
-  const basePricesQS={waldglas:3.5,crystal:9};
+  const basePricesQS={waldglas:350,crystal:900};
   Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{basePricesQS[k]=v.base;});
   const qsRate=G.difficulty==="easy"?0.90:0.85;
   const qsRatePct=Math.round(qsRate*100);
@@ -229,8 +235,8 @@ function quickSellQuote(){
   ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
     const inv=G[k]||[];
     if(!Array.isArray(inv)) return;
-    const bp=basePricesQS[k]||3.5;
-    inv.forEach(q=>{qsTotal+=Math.max(1, Math.round(q*bp*qsRate));qsCount++;});
+    const bp=basePricesQS[k]||350;
+    inv.forEach(q=>{qsTotal+=Math.max(KR, Math.round(q*inZl(bp)*qsRate)*KR);qsCount++;});
   });
   return {rate:qsRate,ratePct:qsRatePct,total:qsTotal,count:qsCount,basePrices:basePricesQS};
 }
@@ -243,33 +249,35 @@ function quickSellAll(){
   ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
     const inv=G[k]||[];
     if(!Array.isArray(inv)||!inv.length) return;
-    const bp=basePricesQS[k]||3.5;
-    const gain=inv.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*qsRate)),0);
+    const bp=basePricesQS[k]||350;
+    const gain=inv.reduce((s,q)=>s+Math.max(KR, Math.round(q*inZl(bp)*qsRate)*KR),0);
     earned+=gain;
     G[k]=[];
   });
   G.grose+=earned;
   G.quickSellUsed=true;
-  G.log.push(`__ECO__🐴 ${L==="cs"?"Kramář Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${earned}g (${qsRatePct}%)`);
+  partnerEvent("weiss","quickSell",earned);
+  G.log.push(`__ECO__🐴 ${L==="cs"?"Kupec Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${mny(earned)} (${qsRatePct}%)`);
   Fx.render();
 }
 
 // ── workers: debts, loyalty modals, retention, market hire ──
-// Rozpočítání schodku mezd na celé groše (metoda největšího zbytku): podíl_i = floor(w_i*D/W), zbylé groše dostanou
+// Rozpočítání schodku mezd na celé zlatníky (`unit` kr; metoda největšího zbytku): podíl_i = floor(w_i*D/W), zbylé zlatníky dostanou
 // největší zbytky (při shodě nižší index). Σ == D přesně, každý podíl ≤ w_i. Čistě celočíselné, deterministické.
-function allocateShortfalls(wageList,deficit){
+function allocateShortfalls(wageKr,deficitKr,unit=KR){
+  const wageList=wageKr.map(x=>x/unit),deficit=deficitKr/unit;
   const n=wageList.length,total=wageList.reduce((s,x)=>s+x,0),D=Math.max(0,Math.min(total,Math.round(deficit)));
   const out=new Array(n).fill(0);
-  if(!(D>0)||!(total>0))return out;
+  if(!(D>0)||!(total>0))return out.map(x=>x*unit);
   const rem=[];let given=0;
   for(let i=0;i<n;i++){const num=wageList[i]*D;out[i]=Math.floor(num/total);given+=out[i];rem.push({i,r:num-out[i]*total});}
   rem.sort((a,b)=>b.r-a.r||a.i-b.i);
   for(let k=0;k<D-given;k++)out[rem[k].i]++;
-  return out;
+  return out.map(x=>x*unit);
 }
 function claimsTotal(p){return(p.exCrewClaims||[]).reduce((s,c)=>s+(c.amount||0),0);}   // pohledávky bývalých zaměstnanců
 function totalWorkerDebt(){return G.workers.filter(w=>(w.unpaidDebt||0)>0).reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal(G);}
-// Dvě oddělené entity dluhu: Weiss (G.debt, úvěr + úrok, auto-splátka) a parta (součet w.unpaidDebt = nevyplacené mzdy).
+// Dvě oddělené entity dluhu: Reichel (G.debt, úvěr + úrok, auto-splátka) a parta (součet w.unpaidDebt = nevyplacené mzdy).
 function liabilities(p){const weiss=p.debt||0,crewNow=(p.workers||[]).reduce((s,w)=>s+(w.unpaidDebt||0),0),claims=claimsTotal(p),crew=crewNow+claims;return{weiss,crew,crewNow,claims,total:weiss+crew};}
 // month summary: "Clear worker debts"
 function payWorkerDebtsSummary(){
@@ -277,7 +285,7 @@ function payWorkerDebtsSummary(){
   if(!(totalUnpaid>0&&G.grose>=totalUnpaid))return;   // UI gate
   G.workers.forEach(w=>{if(w.unpaidDebt>0){G.grose-=w.unpaidDebt;w.unpaidDebt=0;}});
   G.grose-=claimsTotal(G);G.exCrewClaims=[];   // pohledávky bývalých dělníků se splácejí spolu s ostatními
-  G.log.push("__ECO__💸 "+(L==="cs"?"Dluhy dělníkům splaceny: -"+totalUnpaid+"g":"Worker debts cleared: -"+totalUnpaid+"g"));
+  G.log.push("__ECO__💸 "+(L==="cs"?"Dluhy dělníkům splaceny: -"+mny(totalUnpaid):"Worker debts cleared: -"+mny(totalUnpaid)));
   Fx.render();
 }
 // loyalty modal (after the summary, workers with unpaid wages)
@@ -344,7 +352,7 @@ function payAllOwedWages(){
       w.unpaidDebt=0;
     }
   });
-  G.log.push(`__ECO__💸 ${L==="cs"?"Dluhy dělníkům splaceny":"Worker debts cleared"}: -${totalOwed}g`);
+  G.log.push(`__ECO__💸 ${L==="cs"?"Dluhy dělníkům splaceny":"Worker debts cleared"}: -${mny(totalOwed)}`);
   Fx.render();
 }
 // Pohledávka bývalého zaměstnance: zaplatí se celá; mimo vyúčtování žádný další efekt (háček pro příběhové události/pověst později).
@@ -354,7 +362,7 @@ function payExClaim(claimId){
   if(!c||!(c.amount>0)||G.grose<c.amount)return;   // UI gate
   G.grose-=c.amount;
   G.exCrewClaims=G.exCrewClaims.filter(x=>x.id!==claimId);
-  G.log.push(`__ECO__💸 ${L==="cs"?"Splacena pohledávka bývalého dělníka":"Former worker's claim paid"} ${c.name}: -${c.amount}g`);
+  G.log.push(`__ECO__💸 ${L==="cs"?"Splacena pohledávka bývalého dělníka":"Former worker's claim paid"} ${c.name}: -${mny(c.amount)}`);
   Fx.render();
 }
 function payWorkerWage(wId,amt){
@@ -369,7 +377,7 @@ function payWorkerWage(wId,amt){
     ww.loyalty=Math.min(100,(ww.loyalty||70)+8);
     ww.mood=Math.min(100,(ww.mood||60)+5);
   }
-  G.log.push(`__ECO__💸 ${L==="cs"?"Splaceno":"Paid"} ${w.name}: ${pay}g`);
+  G.log.push(`__ECO__💸 ${L==="cs"?"Splaceno":"Paid"} ${w.name}: ${mny(pay)}`);
   Fx.render();
 }
 // Market tab: hire a specialist drawn to the region by St. George (G.trhuNPC). Ids are stamped with Date.now().
@@ -381,7 +389,7 @@ function hireMarketSpecialist(candidateId){
   G.grose-=c.hireCost;
   G.workers.push({...c,id:"w"+Date.now()});
   G.trhuNPC=(G.trhuNPC||[]).filter(x=>x.id!==c.id);
-  G.log.push(`__ECO__👷 ${c.name} ${L==="cs"?"najmut na trhu":"hired at market"} (-${c.hireCost}g)`);
+  G.log.push(`__ECO__👷 ${c.name} ${L==="cs"?"najmut na trhu":"hired at market"} (-${mny(c.hireCost)})`);
   Fx.render();
 }
 

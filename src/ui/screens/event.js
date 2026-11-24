@@ -108,8 +108,8 @@ function renderEventScreen(ctx){
     shamotCrack:{i:"🧱",cs:"Šamot praská!",en:"Shamot cracking!",
       dcs:"Vyzdívka pece je kriticky poškozena. Pec chladne.",den:"Furnace lining critically damaged. Furnace cooling."},
     forestDepleted:{i:"🌲",cs:"Hvozd vyčerpán!",en:"Forest depleted!",
-      dcs:`Les je prázdný. Dřevo musíš kupovat od Weisse (${WOOD_EMERGENCY_PRICE}g/ks) nebo sázet nové stromy. Les se obnoví za 2–3 sezóny.`,
-      den:`The forest is bare. Buy wood from Weiss (${WOOD_EMERGENCY_PRICE}g/unit) or plant new trees. Recovery takes 2–3 seasons.`},
+      dcs:`Les je prázdný. Dřevo musíš kupovat od Weisse (${mny(WOOD_EMERGENCY_PRICE)}/ks) nebo sázet nové stromy. Les se obnoví za 2–3 sezóny.`,
+      den:`The forest is bare. Buy wood from Weiss (${mny(WOOD_EMERGENCY_PRICE)}/unit) or plant new trees. Recovery takes 2–3 seasons.`},
     svjiri:{i:"💨",cs:"Hlásí se foukači a brusiči — Sv. Jiří",en:"Blowers and grinders apply — St. George",
       dcs:"Kampaň na Sv. Jiří přilákala foukače a brusiče z okolí. Další sezóny mohou být jiné. Na Trhu je možné je najmout co nejdříve.",
       den:"St. George's campaign drew blowers and grinders from the region. Next seasons can be different. Hire them at the Market as soon as possible."}

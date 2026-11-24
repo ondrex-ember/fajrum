@@ -1,8 +1,8 @@
 // ── KONTRAKT SYSTÉM ─────────────────────────────────────────────────────────
 function contractCost(w,months){
-  const wage=2+(w.wageMod||0);
+  const wage=200+(w.wageMod||0);
   const opt=CONTRACT_OPTIONS.find(o=>o.months===months)||CONTRACT_OPTIONS[0];
-  return Math.round(wage*opt.mult);
+  return Math.round(inZl(wage)*opt.mult)*KR;
 }
 function signContract(workerId,months){
   const w=G.workers.find(x=>x.id===workerId);
@@ -16,7 +16,7 @@ function signContract(workerId,months){
   // Odstranit z retention queue
   G._retentionPending=(G._retentionPending||[]).filter(id=>id!==workerId);
   const L=G.lang||"cs";
-  G.log.push(`__ECO__📜 ${w.name} ${L==="cs"?"podepsal kontrakt na":"signed contract for"} ${months} ${L==="cs"?"měs.":"mo."} (-${cost}g, +${L==="cs"?"loaj.":"loy."})`);
+  G.log.push(`__ECO__📜 ${w.name} ${L==="cs"?"podepsal kontrakt na":"signed contract for"} ${months} ${L==="cs"?"měs.":"mo."} (-${mny(cost)}, +${L==="cs"?"loaj.":"loy."})`);
   Fx.render();
 }
 

@@ -49,7 +49,7 @@ function renderHelpModal(ctx){
         L==="cs"?"📜 Zakázky (Trh)":"📜 Contracts (Market)"),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",lineHeight:"1.7",marginBottom:"10px"}},
         L==="cs"
-          ?"Na začátku každé sezóny přijdou nabídky od kupců — přijmi max 3 aktivní zakázky. Splnění do termínu = bonus groše. Nesplnění = ztráta reputace. Kupci: Weiss (waldglas), Hoffmann (křišťál), Opat z Lemberka (liturgie), Šlechtic von Harrach (luxus)."
+          ?"Na začátku každé sezóny přijdou nabídky od kupců — přijmi max 3 aktivní zakázky. Splnění do termínu = bonus peníze. Nesplnění = ztráta reputace. Kupci: Weiss (waldglas), Hoffmann (křišťál), Opat z Lemberka (liturgie), Šlechtic von Harrach (luxus)."
           :"At each season start, buyers make offers — accept max 3 active contracts. Fulfil by deadline = bonus groschen. Failure = reputation loss. Buyers: Weiss (waldglas), Hoffmann (crystal), Abbot of Lemberk (liturgy), Noble von Harrach (luxury)."),
 
       h("div",{style:{textAlign:"right",marginTop:"10px",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"8px",display:"flex",justifyContent:"space-between",alignItems:"center"}},

@@ -803,6 +803,71 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
   filter: drop-shadow(0 0 4px rgba(201,149,43,0.4));
 }
 
+
+/* ── Zásoby: značky na pills, bublina, panel „📦 Zásoby“ (core/stock.js, ui/stock-ui.js) ── */
+.stk-pill{cursor:pointer;position:relative;}
+.stk-mark{display:inline-flex;align-items:center;justify-content:center;min-width:12px;height:12px;margin-left:2px;border-radius:7px;font-size:9px;font-weight:800;line-height:1;padding:0 2px;}
+.stk-mark.warn{background:#d9a21b;color:#2a1a0a;}
+.stk-mark.crit{background:var(--danger);color:#fff;}
+.stk-bubble{display:flex;flex-direction:column;gap:10px;padding-bottom:4px;}
+.stk-head{display:flex;align-items:center;gap:12px;}
+.stk-head-art .fj-resource-art{width:44px;height:44px;font-size:34px;}
+.stk-head-art .fj-resource-art>img{width:100%;height:100%;}
+.stk-head-art>span{font-size:34px;line-height:1;}
+.stk-amount{font-size:26px;font-weight:700;color:var(--ink);line-height:1.1;}
+.stk-state{font-size:13px;font-weight:700;color:var(--ok);}
+.stk-state.warn{color:var(--gold);}
+.stk-state.crit{color:var(--danger);}
+.stk-hint{padding:8px 10px;border-radius:5px;font-size:14px;line-height:1.4;border-left:4px solid var(--gold);background:rgba(201,149,43,.14);color:var(--ink);}
+.stk-hint.crit{border-left-color:var(--danger);background:rgba(160,48,32,.13);}
+.stk-row-label{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--warm);font-weight:700;margin-bottom:2px;}
+.stk-row-text{font-size:14px;line-height:1.45;color:var(--ink);white-space:pre-line;}
+.stk-buy{font-size:13px;line-height:1.4;padding:7px 10px;border-radius:5px;background:rgba(139,94,52,.12);color:var(--ink);}
+.stk-open{align-self:flex-start;min-height:40px;}
+.fj-stock-panel .stk-alert{padding:7px 10px;margin-bottom:6px;border-radius:5px;border-left:4px solid var(--gold);background:rgba(201,149,43,.13);cursor:pointer;}
+.fj-stock-panel .stk-alert.crit{border-left-color:var(--danger);background:rgba(160,48,32,.13);}
+.stk-alert-text{font-size:12px;font-weight:700;color:var(--ink);}
+.stk-alert-hint{font-size:11px;color:var(--warm);margin-top:2px;line-height:1.35;}
+.stk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;}
+.stk-tile{display:flex;flex-direction:column;gap:2px;text-align:left;padding:6px 8px;border-radius:5px;border:1px solid rgba(42,26,10,.14);background:rgba(0,0,0,.03);color:var(--ink);font-family:inherit;cursor:pointer;min-height:64px;}
+.stk-tile.warn{border-color:#d9a21b;background:rgba(217,162,27,.12);}
+.stk-tile.crit{border-color:var(--danger);background:rgba(160,48,32,.12);}
+.stk-tile-top{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--warm);font-weight:700;}
+.stk-tile-top .fj-resource-art{width:20px;height:20px;}
+.stk-tile-val{font-size:17px;font-weight:700;line-height:1.1;}
+.stk-tile-reach{font-size:10px;color:var(--warm);line-height:1.2;}
+.stk-tile-state{font-size:10px;font-weight:800;}
+.stk-tile.warn .stk-tile-state{color:var(--gold);}
+.stk-tile.crit .stk-tile-state{color:var(--danger);}
+.stk-tile-bar{height:4px;border-radius:2px;background:rgba(0,0,0,.12);margin-top:auto;overflow:hidden;}
+.stk-tile-fill{height:100%;background:var(--ok);}
+.stk-tile.warn .stk-tile-fill{background:#d9a21b;}
+.stk-tile.crit .stk-tile-fill{background:var(--danger);}
+
+/* ── Podzáložky (ui/subtabs.js): řádek chipů nahoře karty; na úzkém displeji se posouvá do strany ── */
+.fj-sub-chips{position:sticky;top:0;z-index:4;display:flex;flex-wrap:nowrap!important;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;margin:0 0 8px;padding:6px 8px;background:var(--card2);border-bottom:1px solid rgba(42,26,10,.18);}
+.fj-sub-chips .detail-subtab{flex:0 0 auto;white-space:nowrap;border-radius:4px;cursor:pointer;}
+.fj-sub-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;margin-left:3px;padding:0 4px;border-radius:8px;background:var(--gold);color:#2a1a0a;font-size:10px;font-weight:800;}
+/* přehledové rejstříky uvnitř karet jsou s podzáložkami zbytečné (sekce, na které odkazovaly, tu už nejsou všechny) */
+.content:has(.fj-sub-chips) :is(.fj-market-nav,.fj-d4-register-nav,.fj-d3-index){display:none;}
+
+/* ── Bubliny „proč nejde úkol“ (core/task-block.js, ui/task-block-ui.js) ── */
+.btn.is-veiled{opacity:.5;cursor:pointer;}
+.fj-crew-task-choice.is-veiled{opacity:.55;cursor:pointer;}
+.fj-task-warn{margin-top:4px;padding:4px 7px;border-radius:4px;font-size:10px;line-height:1.35;color:var(--ink);background:rgba(217,162,27,.16);border-left:3px solid #d9a21b;}
+.tb-bubble{display:flex;flex-direction:column;gap:9px;padding-bottom:4px;}
+.tb-reason{font-size:16px;font-weight:700;line-height:1.35;color:var(--ink);}
+.tb-when{font-size:14px;color:var(--ok);font-weight:700;}
+.tb-tip,.tb-note{font-size:13px;line-height:1.4;color:var(--warm);}
+.tb-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.tb-actions .btn{min-height:44px;}
+
+/* ── Mobilní navigace: posuvný pruh všech sekcí + „Více“ vpravo (ui/fajrum-ui.js navigation) ── */
+.fj-nav-strip{display:flex!important;grid-template-columns:none;align-items:stretch;padding-inline:0;}
+.fj-nav-scroll{flex:1 1 auto;min-width:0;display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;padding-inline:4px;}
+.fj-nav-scroll::-webkit-scrollbar{display:none;}
+.fj-nav-strip .fj-nav-button{flex:0 0 auto;min-width:68px;scroll-snap-align:center;}
+.fj-nav-strip .fj-nav-more{flex:0 0 64px;min-width:64px;border-left:1px solid #66503a;border-radius:0;}
 </style>
 <link rel="stylesheet" href="ui/fajrum-mobile.css">
 <link rel="stylesheet" href="ui/fajrum-artwork.css">

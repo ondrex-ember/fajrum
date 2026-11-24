@@ -112,6 +112,17 @@ function renderTabSettings(ctx){
   saveSec.append(resetRow);
   content.append(saveSec);
 
+  // ── PRŮVODCE ──
+  const gSec=h("div",{class:"sec"});
+  gSec.append(h("div",{class:"sec-title"},"🧭 "+(L==="cs"?"Průvodce":"Guide")));
+  gSec.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
+    L==="cs"?"Mistr Kunc radí krok za krokem podle toho, co se v huti děje. Nic za tebe nehraje, jen ukáže, co hlídat."
+            :"Master Kunc advises step by step based on what is happening in the foundry. He plays nothing for you; he only points out what to watch."));
+  gSec.append(h("div",{class:"settings-row"},
+    h("span",{class:"settings-label"},L==="cs"?"Zobrazovat průvodce":"Show the guide"),
+    h("button",{class:"btn btn-s"+(guideOn()?" btn-p":""),onClick:()=>setGuide(!guideOn())},guideOn()?(L==="cs"?"Zapnuto":"On"):(L==="cs"?"Vypnuto":"Off"))));
+  content.append(gSec);
+
   // Zvuk
   const aSec=h("div",{class:"sec"});
   aSec.append(h("div",{class:"sec-title"},"🔊 "+(L==="cs"?"Zvuk":"Audio")));

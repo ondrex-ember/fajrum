@@ -3,6 +3,7 @@
 
 function renderTabProduction(ctx){
   const {L,isC,p,fEff,isDesktop,content}=ctx;
+  {const sb=subTabBar("production");if(sb)content.append(sb);}
   // Waldglas
   const w1=h("div",{class:"sec","data-worksite":"potash"});
   w1.append(
@@ -68,9 +69,9 @@ function renderTabProduction(ctx){
     const prodRight=h("div",{style:{borderLeft:"1px solid rgba(42,26,10,.1)"}});
     prodRight.append(w3,wFormy);
     prodGrid.append(prodLeft,prodRight);
-    content.append(prodGrid);
+    if(subOn("production","melt"))content.append(prodGrid);
   }else{
-    content.append(w1,w2,w3,wFormy);
+    if(subOn("production","melt"))content.append(w1,w2,w3,wFormy);
   }
 
   // ── FOUKANÉ VÝROBKY — vždy full-width pod gridem ──
@@ -108,7 +109,7 @@ function renderTabProduction(ctx){
       // Hlavička: ikona + jméno + cena
       card.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"3px"}},
         h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
-        h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700"}},`~${estPrice}g`)));
+        h("span",{style:{fontSize:"10px",color:"#c9952b",fontWeight:"700"}},`~${mny(estPrice)}`)));
       // Výběr barvy/vstupu — jen pokud má více možností
       if(it.inputs.length>1){
         const colorRow=h("div",{style:{display:"flex",gap:"2px",flexWrap:"wrap",marginBottom:"3px"}});
@@ -204,7 +205,7 @@ function renderTabProduction(ctx){
       wFouk.append(sGrid);
     });
   }
-  content.append(wFouk);
+  if(subOn("production","blow"))content.append(wFouk);
 
   // ── BROUŠENÍ ──
   const wBrus=h("div",{class:"sec","data-worksite":"grinding"});
@@ -231,7 +232,7 @@ function renderTabProduction(ctx){
         card.append(
           h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px"}},
             h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
-            h("span",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700"}},`~${it.base}g`)),
+            h("span",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700"}},`~${mny(it.base)}`)),
           h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
             `✨ ${it.qty}× crystal`),
           inv.length?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},`${L==="cs"?"Sklad":"Stock"}: ${inv.length}×`):"",
@@ -259,7 +260,7 @@ function renderTabProduction(ctx){
         card.append(
           h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px"}},
             h("span",{style:{fontSize:"11px"}},`${it.icon} ${L==="cs"?it.cs:it.en}`),
-            h("span",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700"}},`~${it.base}g`)),
+            h("span",{style:{fontSize:"10px",color:"#3a6a9a",fontWeight:"700"}},`~${mny(it.base)}`)),
           h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},`${COLOR_ICON[it.input]||"✨"} ${it.qty}× ${it.input}`),
           inv.length?h("div",{style:{fontSize:"9px",color:"#4a7a3a",marginBottom:"3px"}},`${L==="cs"?"Sklad":"Stock"}: ${inv.length}×`):"",
           h("button",{class:"btn btn-s"+(ok?" btn-p":""),
@@ -271,7 +272,7 @@ function renderTabProduction(ctx){
       wBrus.append(kGrid);
     }
   }
-  content.append(wBrus);
+  if(subOn("production","grind"))content.append(wBrus);
 
   // ── RYTINY ──
   const wRyt=h("div",{class:"sec","data-worksite":"engraving"});
@@ -298,7 +299,7 @@ function renderTabProduction(ctx){
         h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px"}},
           h("span",{style:{fontSize:"10px"}},`${srcItem.icon} ${L==="cs"?srcItem.cs:srcItem.en}`),
           h("span",{style:{fontSize:"10px",color:"#8b7a2a",fontWeight:"700"}},
-            `~${Math.round(srcBase*engraveBonus(key))}g ✂️`)),
+            `~${mny(Math.round(srcBase*engraveBonus(key)))} ✂️`)),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"3px"}},
           `${L==="cs"?"Na skladě":"In stock"}: ${inv.length}× → rytina: ${rytInv.length}×`),
         h("button",{class:"btn btn-s"+(ok?" btn-p":""),
@@ -309,7 +310,7 @@ function renderTabProduction(ctx){
     });
     wRyt.append(rytGrid);
   }
-  content.append(wRyt);
+  if(subOn("production","grind"))content.append(wRyt);
 
   // ── SPECIÁLNÍ VÝROBKY ──
   const wSpec=h("div",{class:"sec"});
@@ -329,11 +330,11 @@ function renderTabProduction(ctx){
   [
     h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
       h("span",{style:{fontSize:"12px",fontWeight:"700"}},"🪟 "+(L==="cs"?"Okenní terčíky":"Window discs")),
-      h("span",{style:{fontSize:"11px",color:"#4a7a3a",fontWeight:"700"}},"~3–9g/ks")),
+      h("span",{style:{fontSize:"11px",color:"#4a7a3a",fontWeight:"700"}},"~"+mny(300)+"–"+mny(900)+(L==="cs"?"/ks":"/pc"))),
     h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
       L==="cs"
-        ?"🟫 2× waldglas → 2–3× terčík Ø8–10 cm. Nepodařené (kval.≤2) → výplně (2g). Prémiové (kval.≥4) → žebrové (9g)."
-        :"🟫 2× waldglas → 2–3× window disc Ø8–10 cm. Rejects (qual.≤2) → fillers (2g). Premium (qual.≥4) → ribbed (9g)."),
+        ?"🟫 2× waldglas → 2–3× terčík Ø8–10 cm. Nepodařené (kval.≤2) → výplně ("+mny(200)+"). Prémiové (kval.≥4) → žebrové ("+mny(900)+")."
+        :"🟫 2× waldglas → 2–3× window disc Ø8–10 cm. Rejects (qual.≤2) → fillers ("+mny(200)+"). Premium (qual.≥4) → ribbed ("+mny(900)+")."),
     !hasFoukacLesni?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
       L==="cs"?"⛔ Foukač nastupuje v dubnu (Sv. Jiří)":"⛔ Blower joins in April (St. George's Day)"):null,
     !hasTercikInput&&hasFoukacLesni?h("div",{style:{fontSize:"9px",color:"#a03020",marginBottom:"3px"}},
@@ -373,7 +374,7 @@ function renderTabProduction(ctx){
   [
     h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
       h("span",{style:{fontSize:"12px",fontWeight:"700"}},`🪞 ${L==="cs"?zrIt.cs:zrIt.en}`),
-      h("span",{style:{fontSize:"11px",color:"#c9952b",fontWeight:"700"}},`~${zrIt.sell_cs}g`)),
+      h("span",{style:{fontSize:"11px",color:"#c9952b",fontWeight:"700"}},`~${mny(zrIt.sell_cs)}`)),
     h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
       `✨ 2× crystal  🩶 1× ${L==="cs"?"rtuť":"mercury"}  ⚪ 1× ${L==="cs"?"cín":"tin"}`),
     h("div",{style:{fontSize:"9px",color:hasBrusic?"#4a7a3a":"#a03020",marginBottom:"3px"}},
@@ -412,7 +413,7 @@ function renderTabProduction(ctx){
   [
     h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"4px"}},
       h("span",{style:{fontSize:"12px",fontWeight:"700"}},`⚗️ ${L==="cs"?alIt.cs:alIt.en}`),
-      h("span",{style:{fontSize:"11px",color:"#7a4a9a",fontWeight:"700"}},`~${alIt.sell_cs}g`)),
+      h("span",{style:{fontSize:"11px",color:"#7a4a9a",fontWeight:"700"}},`~${mny(alIt.sell_cs)}`)),
     h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",lineHeight:"1.5"}},
       `✨ 2× crystal  🧪 1× ${L==="cs"?"arsen (As₂O₃)":"arsenic (As₂O₃)"}`),
     h("div",{style:{fontSize:"9px",color:hasFoukacKrist?"#4a7a3a":"#a03020",marginBottom:"3px"}},
@@ -442,5 +443,5 @@ function renderTabProduction(ctx){
       :"🪟 Window discs = blown as basic item, quality≤2 → fillers, ≥4 → ribbed. 🪞 Mercury only from Baranovský (season 3+). ⚗️ Alembic = alchemist/apothecary commission."));
 
   if(window.FajrumRecipeUI)FajrumRecipeUI.specialCards(wSpec,p,{isCampaign:isC,craft:craftSpecial});
-  content.append(wSpec);
+  if(subOn("production","special"))content.append(wSpec);
 }

@@ -9,7 +9,7 @@
   const missing=Object.entries(it.inputs).filter(([key,n])=>FajrumCatalog.specialHave(state,key)<n);
   const ok=options.isCampaign&&state.fActive&&state.season>=it.minSeason&&!missing.length&&!missingWorkers.length;
   const card=el('div','fj-craft-card');card.dataset.product='hodiny';card.dataset.glass='waldglas';card.dataset.available=String(ok);
-  const heading=el('div','fj-recipe-heading');heading.append(el('strong','',it[L]),el('span','',`~${it.base}g`));card.append(heading,el('p','fj-recipe-cost',it['desc_'+L]));
+  const heading=el('div','fj-recipe-heading');heading.append(el('strong','',it[L]),el('span','',`~${moneyStr(it.base,L!=='en')}`));card.append(heading,el('p','fj-recipe-cost',it['desc_'+L]));
   card.append(el('div','fj-recipe-cost',Object.entries(it.inputs).map(([k,n])=>`${n}× ${label(k,L)}`).join(' + ')));
   card.append(el('div','fj-recipe-cost',it.workers.map(k=>(L==='cs'?PROF_CS:PROF_EN)[k]).join(' + ')));
   const hint=!options.isCampaign||!state.fActive?(L==='cs'?'Pec neběží':'Furnace off'):missingWorkers.length?(L==='cs'?'Chybí profese: ':'Missing worker: ')+missingWorkers.map(k=>(L==='cs'?PROF_CS:PROF_EN)[k]).join(', '):missing.length?(L==='cs'?'Chybí: ':'Missing: ')+missing.map(([k])=>label(k,L)).join(', '):'';

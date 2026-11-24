@@ -67,7 +67,7 @@ function buildChronicleEntry(round, isP, L, productionLines, economyLines, event
 function genShop(){
   const s={};
   Object.entries(MERCH).forEach(([k,v])=>{
-    s[k]={...v,stock:2+Math.floor(Math.random()*3),price:v.b+Math.floor(Math.random()*2)};
+    s[k]={...v,stock:2+Math.floor(Math.random()*3),price:v.b+Math.floor(Math.random()*2)*KR};
   });
   return s;
 }
@@ -77,7 +77,7 @@ function genShop(){
 // waldglas: ~2 ks/kolo, křišťál: ~1 ks/kolo (vlastní receptura: čistý písek + čistá potaš + vápenec).
 function contractFeasible(c,st){
   if(c.item!=="waldglas"&&c.item!=="crystal")return true;
-  const have=st&&Array.isArray(st[c.item])?st[c.item].length:0;
+  const have=st&&Array.isArray(st[c.item])?contractHave(st[c.item],c):0;
   if(have>=c.qty)return true;
   const tier=(st&&st.seasonTier)||0;
   let firstProd=0; while(firstProd<ROUNDS&&!isCampaignMonth(firstProd,tier))firstProd++;
@@ -87,7 +87,7 @@ function contractFeasible(c,st){
 }
 function freshContracts(st){
   const pool=CONTRACT_POOL.filter(c=>contractFeasible(c,st));
-  return [...pool].sort(()=>Math.random()-.5).slice(0,3);
+  return [...pool].sort(()=>Math.random()-.5).slice(0,contractOffers()).map(c=>({...c}));
 }
 
 let G;
@@ -95,8 +95,8 @@ function initState(){
   return{
     phase:"intro", lang:"cs",
     season:1, round:0,
-    grose:65, debt:40, morale:65, beer:1,
-    _dm:2, exCrewClaims:[], // _dm = verze účetního modelu dluhů (2 = dluh partě odděleně od Weisse); exCrewClaims = pohledávky bývalých zaměstnanců [{id,name,npcId,amount,season,round,reason}]
+    grose:6500, debt:4000, morale:65, beer:1,
+    _dm:2, _cur:2, exCrewClaims:[], // _dm = verze účetního modelu dluhů (2 = dluh partě odděleně od Reichela); exCrewClaims = pohledávky bývalých zaměstnanců [{id,name,npcId,amount,season,round,reason}]
     debtMoratorium:0, totalDone:0, totalW:0, totalC:0, failureReason:null, failureStats:null,
     forest:INIT_FOREST, forestMax:INIT_FOREST,
     seasonTier:0, noblePrivilege:false,
@@ -173,7 +173,9 @@ function initState(){
     shop:genShop(), mBonus:false,
     contracts:[], avail:freshContracts(), done:0,
     fama:{church:0, noble:0, trade:0},
-    debtReputation:0, // 0–100: splácení dluhu zlepšuje podmínky půjček u Weisse
+    guide:{on:false,done:[],snooze:{}}, // průvodce Kunc (core/guide.js); starý save bez klíče = vypnuto
+    partners:partnersInit(), // vztahy s obchodními partnery (jen záznam, viz core/partners.js)
+    debtReputation:0, // 0–100: splácení dluhu zlepšuje podmínky půjček u Reichela
     totalDebtPaid:0,  // celkem splaceno (tracking)
     quickSellUsed:false, // rychlý výkup — jednou za sezónu
     endgame:{church:false, noble:false, trade:false},

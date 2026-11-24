@@ -39,7 +39,7 @@ function renderRetentionModal(ctx,wId,rw){
     "⚠️ "+sitText));
   if(unpaid>0){
     box.append(h("div",{style:{fontSize:"11px",color:"#a03020",marginBottom:"8px",fontWeight:"600"}},
-      `💸 ${L==="cs"?"Dlužné mzdy":"Owed wages"}: ${unpaid}g — ${L==="cs"?"to ho drásá nejvíc":"this hurts him most"}`));
+      `💸 ${L==="cs"?"Dlužné mzdy":"Owed wages"}: ${mny(unpaid)} — ${L==="cs"?"to ho drásá nejvíc":"this hurts him most"}`));
   }
   // Kontrakt volby
   box.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},
@@ -59,7 +59,7 @@ function renderRetentionModal(ctx,wId,rw){
     const moodBonus=Math.min(opt.months,12);
     btn.append(
       h("span",{style:{fontWeight:"600"}},lbl),
-      h("span",{style:{color:"#8b5e34",fontSize:"10px"}},`${cost}g · +20 loaj. +${moodBonus} nál.`)
+      h("span",{style:{color:"#8b5e34",fontSize:"10px"}},`${mny(cost)} · +20 loaj. +${moodBonus} nál.`)
     );
     contractGrid.append(btn);
   });
@@ -68,7 +68,7 @@ function renderRetentionModal(ctx,wId,rw){
   const actRow=h("div",{style:{display:"flex",flexDirection:"column",gap:"4px"}});
   if(unpaid>0&&p.grose>=unpaid){
     actRow.append(h("button",{class:"btn btn-p",style:{fontSize:"11px"},
-      onClick:()=>{retentionPayDebt(wId);}},`💸 ${L==="cs"?"Splatit dluh":"Pay debt"} (${unpaid}g) ${L==="cs"?"— zůstane":"— he stays"}`));
+      onClick:()=>{retentionPayDebt(wId);}},`💸 ${L==="cs"?"Splatit dluh":"Pay debt"} (${mny(unpaid)}) ${L==="cs"?"— zůstane":"— he stays"}`));
   }
   actRow.append(
     h("button",{class:"btn",style:{fontSize:"11px",opacity:.75},

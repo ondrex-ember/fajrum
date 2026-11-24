@@ -34,12 +34,19 @@ const JS_MAIN = [
   'src/data/glass.js',
   'src/data/texts.js',
   'src/data/achievements-wiki.js',
+  'src/data/partners.js',
+  'src/data/guide.js',
+  'src/data/resource-info.js',
 
   // Game logic — headless (runs in Node for the golden/extract tests); no DOM, no sound, talks to the UI only through Fx
   'src/core/rules-base.js',
   'src/core/crew.js',
   'src/core/craft.js',
   'src/core/state.js',
+  'src/core/partners.js',
+  'src/core/guide.js',
+  'src/core/stock.js',
+  'src/core/task-block.js',
   'src/core/process-round.js',
   'src/core/contracts-sign.js',
   'src/core/interseason.js',
@@ -61,6 +68,11 @@ const JS_MAIN = [
   'src/ui/molten.js',
   'src/ui/season-upgrades.js',
   'src/ui/contract-cards.js',
+  'src/ui/partner-card.js',
+  'src/ui/guide-card.js',
+  'src/ui/stock-ui.js',
+  'src/ui/subtabs.js',
+  'src/ui/task-block-ui.js',
   'src/ui/render.js',
 
   // UI: full-screen views (renderOriginal() dispatches to them)

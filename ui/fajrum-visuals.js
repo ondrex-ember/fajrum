@@ -33,7 +33,7 @@
   if(state.tab==='production')detail=cs?`Hotové pánve ${state.pReady} · formy ${state.res.formy||0}`:`Ready crucibles ${state.pReady} · moulds ${state.res.formy||0}`;
   if(state.tab==='storage'){const count=[...new Set([...options.stockKeys,'rubin_raw'])].reduce((sum,key)=>sum+(Array.isArray(state[key])?state[key].length:0),0);detail=cs?`Sklo a výrobky: ${count} ks`:`Glass and glassware: ${count} pcs`;}
   if(state.tab==='market'){detail=options.marketClosed?(cs?'Běžný prodej je uzavřen':'Regular sales are closed'):(cs?'Trh je otevřen':'Market is open');section.dataset.closed=String(options.marketClosed);}
-  if(state.tab==='accounts')detail=cs?`Hotovost ${state.grose} g · dluh ${state.debt} g`:`Cash ${state.grose} g · debt ${state.debt} g`;
+  if(state.tab==='accounts')detail=cs?`Pokladna ${moneyStr(state.grose,true)} · dluh ${moneyStr(state.debt,true)}`:`Treasury ${moneyStr(state.grose,false)} · debt ${moneyStr(state.debt,false)}`;
   if(state.tab==='log')detail=cs?`Záznamy ${state.log.length} · sezóna ${state.season}`:`Entries ${state.log.length} · season ${state.season}`;
   if(state.tab==='archiv')detail=cs?'Výrobky · recepty · objevy':'Glassware · recipes · discoveries';
   if(detail)section.append(el('div','fj-section-art-detail',detail));return section;

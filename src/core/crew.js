@@ -35,7 +35,7 @@ function hireWorker(candidate){
   G.grose-=candidate.hireCost;
   G.workers.push({...candidate,id:"w"+Date.now()});
   G.interseason.candidates=G.interseason.candidates.filter(c=>c.id!==candidate.id);
-  G.log.push(`__ECO__👷 ${candidate.name} ${G.lang==="cs"?"přijat do hutě":"hired"} (-${candidate.hireCost}g)`);
+  G.log.push(`__ECO__👷 ${candidate.name} ${G.lang==="cs"?"přijat do hutě":"hired"} (-${mny(candidate.hireCost)})`);
   Fx.render();
 }
 
@@ -47,7 +47,7 @@ function fireWorker(workerId){
   G.log.push(`__ECO__👋 ${w.name} ${G.lang==="cs"?"odešel z hutě":"left the foundry"}`);
   if((w.unpaidDebt||0)>0){   // propuštěný dělník si nárok na nevyplacené mzdy odnáší → kniha pohledávek
     (G.exCrewClaims=G.exCrewClaims||[]).push({id:"c"+G.season+"_"+G.round+"_"+w.id,name:w.name,npcId:w.npcId||null,amount:w.unpaidDebt,season:G.season,round:G.round,reason:"fired"});
-    G.log.push(`__ECO__📒 ${G.lang==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${w.unpaidDebt}g zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${w.unpaidDebt}g recorded in the ledger`}`);
+    G.log.push(`__ECO__📒 ${G.lang==="cs"?`Pohledávka bývalého dělníka ${w.name}: ${mny(w.unpaidDebt)} zapsána v knize dluhů`:`Claim of former worker ${w.name}: ${mny(w.unpaidDebt)} recorded in the ledger`}`);
   }
   Fx.render();
 }
@@ -63,10 +63,10 @@ function workerTier(lv){
 function getTomislavRank(p){
   const mins=[
     {id:"pomocnik", s:0, g:0},
-    {id:"ucen",     s:1, g:50},
-    {id:"tovarys",  s:2, g:200},
-    {id:"mistr",    s:4, g:600},
-    {id:"velmistr", s:8, g:2000},
+    {id:"ucen",     s:1, g:5000},
+    {id:"tovarys",  s:2, g:20000},
+    {id:"mistr",    s:4, g:60000},
+    {id:"velmistr", s:8, g:200000},
   ];
   let idx=0;
   mins.forEach((m,i)=>{if((p.season||1)>=m.s&&(p.grose||0)>=m.g)idx=i;});

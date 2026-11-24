@@ -111,3 +111,40 @@ Pozn.: `--clicks` je pomalé a paměťově náročné; pouštěj shardy po dvou 
 
 DOM a klikací test se spouští **před** a **po** úpravě a oba výstupy musí být identické (`diff`). Pro refaktor bez změny chování
 je to nejrychlejší důkaz; pro změny hry slouží `golden --check` jako upozornění, co se změnilo.
+
+## Testy ve web repu (`tests/`)
+
+Od portu Android → web má web repo vlastní headless testy (bez DOMu, jen Node). Nahrazují nástroje z Android repa, které tu nejsou.
+
+```bash
+node tests/golden.js check tests/golden/*.json          # přehraje scénáře na aktuálním kódu a porovná stav + počet volání Math.random
+node tests/golden.js gen out.json <seed> <easy|normal> <maxAkcí> [sezón] [careful|chaos]   # nový scénář robotem
+```
+
+- `tests/lib/engine.js` načte `JS_HEADLESS` (core + data) a `ui/fajrum-recipes.js` (katalog receptur, `core/` na něm závisí) do Node `vm`, s `Math.random` = mulberry32 (stejný jako Android `Mulberry32`) a řízeným `Date.now`.
+- Scénář = seznam akcí (slovník jako Android `Actions.kt`) + kontrolní body (`rngCalls`, fáze, stav bez `SKIP_KEYS`). Formát čte i Android `GoldenReplay`.
+- `tests/golden/` = základní scénáře. Změna pravidel hry je rozdíl v `check`; je-li záměrná, přegeneruj scénáře (`gen`) a stejnou změnu zapiš do Android enginu (`PARITY.md`).
+- Křížová kontrola proti Kotlinu: stejný JSON přehraj `GoldenReplay` na Android enginu s obsahem odpovídajícím webu.
+
+### Krejcary (měna) a testy kolem nich
+
+- `tests/golden/` je od kroku „krejcary" nahrávané v krejcarech (1 zl = 100 kr; meta `currency:"krejcary"`). `tests/golden-groats/` jsou stejné scénáře před převodem (v groších) — slouží jako vstup pro:
+- **Zakázky 1b-1** (24 zakázek s `minQ`, 5 nabídek, druhá vlna, Fama podle odměny) změnily pořadí RNG: `tests/golden/` je přegenerované (`gen`, meta `currency:"krejcary"`) a `check --from-groats` už neplatí (porovnává s pravidly před 1b-1). Staré savy ověřuje `node tests/oldsaves.js tests/golden-groats/*.json --loose` (načtení = kontrolní bod, hra pokračuje bez výjimky/NaN; průběh se neporovnává). Pravidla zakázek hlídá `node tests/contracts.js`.
+  - `node tests/golden.js check --from-groats tests/golden-groats/*.json` — přepočte scénář ×100 (stejné pravidlo jako Android `scaleGolden`) a ověří, že se stav i počet volání RNG shodují bit po bitu (text logu se neporovnává);
+  - `node tests/golden.js rebase tests/golden-groats tests/golden` — z groat scénářů znovu vytvoří krejcarové (stav se ověří, nové hashe logu se převezmou, protože text logu obsahuje částky);
+  - `node tests/oldsaves.js tests/golden-groats/*.json --every 5 --ahead 6` — z kontrolních bodů složí staré savy (bez `_cur`), načte je přes `validateGameSave` (migrace ×100) a ověří, že hra pokračuje.
+- `tests/uismoke.js` — smoke test DOM v jsdom (`npm i jsdom` mimo repo, `NODE_PATH=…/node_modules node tests/uismoke.js`; proměnné `ROUNDS`, `RICH=1`, `DEBT=1`, `EN=1`). Projde všechny záložky přes celé sezóny, shrnutí, události, mezisezónu a game over; hledá `NaN`/`undefined`/`[object` a zbylé částky ve starém tvaru („12g"). Nenahrazuje ruční kontrolu vzhledu.
+- Peníze ve stavu i v obsahu jsou celé krejcary. Částku do textu vždy přes `mny(kr)` / `moneyStr(kr,cs)`; zaokrouhlování pravidel se dělá po zlatnících (`Math.round(inZl(x)*k)*KR`), aby výsledek zůstal shodný s původní hrou.
+
+### Obchodní partneři (`G.partners`)
+
+- Data: `src/data/partners.js` (`PARTNERS`, stejná data jako Android `content/PARTNERS.json`; texty, pásma, delty událostí se ladí tady). Logika: `src/core/partners.js` (`partnerEvent`, `partnerByBuyer`, `partnerTier`). Karta: `src/ui/partner-card.js`.
+- Fáze A: vztah se jen zaznamenává (nečte se zpět do pravidel, nesahá na RNG). `partners` je v `SKIP_KEYS` goldenů.
+- `node tests/partners.js tests/golden/*.json` — ověří, že záznamy odpovídají textům v logu (půjčky, výkup, dřevo, odklad, zakázky podle `buyer`), že důvěra souhlasí s přehráním historie a že log nepřesahuje 30 záznamů.
+- Portrét Reichela `img/partners/reichel.webp` zatím chybí → karta ukáže emoji 🧐 (po přidání souboru se obrázek použije sám).
+
+### Průvodce Kunc
+
+- Data: `src/data/guide.js` (`GUIDE_STEPS`: texty, CTA, nápověda, `anim`, `tab`; ladí se ručně, stejná data jako Android `GUIDE_STEPS.json`). Logika: `src/core/guide.js` (kroky `GUIDE_STEP_DEFS` s predikáty, `guideCurrentStep()`, `guideView()`, akce `setGuide`/`guideSnooze`/`guideDo`). Karta: `src/ui/guide-card.js` (nahoře na Přehledu), přepínač v Nastavení, nabídka v úvodním modálu.
+- Stav `G.guide = {on, done:[id], snooze:{id: měsíc}}`; Easy = zapnuto, Normal = vypnuto (nabídka v modálu), starý save bez klíče = vypnuto. `guide` je v `SKIP_KEYS` goldenů; výběr kroku je čistá funkce stavu (žádné RNG, žádné zápisy).
+- `node tests/guide.js [seedů] [sezón]` — bot, který dělá jen to, co radí karta (jako Android `guideFollower`), a kontroluje čistotu výběru. Očekávání (shodné s Androidem): Easy přežije 8 sezón bez půjček a dosáhne tieru 1; Normal s průvodcem nepřežije (zůstává tvrdý).

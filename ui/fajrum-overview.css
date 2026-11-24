@@ -29,6 +29,8 @@
 .fj-overview-meter.is-warning .fj-overview-meter-caption strong {color:var(--danger);}
 .fj-overview-meter.is-warning .fj-overview-meter-fill {background:linear-gradient(90deg,#9d4936,#d58360);}
 .fj-overview-page .fj-hut-hero .fj-art-foot {background-image:var(--fj-overview-paper);background-size:auto,620px;}
-@media(min-width:640px) {.fj-overview-resource-columns {grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);}}
+/* Dvě karty (Hvozd a zásoby / Pec) vedle sebe jen když je karta „Dřevo · Pec“ dost široká; v užším pravém sloupci desktopu se skládají pod sebe. */
+.fj-overview-operations {container-type:inline-size;container-name:fj-ops;}
+@container fj-ops (min-width:560px) {.fj-overview-resource-columns {grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);}}
 @media(min-width:960px) and (min-height:500px) {#app.desktop .fj-overview-columns {gap:12px;padding:10px;align-items:start;}#app.desktop .fj-overview-columns>.sec {margin:0;border:1px solid var(--fj-edge);border-radius:6px;}}
 @media(max-width:370px) {.content.fj-overview-page :is(.fj-overview-ledger,.fj-overview-operations,.fj-overview-roster,.fj-overview-specialists) {padding:14px;}.fj-overview-card-head {gap:8px;}.fj-overview-card-head h3 {font-size:15px;}.fj-overview-allocations,.fj-overview-furnace {padding:10px;}}

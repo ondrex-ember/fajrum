@@ -17,7 +17,7 @@ function startNewSeason(){
   const oldLog=[...p.log];
   oldLog.push(`__SEASON__${newSeason}·${1679+newSeason}`);
   if(storedItems>0){
-    oldLog.push(`__ECO__🏭 ${p.lang==="cs"?`Sklad: ${storedItems}× skla přeneseno, náklad ${storageCost}g`:`Storage: ${storedItems}× glass carried over, cost ${storageCost}g`}`);
+    oldLog.push(`__ECO__🏭 ${p.lang==="cs"?`Sklad: ${storedItems}× skla přeneseno, náklad ${mny(storageCost)}`:`Storage: ${storedItems}× glass carried over, cost ${mny(storageCost)}`}`);
   }
 
   // Reputační zakázky přenesené z minulé sezóny: termín je v absolutních kolech, nová sezóna začíná kolem 0
@@ -99,8 +99,8 @@ function calcSeasonScore(){
     crystal:p.tC*15,
     quality:p.tQN?Math.round((p.tQS/p.tQN)*10):0,
     contracts:p.done*20,
-    grose:Math.round(p.grose*1.5),
-    debt:Math.max(0,(50-p.debt-totalWorkerDebt())*2),   // skóre počítá oba závazky: Weiss + parta
+    grose:Math.round(inZl(p.grose)*1.5),
+    debt:Math.max(0,(50-inZl(p.debt)-inZl(totalWorkerDebt()))*2),   // skóre počítá oba závazky: Reichel + parta
     morale:Math.round(p.morale*.8),
     forest:p.forest*3,
     furnaceRunIn:Math.round(p.furnace.runIn*.5)
@@ -111,14 +111,14 @@ function totalScore(sc){return Object.values(sc).reduce((a,b)=>a+b,0);}
 // ── AKCE ────────────────────────────────────────────────────
 function marketSalePrices(){
   // Ceny: základní suroviny + foukané (s color multiplikátorem) + broušené + rytiny
-  const basePrices={waldglas:3.5,crystal:9,jantar:10,zlut:30,modra:14,smaragd:16,lattimo:22,rubin:50};
+  const basePrices={waldglas:350,crystal:900,jantar:1000,zlut:3000,modra:1400,smaragd:1600,lattimo:2200,rubin:5000};
   // Foukané — základní (waldglas) a barevné varianty
   Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{
     basePrices[k]=v.base; // waldglas verze
     v.inputs.forEach(col=>{
       if(col!=="waldglas"){
         const stateKey=k+"_"+col;
-        basePrices[stateKey]=Math.round(v.base*COLOR_MULT[col]);
+        basePrices[stateKey]=Math.round(inZl(v.base)*COLOR_MULT[col])*KR;
       }
     });
   });
@@ -126,24 +126,24 @@ function marketSalePrices(){
   Object.entries(GROUND_ITEMS).forEach(([k,v])=>{basePrices[k]=v.base;});
   // Rytiny — motiv basic = ×1.4, ostatní dle ENGRAVE_MOTIFS
   ENGRAVE_INPUTS.forEach(k=>{
-    const srcBase=GROUND_ITEMS[k]?.base||basePrices[k]||10;
-    basePrices["rytina_"+k]=Math.round(srcBase*engraveBonus(k));
+    const srcBase=GROUND_ITEMS[k]?.base||basePrices[k]||1000;
+    basePrices["rytina_"+k]=Math.round(inZl(srcBase)*engraveBonus(k))*KR;
   });
   Object.entries(SPECIAL_ITEMS).forEach(([key,it])=>{basePrices[key]=it.base;});
   // Okenní sklo a speciální výrobky
-  basePrices["tercik"]=6;
-  basePrices["tercik_vyplne"]=2;
-  basePrices["tercik_zebrovy"]=9;
-  basePrices["zrcadlo"]=65;
-  basePrices["alembik"]=55;
-  basePrices["holba"]=12;
-  basePrices["kutrolf"]=28;
-  basePrices["kutrolf_waldglas"]=18;
-  basePrices["stangenglas"]=22;
-  basePrices["pateriky"]=2;
-  basePrices["pateriky_modra"]=4;
-  basePrices["pateriky_smaragd"]=5;
-  basePrices["pateriky_lattimo"]=6;
+  basePrices["tercik"]=600;
+  basePrices["tercik_vyplne"]=200;
+  basePrices["tercik_zebrovy"]=900;
+  basePrices["zrcadlo"]=6500;
+  basePrices["alembik"]=5500;
+  basePrices["holba"]=1200;
+  basePrices["kutrolf"]=2800;
+  basePrices["kutrolf_waldglas"]=1800;
+  basePrices["stangenglas"]=2200;
+  basePrices["pateriky"]=200;
+  basePrices["pateriky_modra"]=400;
+  basePrices["pateriky_smaragd"]=500;
+  basePrices["pateriky_lattimo"]=600;
   return basePrices;
 }
 function marketSaleQuote(type,n){
@@ -153,11 +153,11 @@ function marketSaleQuote(type,n){
   inv.sort((a,b)=>b-a);
   const selling=inv.slice(0,cnt),rest=inv.slice(cnt);
   const hasObchodnik=G.workers.some(w=>w.traits?.includes("obchodnik"));
-  const bp=marketSalePrices()[type]||3.5;
+  const bp=marketSalePrices()[type]||350;
   const isVelmistr=getTomislavRank(G)==="velmistr";
   const easyPriceMult = G.difficulty === "easy" ? 1.20 : 1.0;
   const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
-  const total=selling.reduce((s,q)=>s+Math.max(1, Math.round(q*bp*mul)),0);
+  const total=selling.reduce((s,q)=>s+Math.max(KR, Math.round(q*inZl(bp)*mul)*KR),0);
   return {count:cnt,total,rest,base:bp,multiplier:mul};
 }
 // Display name of an inventory key for the chronicle (never the raw key): blown (+colour), ground, engraved, stained, special, colour glass.
@@ -190,15 +190,15 @@ function sellItems(type,n){
   const {count:cnt,total,rest}=marketSaleQuote(type,n);
   G[type]=rest; G.grose+=total;
   G.totalSold=(G.totalSold||0)+cnt;
-  G.log.push(`__ECO__💰 ${cnt}× ${type} → ${total}g`);
+  G.log.push(`__ECO__💰 ${cnt}× ${type} → ${mny(total)}`);
   checkAchievements();
   Fx.render();
 }
 function buyItem(k){
   const it=G.shop[k];if(!it||it.stock<=0||G.grose<it.price)return;
   it.stock--; G.grose-=it.price; G.res[k]=(G.res[k]||0)+1;
-  G.log.push(`__ECO__🛒 ${merchName(k,G.lang)} → -${it.price}g`);
+  G.log.push(`__ECO__🛒 ${merchName(k,G.lang)} → -${mny(it.price)}`);
   Fx.sound("coin", 0.5);
-  Fx.float(`-${it.price}g 🛒`, null, "neg");
+  Fx.float(`-${mny(it.price)} 🛒`, null, "neg");
   Fx.render();
 }

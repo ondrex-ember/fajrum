@@ -5,10 +5,10 @@
 const INTRO_TEXT={
   intro:{cs:"Rok 1680. Otec ti zanechal recept, dluh a starou pec v Arnsdorfu. Kolem šumí hvozd — tvůj poklad i prokletí. Každý strom, co pokácíš, ti dá dřevo. Ale les pomalu dorůstá zpět.",
          en:"Year 1680. Your father left you a recipe, a debt, and an old furnace in Arnsdorf. The forest is your treasure and your curse. Every tree gives wood — and it slowly grows back."},
-  easy:{cs:"🕯️ Štědré dědictví: pec zaběhnutá, 140 grošů v pokladně, nízký dluh 30g, plná spižírna i sklad. Zlevněné zimní mzdy, vyšší výkupní ceny (+20%) a zakázkový bonus (+25%). Klidný čas na učení sklářského umění.",
-        en:"🕯️ Generous inheritance: run-in furnace, 140 coins in treasury, low debt 30g, full pantry and store. Discounted winter wages, higher selling prices (+20%), and contract bonuses (+25%). Relaxed time to master glassmaking."},
-  normal:{cs:"⚔️ Vyvážený start: otcova stará huť, 65 grošů na rozběh, dluh 40g, skromné zásoby na zimu. Vhodné pro strategickou správu lesa a pece.",
-          en:"⚔️ Balanced start: father's old foundry, 65 coins to start, 40g debt, modest winter stores. Ideal for strategic management of woods and furnace."}
+  easy:{cs:"🕯️ Štědré dědictví: pec zaběhnutá, 140 zl v pokladně, nízký dluh 30 zl, plná spižírna i sklad. Zlevněné zimní mzdy, vyšší výkupní ceny (+20%) a zakázkový bonus (+25%). Klidný čas na učení sklářského umění.",
+        en:"🕯️ Generous inheritance: run-in furnace, 140 fl in treasury, low debt 30 fl, full pantry and store. Discounted winter wages, higher selling prices (+20%), and contract bonuses (+25%). Relaxed time to master glassmaking."},
+  normal:{cs:"⚔️ Vyvážený start: otcova stará huť, 65 zl na rozběh, dluh 40 zl, skromné zásoby na zimu. Vhodné pro strategickou správu lesa a pece.",
+          en:"⚔️ Balanced start: father's old foundry, 65 fl to start, 40 fl debt, modest winter stores. Ideal for strategic management of woods and furnace."}
 };
 
 // Deník hráče (záložka Deník): ranky Tomislava Břeťánka + schopnosti ranku
@@ -135,16 +135,16 @@ const HRAC_RANKS=[
   {id:"pomocnik",  cs:"Pomocník",    en:"Helper",       minSeason:0,  minGrose:0,    icon:"🪓",
    desc_cs:"Přišel jsem do hutě s prázdnýma rukama. Kunc mi dá šanci — ale jen jednu.",
    desc_en:"I came to the foundry empty-handed. Kunc gives me a chance — but only one."},
-  {id:"ucen",      cs:"Učeň",        en:"Apprentice",   minSeason:1,  minGrose:50,   icon:"🔥",
+  {id:"ucen",      cs:"Učeň",        en:"Apprentice",   minSeason:1,  minGrose:5000,   icon:"🔥",
    desc_cs:"Začínám rozumět ohni. Pánev praská méně. Kunc mě přestává hlídat každý krok.",
    desc_en:"I'm starting to understand the fire. Crucibles crack less. Kunc stops watching every step."},
-  {id:"tovarys",   cs:"Tovaryš",     en:"Journeyman",   minSeason:2,  minGrose:200,  icon:"💨",
+  {id:"tovarys",   cs:"Tovaryš",     en:"Journeyman",   minSeason:2,  minGrose:20000,  icon:"💨",
    desc_cs:"Umím foukat základní tvary. Lidé v huti mi říkají Tomáš, ne 'ten nový'.",
    desc_en:"I can blow basic shapes. People in the foundry call me Tomáš, not 'the new one'."},
-  {id:"mistr",     cs:"Mistr hutě",  en:"Foundry Master",minSeason:4, minGrose:600,  icon:"⚗️",
+  {id:"mistr",     cs:"Mistr hutě",  en:"Foundry Master",minSeason:4, minGrose:60000,  icon:"⚗️",
    desc_cs:"Huť je moje. Křišťál teče z pece jako voda. Baranovský mi nabízí zakázku pro Harrache.",
    desc_en:"The foundry is mine. Crystal flows from the furnace like water. Baranovský offers a Harrach commission."},
-  {id:"velmistr",  cs:"Velmistr",    en:"Glasmaster",   minSeason:8,  minGrose:2000, icon:"💎",
+  {id:"velmistr",  cs:"Velmistr",    en:"Glasmaster",   minSeason:8,  minGrose:200000, icon:"💎",
    desc_cs:"Jméno Břeťánek zní po celém Novoborsku. Rubín, filigrán, zrcadla — vše.",
    desc_en:"The name Břeťánek rings across all of Novoborsko. Ruby, filigree, mirrors — all of it."},
 ];
@@ -164,12 +164,12 @@ const CODEX_STATIC={
   melt:{
     title_cs:"🔥 Sklovina — surové sklo", title_en:"🔥 Glass melt — raw glass",
     items:[
-      {icon:"🟫",cs:"Lesní sklo (Waldglas)",en:"Forest glass (Waldglas)",price:"~3.5g/★",
+      {icon:"🟫",cs:"Lesní sklo (Waldglas)",en:"Forest glass (Waldglas)",price:"~3 zl 50 kr/★",
        recipe_cs:"3× písek + 2× potaš + 1× vápenec → pánev → tavení",
        recipe_en:"3× sand + 2× potash + 1× limestone → crucible → smelting",
        note_cs:"Základní surovina. Nazelenalá barva od Fe a S. Potaš černá/modrá postačí.",
        note_en:"Base material. Greenish colour from Fe and S. Black/blue potash sufficient."},
-      {icon:"✨",cs:"Křišťál (čiré sklo)",en:"Crystal (clear glass)",price:"~9g/★",
+      {icon:"✨",cs:"Křišťál (čiré sklo)",en:"Crystal (clear glass)",price:"~9 zl/★",
        recipe_cs:"3× čistý písek + 2× čistá potaš + 1× vápenec + 1× uhlí → pánev → tavení (65%+ fTemp)",
        recipe_en:"3× pure sand + 2× refined potash + 1× limestone + 1× charcoal → crucible → smelting (65%+ fTemp)",
        note_cs:"Samostatná receptura, ne vyčištěný waldglas. Burel (čeření) zlepší příští dávku. Technologický přelom ~1680, Müller 1683.",
@@ -180,19 +180,19 @@ const CODEX_STATIC={
     title_cs:"🪟 Okenní sklo & speciální výrobky", title_en:"🪟 Window glass & special items",
     items:[
       {key:"tercik",icon:"🪟",cs:"Okenní terčík",en:"Window disc",
-       price:"6g/★ · výplně 2g · žebrové 9g", price_en:"6g/★ · fillers 2g · ribbed 9g",
+       price:"6 zl/★ · výplně 2 zl · žebrové 9 zl", price_en:"6 fl/★ · fillers 2 fl · ribbed 9 fl",
        recipe_cs:"2× lesní sklo → foukání → Ø8–10 cm. Kval.≤2 → výplně, kval.≥4 → žebrové.",
        recipe_en:"2× waldglas → blowing → Ø8–10 cm. Qual.≤2 → fillers, qual.≥4 → ribbed.",
        note_cs:"Hromadný odbyt každé hutě. Kláštery, měšťanské domy, Haida trh. (CP_13II2015)",
        note_en:"Bulk product of every foundry. Monasteries, townhouses, Haida market. (CP_13II2015)"},
       {key:"zrcadlo",icon:"🪞",cs:"Zrcadlo (sezóna 3+)",en:"Mirror (season 3+)",
-       price:"~65g",
+       price:"~65 zl",
        recipe_cs:"2× křišťál + 1× rtuť + 1× cín + hranař",
        recipe_en:"2× crystal + 1× mercury + 1× tin + edge-cutter",
        note_cs:"Amalgám rtuti+cínu na zadní stranu. Rtuť z Idrie = import. Vzácný luxus pro šlechtu.",
        note_en:"Mercury-tin amalgam on reverse. Mercury from Idrija = import. Rare noble luxury."},
       {key:"alembik",icon:"⚗️",cs:"Alembik (sezóna 2+)",en:"Alembic (season 2+)",
-       price:"~55g",
+       price:"~55 zl",
        recipe_cs:"2× křišťál + 1× arsen (As₂O₃) + foukač křišťálu",
        recipe_en:"2× crystal + 1× arsenic (As₂O₃) + crystal blower",
        note_cs:"Destilační helma. Nejstarší nález stř. Evropy: klarisy Bratislava ~1290. (Sedláčková 2021)",
@@ -258,7 +258,7 @@ const CHRON_HUMOR_GOOD=[
   {cs:"Máňa po dvou džbánech vymyslela zkratku mezi milířem a loužírnou přes zadní dvůr. Ušetří čtvrt hodiny na každé směně. Káninský ji odmítl pochválit, ale příští den tu zkratku používal jako první.",
    en:"After two tankards Máňa came up with a shortcut between the charcoal kiln and the lye house across the back yard. It saves a quarter of an hour on every shift. Káninský refused to praise her, but the next day he was the first to use the shortcut.", effect:"morale", val:6},
   {cs:"Baranovský — uvolněný po pivě — zapomněl obchodní taktiku a řekl kramáři z Haidy skutečnou výkupní cenu skla. Kramář byl tak překvapen upřímností že dal o dva groše víc. Baranovský si myslí že vyjednal výborně.",
-   en:"Baranovský — relaxed after beer — forgot his sales tactics and told the pedlar from Haida the real purchase price of glass. The pedlar was so surprised by the honesty that he paid two groschen more. Baranovský thinks he negotiated brilliantly.", effect:"grose", val:4},
+   en:"Baranovský — relaxed after beer — forgot his sales tactics and told the pedlar from Haida the real purchase price of glass. The pedlar was so surprised by the honesty that he paid two groschen more. Baranovský thinks he negotiated brilliantly.", effect:"grose", val:400},
   {cs:"Táborský se po slavnostním přídělu vsadil s Komárem kdo nanosí víc jílu za hodinu. Přinesli dvojnásobek denní normy. Druhý den si oba stěžovali na záda, ale zásoby jílu byly plné.",
    en:"After the festive ration Táborský bet Komár who could carry more clay in an hour. They brought double the daily quota. The next day both complained about their backs, but the clay stock was full.", effect:"clay", val:4}
 ];

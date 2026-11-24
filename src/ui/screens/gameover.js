@@ -40,8 +40,8 @@ function renderGameOverScreen(ctx){
     reasonIcon = "⚖️";
     reasonTitle = L==="cs" ? "Panská exekuce a zabavení huti věřiteli" : "Manorial foreclosure and confiscation";
     reasonStory = L==="cs"
-      ? "Panský hejtman hraběcího panství v doprovodu rychtáře a ozbrojených biřiců přitloukl na vrata huti exekuční pečeť. Pro nesplatitelné dluhy a neuhrazené účty u Faktora Weisse byla celá sklárna zabavena. Pánve a zásoby křišťálu šly do dražby v České Lípě a správu huti převzal cizí faktor."
-      : "The estate bailiff, accompanied by the reeve and armed guards, nailed the foreclosure seal upon the foundry gates. For insurmountable debt and unpaid credit to Factor Weiss, the entire glasshouse was confiscated. Crucibles and glass stocks were auctioned in Česká Lípa, and management handed to an outside overseer.";
+      ? "Panský hejtman hraběcího panství v doprovodu rychtáře a ozbrojených biřiců přitloukl na vrata huti exekuční pečeť. Pro nesplatitelné dluhy a neuhrazené účty u Faktora Reichela byla celá sklárna zabavena. Pánve a zásoby křišťálu šly do dražby v České Lípě a správu huti převzal cizí faktor."
+      : "The estate bailiff, accompanied by the reeve and armed guards, nailed the foreclosure seal upon the foundry gates. For insurmountable debt and unpaid credit to Factor Reichel, the entire glasshouse was confiscated. Crucibles and glass stocks were auctioned in Česká Lípa, and management handed to an outside overseer.";
   } else {
     reasonIcon = "🌋";
     reasonTitle = L==="cs" ? "Zkáza pece a úplný rozpad huti" : "Collapse of the furnace and ruin of the workshop";
@@ -68,7 +68,7 @@ function renderGameOverScreen(ctx){
     {label: L==="cs"?"Uvařeno skloviny":"Glass batches melted", val: `🔥 ${st.batches} ${L==="cs"?"várek":"batches"}`},
     {label: L==="cs"?"Prodané výrobky":"Glassware sold", val: `✨ ${st.sold} ${L==="cs"?"kusů":"pieces"}`},
     {label: L==="cs"?"Splněné zakázky":"Contracts fulfilled", val: `📜 ${st.contracts}`},
-    {label: L==="cs"?"Splaceno dluhů":"Debt repaid", val: `💰 ${st.debtPaid}g`},
+    {label: L==="cs"?"Splaceno dluhů":"Debt repaid", val: `💰 ${mny(st.debtPaid)}`},
     {label: L==="cs"?"Nejvyšší věhlas (Fama)":"Highest Fama", val: `⭐ ${st.maxFama}/100`}
   ].forEach(s => {
     statGrid.append(h("div", {style: {padding: "8px", background: "rgba(0,0,0,.04)", borderRadius: "4px"}},
@@ -86,9 +86,9 @@ function renderGameOverScreen(ctx){
   const tipsList = [
     L==="cs"?"🍞 Zásoba jídla a piva: Nenechávej zásoby jídla na nule. Alespoň 1 díl piva udrží morálku a věrnost dělníků."
            :"🍞 Provisions: Keep food in stock. At least 1 beer ration maintains morale and worker loyalty.",
-    L==="cs"?"⏳ Odklad splátek u Faktora Weisse: Pokud v zimě chybí groše na mzdy, vyjednej u Weisse 2 kola odkladu splátek."
-           :"⏳ Debt moratorium: When winter cash is tight for wages, negotiate a 2-round repayment deferral with Weiss.",
-    L==="cs"?"📦 Neprodávej pozdě: Nenechávej hotové sklo ležet na skladě — proměň ho u Weisse nebo na Trhu v groše pro provoz."
+    L==="cs"?"⏳ Odklad splátek u Faktora Reichela: Pokud v zimě chybí peníze na mzdy, vyjednej u Reichela 2 kola odkladu splátek."
+           :"⏳ Debt moratorium: When winter cash is tight for wages, negotiate a 2-round repayment deferral with Reichel.",
+    L==="cs"?"📦 Neprodávej pozdě: Nenechávej hotové sklo ležet na skladě — proměň ho u Weisse nebo na Trhu v peníze pro provoz."
            :"📦 Liquidate inventory: Sell finished glass promptly at Market or quick-sell to Weiss for operational cashflow.",
     L==="cs"?"🏺 Pánve potřebují 2 kola: Káninský musí šlapat jíl dříve, než stará pánev doslouží a praskne."
            :"🏺 Crucibles take time: Have Káninský prepare crucibles well before the working one fractures."

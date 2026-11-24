@@ -169,8 +169,8 @@
   }
   function navigation({ tabBar, state, select, app }) {
     const labels = cs(state)
-      ? {overview:'Huť', furnace:'Pec', production:'Výroba', storage:'Sklad', parta:'Parta', market:'Trh', log:'Kronika', accounts:'Správa hutě', hrac:'Deník', archiv:'Archiv', settings:'Nastavení', more:'Více', workshop:'Dílna'}
-      : {overview:'Foundry', furnace:'Furnace', production:'Making', storage:'Stock', parta:'Crew', market:'Market', log:'Chronicle', accounts:'Accounts', hrac:'Journal', archiv:'Archive', settings:'Settings', more:'More', workshop:'Workshop'};
+      ? {overview:'Přehled', furnace:'Pec', production:'Výroba', storage:'Sklad', parta:'Parta', market:'Trh', log:'Kronika', accounts:'Huť', hrac:'Deník', archiv:'Archiv', settings:'Nastavení', more:'Více', workshop:'Dílna'}
+      : {overview:'Overview', furnace:'Furnace', production:'Making', storage:'Stock', parta:'Crew', market:'Market', log:'Chronicle', accounts:'Foundry', hrac:'Journal', archiv:'Archive', settings:'Settings', more:'More', workshop:'Workshop'};
     const original = [...tabBar.children];
     const brandCopy = app.querySelector('.fj-brand-copy');
     const references = brandCopy ? [...brandCopy.children].slice(1) : [];
@@ -183,11 +183,11 @@
       node.setAttribute('aria-label', labels[keys[i]]);
       if (state.tab === keys[i]) node.setAttribute('aria-current', 'page');
     });
-    const workshop = ['furnace','production','storage'];
-    if (workshop.includes(state.tab)) { prefs.workshop = state.tab; savePrefs(); }
-    const current = workshop.includes(state.tab) ? 'workshop'
-      : ['overview','parta','market'].includes(state.tab) ? state.tab : 'more';
-    const nav = el('nav', 'fj-bottom-nav');
+    // Posuvný pruh všech sekcí (aktuální se po vykreslení dorolovává do středu), „Více“ připnuté vpravo; všechna tlačítka stejného vzhledu.
+    // Pořadí jako na Androidu: Přehled, Výroba, Pec, Trh, Sklad, Huť, Parta, Kronika, Deník, Archiv, Nastavení.
+    const stripKeys = ['overview','production','furnace','market','storage','accounts','parta','log','hrac','archiv','settings'];
+    if (['furnace','production','storage'].includes(state.tab)) { prefs.workshop = state.tab; savePrefs(); }
+    const nav = el('nav', 'fj-bottom-nav fj-nav-strip');
     nav.setAttribute('aria-label', cs(state) ? 'Hlavní navigace' : 'Main navigation');
     const openMore = () => {
       const list = el('div', 'fj-more-list');
@@ -209,14 +209,12 @@
       list.append(themeControl(state, select));
       sheet(labels.more, list, app);
     };
-    for (const [key, glyph, action] of [
-      ['overview','overview',()=>select('overview')],
-      ['workshop','workshop',()=>select(prefs.workshop)],
-      ['parta','parta',()=>select('parta')],
-      ['market','market',()=>select('market')],
-      ['more','more',openMore]
-    ]) {
-      const node = button(labels[key], glyph, action);
+    const scroller = el('div', 'fj-nav-scroll');
+    scroller.setAttribute('role','tablist');
+    for (const key of stripKeys) {
+      const node = button(labels[key], key, () => select(key));
+      node.setAttribute('role','tab');
+      node.dataset.stripTab = key;
       if (key === 'market') {
         // Oznamujeme nové nabídky, nikoliv součet nabídek a přijatých zakázek.
         // Přijaté zakázky jsou stále dostupné v Trhu bez notifikačního čísla.
@@ -229,19 +227,14 @@
           node.setAttribute('aria-label', `${labels[key]} · ${count} ${countLabel}`);
         }
       }
-      if (key === current) { node.classList.add('is-current'); node.setAttribute('aria-current','page'); }
-      nav.append(node);
+      const current = state.tab === key;
+      node.setAttribute('aria-selected', String(current));
+      if (current) { node.classList.add('is-current'); node.setAttribute('aria-current','page'); }
+      scroller.append(node);
     }
-    let subnav = null;
-    if (current === 'workshop') {
-      subnav = el('nav','fj-subnav');
-      subnav.setAttribute('aria-label', labels.workshop);
-      for (const key of workshop) subnav.append(original[keys.indexOf(key)]);
-    } else if (current === 'more') {
-      subnav = el('div','fj-section-heading');
-      subnav.append(navigationIcon(state.tab), el('h2','',labels[state.tab] || labels.more));
-      subnav.append(button(labels.more,'more',openMore,'fj-section-switch'));
-    }
+    const more = button(labels.more, 'more', openMore, 'fj-nav-button fj-nav-more');
+    nav.append(scroller, more);
+    const subnav = null;
     return {nav, subnav};
   }
   function setTheme(value, refresh) {
@@ -268,11 +261,13 @@
     details.open = prefs.resourcesOpen;
     const summary = el('summary','fj-resource-summary');
     summary.setAttribute('aria-label', cs(state) ? 'Rozbalit všechny zásoby' : 'Expand all resources');
+    // Stav (POZOR / !) počítá core/stock.js — stejný výpočet jako značky pills, bubliny a panel Zásoby
+    const lowStock = (stockKey, fallback) => (typeof window.stockCalc === 'function' && window.stockCalc(stockKey)) ? window.stockStateOf(stockKey) !== 'ok' : fallback;
     for (const [key,label,value,warn] of [
-      ['wood',cs(state)?'Dřevo':'Wood',state.res.wood,state.res.wood<8],
-      ['potash',cs(state)?'Potaš':'Potash',state.res.potash,state.res.potash<2],
-      ['food',cs(state)?'Jídlo':'Food',state.res.food,state.res.food<3],
-      ['panev',cs(state)?'Pánve':'Crucibles',state.pReady,state.round>=5&&state.pReady<1]
+      ['wood',cs(state)?'Dřevo':'Wood',state.res.wood,lowStock('wood',state.res.wood<8)],
+      ['potash',cs(state)?'Potaš':'Potash',state.res.potash,lowStock('potash',state.res.potash<2)],
+      ['food',cs(state)?'Jídlo':'Food',state.res.food,lowStock('food',state.res.food<3)],
+      ['panev',cs(state)?'Pánve':'Crucibles',state.pReady,lowStock('crucibles',state.round>=5&&state.pReady<1)]
     ]) {
       const cell = el('span','fj-resource-cell'+(warn?' is-warning':''));
       cell.dataset.fajrumResource = key;
@@ -404,6 +399,8 @@
         });
       }
     }
+    {const strip=app.querySelector('.fj-nav-scroll'),cur=strip&&strip.querySelector('.is-current');
+     if(strip&&cur)strip.scrollLeft=Math.max(0,cur.offsetLeft-(strip.clientWidth-cur.offsetWidth)/2);}
     const header = app.querySelector('.hdr');
     headerAndCalendar(app,state,header);
     if (app.classList.contains('desktop')) {

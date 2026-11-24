@@ -70,13 +70,13 @@ function renderTabHrac(ctx){
       background:seaDone?"#4a7a3a":"#c9952b",transition:"width .3s"}}));
     progDiv.append(seaBarDiv);
 
-    // Groše progress
+    // Pokladna progress
     const groDone=hracGrose>=nextRank.minGrose;
     const groBar=Math.min(1,hracGrose/nextRank.minGrose);
     progDiv.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"9px",
       color:groDone?"#4a7a3a":"#8b5e34",marginBottom:"2px"}},
-      L==="cs"?`${groDone?"✅":"💰"} Groše: ${hracGrose}/${nextRank.minGrose}g`
-               :`${groDone?"✅":"💰"} Groschen: ${hracGrose}/${nextRank.minGrose}g`,
+      L==="cs"?`${groDone?"✅":"💰"} Pokladna: ${mny(hracGrose)}/${mny(nextRank.minGrose)}`
+               :`${groDone?"✅":"💰"} Treasury: ${mny(hracGrose)}/${mny(nextRank.minGrose)}`,
       groDone?(L==="cs"?"splněno":"done"):""));
     const groBarDiv=h("div",{style:{height:"4px",borderRadius:"2px",background:"rgba(42,26,10,.1)"}});
     groBarDiv.append(h("div",{style:{height:"100%",borderRadius:"2px",width:`${Math.round(groBar*100)}%`,
@@ -120,7 +120,7 @@ function renderTabHrac(ctx){
       h("div",{style:{fontSize:"9px",color:"#8b6a3a",fontStyle:"italic"}},
         L==="cs"?r.desc_cs:r.desc_en),
       h("div",{style:{fontSize:"9px",color:"rgba(139,94,52,.6)",marginTop:"1px"}},
-        `${L==="cs"?"od sez.":"from s."}${r.minSeason} · ${r.minGrose}g`));
+        `${L==="cs"?"od sez.":"from s."}${r.minSeason} · ${mny(r.minGrose)}`));
     row.append(rTxt);
     timelineDiv.append(row);
   });
@@ -132,7 +132,7 @@ function renderTabHrac(ctx){
   statDiv.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"6px"}},
     L==="cs"?"📊 Statistiky hutě:":"📊 Foundry statistics:"));
   const stats=[
-    {icon:"💰",label_cs:"Celkové groše",label_en:"Total groschen",val:`${hracGrose}g`},
+    {icon:"💰",label_cs:"Pokladna",label_en:"Treasury",val:`${mny(hracGrose)}`},
     {icon:"🗓️",label_cs:"Sezóna",label_en:"Season",val:hracSeason},
     {icon:"🔥",label_cs:"Várky odtaveny",label_en:"Batches smelted",val:p.totalBatches||0},
     {icon:"📦",label_cs:"Výrobků prodáno",label_en:"Items sold",val:p.totalSold||0},

@@ -35,7 +35,7 @@ function renderContractCard(c,kind){
     famaTxt=" · "+FAMA_ICON[fama.cat]+" "+(cs?"reputace ":"reputation ")+(cs?FAMA_LABEL_CS[fama.cat]:FAMA_LABEL_EN[fama.cat])
       +" +"+fama.gain+" / "+(cs?"při propadnutí ":"if missed ")+fama.loss;
   }
-  box.append(h("div",{class:"fj-contract-reward",style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},"💰 +"+reward+"g"+famaTxt));
+  box.append(h("div",{class:"fj-contract-reward",style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},"💰 +"+mny(reward)+famaTxt));
   // Co dělat
   const where=contractWhere(st.lines,L);
   let msg;
@@ -74,7 +74,7 @@ function contractOfferRow(c){
     h("div",{style:{flex:1,minWidth:0}},
       h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.35"}},contractIcon(c)+" "+(cs?c.cs:c.en)),
       h("div",{style:{fontSize:"9px",color:"#8b5e34"}},
-        "💰 +"+contractReward(c,"market")+"g"+(dueTxt?" · ⏳ "+dueTxt:"")
+        "💰 +"+mny(contractReward(c,"market"))+(dueTxt?" · ⏳ "+dueTxt:"")
         +(fama.cat?" · "+FAMA_ICON[fama.cat]+" +"+fama.gain:""))),
     h("button",{class:"btn btn-s"+(can?" btn-p":""),...(can?{}:{disabled:true}),
       style:{fontSize:"9px",flexShrink:0,opacity:can?1:0.45,cursor:can?"pointer":"not-allowed"},

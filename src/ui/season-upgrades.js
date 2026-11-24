@@ -154,7 +154,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
         dryWood: {cs:"Suché dříví", en:"Dry hardwood", icon:"🔥"},
         firebrick: {cs:"Šamotové kvádry", en:"Firebrick", icon:"🧱"},
         pitch: {cs:"Smůla", en:"Pitch", icon:"🌲"},
-        grose: {cs:"Groše", en:"Groats", icon:"💰"}
+        grose: {cs:"Pokladna", en:"Treasury", icon:"💰"}
       };
 
       const costChips=h("div",{class:"fj-season-tier-costs",style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
@@ -165,7 +165,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
         const ok=have>=needed;
         if(!ok){
           canAfford=false;
-          missing.push(`${needed-have}× ${costLabels[resKey]?costLabels[resKey].icon:""}`);
+          missing.push(resKey==="grose"?`${mny(needed-have)} ${costLabels[resKey].icon}`:`${needed-have}× ${costLabels[resKey]?costLabels[resKey].icon:""}`);
         }
         costChips.append(h("span",{class:"fj-season-tier-cost "+(ok?"is-sufficient":"is-missing"),
           style:{
@@ -176,7 +176,7 @@ function renderSeasonUpgrades(container, isInterseason=false){
             color:ok?"#4a7a3a":"#a03020",
             border:`1px solid ${ok?"rgba(74,122,58,.2)":"rgba(160,48,32,.2)"}`
           }
-        }, `${costLabels[resKey]?costLabels[resKey].icon:""} ${have}/${needed} ${L==="cs"?(costLabels[resKey]?.cs||resKey):(costLabels[resKey]?.en||resKey)}`));
+        }, `${costLabels[resKey]?costLabels[resKey].icon:""} ${resKey==="grose"?mny(have)+"/"+mny(needed):have+"/"+needed} ${L==="cs"?(costLabels[resKey]?.cs||resKey):(costLabels[resKey]?.en||resKey)}`));
       }
       tCard.append(costChips);
 

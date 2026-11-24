@@ -20,7 +20,7 @@ function renderLoyaltyModal(ctx,debtedWorkers){
       padding:"4px 8px",marginBottom:"3px",background:"rgba(160,0,0,.07)",borderRadius:"3px",
       fontSize:"11px",border:"1px solid rgba(160,0,0,.15)"}},
       h("span",{style:{fontWeight:"700",color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
-      h("span",{style:{color:"#a03020"}},(L==="cs"?"dluh: ":"owes: ")+(w.unpaidDebt||0)+"g")));
+      h("span",{style:{color:"#a03020"}},(L==="cs"?"dluh: ":"owes: ")+mny(w.unpaidDebt||0))));
   });
   const totalUnpaid=debtedWorkers.reduce((s,w)=>s+(w.unpaidDebt||0),0);
   const canPayAll=p.grose>=totalUnpaid;
@@ -28,7 +28,7 @@ function renderLoyaltyModal(ctx,debtedWorkers){
   const btnRow=h("div",{style:{display:"flex",flexDirection:"column",gap:"5px",marginTop:"10px"}});
   if(canPayAll){
     btnRow.append(h("button",{class:"btn btn-p",style:{width:"100%",fontSize:"11px"},
-      onClick:loyaltyModalPayAll},L==="cs"?"💸 Splatit vše ("+totalUnpaid+"g) — dělníci zůstanou":"💸 Pay all ("+totalUnpaid+"g) — workers stay"));
+      onClick:loyaltyModalPayAll},L==="cs"?"💸 Splatit vše ("+mny(totalUnpaid)+") — dělníci zůstanou":"💸 Pay all ("+mny(totalUnpaid)+") — workers stay"));
   }
   btnRow.append(h("button",{class:"btn",style:{width:"100%",fontSize:"11px"},
     onClick:loyaltyModalPromise},L==="cs"?"🤝 Slíbit doplatek — dělníci váhají (+5 loaj.)":"🤝 Promise payment — workers hesitate (+5 loy.)"));

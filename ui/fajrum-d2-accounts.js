@@ -17,7 +17,7 @@
  function makeHeader(state){
   // Mirror the game's existing next-round expense calculation without changing rules.
   const workers=Array.isArray(state.workers)?state.workers:[];
-  const wages=workers.reduce((sum,w)=>sum+2+finite(w.wageMod),0);
+  const wages=workers.reduce((sum,w)=>sum+200+finite(w.wageMod),0);
   const beer=([0,1,2,4][finite(state.beer)]||0)*Math.ceil(workers.length/3);
   const outflow=wages+beer, cash=finite(state.grose),debt=finite(state.debt);
   const active=(Array.isArray(state.contracts)?state.contracts.length:0)+(Array.isArray(state.repContracts)?state.repContracts.length:0);
@@ -37,12 +37,12 @@
   const book=el('div','fj-d2-ledger-sheet');
   const heading=el('div','fj-d2-ledger-heading');
   heading.append(el('span','',t(state,'Soupis nynějšího stavu','Present balance')),
-   el('span','',t(state,'groše · g','groats · g')));
+   el('span','',t(state,'pokladna','treasury')));
   const list=el('dl','fj-d2-ledger-entries');
   list.append(
-   entry(t(state,'Hotovost v pokladně','Cash in hand'),fmt(cash,state)+' g','cash'),
-   entry(t(state,'Dluh faktorovi Weissovi','Debt to factor Weiss'),fmt(debt,state)+' g','debt'),
-   entry(t(state,'Mzdy a příděl na další kolo','Wages and rations, next round'),fmt(outflow,state)+' g','outflow'),
+   entry(t(state,'Hotovost v pokladně','Cash in hand'),moneyStr(cash,state.lang!=='en'),'cash'),
+   entry(t(state,'Dluh faktorovi Reichelovi','Debt to factor Reichel'),moneyStr(debt,state.lang!=='en'),'debt'),
+   entry(t(state,'Mzdy a příděl na další kolo','Wages and rations, next round'),moneyStr(outflow,state.lang!=='en'),'outflow'),
    entry(t(state,'Přijaté zakázky','Accepted contracts'),fmt(active,state),'contracts')
   );
   if(debt>0)list.querySelector('[data-kind="debt"]').dataset.alert='true';
@@ -51,8 +51,8 @@
   if(outflow<=0)foot.textContent=t(state,'Pro příští kolo nejsou evidovány mzdy ani příděly.','No wages or rations are listed for the next round.');
   else if(funds)foot.textContent=t(state,'Pokladna vystačí na běžné mzdy a příděl. Další příjmy a platby nezapočítány.','Cash covers ordinary wages and rations. Other receipts and payments are not included.');
   else foot.textContent=t(state,
-    'Na běžné mzdy a příděl schází '+fmt(outflow-cash,state)+' g. Další příjmy a platby nezapočítány.',
-    'Short of ordinary wages and rations by '+fmt(outflow-cash,state)+' g. Other receipts and payments are not included.');
+    'Na běžné mzdy a příděl schází '+moneyStr(outflow-cash,true)+'. Další příjmy a platby nezapočítány.',
+    'Short of ordinary wages and rations by '+moneyStr(outflow-cash,false)+'. Other receipts and payments are not included.');
   foot.dataset.status=funds?'enough':'short';
   book.append(heading,list,foot);wrap.append(top,book);
   return wrap;
@@ -69,7 +69,9 @@
   const title=section.querySelector(':scope > .sec-title');if(title)title.classList.add('fj-d2-ledger-section-title');
   const active=cols.previousElementSibling;
   if(active&&active!==title){active.classList.add('fj-d2-active-contracts');active.dataset.d2Active=String((state.contracts||[]).length+(state.repContracts||[]).length);}
-  const left=cols.children[0],right=cols.children[1];
+  // panely značí data-acc-pane (podzáložky ukazují jen jeden sloupec); pořadí je záloha pro starý DOM
+  const left=cols.querySelector(':scope > [data-acc-pane="offers"]')||(cols.querySelector(':scope > [data-acc-pane]')?null:cols.children[0]);
+  const right=cols.querySelector(':scope > [data-acc-pane="finance"]')||(cols.querySelector(':scope > [data-acc-pane]')?null:cols.children[1]);
   cols.classList.add('fj-d2-ledger-columns');
   if(left){
    left.classList.add('fj-d2-offers-pane');
@@ -91,7 +93,7 @@
    for(const button of right.querySelectorAll('button'))button.classList.add('fj-d2-account-action');
   }
   const reputation=cols.nextElementSibling;
-  if(reputation){
+  if(reputation&&reputation.querySelector('.fj-accounts-reputation-grid')){
    reputation.classList.add('fj-d2-reputation');
    const heading=reputation.firstElementChild;if(heading)heading.classList.add('fj-d2-reputation-heading');
    const grid=reputation.querySelector('.fj-accounts-reputation-grid');

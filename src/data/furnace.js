@@ -10,7 +10,7 @@ const FURNACE_TYPES={
   stone:    {name:"Zděná pec",    nameEn:"Stone furnace",    maxRunIn:85,maxTemp:92,fuelMult:0.85, maxSlots:2},
   master:   {name:"Mistrovská pec",nameEn:"Master furnace",  maxRunIn:100,maxTemp:99,fuelMult:0.70, maxSlots:4}
 };
-const UPGRADE_COST={stone:{wood:20,limestone:8,clay:6,grose:15},master:{wood:30,limestone:12,clay:10,grose:40}};
+const UPGRADE_COST={stone:{wood:20,limestone:8,clay:6,grose:1500},master:{wood:30,limestone:12,clay:10,grose:4000}};
 
 // ── ROZŠÍŘENÍ SEZÓNY A STAVEBNÍ TIERS ─────────────────────────
 const SEASON_TIERS={
@@ -40,7 +40,7 @@ const SEASON_TIERS={
     badge:"Tier 1",
     icon:"🪨",
     reqFurnace:"stone",
-    cost:{stone:15,wood:20,clay:8,grose:25},
+    cost:{stone:15,wood:20,clay:8,grose:2500},
     benefit_cs:"+1 měsíc tavby (Listopad) · Prodej před zimou · Těžba lomového kamene v Lůmku",
     benefit_en:"+1 month smelting (November) · Pre-winter sales · Quarry stone mining"
   },
@@ -57,7 +57,7 @@ const SEASON_TIERS={
     reqFurnace:"stone",
     reqTier:1,
     reqFama:40,
-    cost:{stone:20,dryWood:12,grose:45},
+    cost:{stone:20,dryWood:12,grose:4500},
     benefit_cs:"Kampaň začíná již v Březnu (9 měsíců tavby) · Prémiové jarní zakázky · Možnost sušit buková polena",
     benefit_en:"Campaign begins in March (9 months smelting) · Premium spring contracts · Hardwood curing"
   },
@@ -74,7 +74,7 @@ const SEASON_TIERS={
     reqFurnace:"master",
     reqTier:2,
     reqFama:60,
-    cost:{stone:30,firebrick:10,dryWood:15,pitch:8,grose:85},
+    cost:{stone:30,firebrick:10,dryWood:15,pitch:8,grose:8500},
     benefit_cs:"12 měsíců nepřetržité tavby · Žádná ztráta zaběhnutí pece v mezisezóně · +25% prémie za zimní dodávky",
     benefit_en:"12 months continuous smelting · 100% furnace run-in retention · +25% winter contract bonus"
   }
@@ -84,32 +84,32 @@ const ZONES=[
   {max:10,l:"🟤",c:"#3a2a14"},{max:25,l:"🔴",c:"#8b2020"},{max:40,l:"🔴",c:"#cc3322"},
   {max:55,l:"🟠",c:"#dd6600"},{max:70,l:"🟡",c:"#ddaa00"},{max:82,l:"🟡",c:"#eebb22"},
   {max:92,l:"⚪",c:"#ffdd88"},{max:100,l:"⚪",c:"#ffffcc"}];
-const BEER=[{m:-10,cost:0,acc:0},{m:5,cost:1,acc:0},{m:10,cost:2,acc:.1},{m:-8,cost:4,acc:.25}];
+const BEER=[{m:-10,cost:0,acc:0},{m:5,cost:100,acc:0},{m:10,cost:200,acc:.1},{m:-8,cost:400,acc:.25}];
 
 // ── NOVÉ SUROVINY — barevné sklo ─────────────────────────────
 // Historické přísady dle Neriho (1612) a Kunckela (1679)
 const ADDITIVES={
-  smolka:   {cs:"Šmolka (Zaffre)",  en:"Zaffre (Cobalt)",    icon:"🔵", base:18, rare:true,
+  smolka:   {cs:"Šmolka (Zaffre)",  en:"Zaffre (Cobalt)",    icon:"🔵", base:1800, rare:true,
              desc_cs:"Surový oxid kobaltnatý — ze Saska. Základ modré.", desc_en:"Raw cobalt oxide from Saxony. Base of blue glass."},
-  burel:    {cs:"Burel (MnO₂)",     en:"Burel (MnO₂)",       icon:"🟣", base:8,  rare:false,
+  burel:    {cs:"Burel (MnO₂)",     en:"Burel (MnO₂)",       icon:"🟣", base:800,  rare:false,
              desc_cs:"Oxid manganičitý — odbarvovač i modifikátor barvy.", desc_en:"Manganese dioxide — decolorizer and color modifier."},
-  aesUstum: {cs:"Pálená měď",       en:"Aes Ustum (Cu)",     icon:"🟢", base:12, rare:true,
+  aesUstum: {cs:"Pálená měď",       en:"Aes Ustum (Cu)",     icon:"🟢", base:1200, rare:true,
              desc_cs:"Spálená měď v pomocné peci. Základ smaragdu.", desc_en:"Copper burnt in auxiliary furnace. Base of emerald green."},
-  crocusMartis:{cs:"Crocus Martis", en:"Crocus Martis (Fe)", icon:"🟤", base:6,  rare:false,
+  crocusMartis:{cs:"Crocus Martis", en:"Crocus Martis (Fe)", icon:"🟤", base:600,  rare:false,
              desc_cs:"Pražený síran železnatý — teplá zelená.", desc_en:"Roasted iron sulphate — warm green tone."},
-  cin:      {cs:"Cín (Sn)",         en:"Tin (Sn)",            icon:"⚪", base:10, rare:false,
+  cin:      {cs:"Cín (Sn)",         en:"Tin (Sn)",            icon:"⚪", base:1000, rare:false,
              desc_cs:"Čistý cín pro lattimo (mléčné sklo).", desc_en:"Pure tin for lattimo (milk glass)."},
-  olovo:    {cs:"Olovo (Pb)",       en:"Lead (Pb)",           icon:"⬛", base:8,  rare:false,
+  olovo:    {cs:"Olovo (Pb)",       en:"Lead (Pb)",           icon:"⬛", base:800,  rare:false,
              desc_cs:"Olovo pro lattimo a rubín — zvyšuje lesk.", desc_en:"Lead for lattimo and ruby — increases brilliance."},
-  antimon:  {cs:"Antimon (Sb)",     en:"Antimony (Sb)",       icon:"🔘", base:14, rare:true,
+  antimon:  {cs:"Antimon (Sb)",     en:"Antimony (Sb)",       icon:"🔘", base:1400, rare:true,
              desc_cs:"Stabilizátor pro rubínové sklo (Kunckel).", desc_en:"Stabilizer for ruby glass (Kunckel)."},
-  zlato:    {cs:"Zlatý prach (Au)", en:"Gold dust (Au)",      icon:"🟡", base:40, rare:true,
+  zlato:    {cs:"Zlatý prach (Au)", en:"Gold dust (Au)",      icon:"🟡", base:4000, rare:true,
              desc_cs:"Zlato pro purpurový prášek (později zvaný Cassiův purpur) — základ rubínového skla.", desc_en:"Gold for the purple powder (later called purple of Cassius) — base of ruby glass."},
-  stribro:  {cs:"Stříbro (Ag)",     en:"Silver (Ag)",         icon:"🪙", base:16, rare:true,
+  stribro:  {cs:"Stříbro (Ag)",     en:"Silver (Ag)",         icon:"🪙", base:1600, rare:true,
              desc_cs:"Chlorid nebo dusičnan stříbrný — v pastě s okrem dává povrchovou stříbrnou žluť (jantarovou lazuru).", desc_en:"Silver chloride or nitrate — in a paste with ochre it gives the surface silver stain (amber glaze)."},
-  arsen:    {cs:"Arsen (As₂O₃)",  en:"Arsenic (As₂O₃)",     icon:"☠️", base:24, rare:true,
+  arsen:    {cs:"Arsen (As₂O₃)",  en:"Arsenic (As₂O₃)",     icon:"☠️", base:2400, rare:true,
              desc_cs:"Arsenová běl (hutní mouka) z krušnohorských hutí. Nejúčinnější čeřidlo — dvě dávky bonusu najednou — ale jedovatá (únava taviče). Potřebná také na alembik.", desc_en:"White arsenic from the Ore Mountain smelters. The most effective fining agent — two bonus charges at once — but poisonous (smelter fatigue). Also needed for the alembic."},
-  rtut:     {cs:"Rtuť (Hg)",        en:"Mercury (Hg)",        icon:"🩶", base:20, rare:true,
+  rtut:     {cs:"Rtuť (Hg)",        en:"Mercury (Hg)",        icon:"🩶", base:2000, rare:true,
              desc_cs:"Amalgám rtuti a cínu — zadní strana zrcadla. Nutný import, nelze vyrobit na místě.", desc_en:"Mercury-tin amalgam — rear of mirror. Must be imported, cannot be produced locally."}
 };
 
@@ -129,7 +129,7 @@ const COLOR_RECIPES={
     output:"jantar", quality_bonus:0,
     furnaceMin:55,
     unlock_item:null, // dostupné vždy — přirozená barva lesních hutí
-    sell_cs:10, sell_en:10,
+    sell_cs:1000, sell_en:1000,
     latin:"Fortuna vitrea est — tum cum splendet, frangitur"
   },
   modra:{
@@ -141,7 +141,7 @@ const COLOR_RECIPES={
     output:"modra", quality_bonus:0,
     furnaceMin:60, // min teplota %
     unlock_item:"smolka", // odemkne až Baranovský přiveze šmolku
-    sell_cs:14, sell_en:14,
+    sell_cs:1400, sell_en:1400,
     latin:"In vase vitreo — kobaltová modrá",
     latinEn:"In vase vitreo — cobalt blue"
   },
@@ -154,7 +154,7 @@ const COLOR_RECIPES={
     output:"smaragd", quality_bonus:0,
     furnaceMin:65,
     unlock_item:"aesUstum",
-    sell_cs:16, sell_en:16,
+    sell_cs:1600, sell_en:1600,
     latin:"Ignis mutat res — měď v ohni",
     latinEn:"Ignis mutat res — copper in the fire"
   },
@@ -167,7 +167,7 @@ const COLOR_RECIPES={
     output:"lattimo", quality_bonus:1,
     furnaceMin:70,
     unlock_item:"cin",
-    sell_cs:22, sell_en:22,
+    sell_cs:2200, sell_en:2200,
     latin:"Corpus fit vitrum — čistá bílá hmota",
     latinEn:"Corpus fit vitrum — pure white matter"
   },
@@ -180,7 +180,7 @@ const COLOR_RECIPES={
     output:"rubin", quality_bonus:2,
     furnaceMin:75,
     unlock_item:"zlato",
-    sell_cs:50, sell_en:50,
+    sell_cs:5000, sell_en:5000,
     latin:"Donec fiat vitrum pellucidum — zlatý rubín",
     latinEn:"Donec fiat vitrum pellucidum — golden ruby"
   },
@@ -193,7 +193,7 @@ const COLOR_RECIPES={
     output:"zlut", quality_bonus:0,
     furnaceMin:0, mufle:true, wood:2, // vlastní muflová pec — nezávisí na hlavní peci, spálí 2 dřeva
     unlock_item:"stribro",
-    sell_cs:30, sell_en:30,
+    sell_cs:3000, sell_en:3000,
     latin:"Clarior e tenebris — stříbro v ohni",
     latinEn:"Clarior e tenebris — silver in the fire"
   }

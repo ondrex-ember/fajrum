@@ -8,7 +8,7 @@ function renderInterseasonScreen(ctx){
   const sc=is.seasonScore||{};
   const total=totalScore(sc);
   const shamotWear=p.furnace.shamotWear;
-  const canRepair=p.res.clay>=4&&p.res.limestone>=2&&p.grose>=8;
+  const canRepair=p.res.clay>=4&&p.res.limestone>=2&&p.grose>=800;
   const canUpgradeStone=p.furnace.type==="primitive"&&
     p.res.wood>=UPGRADE_COST.stone.wood&&p.res.limestone>=UPGRADE_COST.stone.limestone&&
     p.res.clay>=UPGRADE_COST.stone.clay&&p.grose>=UPGRADE_COST.stone.grose;
@@ -30,7 +30,7 @@ function renderInterseasonScreen(ctx){
   [
     ["🔥 Waldglas",sc.waldglas],["✨ Křišťál",sc.crystal],
     ["⭐ Kvalita",sc.quality],["📜 Zakázky",sc.contracts],
-    ["💰 Groše",sc.grose],["🌲 Les",sc.forest]
+    ["💰 "+(L==="cs"?"Pokladna":"Treasury"),sc.grose],["🌲 Les",sc.forest]
   ].forEach(([l,v])=>{
     scoreGrid.append(h("div",{class:"interseason-card"},
       h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"2px"}},l),
@@ -61,12 +61,12 @@ function renderInterseasonScreen(ctx){
     furnCard.append(h("div",{style:{marginTop:"8px",padding:"6px",background:"rgba(160,48,32,.08)",borderRadius:"4px",fontSize:"11px",color:"#a03020"}},
       (is.shamotCritical?"⚠️ ":"🔧 ")+(L==="cs"?"Šamot potřebuje opravu":"Shamot needs repair"),
       h("br",null),
-      h("span",{style:{fontSize:"10px",color:"#8b5e34"}},"Cena: 4🧱 + 2🪨 + 8g")));
+      h("span",{style:{fontSize:"10px",color:"#8b5e34"}},"Cena: 4🧱 + 2🪨 + "+mny(800))));
     furnCard.append(h("button",{
       class:"btn btn-s"+(canRepair?"":" btn-danger"),
       style:{marginTop:"4px",opacity:canRepair?1:.5},
       onClick:()=>{if(canRepair)repairShamot();}},
-      L==="cs"?"Opravit šamot (8g)":"Repair shamot (8g)"));
+      L==="cs"?"Opravit šamot ("+mny(800)+")":"Repair shamot ("+mny(800)+")"));
   }
   body.append(furnCard);
 
@@ -79,7 +79,7 @@ function renderInterseasonScreen(ctx){
         class:"btn"+(canUpgradeStone?" btn-p":""),"data-furnace-preview":"stone",
         style:{width:"100%",marginBottom:"4px",opacity:canUpgradeStone?1:.5},
         onClick:()=>{if(canUpgradeStone)upgradeFurnace("stone");}},
-        `🔥 ${L==="cs"?"Zděná pec":"Stone furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
+        `🔥 ${L==="cs"?"Zděná pec":"Stone furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${mny(uc.grose)})`));
     }
     if(p.furnace.type==="stone"){
       const uc=UPGRADE_COST.master;
@@ -87,7 +87,7 @@ function renderInterseasonScreen(ctx){
         class:"btn"+(canUpgradeMaster?" btn-p":""),"data-furnace-preview":"master",
         style:{width:"100%",marginBottom:"4px",opacity:canUpgradeMaster?1:.5},
         onClick:()=>{if(canUpgradeMaster)upgradeFurnace("master");}},
-        `🔥 ${L==="cs"?"Mistrovská pec":"Master furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${uc.grose}g)`));
+        `🔥 ${L==="cs"?"Mistrovská pec":"Master furnace"} (${uc.wood}🌳 + ${uc.limestone}🟩 + ${uc.clay}🧱 + ${mny(uc.grose)})`));
     }
   }
 
@@ -112,7 +112,7 @@ function renderInterseasonScreen(ctx){
       padding:"6px",background:"rgba(139,94,52,.06)",borderRadius:"4px"}},
       `📦 ${L==="cs"?"Sklad přenáší":"Storage carries"}: 🔥${p.waldglas.length} + ✨${p.crystal.length} ${L==="cs"?"kusů":"pieces"}`,
       h("br",null),
-      h("span",{style:{fontSize:"11px",color:"#a03020"}},`💸 ${L==="cs"?"Náklady skladu":"Storage cost"}: ${storageCost}g`)));
+      h("span",{style:{fontSize:"11px",color:"#a03020"}},`💸 ${L==="cs"?"Náklady skladu":"Storage cost"}: ${mny(storageCost)}`)));
   }
 
   // Baranovský — nabídka přísad
@@ -128,12 +128,12 @@ function renderInterseasonScreen(ctx){
       h("div",{style:{fontSize:"12px",color:"#3a2a14",marginBottom:"4px",fontStyle:"italic"}},
         `„${L==="cs"?bo.cs:bo.en}"`),
       h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"6px"}},
-        `${ad?.icon} ${bo.qty}× ${L==="cs"?ad?.cs:ad?.en} — ${bo.price}g`),
+        `${ad?.icon} ${bo.qty}× ${L==="cs"?ad?.cs:ad?.en} — ${mny(bo.price)}`),
       h("button",{
         class:"btn"+(canBuy?" btn-p":""),
         style:{width:"100%",opacity:canBuy?1:.5},
         onClick:()=>{if(canBuy)buyBaranOffer();}},
-        canBuy?(L==="cs"?"Koupit":"Buy"):(L==="cs"?"Nedostatek grošů":"Not enough groats")));
+        canBuy?(L==="cs"?"Koupit":"Buy"):(L==="cs"?"Nedostatek peněz":"Not enough funds")));
     body.append(baranSec,baranCard);
   }
 

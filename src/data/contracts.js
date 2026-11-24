@@ -23,49 +23,61 @@ const CONTRACT_OPTIONS=[
   {months:12, mult:8.0,  label_cs:"12 měsíců", label_en:"12 months"},
 ];
 
+// Etapa 1b-1: 24 zakázek s min. kvalitou (minQ) a odměnou škálovanou kvalitou; stejný obsah jako Android content/CONTRACT_POOL.json.
+// Termíny jsou absolutní kola (7–11). Odevzdává se nejnižší vyhovující kus (viz contractTake).
 const CONTRACT_POOL=[
-  // Weiss — kramar z Haidy
-  {id:"c1",item:"waldglas",qty:3,reward:18,due:7,buyer:"Weiss",
-   cs:"Kupec Weiss: 3× lesní sklo",en:"Merchant Weiss: 3× forest glass"},
-  {id:"c2",item:"waldglas",qty:5,reward:32,due:8,buyer:"Weiss",
-   cs:"Kupec Weiss: 5× lesní sklo",en:"Merchant Weiss: 5× forest glass"},
-  {id:"c4",item:"waldglas",qty:2,reward:12,due:6,buyer:"Weiss",
-   cs:"Kupec Weiss: 2× lesní sklo",en:"Merchant Weiss: 2× forest glass"},
-  {id:"c7",item:"waldglas",qty:4,reward:22,due:7,buyer:"Weiss",
-   cs:"Kupec Weiss: 4× lesní sklo",en:"Merchant Weiss: 4× forest glass"},
-  {id:"c17",item:"waldglas",qty:1,reward:7,due:4,buyer:"Weiss",
-   cs:"Kupec Weiss: 1× sklo — rychlá dodávka",en:"Merchant Weiss: 1× glass — quick delivery"},
-  // Hoffmann — drážďanský faktor
-  {id:"c3",item:"crystal",qty:2,reward:45,due:8,buyer:"Hoffmann",
-   cs:"Faktor Hoffmann: 2× křišťál",en:"Factor Hoffmann: 2× crystal"},
-  {id:"c5",item:"crystal",qty:1,reward:28,due:7,buyer:"Hoffmann",
-   cs:"Faktor Hoffmann: 1× křišťál",en:"Factor Hoffmann: 1× crystal"},
-  {id:"c6",item:"crystal",qty:3,reward:70,due:8,buyer:"Hoffmann",
-   cs:"Faktor Hoffmann: 3× křišťál",en:"Factor Hoffmann: 3× crystal"},
-  {id:"c8",item:"crystal",qty:2,reward:50,due:7,buyer:"Hoffmann",
-   cs:"Faktor Hoffmann: 2× křišťál",en:"Factor Hoffmann: 2× crystal"},
-  {id:"c18",item:"crystal",qty:1,reward:22,due:5,buyer:"Hoffmann",
-   cs:"Faktor Hoffmann: 1× křišťál — spěšná zásilka",en:"Factor Hoffmann: 1× crystal — rush order"},
-  // Opat z Lemberka
-  {id:"c9",item:"crystal",qty:1,reward:35,due:6,buyer:"Opat",
-   cs:"Opat z Lemberka: 1× křišťál na kalich",en:"Abbot of Lemberk: 1× crystal for chalice"},
-  {id:"c10",item:"waldglas",qty:4,reward:20,due:5,buyer:"Opat",
-   cs:"Opat z Lemberka: 4× sklo na oltář",en:"Abbot of Lemberk: 4× glass for altar"},
-  // Šlechtic von Harrach
-  {id:"c11",item:"crystal",qty:2,reward:60,due:8,buyer:"Slechtic",
-   cs:"Šlechtic von Harrach: 2× křišťál na pohár",en:"Noble von Harrach: 2× crystal goblet"},
-  {id:"c12",item:"crystal",qty:1,reward:40,due:6,buyer:"Slechtic",
-   cs:"Šlechtic von Harrach: 1× křišťál na slavnost",en:"Noble von Harrach: 1× crystal for a feast"},
-  // Foukané
-  {id:"c13",item:"cise",qty:2,reward:38,due:7,buyer:"Weiss",
-   cs:"Kupec Weiss: 2× foukané číše",en:"Merchant Weiss: 2× blown goblets"},
-  {id:"c14",item:"dzban",qty:1,reward:22,due:6,buyer:"Opat",
-   cs:"Opat z Lemberka: 1× džbán na svěcenou vodu",en:"Abbot of Lemberk: 1× jug for holy water"},
-  {id:"c15",item:"koule",qty:3,reward:28,due:7,buyer:"Weiss",
-   cs:"Kupec Weiss: 3× skleněné koule — zboží na jarmark",en:"Merchant Weiss: 3× glass balls — fair goods"},
-  // Broušené
-  {id:"c16",item:"brus_hrana_cise",qty:1,reward:55,due:8,buyer:"Slechtic",
-   cs:"Šlechtic von Harrach: 1× broušená číše — dárek",en:"Noble von Harrach: 1× cut goblet — gift"}];
+  {id:"c1",item:"waldglas",qty:3,reward:6100,due:9,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 3× lesní sklo (od ★★★★)",en:"Merchant Weiss: 3× forest glass (min ★★★★)"},
+  {id:"c2",item:"waldglas",qty:5,reward:10200,due:10,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 5× lesní sklo (od ★★★★)",en:"Merchant Weiss: 5× forest glass (min ★★★★)"},
+  {id:"c4",item:"waldglas",qty:2,reward:2700,due:8,buyer:"Weiss",minQ:3,
+   cs:"Kupec Weiss: 2× lesní sklo (od ★★★)",en:"Merchant Weiss: 2× forest glass (min ★★★)"},
+  {id:"c7",item:"waldglas",qty:4,reward:8100,due:10,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 4× lesní sklo (od ★★★★)",en:"Merchant Weiss: 4× forest glass (min ★★★★)"},
+  {id:"c17",item:"waldglas",qty:1,reward:1400,due:7,buyer:"Weiss",minQ:3,
+   cs:"Kupec Weiss: 1× sklo — rychlá dodávka (od ★★★)",en:"Merchant Weiss: 1× glass — quick delivery (min ★★★)"},
+  {id:"c3",item:"crystal",qty:2,reward:10400,due:10,buyer:"Hoffmann",minQ:4,
+   cs:"Faktor Hoffmann: 2× křišťál (od ★★★★)",en:"Factor Hoffmann: 2× crystal (min ★★★★)"},
+  {id:"c5",item:"crystal",qty:1,reward:5200,due:9,buyer:"Hoffmann",minQ:4,
+   cs:"Faktor Hoffmann: 1× křišťál (od ★★★★)",en:"Factor Hoffmann: 1× crystal (min ★★★★)"},
+  {id:"c6",item:"crystal",qty:3,reward:15700,due:11,buyer:"Hoffmann",minQ:4,
+   cs:"Faktor Hoffmann: 3× křišťál (od ★★★★)",en:"Factor Hoffmann: 3× crystal (min ★★★★)"},
+  {id:"c8",item:"crystal",qty:2,reward:10400,due:10,buyer:"Hoffmann",minQ:4,
+   cs:"Faktor Hoffmann: 2× křišťál (od ★★★★)",en:"Factor Hoffmann: 2× crystal (min ★★★★)"},
+  {id:"c18",item:"crystal",qty:1,reward:5200,due:8,buyer:"Hoffmann",minQ:4,
+   cs:"Faktor Hoffmann: 1× křišťál — spěšná zásilka (od ★★★★)",en:"Factor Hoffmann: 1× crystal — rush order (min ★★★★)"},
+  {id:"c9",item:"crystal",qty:1,reward:7200,due:9,buyer:"Opat",minQ:5,
+   cs:"Opat z Lemberka: 1× křišťál na kalich (od ★★★★★)",en:"Abbot of Lemberk: 1× crystal for chalice (min ★★★★★)"},
+  {id:"c10",item:"waldglas",qty:4,reward:11200,due:9,buyer:"Opat",minQ:5,
+   cs:"Opat z Lemberka: 4× sklo na oltář (od ★★★★★)",en:"Abbot of Lemberk: 4× glass for altar (min ★★★★★)"},
+  {id:"c11",item:"crystal",qty:2,reward:14400,due:11,buyer:"Slechtic",minQ:5,
+   cs:"Šlechtic von Harrach: 2× křišťál na pohár (od ★★★★★)",en:"Noble von Harrach: 2× crystal goblet (min ★★★★★)"},
+  {id:"c12",item:"crystal",qty:1,reward:7200,due:9,buyer:"Slechtic",minQ:5,
+   cs:"Šlechtic von Harrach: 1× křišťál na slavnost (od ★★★★★)",en:"Noble von Harrach: 1× crystal for a feast (min ★★★★★)"},
+  {id:"c13",item:"cise",qty:2,reward:5800,due:10,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 2× foukané číše (od ★★★★)",en:"Merchant Weiss: 2× blown goblets (min ★★★★)"},
+  {id:"c14",item:"dzban",qty:1,reward:2900,due:9,buyer:"Opat",minQ:4,
+   cs:"Opat z Lemberka: 1× džbán na svěcenou vodu (od ★★★★)",en:"Abbot of Lemberk: 1× jug for holy water (min ★★★★)"},
+  {id:"c15",item:"koule",qty:3,reward:17400,due:10,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 3× skleněné koule — zboží na jarmark (od ★★★★)",en:"Merchant Weiss: 3× glass balls — fair goods (min ★★★★)"},
+  {id:"c16",item:"brus_hrana_cise",qty:1,reward:11600,due:11,buyer:"Slechtic",minQ:4,
+   cs:"Šlechtic von Harrach: 1× broušená číše — dárek (od ★★★★)",en:"Noble von Harrach: 1× cut goblet — gift (min ★★★★)"},
+  {id:"c19",item:"holba",qty:2,reward:13900,due:10,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 2× holba pro hostinec (od ★★★★)",en:"Merchant Weiss: 2× stein mug for an inn (min ★★★★)"},
+  {id:"c20",item:"pullitr",qty:4,reward:9300,due:9,buyer:"Weiss",minQ:4,
+   cs:"Kupec Weiss: 4× půllitr pro šenk (od ★★★★)",en:"Merchant Weiss: 4× pint mug for a tavern (min ★★★★)"},
+  {id:"c21",item:"romer",qty:3,reward:10400,due:10,buyer:"Opat",minQ:4,
+   cs:"Opat z Lemberka: 3× römer na mešní víno (od ★★★★)",en:"Abbot of Lemberk: 3× Römer glass for communion wine (min ★★★★)"},
+  {id:"c22",item:"konvice",qty:2,reward:10400,due:10,buyer:"Opat",minQ:4,
+   cs:"Opat z Lemberka: 2× konvice pro klášter (od ★★★★)",en:"Abbot of Lemberk: 2× pitcher for the monastery (min ★★★★)"},
+  {id:"c23",item:"holba",qty:3,reward:14000,due:11,buyer:"Weiss",minQ:3,
+   cs:"Kupec Weiss: 3× holba — zboží na jarmark (od ★★★)",en:"Merchant Weiss: 3× stein mug — fair goods (min ★★★)"},
+  {id:"c24",item:"romer",qty:2,reward:9600,due:11,buyer:"Slechtic",minQ:5,
+   cs:"Šlechtic von Harrach: 2× römer na hostinu (od ★★★★★)",en:"Noble von Harrach: 2× Römer glass for a feast (min ★★★★★)"}];
+
+// Pravidla zakázek (Etapa 1b-1; Android content/CONTRACT_RULES.json): počet nabídek za sezónu, Fama podle odměny, druhá vlna nabídek.
+// Fama za splněnou tržní zakázku = famaBase + floor(reward / famaPer), max famaMax. Nabídky druhé vlny přibývají při zpracování kola wave2Round.
+const CONTRACT_RULES={offers:5,famaBase:2,famaPer:2000,famaMax:8,wave2Round:4,wave2Offers:2,wave2MinLeft:3};
 
 // ── REPUTACE (Fama) ─────────────────────────────────────────
 // Buyer → kategorie famy
@@ -93,41 +105,41 @@ const FAMA_LABEL_EN={church:"Church", noble:"Nobility", trade:"Trade"};
 const REP_CONTRACT_POOL=[
   // ── CÍRKEV ──
   {id:"rc1", cat:"church", minFama:20, chance:0.04,
-   item:"crystal", qty:1, reward:40, due:5,
+   item:"crystal", qty:1, reward:4000, due:5,
    cs:"Opat z Lemberka: prasklý pohár u oltáře — náhrada",
    en:"Abbot of Lemberk: cracked altar cup — replacement"},
   {id:"rc2", cat:"church", minFama:40, chance:0.03,
-   item:"modra", qty:2, reward:65, due:6,
+   item:"modra", qty:2, reward:6500, due:6,
    cs:"Farář z Haidy: 2× kobaltové panely do kaple — oprava okna",
    en:"Haida priest: 2× cobalt panels for chapel — window repair"},
   {id:"rc3", cat:"church", minFama:65, chance:0.025,
-   item:"brus_hrana_panel", qty:1, reward:90, due:7,
+   item:"brus_hrana_panel", qty:1, reward:9000, due:7,
    cs:"Opat: broušený panel do relikviáře — původní prasknul při procesí",
    en:"Abbot: cut panel for reliquary — original cracked in procession"},
   // ── PANSTVO ──
   {id:"rc4", cat:"noble", minFama:20, chance:0.04,
-   item:"pohar", qty:2, reward:50, due:5,
+   item:"pohar", qty:2, reward:5000, due:5,
    cs:"Šlechtic von Harrach: 2× poháry — hos ztratil při banketu",
    en:"Noble von Harrach: 2× goblets — lost at banquet"},
   {id:"rc5", cat:"noble", minFama:45, chance:0.03,
-   item:"brus_hrana_cise", qty:1, reward:80, due:6,
+   item:"brus_hrana_cise", qty:1, reward:8000, due:6,
    cs:"Šlechtična Harrach: broušená číše — rozbitá při honech, náhrada ke svátku",
    en:"Noblewoman Harrach: cut goblet — broken during hunt, needed for feast"},
   {id:"rc6", cat:"noble", minFama:65, chance:0.025,
-   item:"rubin", qty:1, reward:120, due:8,
+   item:"rubin", qty:1, reward:12000, due:8,
    cs:"Šlechtic von Harrach: rubínové sklo — doplnění sady pro císařskou návštěvu",
    en:"Noble von Harrach: ruby glass — set completion for imperial visit"},
   // ── OBCHOD ──
   {id:"rc7", cat:"trade", minFama:15, chance:0.05,
-   item:"waldglas", qty:4, reward:22, due:4,
+   item:"waldglas", qty:4, reward:2200, due:4,
    cs:"Kupec Weiss: rychlá dodávka — zákazník čeká v Haidě",
    en:"Merchant Weiss: urgent delivery — buyer waiting in Haida"},
   {id:"rc8", cat:"trade", minFama:35, chance:0.035,
-   item:"crystal", qty:2, reward:55, due:5,
+   item:"crystal", qty:2, reward:5500, due:5,
    cs:"Faktor Hoffmann: doplnění zásilky do Drážďan — 2 kusy chybí",
    en:"Factor Hoffmann: top-up shipment to Dresden — 2 pieces missing"},
   {id:"rc9", cat:"trade", minFama:60, chance:0.025,
-   item:"brus_pokal", qty:1, reward:95, due:6,
+   item:"brus_pokal", qty:1, reward:9500, due:6,
    cs:"Hoffmann: broušený pohár pro drážďanský dvůr — speciální objednávka",
    en:"Hoffmann: cut goblet for Dresden court — special order"}
 ];
@@ -145,7 +157,7 @@ const ENDGAME_CONTRACTS={
       {item:"brus_hrana_panel", qty:1, cs:"Broušený panel (1×)", en:"Cut panel (1×)"},
       {item:"rubin",      qty:1, cs:"Rubínový panel víka (1×)", en:"Ruby lid panel (1×)"}
     ],
-    reward:180, due:10,
+    reward:18000, due:10,
     completionText_cs:"Opat Benedikt praví: \u201eTvé sklo je jako zamrzlé světlo.\u201c Relikviář putuje do kaple.",
     completionText_en:"Abbot Benedict says: \"Your glass is like frozen light.\" The reliquary joins the chapel."
   },
@@ -159,7 +171,7 @@ const ENDGAME_CONTRACTS={
       {item:"rytina_brus_pokal", qty:1, cs:"Rytý pohál s erbem (1×)", en:"Engraved goblet with crest (1×)"},
       {item:"brus_koule",     qty:3, cs:"Broušené koule (3×)", en:"Cut spheres (3×)"}
     ],
-    reward:220, due:12,
+    reward:22000, due:12,
     completionText_cs:"Hrabě Harrach: \u201eArnsdorfské sklo ozdobí sál po generace.\u201c Řemeslo je proslaveno.",
     completionText_en:"Count Harrach: \"Arnsdorf glass will grace this hall for generations.\" The craft is renowned."
   },
@@ -172,7 +184,7 @@ const ENDGAME_CONTRACTS={
       {item:"crystal", qty:5, cs:"Křišťálový základ (5×)", en:"Crystal base (5×)"},
       {item:"brus_hrana_cise", qty:5, cs:"Broušené číše (5×)", en:"Cut goblets (5×)"}
     ],
-    reward:250, due:14,
+    reward:25000, due:14,
     completionText_cs:"Hoffmann: \u201eKonečně někdo z Čech kdo ví co dělá. Podepíšeme smlouvu.\u201c",
     completionText_en:"Hoffmann: \"Finally someone from Bohemia who knows their craft. We sign a contract.\""
   }
@@ -181,21 +193,21 @@ const ENDGAME_CONTRACTS={
 // Pravidelné dodávky po endgame — generují se každou sezónu
 const REGULAR_DELIVERIES={
   church:[
-    {id:"rd_church1", item:"crystal", qty:1, reward:38, due:6,
+    {id:"rd_church1", item:"crystal", qty:1, reward:3800, due:6,
      cs:"Klášter sv. Vojtěcha: pravidelná dodávka — 1× křišťál", en:"St. Vojtěch: regular delivery — 1× crystal"},
-    {id:"rd_church2", item:"modra", qty:1, reward:50, due:7,
+    {id:"rd_church2", item:"modra", qty:1, reward:5000, due:7,
      cs:"Klášter: kobaltový panel — roční výzdoba", en:"Monastery: cobalt panel — annual decor"}
   ],
   noble:[
-    {id:"rd_noble1", item:"brus_hrana_cise", qty:1, reward:70, due:7,
+    {id:"rd_noble1", item:"brus_hrana_cise", qty:1, reward:7000, due:7,
      cs:"Hrabě Harrach: roční doplnění soupravy", en:"Count Harrach: annual set replenishment"},
-    {id:"rd_noble2", item:"pohar", qty:2, reward:45, due:6,
+    {id:"rd_noble2", item:"pohar", qty:2, reward:4500, due:6,
      cs:"Harrach: 2× poháry pro letní bankety", en:"Harrach: 2× goblets for summer banquets"}
   ],
   trade:[
-    {id:"rd_trade1", item:"pohar", qty:5, reward:60, due:8,
+    {id:"rd_trade1", item:"pohar", qty:5, reward:6000, due:8,
      cs:"Hoffmann: pravidelná zásilka do Drážďan", en:"Hoffmann: regular Dresden shipment"},
-    {id:"rd_trade2", item:"crystal", qty:2, reward:50, due:7,
+    {id:"rd_trade2", item:"crystal", qty:2, reward:5000, due:7,
      cs:"Hoffmann: křišťál pro drážďanské faktory", en:"Hoffmann: crystal for Dresden factors"}
   ]
 };

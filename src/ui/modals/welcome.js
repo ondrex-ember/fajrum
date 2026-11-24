@@ -25,8 +25,16 @@ function renderWelcomeModal(ctx){
                   :"🔥 Campaign (Apr–Oct): furnace burns, smelt, sell at market.")),
       h("div",{style:{fontSize:"11px",lineHeight:"1.6",marginBottom:"12px",color:"#5a3a1a"}},
         L==="cs"
-          ?"Přiděluj dřevo na záložce Přehled (palivo / potaš / stavba). V kampani nastav Palivo na 100 % — bez dřeva pec nevyhřeješ."
-          :"Allocate wood in Overview tab (fuel / potash / build). In campaign set Fuel to 100% — without wood the furnace won't heat."),
+          ?"Dřevo rozděluješ na záložce Přehled (palivo / potaš / stavba). V kampani potřebuje pec palivo, ale potaš nesmí zůstat na 0 %, jinak se sklo brzy nesvaří."
+          :"Allocate wood in the Overview tab (fuel / potash / build). In campaign the furnace needs fuel, but never leave potash at 0%, or glass soon cannot be melted."),
+      h("div",{style:{fontSize:"11px",lineHeight:"1.6",marginBottom:"12px",color:"#5a3a1a",fontStyle:"italic"}},
+        guideOn()
+          ?(L==="cs"?"Průvodcem ti bude mistr Kunc. Najdeš ho nahoře na Přehledu a vypnout ho můžeš v Nastavení."
+                   :"Master Kunc will guide you. You will find him at the top of the Overview, and you can turn him off in Settings.")
+          :(L==="cs"?"Chceš, aby tě provázel mistr Kunc? Radí krok za krokem podle toho, co se v huti děje."
+                   :"Would you like master Kunc to guide you? He advises step by step based on what is happening.")),
+      guideOn()?null:h("button",{class:"btn",style:{width:"100%",marginBottom:"8px"},onClick:()=>setGuide(true)},
+        L==="cs"?"Zapnout průvodce":"Turn on the guide"),
       h("button",{class:"btn btn-p",style:{width:"100%"},
         onClick:()=>{G.firstVisit=false;render();}},
         L==="cs"?"OK — Vstoupit do hutě":"OK — Enter the Foundry")));

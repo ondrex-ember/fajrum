@@ -1,7 +1,7 @@
 /* Phase 12: trading partners. Read-only art; all native trade actions remain attached. */
 (function(){
  'use strict';
- const people={Weiss:'weiss',Hoffmann:'hoffmann',Opat:'abbot',Slechtic:'nobleman',priest:'priest',noblewoman:'noblewoman'};
+ const people={Weiss:'weiss',Reichel:'reichel',Hoffmann:'hoffmann',Opat:'abbot',Slechtic:'nobleman',priest:'priest',noblewoman:'noblewoman'};
  const contractPeople={rc1:'Opat',rc2:'priest',rc3:'Opat',rc4:'Slechtic',rc5:'noblewoman',rc6:'Slechtic',rc7:'Weiss',rc8:'Hoffmann',rc9:'Hoffmann',rd_noble1:'Slechtic',rd_noble2:'Slechtic',rd_trade1:'Hoffmann',rd_trade2:'Hoffmann'};
  const commissions={church:'church',noble:'noble',trade:'trade'};
  const own=(map,key)=>Object.prototype.hasOwnProperty.call(map,key);
@@ -29,7 +29,7 @@
   for(const heading of app.querySelectorAll('[data-partner]'))decorate(heading,personSource(heading.dataset.partner),'person');
   if(state.phase!=='playing')return;
   for(const section of app.querySelectorAll('.fj-market-section')){
-   if(['buy','quick','loans'].includes(section.dataset.marketSection))decorate(section.querySelector(':scope > .sec-title'),personSource('Weiss'),'person');
+   if(['buy','quick','loans'].includes(section.dataset.marketSection))decorate(section.querySelector(':scope > .sec-title'),personSource(section.dataset.marketSection==='loans'?'Reichel':'Weiss'),'person');
   }
   for(const card of app.querySelectorAll('.fj-contract-card,.fj-contract-offer')){
    const offer=card.classList.contains('fj-contract-offer');

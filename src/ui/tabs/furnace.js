@@ -3,6 +3,7 @@
 
 function renderTabFurnace(ctx){
   const {p,isP,isC,L,ft,fEff,content,isDesktop}=ctx;
+  {const sb=subTabBar("furnace");if(sb)content.append(sb);}
   const z=zone(p.fTemp);
   const tempColor=z.c;
   const isTempering=isTemperingMonth(p.round,p.seasonTier||0);
@@ -308,7 +309,7 @@ function renderTabFurnace(ctx){
     {label:L==="cs"?"Kvalita pánve":"Crucible quality",val:Math.round(p.panevQuality/5*EFF_PANEV*100)+"%",
      tip:L==="cs"?"Závisí na pánvaři a zimní výrobě.":"Depends on crucible-maker and winter production."},
     {label:L==="cs"?"Šamot (vyzdívka)":"Shamot (lining)",val:shamotPct<30?Math.round(EFF_SHAMOT*100)+"%":shamotPct<60?Math.round(EFF_SHAMOT*50)+"%":"0%",
-     tip:L==="cs"?"Oprav v mezisezóně (4🧱+2🪨+8g).":"Repair in off-season (4🧱+2🪨+8g)."}
+     tip:L==="cs"?"Oprav v mezisezóně (4🧱+2🪨+"+mny(800)+").":"Repair in off-season (4🧱+2🪨+"+mny(800)+")."}
   ];
   effRows.forEach(r=>{
     effSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"4px 0",
@@ -327,7 +328,7 @@ function renderTabFurnace(ctx){
       ?"Max. účinnost dle pece: Primitivní ~58% · Zděná ~75% · Mistrovská ~90%.\nVyšší účinnost = více skla z várky."
       :"Max. efficiency by furnace: Primitive ~58% · Stone ~75% · Master ~90%.\nHigher efficiency = more glass per batch."));
   // Dashboard — vždy přes celou šířku (1 sloupec)
-  content.append(dashSec);
+  if(subOn("furnace","furnace"))content.append(dashSec);
   // effSec + chemSec připojíme níže společně po sestavení chemSec
 
   // Přísady — placeholder pro budoucí chemii
@@ -374,7 +375,7 @@ function renderTabFurnace(ctx){
         L==="cs"
           ?"🔬 Barviva, odbarvovače a speciální přísady (MnO₂, CoO, Au...) — všecko bude."
           :"🔬 Colorants, decolorants and special additives (MnO₂, CoO, Au...) — coming soon.")));
-  content.append(chemSec);
+  // chemSec se připojí níže podle podzáložky
 
   // Barevné sklo — craft sekce
   const colorSec=h("div",{class:"sec"});
@@ -505,7 +506,7 @@ function renderTabFurnace(ctx){
           h("div",null,
             h("span",{style:{fontSize:"13px"}},rec.icon+" "),
             h("strong",{style:{fontSize:"11px",color:"#3a2a14"}},L==="cs"?rec.cs:rec.en)),
-          h("span",{style:{fontSize:"10px",color:"#c9952b",fontStyle:"italic"}},`~${rec.sell_cs}g`)),
+          h("span",{style:{fontSize:"10px",color:"#c9952b",fontStyle:"italic"}},`~${mny(rec.sell_cs)}`)),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",lineHeight:"1.3"}},
           L==="cs"?rec.desc_cs:rec.desc_en),
         h("div",{style:{display:"flex",gap:"3px",flexWrap:"wrap",fontSize:"10px"}},
@@ -559,15 +560,8 @@ function renderTabFurnace(ctx){
     }
   }
   // Desktop: levý = effSec, pravý = chemSec; colorSec přes celou šířku dole
-  if(isDesktop){
-    const bottomCols=h("div",{style:{display:"flex",gap:"0",alignItems:"flex-start",borderBottom:"1px solid rgba(42,26,10,.1)"}});
-    effSec.style.flex="1";
-    effSec.style.borderRight="1px solid rgba(42,26,10,.1)";
-    chemSec.style.flex="1";
-    bottomCols.append(effSec,chemSec);
-    content.append(bottomCols,colorSec);
-  }else{
-    content.append(effSec,chemSec,colorSec);
-  }
-  renderSeasonUpgrades(content);
+  // Podzáložky: Pec = přístroje (nahoře) + účinnost; Kmen a barvy = kmen + barevné recepty; Rozvoj hutě = stupně hutě
+  if(subOn("furnace","furnace"))content.append(effSec);
+  if(subOn("furnace","colors"))content.append(chemSec,colorSec);
+  if(subOn("furnace","develop"))renderSeasonUpgrades(content);
 }

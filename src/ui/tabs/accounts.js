@@ -3,6 +3,7 @@
 
 function renderTabAccounts(ctx){
   const {L,p,content}=ctx;
+  {const sb=subTabBar("accounts");if(sb)content.append(sb);}
   // ── Dvousloupcový layout: Zakázky | Účty ──
   const hutSec=h("div",{class:"sec"});
   hutSec.append(h("div",{class:"sec-title"},"🏭 "+(L==="cs"?"Huť — Zakázky & Účty":"Foundry — Contracts & Accounts")));
@@ -27,7 +28,7 @@ function renderTabAccounts(ctx){
     activeBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},
       L==="cs"?"Žádné aktivní zakázky. Nabídky najdeš níže a na Trhu — plněním buduješ reputaci.":"No active contracts. Offers are listed below and at the Market — fulfilling them builds reputation."));
   }
-  hutSec.append(activeBox);
+  if(subOn("accounts","contracts"))hutSec.append(activeBox);
 
   const twoCol=h("div",{class:"fj-accounts-columns",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"10px"}});
 
@@ -51,7 +52,7 @@ function renderTabAccounts(ctx){
         h("div",{style:{fontSize:"10px",color:"#5a3a1a",marginBottom:"4px",lineHeight:"1.4"}},
           L==="cs"?eg.cs:eg.en),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px"}},
-          (L==="cs"?"Odměna: ":"Reward: ")+eg.reward+"g · "+(L==="cs"?"termín ":"due ")+eg.due+(L==="cs"?" kol":" rounds")),
+          (L==="cs"?"Odměna: ":"Reward: ")+mny(eg.reward)+" · "+(L==="cs"?"termín ":"due ")+eg.due+(L==="cs"?" kol":" rounds")),
         h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"4px",fontStyle:"italic"}},
           (L==="cs"?"Vyžaduje pec: ":"Requires furnace: ")+(FURNACE_TYPES[reqFurn]?(L==="cs"?FURNACE_TYPES[reqFurn].name:FURNACE_TYPES[reqFurn].nameEn):reqFurn)
           +(furnOk?" ✅":" ❌")),
@@ -92,15 +93,15 @@ function renderTabAccounts(ctx){
   rightCol.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"6px",borderBottom:"1px solid rgba(42,26,10,.1)",paddingBottom:"3px"}},
     "📒 "+(L==="cs"?"Účty — Schuldenbuch":"Accounts — Schuldenbuch")));
 
-  const wagesNext=p.workers.reduce((s,w)=>s+(2+(w.wageMod||0)),0);
+  const wagesNext=p.workers.reduce((s,w)=>s+(200+(w.wageMod||0)),0);
   const beerCostNext=([0,1,2,4][p.beer]||0)*Math.ceil(p.workers.length/3);
   const totalOutNext=wagesNext+beerCostNext;
-  const debtAutoNext=p.debt>0&&p.grose>5?Math.min(5,p.grose-2,p.debt):0;
+  const debtAutoNext=p.debt>0&&p.grose>500?Math.min(500,p.grose-200,p.debt):0;
   let projDebt=p.debt,projGrose=p.grose;
   const proj=[];
   for(let i=0;i<3;i++){
     projGrose=Math.max(0,projGrose-totalOutNext);
-    const dPay=projDebt>0&&projGrose>5?Math.min(5,projGrose-2,projDebt):0;
+    const dPay=projDebt>0&&projGrose>500?Math.min(500,projGrose-200,projDebt):0;
     projGrose-=dPay; projDebt=Math.max(0,projDebt-dPay);
     if(projGrose<totalOutNext) projDebt+=Math.max(0,totalOutNext-projGrose);
     proj.push({debt:Math.round(projDebt),grose:Math.round(projGrose)});
@@ -111,18 +112,18 @@ function renderTabAccounts(ctx){
   nowBox.append(
     h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
       h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Hotovost v pokladně:":"Cash in hand:"),
-      h("strong",{style:{fontSize:"13px",color:p.grose>20?"#4a7a3a":"#a03020"}},p.grose+"g")),
+      h("strong",{style:{fontSize:"13px",color:p.grose>2000?"#4a7a3a":"#a03020"}},mny(p.grose))),
     h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
-      h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Dluh u Weisse:":"Debt owed to Weiss:"),
+      h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Dluh u Reichela:":"Debt owed to Reichel:"),
       h("strong",{style:{fontSize:"13px",color:p.debt>0?"#a03020":"#4a7a3a"}},
-        p.debt>0?p.debt+"g":(L==="cs"?"✅ Splaceno":"✅ Clear"))),
+        p.debt>0?mny(p.debt):(L==="cs"?"✅ Splaceno":"✅ Clear"))),
     p.debt>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
-      L==="cs"?"Auto-splátka: až 5g/kolo je-li hotovost nad 5g":"Auto-payment: up to 5g/round when cash above 5g"):h("span",{}),
+      L==="cs"?`Auto-splátka: až ${mny(500)}/kolo je-li hotovost nad ${mny(500)}`:`Auto-payment: up to ${mny(500)}/round when cash above ${mny(500)}`):h("span",{}),
     liabilities(p).crew>0?h("div",{style:{display:"flex",justifyContent:"space-between",marginTop:"4px"}},
       h("span",{style:{fontSize:"11px",color:"#8b5e34"}},L==="cs"?"Dluh partě (mzdy):":"Owed to crew (wages):"),
-      h("strong",{style:{fontSize:"13px",color:"#a03020"}},liabilities(p).crew+"g")):h("span",{}),
+      h("strong",{style:{fontSize:"13px",color:"#a03020"}},mny(liabilities(p).crew))):h("span",{}),
     liabilities(p).crew>0?h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px",fontStyle:"italic"}},
-      L==="cs"?"Dluh partě se neplatí automaticky ani Weissovi — vyplácí se v záložce Parta.":"Crew debt is not auto-repaid and not part of Weiss's loan — pay it in the Crew tab."):h("span",{})
+      L==="cs"?"Dluh partě se neplatí automaticky ani Reichelovi — vyplácí se v záložce Parta.":"Crew debt is not auto-repaid and not part of Reichel's loan — pay it in the Crew tab."):h("span",{})
   );
   rightCol.append(nowBox);
   // Ruční splacení
@@ -131,9 +132,9 @@ function renderTabAccounts(ctx){
     payBox.append(h("div",{style:{fontSize:"11px",color:"#8b5e34",marginBottom:"6px",fontWeight:"600"}},
       L==="cs"?"💸 Splatit dluh předčasně:":"💸 Early debt repayment:"));
     const payBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap"}});
-    [10,20,p.debt].forEach(amt=>{
+    [1000,2000,p.debt].forEach(amt=>{
       if(amt<=0) return;
-      const lbl=amt===p.debt?(L==="cs"?"Vše ("+amt+"g)":"All ("+amt+"g)"):amt+"g";
+      const lbl=amt===p.debt?(L==="cs"?"Vše ("+mny(amt)+")":"All ("+mny(amt)+")"):mny(amt);
       const canPay=p.grose>=amt;
       payBtns.append(h("button",{class:"btn btn-s",style:{opacity:canPay?1:0.45,cursor:canPay?"pointer":"not-allowed"},
         onClick:()=>{
@@ -148,13 +149,13 @@ function renderTabAccounts(ctx){
   const outBox=h("div",{style:{marginBottom:"8px",padding:"8px 10px",background:"rgba(0,0,0,.03)",borderRadius:"4px",border:"1px solid rgba(42,26,10,.1)"}});
   outBox.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"5px"}},
     L==="cs"?"📊 Výdaje příští kolo:":"📊 Next round expenses:"));
-  [{label:(L==="cs"?"Mzdy ("+p.workers.length+") dělníků":"Wages ("+p.workers.length+") workers"),val:wagesNext+"g",c:"#a03020"},
-   {label:(L==="cs"?"Pivo (příděl "+p.beer+")":"Beer (ration "+p.beer+")"),val:beerCostNext+"g",c:"#8b5e34"},
-   {label:(L==="cs"?"Celkem":"Total"),val:totalOutNext+"g",c:"#a03020",bold:true}
+  [{label:(L==="cs"?"Mzdy ("+p.workers.length+") dělníků":"Wages ("+p.workers.length+") workers"),val:mny(wagesNext),c:"#a03020"},
+   {label:(L==="cs"?"Pivo (příděl "+p.beer+")":"Beer (ration "+p.beer+")"),val:mny(beerCostNext),c:"#8b5e34"},
+   {label:(L==="cs"?"Celkem":"Total"),val:mny(totalOutNext),c:"#a03020",bold:true}
   ].forEach(r=>outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
     h("span",{style:{color:"#8b5e34"}},r.label),h("span",{style:{color:r.c}},r.val))));
   if(debtAutoNext>0)outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#4a7a3a",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
-    h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+debtAutoNext+"g")));
+    h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+mny(debtAutoNext))));
   rightCol.append(outBox);
   // Projekce dluhu
   if(p.debt>0){
@@ -167,7 +168,7 @@ function renderTabAccounts(ctx){
       const arrow=p2.debt<prev?"↓":"↑";
       projBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px"}},
         h("span",{style:{color:"#8b5e34"}},(L==="cs"?"Kolo ":"Round ")+(i+1)),
-        h("span",{style:{color:col}},arrow+" "+p2.debt+"g "+(L==="cs"?"dluh":"debt")+" · "+p2.grose+"g "+(L==="cs"?"pokladna":"cash"))));
+        h("span",{style:{color:col}},arrow+" "+mny(p2.debt)+" "+(L==="cs"?"dluh":"debt")+" · "+mny(p2.grose)+" "+(L==="cs"?"pokladna":"cash"))));
     });
     rightCol.append(projBox);
   }
@@ -176,17 +177,17 @@ function renderTabAccounts(ctx){
   const loanRateH=loanRateAccounts();
   const loanRatePctH=Math.round(loanRateH*100);
   const lichBox=h("div",{style:{padding:"8px 10px",background:"rgba(42,26,10,.06)",borderRadius:"4px",border:"1px dashed rgba(139,94,52,.3)",marginBottom:"4px"}});
-  lichBox.append(h("div",{"data-partner":"Weiss",style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
-    "🪙 "+(L==="cs"?"Faktor Weiss — půjčky a zálohy":"Factor Weiss — loans & advances")));
+  lichBox.append(h("div",{"data-partner":"Reichel",style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"4px"}},
+    "🪙 "+(L==="cs"?"Faktor Reichel — půjčky a zálohy":"Factor Reichel — loans & advances")));
   lichBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"6px",lineHeight:"1.4"}},
     L==="cs"
-      ?`Groše vždy najdu. Aktuální úrok: ${loanRatePctH}% — splácejte a podmínky se zlepší.`
+      ?`Peníze vždy najdu. Aktuální úrok: ${loanRatePctH}% — splácejte a podmínky se zlepší.`
       :`I always have coin. Current rate: ${loanRatePctH}% — repay well and terms improve.`));
   const loanBtns=h("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"6px"}});
-  [15,25,40].forEach(amt=>{
-    const totalDebt=amt+Math.round(amt*loanRateH);
+  [1500,2500,4000].forEach(amt=>{
+    const totalDebt=amt+Math.round(inZl(amt)*loanRateH)*KR;
     loanBtns.append(h("button",{class:"btn btn-s",style:{fontSize:"10px"},
-      onClick:()=>{takeLoan(amt,loanRateH);}},"+"+amt+"g (+"+totalDebt+"g "+(L==="cs"?"dluh":"debt")+")"));
+      onClick:()=>{takeLoan(amt,loanRateH);}},"+"+mny(amt)+" (+"+mny(totalDebt)+" "+(L==="cs"?"dluh":"debt")+")"));
   });
   lichBox.append(loanBtns);
   // Odklad splátek v Účtech
@@ -198,14 +199,19 @@ function renderTabAccounts(ctx){
     const canMoraH=p.grose>=moraCostH||drH>=25;
     const moraRow=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",marginTop:"4px"}});
     moraRow.append(h("button",{class:"btn btn-s",style:{fontSize:"10px",opacity:canMoraH?1:0.6},
-      onClick:()=>{negotiateMoratorium();}},"⏳ "+(L==="cs"?`Odklad splátek (2 kola, ${moraCostH>0?moraCostH+"g":"zdarma"})`:`Defer debt (2 rounds, ${moraCostH>0?moraCostH+"g":"free"})`)));
+      onClick:()=>{negotiateMoratorium();}},"⏳ "+(L==="cs"?`Odklad splátek (2 kola, ${moraCostH>0?mny(moraCostH):"zdarma"})`:`Defer debt (2 rounds, ${moraCostH>0?mny(moraCostH):"free"})`)));
     moraRow.append(h("span",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic"}},
-      L==="cs"?"Umožní použít groše na mzdy a dřevo":"Saves cash for wages and fuel"));
+      L==="cs"?"Umožní použít peníze na mzdy a dřevo":"Saves cash for wages and fuel"));
     lichBox.append(moraRow);
   }
   rightCol.append(lichBox);
 
-  twoCol.append(leftCol,rightCol);
+  // jedna podzáložka = jeden sloupec; panely značí data-acc-pane (ui/fajrum-d2-accounts.js), ne pořadí
+  leftCol.setAttribute("data-acc-pane","offers");rightCol.setAttribute("data-acc-pane","finance");
+  if(subOn("accounts","contracts"))twoCol.append(leftCol);
+  if(subOn("accounts","accounts"))twoCol.append(rightCol);
+  twoCol.style.gridTemplateColumns="1fr";
+  if(!twoCol.children.length)twoCol.style.display="none";
   hutSec.append(twoCol);
 
   // ── REPUTACE PANEL (pod oběma sloupci) ──
@@ -257,7 +263,13 @@ function renderTabAccounts(ctx){
     repGrid.append(catCard);
   });
   repPanel.append(repGrid);
-  hutSec.append(repPanel);
-  renderSeasonUpgrades(hutSec);
+  if(subOn("accounts","fame"))hutSec.append(repPanel);
+  // Vztahy s obchodními partnery (jen záznam: důvěra, metriky, historie)
+  const relPanel=h("div",{style:{borderTop:"1px solid rgba(42,26,10,.12)",paddingTop:"10px",marginTop:"10px"}});
+  relPanel.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"8px"}},
+    "🤝 "+(L==="cs"?"Vztahy s obchodními partnery":"Trade partner relations")));
+  partnerIds().forEach(id=>relPanel.append(partnerCard(id)));
+  if(subOn("accounts","relations"))hutSec.append(relPanel);
+  if(subOn("accounts","fame"))renderSeasonUpgrades(hutSec);
   content.append(hutSec);
 }

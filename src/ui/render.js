@@ -7,7 +7,7 @@ function render(){
   if(window.FajrumUI)FajrumUI.finish(app,G,key=>{G.tab=key;render();});
   if(window.FajrumProducts)FajrumProducts.finish(app,G);
   if(window.FajrumRecipeUI)FajrumRecipeUI.finish(app,G);
-  if(window.FajrumCrew)FajrumCrew.finish(app,G,{taskOptions:workerTaskOptions,assign:setWorkerTask,profile:id=>{G._partaDetail=id;G._partaSubtab="profil";G.tab="parta";render();}});
+  if(window.FajrumCrew)FajrumCrew.finish(app,G,{taskOptions:workerTaskOptions,assign:setWorkerTask,taskBlock,taskBlockClick,activeWarn:taskActiveWarn,profile:id=>{G._partaDetail=id;G._partaSubtab="profil";G.tab="parta";render();}});
   if(window.FajrumMarket)FajrumMarket.finish(app,G,{quote:marketSaleQuote,prices:marketSalePrices,sell:sellItems,lines:contractLines,status:contractStatus});
   if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:!!MARKET_CLOSED[G.round],stockKeys:Object.keys(marketSalePrices())});
   if(window.FajrumPortraits)FajrumPortraits.finish(app,G);
