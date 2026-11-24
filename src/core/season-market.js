@@ -188,7 +188,7 @@ function sellItems(type,n){
     Fx.render(); return;
   }
   const {count:cnt,total,rest}=marketSaleQuote(type,n);
-  G[type]=rest; G.grose+=total;
+  G[type]=rest; G.grose+=total; econ2PieceAdd(total);
   G.totalSold=(G.totalSold||0)+cnt;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${mny(total)}`);
   checkAchievements();

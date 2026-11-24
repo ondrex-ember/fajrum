@@ -31,6 +31,7 @@ const JS_MAIN = [
   'src/data/market.js',
   'src/data/contracts.js',
   'src/data/forest-rules.js',
+  'src/data/econ2.js',
   'src/data/crew.js',
   'src/data/glass.js',
   'src/data/texts.js',
@@ -41,6 +42,7 @@ const JS_MAIN = [
 
   // Game logic — headless (runs in Node for the golden/extract tests); no DOM, no sound, talks to the UI only through Fx
   'src/core/rules-base.js',
+  'src/core/econ2.js',
   'src/core/crew.js',
   'src/core/craft.js',
   'src/core/state.js',

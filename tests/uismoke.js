@@ -216,6 +216,37 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     scan('forest');
     console.log('forest UI checks done');
   }
+  if (process.env.ECON2) {
+    const doc = w.document, chk = (c, m) => { if (!c) found.set('ECON2: ' + m, 1); };
+    if (process.env.MOBILE) { Object.defineProperty(w, 'innerWidth', { value: 400, configurable: true }); }
+    ev('G.huteName="Test"; startGame("'+(process.env.DIFF||'normal')+'"); '+(process.env.EN?'G.lang="en"; ':''));
+    ev('Object.keys(G).filter(k=>/Pending$/.test(k)).forEach(k=>{G[k]=Array.isArray(G[k])?[]:false}); G.phase="playing"; G.round=3; G.curEvt=null; G.grose=50000; G.pieceAcc=700;');
+    const qa = s => [...doc.querySelectorAll(s)], q = s => doc.querySelector(s);
+    chk(ev('G._econ') === 2, 'nová hra má _econ=2');
+    // karta dělníka: blok Mzda s verdiktem a vzorcem
+    ev('G.tab="parta"; G._partaDetail=G.workers.find(w=>w.prof==="tavic").id; G._partaSubtab="profil"; render();');
+    const blk = q('.fj-wage-block');
+    chk(!!blk, 'blok Mzda na kartě výrobce');
+    if (blk) {
+      const t = blk.textContent.replace(/\s+/g, ' ');
+      chk(/[🟢🟡🔴]/u.test(t), 'verdikt: ' + t.slice(0, 40));
+      chk(/25 %|25%/.test(t) && /(rovným dílem|split equally)/.test(t), 'vzorec fondu: ' + t.slice(0, 200));
+      chk(!/NaN|undefined|Infinity/.test(t), 'bez NaN/undefined');
+    }
+    const helperId = ev('G.workers.find(w=>w.prof==="drvorubc").id');
+    ev('G._partaDetail="' + helperId + '"; render();');
+    const tb = (q('.fj-wage-block') || { textContent: '' }).textContent;
+    chk(!/(rovným dílem|split equally)/.test(tb) && /(Pevná mzda|Fixed wage|Stravné|Meals)/.test(tb), 'pomocný: bez vzorce fondu, s pevnou mzdou');
+    ev('G.grose=100; render();'); chk(/🔴/.test((q('.fj-wage-block') || { textContent: '' }).textContent), 'málo hotovosti → 🔴');
+    ev('G.grose=50000; G._partaDetail=null; G.tab="accounts"; render();');
+    chk(/🏰/.test(doc.body.textContent), 'Účty: předpověď činže');
+    // souhrn kola s činží
+    ev('G.round=5; G.leaseSeasons=1; G.grose=50000; processRound(); G.phase="summary"; G.tab="overview"; render();');
+    chk(ev('G.summary&&G.summary.rent&&G.summary.rent.cash') === 2500 || ev('G.summary&&G.summary.rent&&G.summary.rent.cash') === 2000, 'summary.rent v duben (S2)');
+    chk(/🏰/.test(doc.body.textContent), 'souhrn: karta činže');
+    scan('econ2');
+    console.log('econ2 UI checks done');
+  }
   if (process.env.GUIDE) { ev('G.tab="overview"; G.phase="playing"; render();'); const c = w.document.querySelector('.fj-guide-card'); console.log('guide card:', c ? c.textContent.replace(/\s+/g, ' ').slice(0, 300) : 'none'); }
   if (process.env.DUMP) for (const t of process.env.DUMP.split(',')) { ev(`G.phase='playing'; G.tab=${JSON.stringify(t)}; render();`); const bc = w.document.body.cloneNode(true); bc.querySelectorAll('script,style,svg,iframe').forEach(n => n.remove()); console.log('=== ' + t + '\n' + [...bc.querySelectorAll('[data-partner-card]')].map(n => n.textContent.replace(/\s+/g, ' ').slice(0, 900)).join('\n')); }
   console.log('rounds processed:', rounds, 'phase:', ev('G.phase'), 'season:', ev('G.season'));

@@ -1,6 +1,6 @@
 // ── KONTRAKT SYSTÉM ─────────────────────────────────────────────────────────
 function contractCost(w,months){
-  const wage=200+(w.wageMod||0);
+  const wage=workerFixedWage(w);
   const opt=CONTRACT_OPTIONS.find(o=>o.months===months)||CONTRACT_OPTIONS[0];
   return Math.round(inZl(wage)*opt.mult)*KR;
 }

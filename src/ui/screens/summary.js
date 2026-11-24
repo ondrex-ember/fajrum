@@ -165,12 +165,23 @@ function renderSummaryScreen(ctx){
   ecoBox.append(debtStatusCard);
   body.append(ecoBox);
 
+  // ── ČINŽE PANSTVÍ (jen nová ekonomika, v termínu) ──
+  if(sd.rent){
+    const rt=sd.rent, rentBox=h("div",{style:{background:"rgba(42,26,10,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #7a5a2a"}});
+    rentBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"🏰 ČINŽE PANSTVÍ":"🏰 ESTATE RENT"));
+    const rrow=(a,b,col)=>h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px"}},h("span",{style:{color:"#8b5e34"}},a),h("span",{style:{color:col||"#3a2a14"}},b));
+    rentBox.append(rrow(L==="cs"?"Hotovost":"Cash",rt.grace?(L==="cs"?"první sezóna — prominuto":"first season — waived"):("-"+mny(rt.paid)),rt.grace?"#4a7a3a":"#a03020"));
+    if(rt.debt>0)rentBox.append(rrow(L==="cs"?"Nedoplatek → dluh u Reichela":"Shortfall → debt to Reichel",mny(rt.debt),"#a03020"));
+    rentBox.append(rrow(L==="cs"?"Kvóta panství":"Estate quota",`+${rt.wood} 🌳  +${rt.potash} 🧂`,"#4a7a3a"));
+    body.append(rentBox);
+  }
+
   // ── DĚLNÍCI — mzdy a dluhy ──
   const workerBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #8b5e34"}});
   workerBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"👷 MZDY DĚLNÍKŮ":"👷 WORKER WAGES"));
   p.workers.forEach(w=>{
     const wEntry=sd.workerWages?sd.workerWages.find(x=>x.id===w.id):null;
-    const wage=wEntry?wEntry.wage:(2+(w.wageMod||0));
+    const wage=wEntry?wEntry.wage:workerWageView(w).total;
     const paid=wEntry?wEntry.paid:true;
     const shortfall=wEntry?wEntry.shortfall:0;
     const unpaid=w.unpaidDebt||0;
@@ -180,6 +191,7 @@ function renderSummaryScreen(ctx){
     row.append(
       h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
       h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
+        (wEntry&&wEntry.piece>0?h("span",{style:{color:"#8b5e34",fontSize:"9px"}},`${mny(wEntry.fixed)} + ${L==="cs"?"podíl":"share"} ${mny(wEntry.piece)}`):h("span",{},"")),
         h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+mny(wage)):("✗ "+mny(wage)+" → "+(L==="cs"?"dluh":"debt"))),
         unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},(L==="cs"?"celk. dluh":"total debt")+": "+mny(unpaid)):h("span",{},"")
       ));

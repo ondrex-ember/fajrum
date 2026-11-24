@@ -12,6 +12,7 @@ function startInterseason(){
 
   G.furnace=furnace;
   G.reforestWorkers=0;
+  if(econ2())G.leaseSeasons=_e2n(G.leaseSeasons)+1;   // dokončená sezóna nájmu (činže: v první sezóně bez hotovosti)
   if((p.seasonTier||0)>=3){
     G.fActive=true;
   }

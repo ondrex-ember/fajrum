@@ -43,7 +43,7 @@ function setPath(root, path, v) {
 function apply(e, a) {
   const A = e.api, c = (n, ...x) => A.call(n, ...x);
   switch (a.t) {
-    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); break; }
+    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); if (a.econ !== 2) { const g = A.G; delete g._econ; delete g.pieceAcc; delete g.leaseSeasons; } break; }   // klasika, pokud scénář výslovně nechce econ:2
     case 'setTask': c('setWorkerTask', a.id, a.task); break;
     case 'setAlloc': c('setAlloc', a.key, a.val); break;
     case 'allocRecommended': c('setAlloc', 'build', 0); c('setAlloc', 'potash', 40); break;
@@ -159,11 +159,11 @@ function botNext(e, r, mode) {
   return { t: 'nextRound' };
 }
 
-function playAndRecord(seed, diff, maxActions, maxSeasons, mode) {
+function playAndRecord(seed, diff, maxActions, maxSeasons, mode, econ) {
   const e = load({ seed }); const r = botRng(seed);
   const actions = [], checkpoints = [];
   const doApply = a => { apply(e, a); actions.push(a); };
-  doApply({ t: 'newGame', difficulty: diff, huteName: 'test' });
+  doApply(econ ? { t: 'newGame', difficulty: diff, huteName: 'test', econ: 2 } : { t: 'newGame', difficulty: diff, huteName: 'test' });
   checkpoints.push(Object.assign({ i: 0 }, snapshot(e)));
   let guard = 0, last = '';
   while (actions.length < maxActions && guard++ < maxActions * 10) {
@@ -182,7 +182,7 @@ function playAndRecord(seed, diff, maxActions, maxSeasons, mode) {
   }
   const i = actions.length - 1;
   if (!checkpoints.some(c => c.i === i)) checkpoints.push(Object.assign({ i }, snapshot(e)));
-  return { meta: { name: `${mode || 'careful'}-${diff}-seed${seed}`, seed, difficulty: diff, mode: mode || 'careful', source: 'web tests/golden.js', currency: 'krejcary' }, actions, checkpoints, final: { season: e.api.G.season, phase: e.api.G.phase } };
+  return { meta: { name: `${mode || 'careful'}-${diff}-seed${seed}${econ ? '-econ2' : ''}`, seed, difficulty: diff, mode: mode || 'careful', source: 'web tests/golden.js', currency: 'krejcary', ...(econ ? { econ: 2 } : {}) }, actions, checkpoints, final: { season: e.api.G.season, phase: e.api.G.phase } };
 }
 
 function deepDiff(a, b, p, out) {
@@ -250,8 +250,8 @@ module.exports = { apply, snapshot, playAndRecord, check, scaleGolden, rebase, S
 if (require.main === module) {
   const [cmd, ...rest] = process.argv.slice(2);
   if (cmd === 'gen') {
-    const [out, seed, diff, n, seasons, mode] = rest;
-    const g = playAndRecord(+seed, diff, +n, +(seasons || 4), mode);
+    const [out, seed, diff, n, seasons, mode, econ] = rest;
+    const g = playAndRecord(+seed, diff, +n, +(seasons || 4), mode, econ === 'econ2');
     fs.writeFileSync(out, JSON.stringify(g));
     console.log(`${out}: ${g.actions.length} actions, season ${g.final.season}, phase ${g.final.phase}, ${g.checkpoints.length} checkpoints`);
   } else if (cmd === 'check') {
@@ -262,5 +262,5 @@ if (require.main === module) {
   } else if (cmd === 'rebase') {
     const [inDir, outDir] = rest;
     for (const f of fs.readdirSync(inDir).filter(x => x.endsWith('.json'))) console.log(rebase(inDir + '/' + f, outDir + '/' + f));
-  } else { console.error('usage: golden.js gen <out> <seed> <easy|normal> <n> [seasons] | check <file>... | rebase <groat-dir> <out-dir>'); process.exit(2); }
+  } else { console.error('usage: golden.js gen <out> <seed> <easy|normal> <n> [seasons] [careful|chaos] [econ2] | check <file>... | rebase <groat-dir> <out-dir>'); process.exit(2); }
 }

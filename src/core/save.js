@@ -70,7 +70,7 @@ function validateGameSave(saved){
       if(!saveguardIsObject(worker) || typeof worker.id!=="string" || typeof worker.prof!=="string")
         throw new Error("Invalid worker");
       if(worker.name!==undefined && typeof worker.name!=="string")throw new Error("Invalid worker name");
-      for(const key of ["xp","lv","fat","mood","loyalty","wageMod"])
+      for(const key of ["xp","lv","fat","mood","loyalty","wageMod","lastWage"])
         if(worker[key]!==undefined&&(typeof worker[key]!=="number"||!Number.isFinite(worker[key])))
           throw new Error("Invalid worker "+key);
       if(worker.contract!==undefined && worker.contract!==null && !saveguardIsObject(worker.contract))
@@ -93,6 +93,11 @@ function validateGameSave(saved){
   if(!merged.guide||typeof merged.guide!=="object"||Array.isArray(merged.guide))merged.guide={on:false,done:[],snooze:{}};
   else{merged.guide={on:merged.guide.on===true,done:Array.isArray(merged.guide.done)?merged.guide.done.filter(x=>typeof x==="string"):[],snooze:(merged.guide.snooze&&typeof merged.guide.snooze==="object"&&!Array.isArray(merged.guide.snooze))?merged.guide.snooze:{}};}
   merged.forest2=forestSanitize(merged.forest2);
+  // Nová ekonomika (ECON2): značku mají jen nové hry; staré savy zůstávají klasické. Hodnoty se čistí jen tam, kde značka je.
+  if(merged._econ===2&&typeof ECON2!=="undefined"){
+    merged.pieceAcc=typeof merged.pieceAcc==="number"&&isFinite(merged.pieceAcc)&&merged.pieceAcc>0?Math.round(merged.pieceAcc):0;
+    merged.leaseSeasons=Number.isSafeInteger(merged.leaseSeasons)&&merged.leaseSeasons>0?Math.min(1000,merged.leaseSeasons):0;
+  }else if(merged._econ!==undefined){delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;}
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;

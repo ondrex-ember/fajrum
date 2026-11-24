@@ -1593,6 +1593,25 @@ const FOREST_RULES={
     P:{icon:"▫️",name_cs:"Paseka",name_en:"Clearing"},
   }
 };
+// econ2.js — tabulka „nové ekonomiky“ (Android ECON2.json, jen hodnoty). Platí jen pro nové hry (G._econ===2); staré savy zůstávají v klasické ekonomice.
+// Peníze v krejcarech (1 zl = 100 kr); hodnoty s rozlišením {easy,normal}. Stravné, paušál a pevné sazby jsou násobky 50 kr.
+const ECON2={
+  piece:{
+    share:0.25,                       // podíl z tržeb (prodej + dodané zakázky) do společného fondu výrobců
+    helper:{easy:150,normal:200},     // pomocní: pevná mzda v kampani
+    prepCash:{easy:100,normal:150},   // stravné v přípravě (všichni; bez osobního příplatku)
+    retainer:{easy:50,normal:100}     // paušál výrobců v kampani (+ osobní příplatek wageMod, min. 1 zl)
+  },
+  rent:{
+    rounds:[5,11],                    // sv. Jiří (duben), sv. Havel (říjen): hotovost i kvóta v jednom termínu
+    cash:{easy:2000,normal:2500},
+    wood:{easy:25,normal:20},         // kvóta dříví do skladu
+    potash:{easy:5,normal:4},         // kvóta popela (potaše) do skladu
+    graceSeasons:1,                   // v první sezóně hotovostní činže odpadá (kvóta chodí)
+    famaQuota:0.25,                   // kvóta × (1 + famaQuota × min(1, součet Famy / famaFull))
+    famaFull:60
+  }
+};
 // crew.js — professions, traits, NPC roster/bonds/bios/assessments, tasks.
 // Verbatim data moved out of core/ (no logic). Classic script: plain top-level consts in the shared global scope; load order is fixed by build.js.
 
@@ -3572,6 +3591,101 @@ function merchName(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.cs:i.en):k;}
 function merchDesc(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.d_cs:i.d_en):"";}
 
 // Nákup parcel lesa: viz core/forest.js (buyParcely)
+// econ2.js — nová ekonomika Části 1 (Android ECON2): úkolová mzda výrobců, stravné v přípravě, činže panství (kvóta + hotovost).
+// Zapíná se jen v nových hrách (G._econ===2, nastaví startGame/restartAfterFall); staré savy a klasické golden scénáře zůstávají beze změny.
+// Nic tu nelosuje (žádné Math.random) — pořadí RNG zůstává. Stav: G.pieceAcc (fond výrobců, kr), G.leaseSeasons (dokončené sezóny nájmu), w.lastWage.
+
+function _e2n(v){return typeof v==="number"&&isFinite(v)?v:0;}
+function _e2L(cs,en){return G.lang==="cs"?cs:en;}
+function econ2(){return typeof ECON2!=="undefined"&&G&&G._econ===2?ECON2:null;}
+function _e2Pick(v){return v&&typeof v==="object"?(G.difficulty==="easy"?v.easy:v.normal):v;}
+const _E2_HALF=KR/2;   // nejmenší jednotka mezd (půl zlatníku)
+function _e2Round50(x){return Math.max(0,Math.round(x/_E2_HALF)*_E2_HALF);}
+
+// Nová hra: zapne novou ekonomiku (jen když je tabulka k dispozici)
+function econ2Init(){
+  if(typeof ECON2==="undefined")return;
+  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;
+}
+
+function econ2IsProducer(w){return WERKSTAT_PROFS.includes(w.prof);}
+
+// Pevná složka mzdy za jedno kolo: příprava = stravné (všichni, bez příplatku), kampaň = sazba pomocného / paušál výrobce + osobní příplatek (min. 1 zl)
+function econ2FixedParts(w,isP){
+  const e=econ2(), pc=e.piece;
+  if(isP){const b=_e2Round50(_e2Pick(pc.prepCash));return{base:b,mod:0,fixed:b};}
+  const b=_e2Round50(_e2Pick(econ2IsProducer(w)?pc.retainer:pc.helper));
+  const fixed=Math.max(KR,_e2Round50(b+(w.wageMod||0)));
+  return{base:b,mod:fixed-b,fixed};
+}
+
+// Výplata všech dělníků za kolo: pevná složka + (výrobci) rovný díl fondu, zaokrouhlený nahoru na celé zl.
+// Bez výrobců se fond nevyplácí a přenáší se (used = 0).
+function econ2WageList(workers,isP,acc){
+  const fund=Math.max(0,_e2n(acc)), prod=workers.filter(econ2IsProducer).length;
+  const per=prod>0?Math.ceil(fund/prod/KR)*KR:0;
+  let total=0;
+  const list=workers.map(w=>{
+    const fp=econ2FixedParts(w,isP), isProd=econ2IsProducer(w), piece=isProd?per:0;
+    total+=fp.fixed+piece;
+    return{id:w.id,wage:fp.fixed+piece,fixed:fp.fixed,piece};
+  });
+  return{list,total,used:prod>0?fund:0,fund,producers:prod,perProducer:per};
+}
+
+// Přírůstek fondu z tržby (prodej, dodaná zakázka)
+function econ2PieceAdd(kr){
+  const e=econ2();
+  if(!e||!(kr>0))return;
+  G.pieceAcc=_e2n(G.pieceAcc)+Math.round(kr*e.piece.share);
+}
+
+// Pevná složka pro místa mimo výplatu (kontrakt na dělníka): klasika 200+příplatek, nová ekonomika = kampaňová pevná mzda
+function workerFixedWage(w){
+  if(econ2())return econ2FixedParts(w,false).fixed;
+  return 200+(w.wageMod||0);
+}
+
+// Pohled na příští výplatu dělníka (karta dělníka, Účty, souhrn). Čistě zobrazení, nemění stav.
+function workerWageView(w){
+  const isP=isPrepMonth(G.round,G.seasonTier||0), easy=G.difficulty==="easy";
+  if(!econ2()){
+    const total=workerWageFor(w,baseWageRateFor(isP,easy));
+    return{econ:false,isP,producer:false,base:total,mod:0,fixed:total,piece:0,total,fund:0,perProducer:0,producers:0};
+  }
+  const plan=econ2WageList(G.workers,isP,G.pieceAcc), fp=econ2FixedParts(w,isP), isProd=econ2IsProducer(w);
+  const piece=isProd?plan.perProducer:0;
+  return{econ:true,isP,producer:isProd,base:fp.base,mod:fp.mod,fixed:fp.fixed,piece,total:fp.fixed+piece,
+    fund:plan.fund,perProducer:plan.perProducer,producers:plan.producers,share:Math.round(econ2().piece.share*100)};
+}
+// Součet příští výplaty celé party (Účty, předpověď)
+function crewWageNext(){
+  const isP=isPrepMonth(G.round,G.seasonTier||0), easy=G.difficulty==="easy";
+  if(!econ2())return G.workers.reduce((s,w)=>s+workerWageFor(w,baseWageRateFor(isP,easy)),0);
+  return econ2WageList(G.workers,isP,G.pieceAcc).total;
+}
+
+// ── činže panství ──
+function econ2FamaSum(p){const f=(p||G).fama||{};return _e2n(f.church)+_e2n(f.noble)+_e2n(f.trade);}
+// Činže v daném kole (kola 5 a 11) — null, když tu termín není. leaseSeasons = počet dokončených sezón nájmu.
+function econ2RentAt(round,leaseSeasons,p){
+  const e=econ2();
+  if(!e||!e.rent.rounds.includes(round))return null;
+  const rr=e.rent, mult=1+rr.famaQuota*Math.min(1,econ2FamaSum(p)/rr.famaFull);
+  const grace=_e2n(leaseSeasons)<rr.graceSeasons;
+  return{round,grace,cash:grace?0:_e2Pick(rr.cash),cashFull:_e2Pick(rr.cash),
+    wood:Math.round(_e2Pick(rr.wood)*mult),potash:Math.round(_e2Pick(rr.potash)*mult),mult};
+}
+// Nejbližší termín činže (pro Účty): {round, away (kol), ...} nebo null
+function econ2RentNext(){
+  const e=econ2();
+  if(!e)return null;
+  const rs=[...e.rent.rounds].sort((a,b)=>a-b);
+  const now=G.round, nxt=rs.find(r=>r>=now);
+  const nextSeason=nxt===undefined, round=nextSeason?rs[0]:nxt;
+  const rd=econ2RentAt(round,_e2n(G.leaseSeasons)+(nextSeason?1:0),G);
+  return rd?{...rd,away:(nextSeason?ROUNDS-now+round:round-now)}:null;
+}
 // Aktivní vazba = oba členové jsou v huti a nesedí na odpočinku (task!=="idle") — stejná podmínka jako u afinity Josef+Kateřina.
 function bondActive(p,a,b){return p.workers.some(w=>w.npcId===a&&w.task!=="idle")&&p.workers.some(w=>w.npcId===b&&w.task!=="idle");}
 function moodEffMult(w){return 1+((w.mood==null?MOOD_NEUTRAL:w.mood)-MOOD_NEUTRAL)/500;}
@@ -5383,24 +5497,48 @@ function processRound(){
   }
   // 5. Mzdy — individuální dle wageMod, zimní příprava a lehká obtížnost
   const isEasyDiff = p.difficulty === "easy";
+  const E2=econ2();   // nová ekonomika (jen nové hry): úkolová mzda výrobců + stravné v přípravě; klasika beze změny
   const baseWageRate = baseWageRateFor(isP, isEasyDiff);
-  let wages=0;
-  const workerWages=p.workers.map(w=>{
-    const ww=workerWageFor(w, baseWageRate); // odpočinek = poloviční mzda (IDLE_WAGE_FACTOR)
-    wages+=ww;
-    return{id:w.id,wage:ww};
-  });
+  let wages=0, e2plan=null;
+  let workerWages;
+  if(E2){
+    e2plan=econ2WageList(p.workers,isP,p.pieceAcc);
+    wages=e2plan.total;
+    workerWages=e2plan.list.map(x=>({...x}));
+  }else{
+    workerWages=p.workers.map(w=>{
+      const ww=workerWageFor(w, baseWageRate); // odpočinek = poloviční mzda (IDLE_WAGE_FACTOR)
+      wages+=ww;
+      return{id:w.id,wage:ww};
+    });
+  }
   // Kolik reálně zaplatíme — pokud grose nestačí, platíme co jde (zbytek = dluh)
+  const wageUnit=E2?KR/2:KR;   // nová ekonomika dělí po půl zlatníku (mzdy 1,5 zl nesmí vyrobit fantomový dluh)
   const wagesAvail=Math.max(0,grose); // nemůžeme platit z ničeho
-  const wagesPaid=Math.min(wages,Math.floor(inZl(wagesAvail))*KR); // celé zlatníky → schodek je vždy celý počet zlatníků
+  const wagesPaid=Math.min(wages,Math.floor(wagesAvail/wageUnit)*wageUnit); // celé jednotky → schodek je vždy celý počet jednotek
   const wagesDeficit=wages-wagesPaid;
   grose-=wagesPaid;
   // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Reichela (p.debt) — jsou to dvě oddělené entity.
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
-  // Schodek se rozpočítá na celé zlatníky metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádný zlatník se neztratí ani nevytvoří).
-  const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit);
+  // Schodek se rozpočítá metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádná jednotka se neztratí ani nevytvoří).
+  const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit,wageUnit);
   workerWages.forEach((ww,i)=>{ ww.paid=payRatio>=1; ww.shortfall=shortfalls[i]; });
+
+  // 5b. Činže panství (jen nová ekonomika): v termínu sv. Jiří / sv. Havel kvóta dříví a popela do skladu + hotovost (po celých zl, zbytek do dluhu u Reichela)
+  let rentInfo=null;
+  if(E2){
+    const rd=econ2RentAt(round,p.leaseSeasons,p);
+    if(rd){
+      const payable=Math.min(rd.cash,Math.floor(Math.max(0,grose)/KR)*KR), short=rd.cash-payable;
+      grose-=payable; debt+=short;
+      r.wood+=rd.wood; r.potash+=rd.potash;
+      rentInfo={cash:rd.cash,paid:payable,debt:short,wood:rd.wood,potash:rd.potash,grace:rd.grace};
+      if(rd.grace)log.push(`__ECO__🏰 ${L==="cs"?"Činže panství: první sezóna bez hotovosti — platí se jen kvótou":"Estate rent: first season without cash — quota only"}`);
+      else log.push(`__ECO__🏰 ${L==="cs"?"Činže panství":"Estate rent"}: -${mny(payable)}`+(short>0?` (${L==="cs"?"dluh":"debt"} ${mny(short)})`:""));
+      log.push(`__ECO__🌲 ${L==="cs"?"Kvóta panství":"Estate quota"}: +${rd.wood} 🌳, +${rd.potash} 🧂`);
+    }
+  }
 
   // 6. Splácení dluhu u Faktora Reichela (standardní auto-splátka, pokud není aktivní odklad)
   let dPay=0;
@@ -5903,7 +6041,8 @@ function processRound(){
       traits:newTraits,
       health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
       unpaidDebt:newUnpaid,mentorId:newMentorId,mentorRounds:newMentorRounds,
-      contract:newContract,seasonsInFoundry:newSeasonsInFoundry};
+      contract:newContract,seasonsInFoundry:newSeasonsInFoundry,
+      ...(E2&&!isP&&wageEntry?{lastWage:wageEntry.wage}:{})};   // lastWage (jen kampaň): karta dělníka z ní soudí, zda výrobce vydělává
   }).filter(Boolean);
 
   const nr=round+1;
@@ -5917,6 +6056,7 @@ function processRound(){
   const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal({exCrewClaims:[...(p.exCrewClaims||[]),...newClaims]});
   ecoLines.push(`💰 ${mny(grose)}`+(debt>0?` · ${L==="cs"?"dluh Reichelovi":"debt to Reichel"} ${mny(debt)}`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${mny(crewDebtNow)}`:""));
   ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${mny(wagesPaid)}${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${mny(wagesDeficit)}`:""} · ${L==="cs"?"pivo":"beer"} ${mny(bCost)}`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${mny(dPay)}`:""));
+  if(rentInfo)ecoLines.push(`🏰 ${L==="cs"?"činže":"rent"} ${mny(rentInfo.paid)}`+(rentInfo.debt>0?` · ⚠️ ${L==="cs"?"do dluhu":"to debt"} ${mny(rentInfo.debt)}`:"")+` · +${rentInfo.wood}🌳 +${rentInfo.potash}🧂`);
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
   // Produkce tohoto kola (musí se spočítat PŘED Object.assign — potom je p===G a rozdíl by byl 0)
@@ -5952,7 +6092,9 @@ function processRound(){
       contractIncome:contractIncomeTick,
       prodW, prodC, newPanve:roundNewPanve,
       furnTemp:(fA?fT:null),
-      workerProd:roundWorkerProd
+      workerProd:roundWorkerProd,
+      ...(rentInfo?{rent:rentInfo}:{}),
+      ...(E2?{pieceUsed:e2plan.used,pieceProducers:e2plan.producers}:{})
     },
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
@@ -5960,6 +6102,7 @@ function processRound(){
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
+    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
       season:p.season, round:nr,
@@ -5981,7 +6124,7 @@ function processRound(){
 
 // ── KONTRAKT SYSTÉM ─────────────────────────────────────────────────────────
 function contractCost(w,months){
-  const wage=200+(w.wageMod||0);
+  const wage=workerFixedWage(w);
   const opt=CONTRACT_OPTIONS.find(o=>o.months===months)||CONTRACT_OPTIONS[0];
   return Math.round(inZl(wage)*opt.mult)*KR;
 }
@@ -6044,6 +6187,7 @@ function startInterseason(){
 
   G.furnace=furnace;
   G.reforestWorkers=0;
+  if(econ2())G.leaseSeasons=_e2n(G.leaseSeasons)+1;   // dokončená sezóna nájmu (činže: v první sezóně bez hotovosti)
   if((p.seasonTier||0)>=3){
     G.fActive=true;
   }
@@ -6494,7 +6638,7 @@ function sellItems(type,n){
     Fx.render(); return;
   }
   const {count:cnt,total,rest}=marketSaleQuote(type,n);
-  G[type]=rest; G.grose+=total;
+  G[type]=rest; G.grose+=total; econ2PieceAdd(total);
   G.totalSold=(G.totalSold||0)+cnt;
   G.log.push(`__ECO__💰 ${cnt}× ${type} → ${mny(total)}`);
   checkAchievements();
@@ -6755,7 +6899,7 @@ function validateGameSave(saved){
       if(!saveguardIsObject(worker) || typeof worker.id!=="string" || typeof worker.prof!=="string")
         throw new Error("Invalid worker");
       if(worker.name!==undefined && typeof worker.name!=="string")throw new Error("Invalid worker name");
-      for(const key of ["xp","lv","fat","mood","loyalty","wageMod"])
+      for(const key of ["xp","lv","fat","mood","loyalty","wageMod","lastWage"])
         if(worker[key]!==undefined&&(typeof worker[key]!=="number"||!Number.isFinite(worker[key])))
           throw new Error("Invalid worker "+key);
       if(worker.contract!==undefined && worker.contract!==null && !saveguardIsObject(worker.contract))
@@ -6778,6 +6922,11 @@ function validateGameSave(saved){
   if(!merged.guide||typeof merged.guide!=="object"||Array.isArray(merged.guide))merged.guide={on:false,done:[],snooze:{}};
   else{merged.guide={on:merged.guide.on===true,done:Array.isArray(merged.guide.done)?merged.guide.done.filter(x=>typeof x==="string"):[],snooze:(merged.guide.snooze&&typeof merged.guide.snooze==="object"&&!Array.isArray(merged.guide.snooze))?merged.guide.snooze:{}};}
   merged.forest2=forestSanitize(merged.forest2);
+  // Nová ekonomika (ECON2): značku mají jen nové hry; staré savy zůstávají klasické. Hodnoty se čistí jen tam, kde značka je.
+  if(merged._econ===2&&typeof ECON2!=="undefined"){
+    merged.pieceAcc=typeof merged.pieceAcc==="number"&&isFinite(merged.pieceAcc)&&merged.pieceAcc>0?Math.round(merged.pieceAcc):0;
+    merged.leaseSeasons=Number.isSafeInteger(merged.leaseSeasons)&&merged.leaseSeasons>0?Math.min(1000,merged.leaseSeasons):0;
+  }else if(merged._econ!==undefined){delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;}
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;
@@ -6867,6 +7016,7 @@ function startGame(diff){
   G=initState();
   G.huteName=name;
   G.difficulty=diff;
+  econ2Init();   // nová ekonomika jen v nových hrách (staré savy a klasické golden scénáře ji nemají)
   G.firstVisit=true;
   if(diff==="easy"){
     G.furnace.runIn=45;
@@ -6908,6 +7058,7 @@ function restartAfterFall(){
   G=initState();
   G.huteName=hName;
   G.difficulty=diff;
+  econ2Init();
   guideInitForDifficulty(diff);
   G.phase="playing";
   Fx.render();
@@ -6964,6 +7115,13 @@ function setWorkerTask(workerId,t){
   w.task=t;
   if(t==="idle"&&!wasIdle){
     // Upozornění: odpočívající dělník nic nevyrábí, ale dostává mzdu
+    if(econ2()){   // nová ekonomika: odpočinek mzdu nesnižuje (pevná složka se platí vždy, podíl z fondu dostane výrobce)
+      const wv=workerWageView(w);
+      Fx.toast("😴 "+w.name,L==="cs"
+        ?["Odpočívá — nic nevyrábí.","Mzda "+mny(wv.total)+"/kolo se nemění, únava −50 %."]
+        :["Resting — produces nothing.","Wage "+mny(wv.total)+"/round unchanged, fatigue −50%."]);
+      Fx.render();return;
+    }
     const rate=baseWageRateFor(isP,G.difficulty==="easy");
     const wIdle=workerWageFor(w,rate,"idle"), wWork=workerWageFor(w,rate,"work");
     Fx.toast("😴 "+w.name,L==="cs"
@@ -7118,7 +7276,7 @@ function quickSellAll(){
     earned+=gain;
     G[k]=[];
   });
-  G.grose+=earned;
+  G.grose+=earned; econ2PieceAdd(earned);
   G.quickSellUsed=true;
   partnerEvent("weiss","quickSell",earned);
   G.log.push(`__ECO__🐴 ${L==="cs"?"Kupec Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${mny(earned)} (${qsRatePct}%)`);
@@ -10692,12 +10850,23 @@ function renderSummaryScreen(ctx){
   ecoBox.append(debtStatusCard);
   body.append(ecoBox);
 
+  // ── ČINŽE PANSTVÍ (jen nová ekonomika, v termínu) ──
+  if(sd.rent){
+    const rt=sd.rent, rentBox=h("div",{style:{background:"rgba(42,26,10,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #7a5a2a"}});
+    rentBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"🏰 ČINŽE PANSTVÍ":"🏰 ESTATE RENT"));
+    const rrow=(a,b,col)=>h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px"}},h("span",{style:{color:"#8b5e34"}},a),h("span",{style:{color:col||"#3a2a14"}},b));
+    rentBox.append(rrow(L==="cs"?"Hotovost":"Cash",rt.grace?(L==="cs"?"první sezóna — prominuto":"first season — waived"):("-"+mny(rt.paid)),rt.grace?"#4a7a3a":"#a03020"));
+    if(rt.debt>0)rentBox.append(rrow(L==="cs"?"Nedoplatek → dluh u Reichela":"Shortfall → debt to Reichel",mny(rt.debt),"#a03020"));
+    rentBox.append(rrow(L==="cs"?"Kvóta panství":"Estate quota",`+${rt.wood} 🌳  +${rt.potash} 🧂`,"#4a7a3a"));
+    body.append(rentBox);
+  }
+
   // ── DĚLNÍCI — mzdy a dluhy ──
   const workerBox=h("div",{style:{background:"rgba(0,0,0,.04)",borderRadius:"4px",padding:"8px 10px",marginBottom:"8px",borderLeft:"3px solid #8b5e34"}});
   workerBox.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"#8b5e34",marginBottom:"5px"}},L==="cs"?"👷 MZDY DĚLNÍKŮ":"👷 WORKER WAGES"));
   p.workers.forEach(w=>{
     const wEntry=sd.workerWages?sd.workerWages.find(x=>x.id===w.id):null;
-    const wage=wEntry?wEntry.wage:(2+(w.wageMod||0));
+    const wage=wEntry?wEntry.wage:workerWageView(w).total;
     const paid=wEntry?wEntry.paid:true;
     const shortfall=wEntry?wEntry.shortfall:0;
     const unpaid=w.unpaidDebt||0;
@@ -10707,6 +10876,7 @@ function renderSummaryScreen(ctx){
     row.append(
       h("span",{style:{color:"#3a2a14"}},w.name+" "+"★".repeat(Math.max(0,w.lv||0))),
       h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
+        (wEntry&&wEntry.piece>0?h("span",{style:{color:"#8b5e34",fontSize:"9px"}},`${mny(wEntry.fixed)} + ${L==="cs"?"podíl":"share"} ${mny(wEntry.piece)}`):h("span",{},"")),
         h("span",{style:{color:paid?"#4a7a3a":"#a03020"}},paid?("✓ "+mny(wage)):("✗ "+mny(wage)+" → "+(L==="cs"?"dluh":"debt"))),
         unpaid>0?h("span",{style:{color:"#a03020",fontWeight:"700"}},(L==="cs"?"celk. dluh":"total debt")+": "+mny(unpaid)):h("span",{},"")
       ));
@@ -11880,9 +12050,10 @@ function renderTabAccounts(ctx){
   rightCol.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"6px",borderBottom:"1px solid rgba(42,26,10,.1)",paddingBottom:"3px"}},
     "📒 "+(L==="cs"?"Účty — Schuldenbuch":"Accounts — Schuldenbuch")));
 
-  const wagesNext=p.workers.reduce((s,w)=>s+(200+(w.wageMod||0)),0);
+  const wagesNext=crewWageNext();
   const beerCostNext=([0,1,2,4][p.beer]||0)*Math.ceil(p.workers.length/3);
-  const totalOutNext=wagesNext+beerCostNext;
+  const rentNext=econ2RentNext();
+  const totalOutNext=wagesNext+beerCostNext+(rentNext&&rentNext.away===0?rentNext.cash:0);
   const debtAutoNext=p.debt>0&&p.grose>500?Math.min(500,p.grose-200,p.debt):0;
   let projDebt=p.debt,projGrose=p.grose;
   const proj=[];
@@ -11938,9 +12109,14 @@ function renderTabAccounts(ctx){
     L==="cs"?"📊 Výdaje příští kolo:":"📊 Next round expenses:"));
   [{label:(L==="cs"?"Mzdy ("+p.workers.length+") dělníků":"Wages ("+p.workers.length+") workers"),val:mny(wagesNext),c:"#a03020"},
    {label:(L==="cs"?"Pivo (příděl "+p.beer+")":"Beer (ration "+p.beer+")"),val:mny(beerCostNext),c:"#8b5e34"},
+   ...(rentNext&&rentNext.away===0&&rentNext.cash>0?[{label:(L==="cs"?"🏰 Činže panství":"🏰 Estate rent"),val:mny(rentNext.cash),c:"#a03020"}]:[]),
    {label:(L==="cs"?"Celkem":"Total"),val:mny(totalOutNext),c:"#a03020",bold:true}
   ].forEach(r=>outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
     h("span",{style:{color:"#8b5e34"}},r.label),h("span",{style:{color:r.c}},r.val))));
+  if(rentNext&&rentNext.away>0)outBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
+    "🏰 "+(L==="cs"
+      ?`Činže panství za ${rentNext.away} kol: `+(rentNext.grace?"hotovost prominuta":mny(rentNext.cash))+`, kvóta ${rentNext.wood} 🌳 + ${rentNext.potash} 🧂`
+      :`Estate rent in ${rentNext.away} rounds: `+(rentNext.grace?"cash waived":mny(rentNext.cash))+`, quota ${rentNext.wood} 🌳 + ${rentNext.potash} 🧂`)));
   if(debtAutoNext>0)outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#4a7a3a",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
     h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+mny(debtAutoNext))));
   rightCol.append(outBox);
@@ -13835,6 +14011,45 @@ function renderTabOverview(ctx){
 // parta.js — tab "parta".
 // Moved verbatim out of renderOriginal() (ui/render-original.js); locals shared with it arrive through `ctx`.
 
+// Mzda na kartě dělníka. Klasika: jeden řádek. Nová ekonomika (G._econ===2): verdikt, složky, co hradí huť navíc, vzorec fondu, odhad za sezónu.
+function wageBlockNode(w,p,L){
+  const wv=workerWageView(w);
+  if(!wv.econ){
+    return h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
+      `💰 ${L==="cs"?"Mzda":"Wage"}: ${mny(wv.total)}/${L==="cs"?"kolo":"round"}`);
+  }
+  const cs=L==="cs", E=econ2();
+  const crewNext=crewWageNext(), cash=Math.max(0,p.grose||0), owed=w.unpaidDebt||0;
+  const helperRate=_e2Pick(E.piece.helper);
+  let verdict="🟢", vtxt=cs?"Mzda je zajištěná.":"Wage is covered.";
+  if(owed>0||cash<crewNext){verdict="🔴";vtxt=owed>0?(cs?"Huť dlužná mzda: ":"Foundry owes: ")+mny(owed):(cs?"V kase nestačí na příští výplatu.":"Cash does not cover the next payout.");}
+  else if((wv.producer&&w.lastWage!==undefined&&w.lastWage<2*helperRate)||cash<2*crewNext){verdict="🟡";
+    vtxt=(wv.producer&&w.lastWage!==undefined&&w.lastWage<2*helperRate)?(cs?"Poslední výplata nízká — prodejte víc nebo vezměte zakázku.":"Last payout was low — sell more or take a contract."):(cs?"Kasa vystačí jen na jednu výplatu.":"Cash covers just one payout.");}
+  const box=h("div",{class:"fj-wage-block",style:{marginTop:"10px",padding:"8px 10px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}});
+  box.append(h("div",{style:{fontWeight:"700",fontSize:"11px",marginBottom:"4px"}},`${verdict} ${cs?"Mzda":"Wage"}: ${mny(wv.total)}/${cs?"kolo":"round"}`));
+  box.append(h("div",{style:{marginBottom:"5px",fontStyle:"italic"}},vtxt));
+  const row=(a,b,bold)=>h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px",fontWeight:bold?"700":"400"}},h("span",{},a),h("span",{},b));
+  const baseLbl=wv.isP?(cs?"Stravné (příprava)":"Meals (prep)"):(wv.producer?(cs?"Paušál výrobce":"Producer retainer"):(cs?"Pevná mzda":"Fixed wage"));
+  box.append(row(baseLbl,mny(wv.base)));
+  if(wv.mod!==0&&!wv.isP)box.append(row(wv.mod>0?(cs?"Osobní příplatek":"Personal supplement"):(cs?"Osobní srážka":"Personal deduction"),(wv.mod>0?"+":"")+mny(wv.mod)));
+  if(wv.producer)box.append(row((cs?"Podíl z fondu":"Fund share")+` (${wv.share} %)`,mny(wv.piece)));
+  box.append(row(cs?"Celkem":"Total",mny(wv.total),true));
+  // co hradí huť navíc
+  const bc=(BEER[p.beer]||BEER[0]).cost, n=Math.max(1,p.workers.length), beerHead=Math.round(Math.ceil(n/3)*bc/n);
+  box.append(h("div",{style:{marginTop:"5px",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"4px"}},
+    `${cs?"Navíc hradí huť":"Foundry also pays"}: 🍞 ${cs?"0,5/kolo":"0.5/round"}`+(bc>0?` · 🍺 ${mny(beerHead)}/${cs?"os.":"head"}`:"")));
+  if(wv.producer){
+    box.append(h("div",{style:{marginTop:"4px",lineHeight:"1.35"}},cs
+      ?`${wv.share} % z každého prodeje a dodané zakázky jde do společného fondu. O výplatě se fond dělí rovným dílem mezi výrobce (v huti jich je ${wv.producers}). Dnes je ve fondu ${mny(wv.fund)} → na každého ${mny(wv.perProducer)}.`
+      :`${wv.share}% of every sale and delivered contract goes into the shared fund. At payday the fund is split equally among producers (${wv.producers} in the foundry). Fund today: ${mny(wv.fund)} → ${mny(wv.perProducer)} each.`));
+  }
+  // za sezónu: pevná část podle skutečných kol přípravy a kampaně
+  let fixedSeason=0;
+  for(let r=0;r<ROUNDS;r++)fixedSeason+=econ2FixedParts(w,isPrepMonth(r,G.seasonTier||0)).fixed;
+  box.append(h("div",{style:{marginTop:"4px"}},`${cs?"Za sezónu":"Per season"}: ${mny(fixedSeason)}`+(wv.producer?` + ${cs?"podíl z tržeb":"share of sales"}`:"")));
+  return box;
+}
+
 function renderTabParta(ctx){
   const {p,L,content}=ctx;
   const partaSec=h("div",{class:"sec"});
@@ -14099,9 +14314,7 @@ function renderTabParta(ctx){
           modal.append(traitRow);
         }
         // Mzda
-        const wage=2+(w.wageMod||0);
-        modal.append(h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
-          `💰 ${L==="cs"?"Mzda":"Wage"}: ${mny(wage)}/${L==="cs"?"kolo":"round"}`));
+        modal.append(wageBlockNode(w,p,L));
       }
 
       // ── SUBTAB: ROZVOJ ──
@@ -14264,7 +14477,6 @@ function renderTabParta(ctx){
           CONTRACT_OPTIONS.forEach(opt=>{
             const cost=contractCost(w,opt.months);
             const canAfford=p.grose>=cost;
-            const wage=2+(w.wageMod||0);
             const btn=h("div",{class:"contract-btn",
               style:{opacity:canAfford?1:0.45,cursor:canAfford?"pointer":"not-allowed"},
               onClick:()=>{if(canAfford)signContract(w.id,opt.months);}});
@@ -14284,7 +14496,7 @@ function renderTabParta(ctx){
 
       // ── SUBTAB: DLUH ──
       else if(stab==="dluh"){
-        const wage=2+(w.wageMod||0);
+        const wage=workerWageView(w).total;
         if(unpaid===0){
           modal.append(
             h("div",{style:{textAlign:"center",padding:"20px",color:"#4a7a3a",fontSize:"13px",fontWeight:"700"}},"✅ "+

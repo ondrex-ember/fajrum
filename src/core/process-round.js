@@ -611,24 +611,48 @@ function processRound(){
   }
   // 5. Mzdy — individuální dle wageMod, zimní příprava a lehká obtížnost
   const isEasyDiff = p.difficulty === "easy";
+  const E2=econ2();   // nová ekonomika (jen nové hry): úkolová mzda výrobců + stravné v přípravě; klasika beze změny
   const baseWageRate = baseWageRateFor(isP, isEasyDiff);
-  let wages=0;
-  const workerWages=p.workers.map(w=>{
-    const ww=workerWageFor(w, baseWageRate); // odpočinek = poloviční mzda (IDLE_WAGE_FACTOR)
-    wages+=ww;
-    return{id:w.id,wage:ww};
-  });
+  let wages=0, e2plan=null;
+  let workerWages;
+  if(E2){
+    e2plan=econ2WageList(p.workers,isP,p.pieceAcc);
+    wages=e2plan.total;
+    workerWages=e2plan.list.map(x=>({...x}));
+  }else{
+    workerWages=p.workers.map(w=>{
+      const ww=workerWageFor(w, baseWageRate); // odpočinek = poloviční mzda (IDLE_WAGE_FACTOR)
+      wages+=ww;
+      return{id:w.id,wage:ww};
+    });
+  }
   // Kolik reálně zaplatíme — pokud grose nestačí, platíme co jde (zbytek = dluh)
+  const wageUnit=E2?KR/2:KR;   // nová ekonomika dělí po půl zlatníku (mzdy 1,5 zl nesmí vyrobit fantomový dluh)
   const wagesAvail=Math.max(0,grose); // nemůžeme platit z ničeho
-  const wagesPaid=Math.min(wages,Math.floor(inZl(wagesAvail))*KR); // celé zlatníky → schodek je vždy celý počet zlatníků
+  const wagesPaid=Math.min(wages,Math.floor(wagesAvail/wageUnit)*wageUnit); // celé jednotky → schodek je vždy celý počet jednotek
   const wagesDeficit=wages-wagesPaid;
   grose-=wagesPaid;
   // Nevyplacené mzdy = DLUH PARTĚ (w.unpaidDebt, splácí se v záložce Parta/Účty). Nepřičítají se k dluhu u Faktora Reichela (p.debt) — jsou to dvě oddělené entity.
   // Per-worker: kolik kdo dostal (proporcionálně)
   const payRatio=wages>0?wagesPaid/wages:1;
-  // Schodek se rozpočítá na celé zlatníky metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádný zlatník se neztratí ani nevytvoří).
-  const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit);
+  // Schodek se rozpočítá metodou největšího zbytku → součet dluhů partě == wagesDeficit přesně (žádná jednotka se neztratí ani nevytvoří).
+  const shortfalls=allocateShortfalls(workerWages.map(ww=>ww.wage),wagesDeficit,wageUnit);
   workerWages.forEach((ww,i)=>{ ww.paid=payRatio>=1; ww.shortfall=shortfalls[i]; });
+
+  // 5b. Činže panství (jen nová ekonomika): v termínu sv. Jiří / sv. Havel kvóta dříví a popela do skladu + hotovost (po celých zl, zbytek do dluhu u Reichela)
+  let rentInfo=null;
+  if(E2){
+    const rd=econ2RentAt(round,p.leaseSeasons,p);
+    if(rd){
+      const payable=Math.min(rd.cash,Math.floor(Math.max(0,grose)/KR)*KR), short=rd.cash-payable;
+      grose-=payable; debt+=short;
+      r.wood+=rd.wood; r.potash+=rd.potash;
+      rentInfo={cash:rd.cash,paid:payable,debt:short,wood:rd.wood,potash:rd.potash,grace:rd.grace};
+      if(rd.grace)log.push(`__ECO__🏰 ${L==="cs"?"Činže panství: první sezóna bez hotovosti — platí se jen kvótou":"Estate rent: first season without cash — quota only"}`);
+      else log.push(`__ECO__🏰 ${L==="cs"?"Činže panství":"Estate rent"}: -${mny(payable)}`+(short>0?` (${L==="cs"?"dluh":"debt"} ${mny(short)})`:""));
+      log.push(`__ECO__🌲 ${L==="cs"?"Kvóta panství":"Estate quota"}: +${rd.wood} 🌳, +${rd.potash} 🧂`);
+    }
+  }
 
   // 6. Splácení dluhu u Faktora Reichela (standardní auto-splátka, pokud není aktivní odklad)
   let dPay=0;
@@ -1131,7 +1155,8 @@ function processRound(){
       traits:newTraits,
       health:Math.round(newHealth),loyalty:Math.round(newLoyalty),
       unpaidDebt:newUnpaid,mentorId:newMentorId,mentorRounds:newMentorRounds,
-      contract:newContract,seasonsInFoundry:newSeasonsInFoundry};
+      contract:newContract,seasonsInFoundry:newSeasonsInFoundry,
+      ...(E2&&!isP&&wageEntry?{lastWage:wageEntry.wage}:{})};   // lastWage (jen kampaň): karta dělníka z ní soudí, zda výrobce vydělává
   }).filter(Boolean);
 
   const nr=round+1;
@@ -1145,6 +1170,7 @@ function processRound(){
   const crewDebtNow=wk.reduce((s,w)=>s+(w.unpaidDebt||0),0)+claimsTotal({exCrewClaims:[...(p.exCrewClaims||[]),...newClaims]});
   ecoLines.push(`💰 ${mny(grose)}`+(debt>0?` · ${L==="cs"?"dluh Reichelovi":"debt to Reichel"} ${mny(debt)}`:"")+(crewDebtNow>0?` · ${L==="cs"?"dluh partě":"crew debt"} ${mny(crewDebtNow)}`:""));
   ecoLines.push(`💸 ${L==="cs"?"mzdy":"wages"} ${mny(wagesPaid)}${wagesDeficit>0?` · ⚠️ ${L==="cs"?"nezaplaceno":"unpaid"} ${mny(wagesDeficit)}`:""} · ${L==="cs"?"pivo":"beer"} ${mny(bCost)}`+(dPay?` · ${L==="cs"?"dluh":"debt"} -${mny(dPay)}`:""));
+  if(rentInfo)ecoLines.push(`🏰 ${L==="cs"?"činže":"rent"} ${mny(rentInfo.paid)}`+(rentInfo.debt>0?` · ⚠️ ${L==="cs"?"do dluhu":"to debt"} ${mny(rentInfo.debt)}`:"")+` · +${rentInfo.wood}🌳 +${rentInfo.potash}🧂`);
   const logAdditions=buildChronicleEntry(round,isP,L,prodLines,ecoLines,evtLines);
 
   // Produkce tohoto kola (musí se spočítat PŘED Object.assign — potom je p===G a rozdíl by byl 0)
@@ -1180,7 +1206,9 @@ function processRound(){
       contractIncome:contractIncomeTick,
       prodW, prodC, newPanve:roundNewPanve,
       furnTemp:(fA?fT:null),
-      workerProd:roundWorkerProd
+      workerProd:roundWorkerProd,
+      ...(rentInfo?{rent:rentInfo}:{}),
+      ...(E2?{pieceUsed:e2plan.used,pieceProducers:e2plan.producers}:{})
     },
     events:evts.slice(1), curEvt:evts[0]||null,
     debtMoratorium:p.debtMoratorium||0,
@@ -1188,6 +1216,7 @@ function processRound(){
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
+    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
       season:p.season, round:nr,

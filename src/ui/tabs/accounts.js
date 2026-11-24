@@ -93,9 +93,10 @@ function renderTabAccounts(ctx){
   rightCol.append(h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#8b5e34",marginBottom:"6px",borderBottom:"1px solid rgba(42,26,10,.1)",paddingBottom:"3px"}},
     "📒 "+(L==="cs"?"Účty — Schuldenbuch":"Accounts — Schuldenbuch")));
 
-  const wagesNext=p.workers.reduce((s,w)=>s+(200+(w.wageMod||0)),0);
+  const wagesNext=crewWageNext();
   const beerCostNext=([0,1,2,4][p.beer]||0)*Math.ceil(p.workers.length/3);
-  const totalOutNext=wagesNext+beerCostNext;
+  const rentNext=econ2RentNext();
+  const totalOutNext=wagesNext+beerCostNext+(rentNext&&rentNext.away===0?rentNext.cash:0);
   const debtAutoNext=p.debt>0&&p.grose>500?Math.min(500,p.grose-200,p.debt):0;
   let projDebt=p.debt,projGrose=p.grose;
   const proj=[];
@@ -151,9 +152,14 @@ function renderTabAccounts(ctx){
     L==="cs"?"📊 Výdaje příští kolo:":"📊 Next round expenses:"));
   [{label:(L==="cs"?"Mzdy ("+p.workers.length+") dělníků":"Wages ("+p.workers.length+") workers"),val:mny(wagesNext),c:"#a03020"},
    {label:(L==="cs"?"Pivo (příděl "+p.beer+")":"Beer (ration "+p.beer+")"),val:mny(beerCostNext),c:"#8b5e34"},
+   ...(rentNext&&rentNext.away===0&&rentNext.cash>0?[{label:(L==="cs"?"🏰 Činže panství":"🏰 Estate rent"),val:mny(rentNext.cash),c:"#a03020"}]:[]),
    {label:(L==="cs"?"Celkem":"Total"),val:mny(totalOutNext),c:"#a03020",bold:true}
   ].forEach(r=>outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",marginBottom:"3px",fontWeight:r.bold?"700":"400"}},
     h("span",{style:{color:"#8b5e34"}},r.label),h("span",{style:{color:r.c}},r.val))));
+  if(rentNext&&rentNext.away>0)outBox.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
+    "🏰 "+(L==="cs"
+      ?`Činže panství za ${rentNext.away} kol: `+(rentNext.grace?"hotovost prominuta":mny(rentNext.cash))+`, kvóta ${rentNext.wood} 🌳 + ${rentNext.potash} 🧂`
+      :`Estate rent in ${rentNext.away} rounds: `+(rentNext.grace?"cash waived":mny(rentNext.cash))+`, quota ${rentNext.wood} 🌳 + ${rentNext.potash} 🧂`)));
   if(debtAutoNext>0)outBox.append(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#4a7a3a",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"3px",marginTop:"3px"}},
     h("span",{},L==="cs"?"+ auto-splátka dluhu":"+ auto debt payment"),h("span",{},"-"+mny(debtAutoNext))));
   rightCol.append(outBox);

@@ -1,6 +1,45 @@
 // parta.js — tab "parta".
 // Moved verbatim out of renderOriginal() (ui/render-original.js); locals shared with it arrive through `ctx`.
 
+// Mzda na kartě dělníka. Klasika: jeden řádek. Nová ekonomika (G._econ===2): verdikt, složky, co hradí huť navíc, vzorec fondu, odhad za sezónu.
+function wageBlockNode(w,p,L){
+  const wv=workerWageView(w);
+  if(!wv.econ){
+    return h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
+      `💰 ${L==="cs"?"Mzda":"Wage"}: ${mny(wv.total)}/${L==="cs"?"kolo":"round"}`);
+  }
+  const cs=L==="cs", E=econ2();
+  const crewNext=crewWageNext(), cash=Math.max(0,p.grose||0), owed=w.unpaidDebt||0;
+  const helperRate=_e2Pick(E.piece.helper);
+  let verdict="🟢", vtxt=cs?"Mzda je zajištěná.":"Wage is covered.";
+  if(owed>0||cash<crewNext){verdict="🔴";vtxt=owed>0?(cs?"Huť dlužná mzda: ":"Foundry owes: ")+mny(owed):(cs?"V kase nestačí na příští výplatu.":"Cash does not cover the next payout.");}
+  else if((wv.producer&&w.lastWage!==undefined&&w.lastWage<2*helperRate)||cash<2*crewNext){verdict="🟡";
+    vtxt=(wv.producer&&w.lastWage!==undefined&&w.lastWage<2*helperRate)?(cs?"Poslední výplata nízká — prodejte víc nebo vezměte zakázku.":"Last payout was low — sell more or take a contract."):(cs?"Kasa vystačí jen na jednu výplatu.":"Cash covers just one payout.");}
+  const box=h("div",{class:"fj-wage-block",style:{marginTop:"10px",padding:"8px 10px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}});
+  box.append(h("div",{style:{fontWeight:"700",fontSize:"11px",marginBottom:"4px"}},`${verdict} ${cs?"Mzda":"Wage"}: ${mny(wv.total)}/${cs?"kolo":"round"}`));
+  box.append(h("div",{style:{marginBottom:"5px",fontStyle:"italic"}},vtxt));
+  const row=(a,b,bold)=>h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"2px",fontWeight:bold?"700":"400"}},h("span",{},a),h("span",{},b));
+  const baseLbl=wv.isP?(cs?"Stravné (příprava)":"Meals (prep)"):(wv.producer?(cs?"Paušál výrobce":"Producer retainer"):(cs?"Pevná mzda":"Fixed wage"));
+  box.append(row(baseLbl,mny(wv.base)));
+  if(wv.mod!==0&&!wv.isP)box.append(row(wv.mod>0?(cs?"Osobní příplatek":"Personal supplement"):(cs?"Osobní srážka":"Personal deduction"),(wv.mod>0?"+":"")+mny(wv.mod)));
+  if(wv.producer)box.append(row((cs?"Podíl z fondu":"Fund share")+` (${wv.share} %)`,mny(wv.piece)));
+  box.append(row(cs?"Celkem":"Total",mny(wv.total),true));
+  // co hradí huť navíc
+  const bc=(BEER[p.beer]||BEER[0]).cost, n=Math.max(1,p.workers.length), beerHead=Math.round(Math.ceil(n/3)*bc/n);
+  box.append(h("div",{style:{marginTop:"5px",borderTop:"1px solid rgba(42,26,10,.1)",paddingTop:"4px"}},
+    `${cs?"Navíc hradí huť":"Foundry also pays"}: 🍞 ${cs?"0,5/kolo":"0.5/round"}`+(bc>0?` · 🍺 ${mny(beerHead)}/${cs?"os.":"head"}`:"")));
+  if(wv.producer){
+    box.append(h("div",{style:{marginTop:"4px",lineHeight:"1.35"}},cs
+      ?`${wv.share} % z každého prodeje a dodané zakázky jde do společného fondu. O výplatě se fond dělí rovným dílem mezi výrobce (v huti jich je ${wv.producers}). Dnes je ve fondu ${mny(wv.fund)} → na každého ${mny(wv.perProducer)}.`
+      :`${wv.share}% of every sale and delivered contract goes into the shared fund. At payday the fund is split equally among producers (${wv.producers} in the foundry). Fund today: ${mny(wv.fund)} → ${mny(wv.perProducer)} each.`));
+  }
+  // za sezónu: pevná část podle skutečných kol přípravy a kampaně
+  let fixedSeason=0;
+  for(let r=0;r<ROUNDS;r++)fixedSeason+=econ2FixedParts(w,isPrepMonth(r,G.seasonTier||0)).fixed;
+  box.append(h("div",{style:{marginTop:"4px"}},`${cs?"Za sezónu":"Per season"}: ${mny(fixedSeason)}`+(wv.producer?` + ${cs?"podíl z tržeb":"share of sales"}`:"")));
+  return box;
+}
+
 function renderTabParta(ctx){
   const {p,L,content}=ctx;
   const partaSec=h("div",{class:"sec"});
@@ -265,9 +304,7 @@ function renderTabParta(ctx){
           modal.append(traitRow);
         }
         // Mzda
-        const wage=2+(w.wageMod||0);
-        modal.append(h("div",{style:{marginTop:"10px",padding:"6px 8px",background:"rgba(0,0,0,.04)",borderRadius:"4px",fontSize:"10px",color:"#8b5e34"}},
-          `💰 ${L==="cs"?"Mzda":"Wage"}: ${mny(wage)}/${L==="cs"?"kolo":"round"}`));
+        modal.append(wageBlockNode(w,p,L));
       }
 
       // ── SUBTAB: ROZVOJ ──
@@ -430,7 +467,6 @@ function renderTabParta(ctx){
           CONTRACT_OPTIONS.forEach(opt=>{
             const cost=contractCost(w,opt.months);
             const canAfford=p.grose>=cost;
-            const wage=2+(w.wageMod||0);
             const btn=h("div",{class:"contract-btn",
               style:{opacity:canAfford?1:0.45,cursor:canAfford?"pointer":"not-allowed"},
               onClick:()=>{if(canAfford)signContract(w.id,opt.months);}});
@@ -450,7 +486,7 @@ function renderTabParta(ctx){
 
       // ── SUBTAB: DLUH ──
       else if(stab==="dluh"){
-        const wage=2+(w.wageMod||0);
+        const wage=workerWageView(w).total;
         if(unpaid===0){
           modal.append(
             h("div",{style:{textAlign:"center",padding:"20px",color:"#4a7a3a",fontSize:"13px",fontWeight:"700"}},"✅ "+

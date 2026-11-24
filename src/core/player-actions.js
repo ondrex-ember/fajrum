@@ -3,6 +3,7 @@ function startGame(diff){
   G=initState();
   G.huteName=name;
   G.difficulty=diff;
+  econ2Init();   // nová ekonomika jen v nových hrách (staré savy a klasické golden scénáře ji nemají)
   G.firstVisit=true;
   if(diff==="easy"){
     G.furnace.runIn=45;
@@ -44,6 +45,7 @@ function restartAfterFall(){
   G=initState();
   G.huteName=hName;
   G.difficulty=diff;
+  econ2Init();
   guideInitForDifficulty(diff);
   G.phase="playing";
   Fx.render();
@@ -100,6 +102,13 @@ function setWorkerTask(workerId,t){
   w.task=t;
   if(t==="idle"&&!wasIdle){
     // Upozornění: odpočívající dělník nic nevyrábí, ale dostává mzdu
+    if(econ2()){   // nová ekonomika: odpočinek mzdu nesnižuje (pevná složka se platí vždy, podíl z fondu dostane výrobce)
+      const wv=workerWageView(w);
+      Fx.toast("😴 "+w.name,L==="cs"
+        ?["Odpočívá — nic nevyrábí.","Mzda "+mny(wv.total)+"/kolo se nemění, únava −50 %."]
+        :["Resting — produces nothing.","Wage "+mny(wv.total)+"/round unchanged, fatigue −50%."]);
+      Fx.render();return;
+    }
     const rate=baseWageRateFor(isP,G.difficulty==="easy");
     const wIdle=workerWageFor(w,rate,"idle"), wWork=workerWageFor(w,rate,"work");
     Fx.toast("😴 "+w.name,L==="cs"
@@ -254,7 +263,7 @@ function quickSellAll(){
     earned+=gain;
     G[k]=[];
   });
-  G.grose+=earned;
+  G.grose+=earned; econ2PieceAdd(earned);
   G.quickSellUsed=true;
   partnerEvent("weiss","quickSell",earned);
   G.log.push(`__ECO__🐴 ${L==="cs"?"Kupec Weiss vykoupil sklad":"Merchant Weiss bought out stock"}: +${mny(earned)} (${qsRatePct}%)`);
