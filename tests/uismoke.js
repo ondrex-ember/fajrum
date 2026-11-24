@@ -223,6 +223,28 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     ev('Object.keys(G).filter(k=>/Pending$/.test(k)).forEach(k=>{G[k]=Array.isArray(G[k])?[]:false}); G.phase="playing"; G.round=3; G.curEvt=null; G.grose=50000; G.pieceAcc=700;');
     const qa = s => [...doc.querySelectorAll(s)], q = s => doc.querySelector(s);
     chk(ev('G._econ') === 2, 'nová hra má _econ=2');
+    // W1: karta počasí na Přehledu
+    const wxSeed = k => ev('(function(){for(var s=1;s<9999;s++)if(weatherKindFor(s,1,1)==="' + k + '")return s;})()');
+    ev('G.season=1; G.round=1; G.wSeed=' + wxSeed('frost') + '; G.tab="overview"; render();');
+    const wc = q('.fj-weather-card');
+    chk(!!wc && wc.dataset.wx === 'frost' && /❄️/.test(wc.textContent) && !!wc.querySelector('.fj-weather-fx') && /%/.test(wc.querySelector('.fj-weather-risk').textContent), 'karta počasí: mráz s vlivy a rizikem: ' + (wc && wc.textContent.slice(0, 120)));
+    ev('G.wSeed=' + wxSeed('normal') + '; render();');
+    chk(q('.fj-weather-card') && q('.fj-weather-card').dataset.wx === 'normal' && !q('.fj-weather-fx'), 'karta počasí: běžný měsíc bez vlivů');
+    ev('delete G._econ; render();'); chk(!q('.fj-weather-card'), 'klasika: bez karty počasí'); ev('G._econ=2; render();');
+    // W2: panel události s volbou + blokace tlačítka Další měsíc
+    const sv0 = ev('G.season'), r0 = ev('G.round');
+    chk(!q('.fj-fate-card') && !q('.fj-fate-block'), 'bez události: žádný panel ani blokace');
+    ev('G.season=2; G.round=5; G.res.wood=50; G.grose=50000; G.fate.pending={kind:"fire",season:2,round:5}; G.tab="overview"; render();');
+    chk(qa('.fj-fate-card').length === 1 && qa('.fj-fate-opt').length === 3, 'panel události se 3 volbami');
+    chk(qa('.fj-fate-risk').length === 3 && /%/.test(q('.fj-fate-risk').textContent), 'volby ukazují šanci');
+    chk(!!q('.fj-fate-block') && /(Nejdřív rozhodni|Decide first)/.test(q('.fj-fate-block').textContent) && !qa('.action-bar .btn').some(b => !b.classList.contains('fj-fate-block')), 'tlačítko Další měsíc nahrazeno textem');
+    ev('G.grose=100; G.res.wood=0; render();');
+    chk(qa('.fj-fate-opt[disabled]').length === 2 && qa('.fj-fate-why').length === 2, 'bez zásob jsou 2 volby zašedlé s důvodem');
+    ev('G.tab="market"; render();'); chk(!!q('.fj-fate-block'), 'blokace je vidět na každé záložce');
+    q('.fj-fate-block').click(); chk(ev('G.tab') === 'overview', 'klik na blokaci vede na Přehled');
+    q('.fj-fate-opt[data-fate-opt="fate"]').click();
+    chk(ev('G.fate.pending') === null && ev('G.fate.hist.length') === 1 && !q('.fj-fate-card') && !q('.fj-fate-block'), 'volba vyřeší událost a vrátí tlačítko');
+    ev('G.season=' + sv0 + '; G.round=' + r0 + '; G.grose=50000; render();');
     // karta dělníka: blok Mzda s verdiktem a vzorcem
     ev('G.tab="parta"; G._partaDetail=G.workers.find(w=>w.prof==="tavic").id; G._partaSubtab="profil"; render();');
     const blk = q('.fj-wage-block');
@@ -246,6 +268,34 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     chk(/🏰/.test(doc.body.textContent), 'souhrn: karta činže');
     scan('econ2');
     console.log('econ2 UI checks done');
+  }
+  if (process.env.ECON2B) {
+    const doc = w.document, chk = (c, m) => { if (!c) found.set('ECON2B: ' + m, 1); };
+    if (process.env.MOBILE) { Object.defineProperty(w, 'innerWidth', { value: 400, configurable: true }); }
+    ev('G.huteName="Test"; startGame("'+(process.env.DIFF||'normal')+'"); '+(process.env.EN?'G.lang="en"; ':''));
+    ev('Object.keys(G).filter(k=>/Pending$/.test(k)).forEach(k=>{G[k]=Array.isArray(G[k])?[]:false}); G.phase="playing"; G.curEvt=null; G.grose=50000; G.round=0; G.workers.forEach(w=>{w.task="idle"}); processRound(); G.phase="playing"; G.curEvt=null; G.events=[]; G.contracts=[]; render();');
+    const qa = s => [...doc.querySelectorAll(s)], q = s => doc.querySelector(s);
+    chk(ev('G.adv&&G.adv.season') === 1, 'nabídka zálohy založena');
+    ev('goTab("market","reichel"); render();');
+    chk(!!q('.fj-advance-card') && q('.fj-advance-card').dataset.advState === 'offer', 'karta zálohy v Trh › Reichel');
+    chk(qa('.fj-advance-blocker').length === 2 && q('[data-adv-accept]').disabled, 'blokace (důvěra, dluh) + zamčené tlačítko');
+    ev('G.debt=0; G.partners.reichel.trust=40; render();');
+    chk(qa('.fj-advance-blocker').length === 0 && !q('[data-adv-accept]').disabled, 'bez blokací se dá přijmout');
+    const g0 = ev('G.grose'); q('[data-adv-accept]').click();
+    chk(ev('G.contracts.some(c=>c.adv)') === true && ev('G.grose') > g0, 'přijetí přes UI: záloha v kase');
+    chk(q('.fj-advance-card').dataset.advState === 'active', 'karta přejde do stavu active');
+    ev('G.tab="overview"; render();');
+    chk(/🧐/.test(doc.body.textContent), 'Přehled: zakázka od Reichela');
+    ev('G.tab="market"; G._sub={market:"contracts"}; render();');
+    chk(/záloha|advance/i.test(doc.body.textContent), 'aktivní zakázka: poznámka o záloze');
+    // jarmark
+    ev('G.round=7; G.tab="market"; G._sub={market:"sell"}; G.waldglas=[3,3,3]; render();');
+    chk(q('.fj-fair-banner') && q('.fj-fair-banner').dataset.fair === 'soon', 'banner: příští měsíc jarmark');
+    ev('G.round=8; render();');
+    chk(q('.fj-fair-banner') && q('.fj-fair-banner').dataset.fair === 'on' && /1[,.]3/.test(q('.fj-fair-banner').textContent), 'banner: jarmark ×1,3');
+    ev('G.round=9; render();'); chk(!q('.fj-fair-banner'), 'po jarmarku bez banneru');
+    scan('econ2b');
+    console.log('econ2b UI checks done');
   }
   if (process.env.GUIDE) { ev('G.tab="overview"; G.phase="playing"; render();'); const c = w.document.querySelector('.fj-guide-card'); console.log('guide card:', c ? c.textContent.replace(/\s+/g, ' ').slice(0, 300) : 'none'); }
   if (process.env.DUMP) for (const t of process.env.DUMP.split(',')) { ev(`G.phase='playing'; G.tab=${JSON.stringify(t)}; render();`); const bc = w.document.body.cloneNode(true); bc.querySelectorAll('script,style,svg,iframe').forEach(n => n.remove()); console.log('=== ' + t + '\n' + [...bc.querySelectorAll('[data-partner-card]')].map(n => n.textContent.replace(/\s+/g, ' ').slice(0, 900)).join('\n')); }

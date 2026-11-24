@@ -82,7 +82,7 @@ function contractInv(item){
 
 function contractIcon(c){
   if(c.cat&&FAMA_ICON[c.cat])return FAMA_ICON[c.cat];
-  return c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
+  return c.buyer==="Reichel"?"🧐":c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
 }
 
 // Řádky k dodání: jednoduchá zakázka = 1 řádek, endgame = komponenty
@@ -121,6 +121,7 @@ function contractStatus(c){
 }
 
 function contractReward(c,kind){
+  if(c.adv)return c.reward-c.adv.paid;   // záloha E2a: při dodání se vyplatí jen zbytek (pevná cena, bez Easy bonusu)
   if(kind==="market"&&G.difficulty==="easy")return c.reward+Math.round(inZl(c.reward)*0.25)*KR;
   return c.reward;
 }

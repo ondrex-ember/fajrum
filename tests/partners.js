@@ -11,8 +11,9 @@ for (const f of process.argv.slice(2)) {
   const e = load({ seed: g.meta.seed });
   const logs = [];
   let seen = 0;
+  const patched = new Set();   // partneři, jejichž důvěru bot přepsal `patch`em (replay z událostí tam neplatí)
   const flush = () => { const G = e.api.G; if (G.log && G.log.length > seen) { for (const l of G.log.slice(seen)) logs.push(String(l)); } seen = G.log ? G.log.length : 0; };
-  for (const a of g.actions) { apply(e, a); const G = e.api.G; if (G.log && G.log.length < seen) seen = 0; flush(); }
+  for (const a of g.actions) { if (a.t === 'patch') for (const k of Object.keys(a.set)) { const m = /^partners\.([a-z]+)\.trust$/.exec(k); if (m) patched.add(m[1]); } apply(e, a); const G = e.api.G; if (G.log && G.log.length < seen) seen = 0; flush(); }
   const G = e.api.G, P = e.api.get('PARTNERS');
   const count = re => logs.filter(l => re.test(l)).length;
   const exp = {
@@ -22,6 +23,8 @@ for (const f of process.argv.slice(2)) {
     'weiss.woodBought': count(/nouzové dřevo|emergency wood/),
     'reichel.loan': count(/Půjčka od Faktora Reichela|Loan from Factor Reichel/),
     'reichel.moratorium': count(/Sjednán odklad|Negotiated 2-round/),
+    'reichel.advanceDone': count(/Zakázka splněna \(Reichel\)|Contract done \(Reichel\)/),
+    'reichel.advanceMissed': count(/Záloha Reichelovi vrácena|Advance returned to Reichel/),
     'reichel.cleared': 0,
   };
   const errs = [];
@@ -40,7 +43,7 @@ for (const f of process.argv.slice(2)) {
     const n = Object.values(st.n).reduce((s, x) => s + x, 0);
     if (st.log.length !== Math.min(30, n)) errs.push(`${id}: log ${st.log.length} vs n ${n}`);
     // trust replay from the full history when the log is complete
-    if (n <= 30) {
+    if (n <= 30 && !patched.has(id)) {
       let t = P[id].startTrust; for (const r of st.log) t = Math.max(0, Math.min(100, t + P[id].events[r.ev].delta));
       if (Math.abs(t - st.trust) > 1e-9) errs.push(`${id}: trust ${st.trust} vs replay ${t}`);
     }

@@ -138,6 +138,16 @@ const PARTNERS={
     "delta": -4,
     "cs": "Odklad splátek",
     "en": "Repayment deferral"
+   },
+   "advanceDone": {
+    "delta": 3,
+    "cs": "Zakázka se zálohou dodána",
+    "en": "Advance contract delivered"
+   },
+   "advanceMissed": {
+    "delta": -6,
+    "cs": "Zakázka se zálohou nedodána",
+    "en": "Advance contract missed"
    }
   }
  },

@@ -19,8 +19,11 @@ function renderLayout(ctx){
   const actionLabel=p.round>=ROUNDS-1
     ?(L==="cs"?"Uzavřít sezónu →":"End Season →")
     :(L==="cs"?`${ms[(p.round+1)%ROUNDS]} — Další měsíc →`:`${ms[(p.round+1)%ROUNDS]} — Next Month →`);
-  const actionBar=h("div",{class:"action-bar"},
-    h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
+  const fv=fatePendingView();   // W2: nevyřešená událost s volbou blokuje další měsíc
+  const actionBar=h("div",{class:"action-bar"},fv
+    ?h("button",{class:"btn btn-p fj-fate-block",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px",background:"#a03020"},
+      onClick:()=>goTab("overview")},`⚠️ ${L==="cs"?"Nejdřív rozhodni":"Decide first"}: ${fv.icon} ${fv.title}`)
+    :h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
       onClick:processRound},actionLabel));
 
   // Sestav layout — desktop: tabs vlevo + content vpravo, mobil: stack

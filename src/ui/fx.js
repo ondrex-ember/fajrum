@@ -34,6 +34,7 @@ if (typeof window !== 'undefined') {
 
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
+      if(fatePending()){goTab("overview");return;}   // W2: nejdřív rozhodnout událost
       processRound();
       FajrumSfx.play('season', 0.6);
     } else if (e.key >= '1' && e.key <= '9') {

@@ -156,7 +156,7 @@ function marketSaleQuote(type,n){
   const bp=marketSalePrices()[type]||350;
   const isVelmistr=getTomislavRank(G)==="velmistr";
   const easyPriceMult = G.difficulty === "easy" ? 1.20 : 1.0;
-  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
+  const mul=Math.max(G.mBonus?1.5:1,econ2FairMult())*wxFx().priceMult*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
   const total=selling.reduce((s,q)=>s+Math.max(KR, Math.round(q*inZl(bp)*mul)*KR),0);
   return {count:cnt,total,rest,base:bp,multiplier:mul};
 }

@@ -1610,6 +1610,72 @@ const ECON2={
     graceSeasons:1,                   // v první sezóně hotovostní činže odpadá (kvóta chodí)
     famaQuota:0.25,                   // kvóta × (1 + famaQuota × min(1, součet Famy / famaFull))
     famaFull:60
+  },
+  advance:{                           // E2a: záloha od Faktora Reichela na zakázku (jedna nabídka za sezónu, nejvýš jedna aktivní)
+    share:0.5,                        // záloha = 50 % ceny, vyplácí se při přijetí
+    discount:0.15,                    // cena zakázky = viditelná cena × (1 − discount), pevná (bez Easy bonusu a zimní prémie)
+    minTrust:25,                      // důvěra u Reichela
+    maxDebt:0,                        // dluh u Reichela musí být splacen
+    fromRound:1, untilRound:6,        // nabídka v kolech 1–6
+    minLeft:3,                        // termín nejdřív za 3 kola od nabídky
+    maxDue:10                         // termín nejpozději v kole 10
+  },
+  fair:{                              // jarmark: prodejní ceny ×priceMult; neskládá se s Weissem ×1,5 (platí vyšší)
+    rounds:[8,11],                    // sv. Anna (červenec), sv. Havel (říjen)
+    priceMult:1.3
+  },
+  weather:{                           // W1: počasí měsíce = funkce (wSeed, sezóna, měsíc); neukládá se, hlavní RNG se nedotýká
+    order:["frost","storm","dry","wet"],   // pořadí kumulativního losu (jedno rovnoměrné číslo na měsíc)
+    kinds:{
+      frost:{from:0,to:4,p:0.22},     // listopad–březen
+      wet:{from:4,to:11,p:0.10},      // březen–říjen
+      dry:{from:6,to:10,p:0.12},      // květen–září
+      storm:{from:7,to:9,p:0.10}      // červen–srpen (v sezóně 2+ spouští riziko požáru, W2)
+    },
+    fx:{
+      frost:{wood:4,morale:5,logMult:1.5,crucible:1},
+      wet:{logMult:0.7,priceMult:0.9},
+      dry:{fieldMult:0.6,fatigue:0.05},
+      storm:{}
+    }
+  }
+};
+// fate.js — W2: události s volbou (Android FATE.json, jen hodnoty). Platí jen v nové ekonomice (G._econ===2) od sezóny firstSeason.
+// Částky: základ pro S2 Normal v zl / kusech; násobí se easyMult (Easy) a (1 + growth × (sezóna − firstSeason)). Šance a morálka se neškálují.
+// Volba: cost {zl,wood,food} · morale (okamžitě) · fx [[klíč,hodnota,měsíců]] (doznívá v G.fate.fx; „měsíců“ počítá i tento) · risk {p,pStorm,hit{woodPct,zl,morale}} — jedno hození na událost.
+const FATE={
+  firstSeason:2, rounds:[2,9], weatherShare:0.65, growth:0.15, easyMult:0.7, glutMin:12,
+  kinds:{
+    frost:{icon:"❄️",cs:"Mrazy",en:"Hard frost",
+      dcs:"Tuhý mráz leží na hvozdu i v chatrčích. Čím se zahřejete?",den:"A hard frost lies over the forest and the huts. How do you keep warm?",
+      opts:[
+        {id:"heat",cs:"Přitopit",en:"Stoke the fires",dcs:"Mrazová ztráta nálady odpadá.",den:"No frost loss of morale.",cost:{wood:6},fx:[["frostMorale",0,1]]},
+        {id:"blankets",cs:"Deky a pivo",en:"Blankets and beer",dcs:"Mrazová ztráta nálady jen −2.",den:"Frost loss of morale only −2.",cost:{zl:8},fx:[["frostMorale",2,1]]},
+        {id:"endure",cs:"Nechat být",en:"Let it be",dcs:"Nálada −8 místo −5, únava +10 % ten měsíc.",den:"Morale −8 instead of −5, fatigue +10 % this month.",cost:{},fx:[["frostMorale",8,1],["fatigue",0.10,1]]}]},
+    fire:{icon:"🔥",cs:"Požár hrozí",en:"Fire danger",
+      dcs:"Suchý vzduch a jiskry nad skladem dříví. Hlídat, nebo spoléhat na štěstí?",den:"Dry air and sparks over the wood store. Keep watch, or trust to luck?",
+      opts:[
+        {id:"watch",cs:"Hlídky",en:"Night watch",dcs:"Požár nehrozí.",den:"No fire risk.",cost:{zl:10},risk:{p:0}},
+        {id:"store",cs:"Hasit jen sklad",en:"Guard the store only",dcs:"Při požáru −30 % dříví; únava +5 % ten měsíc.",den:"If it burns −30 % wood; fatigue +5 % this month.",cost:{wood:3},fx:[["fatigue",0.05,1]],risk:{p:0.30,pStorm:0.40,hit:{woodPct:30}}},
+        {id:"fate",cs:"Nechat osudu",en:"Leave it to fate",dcs:"Při požáru −25 % dříví a −10 zl.",den:"If it burns −25 % wood and −10 zl.",cost:{},risk:{p:0.35,pStorm:0.45,hit:{woodPct:25,zl:10}}}]},
+    forest:{icon:"🌲",cs:"Lesní řád",en:"Forest ordinance",
+      dcs:"Lesmistr připomíná panský lesní řád a počítá pařezy.",den:"The forester cites the lord's forest ordinance and counts the stumps.",
+      opts:[
+        {id:"fee",cs:"Poplatek",en:"Pay the fee",dcs:"Čistý stůl.",den:"Clean slate.",cost:{zl:12}},
+        {id:"limit",cs:"Omezit kácení",en:"Limit felling",dcs:"Svoz dříví ×0,7 na 3 měsíce.",den:"Wood haul ×0.7 for 3 months.",cost:{},fx:[["logMult",0.7,3]]},
+        {id:"bribe",cs:"Podplatit",en:"Bribe him",dcs:"Při odhalení pokuta −25 zl.",den:"If caught a fine of −25 zl.",cost:{zl:6},risk:{p:0.40,hit:{zl:25}}}]},
+    army:{icon:"⚔️",cs:"Vojsko a kontribuce",en:"Soldiers and levies",
+      dcs:"Voj táhne krajem a chce kontribuci.",den:"A troop marches through the region demanding levies.",
+      opts:[
+        {id:"tribute",cs:"Kontribuce",en:"Pay the levy",dcs:"Peníze místo potíží.",den:"Coin instead of trouble.",cost:{zl:15}},
+        {id:"goods",cs:"Naturálie",en:"Pay in kind",dcs:"Dříví a jídlo; nálada −3.",den:"Wood and food; morale −3.",cost:{wood:8,food:6},morale:-3},
+        {id:"hide",cs:"Schovat zásoby",en:"Hide the stores",dcs:"Při odhalení −30 zl a nálada −5.",den:"If found −30 zl and morale −5.",cost:{},risk:{p:0.50,hit:{zl:30,morale:-5}}}]},
+    glut:{icon:"📦",cs:"Přesycení trhu",en:"Market glut",
+      dcs:"Sklad přetéká zbožím a kupci se ho nedočkají koupit. Co s ním?",den:"The store overflows and buyers have had enough. What now?",
+      opts:[
+        {id:"dump",cs:"Prodat celý sklad",en:"Sell the whole stock",dcs:"Za 70 % ceny hned (Easy ×1,2).",den:"At 70 % of price now (Easy ×1.2).",special:"dump",rate:0.70},
+        {id:"wait",cs:"Počkat",en:"Wait it out",dcs:"Ceny −8 % na 2 měsíce.",den:"Prices −8 % for 2 months.",cost:{},fx:[["priceMult",0.92,2]]},
+        {id:"hold",cs:"Držet do jarmarku",en:"Hold for the fair",dcs:"−15 % kusů se rozbije, do jarmarku ceny −25 %.",den:"−15 % of pieces break, prices −25 % until the fair.",cost:{},special:"hold",breakPct:0.15,priceMult:0.75,fairWithin:3}]}
   }
 };
 // crew.js — professions, traits, NPC roster/bonds/bios/assessments, tasks.
@@ -2888,6 +2954,16 @@ const PARTNERS={
     "delta": -4,
     "cs": "Odklad splátek",
     "en": "Repayment deferral"
+   },
+   "advanceDone": {
+    "delta": 3,
+    "cs": "Zakázka se zálohou dodána",
+    "en": "Advance contract delivered"
+   },
+   "advanceMissed": {
+    "delta": -6,
+    "cs": "Zakázka se zálohou nedodána",
+    "en": "Advance contract missed"
    }
   }
  },
@@ -3605,7 +3681,9 @@ function _e2Round50(x){return Math.max(0,Math.round(x/_E2_HALF)*_E2_HALF);}
 // Nová hra: zapne novou ekonomiku (jen když je tabulka k dispozici)
 function econ2Init(){
   if(typeof ECON2==="undefined")return;
-  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;
+  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;G.fate=fateInit();
+  // W1: osud světa (počasí, osudové události). Záměrně BEZ Math.random — pořadí RNG zůstává (klasické goldeny sdílí Android); zdrojem je čas startu.
+  G.wSeed=(_wxMix(Date.now()%4294967296,7,(typeof performance!=="undefined"&&performance.now?Math.floor(performance.now()*1000):0),0,0));
 }
 
 function econ2IsProducer(w){return WERKSTAT_PROFS.includes(w.prof);}
@@ -3685,6 +3763,320 @@ function econ2RentNext(){
   const nextSeason=nxt===undefined, round=nextSeason?rs[0]:nxt;
   const rd=econ2RentAt(round,_e2n(G.leaseSeasons)+(nextSeason?1:0),G);
   return rd?{...rd,away:(nextSeason?ROUNDS-now+round:round-now)}:null;
+}
+
+// ── jarmark: v měsících E.fair.rounds jsou prodejní ceny ×priceMult; s Weissem se neskládá (marketSaleQuote bere vyšší) ──
+function econ2FairMult(){const e=econ2();return e&&e.fair.rounds.includes(G.round)?e.fair.priceMult:1;}
+// {on: jarmark je tento měsíc, soon: příští měsíc, mult, round: nejbližší termín (tento nebo příští), away}
+function econ2FairInfo(){
+  const e=econ2();
+  if(!e)return null;
+  const rs=[...e.fair.rounds].sort((a,b)=>a-b), nxt=rs.find(r=>r>=G.round);
+  return{on:rs.includes(G.round),soon:rs.includes(G.round+1),mult:e.fair.priceMult,round:nxt===undefined?null:nxt,away:nxt===undefined?null:nxt-G.round};
+}
+
+// ── E2a: záloha od Faktora Reichela ──
+// Stav G.adv = {season, id, taken}: nabídka se zakládá bez RNG v prvním měsíci okna (kolo fromRound) a platí do untilRound.
+function econ2AdvPrice(c){   // viditelná cena (Easy včetně +25 %) × (1 − sleva), celé zl
+  const e=econ2().advance, vis=c.reward+(G.difficulty==="easy"?Math.round(inZl(c.reward)*0.25)*KR:0);
+  return Math.max(KR,Math.round(inZl(vis*(1-e.discount)))*KR);
+}
+function econ2AdvAmount(price){return Math.floor(price*econ2().advance.share/KR)*KR;}
+// Výběr nabídky pro sezónu season v kole round: pool[(season*7+round) mod n]; null, když není co nabídnout. st = stav pro posouzení proveditelnosti.
+function econ2AdvPick(season,round,st){
+  const e=econ2().advance;
+  const taken=new Set([...(G.avail||[]),...(G.contracts||[])].map(x=>x.id));
+  const pool=CONTRACT_POOL.filter(c=>!taken.has(c.id)&&c.due>=round+e.minLeft&&c.due<=e.maxDue&&contractFeasible(c,st||G));
+  return pool.length?pool[(season*7+round)%pool.length]:null;
+}
+// Nabídka pro nové kolo nr (volá processRound; vrací nový záznam adv nebo null = beze změny)
+function econ2AdvRoll(season,nr,st){
+  const e=econ2();
+  if(!e)return null;
+  const a=e.advance, cur=G.adv;
+  if(nr<a.fromRound||nr>a.untilRound)return null;
+  if(cur&&cur.season===season)return null;
+  const c=econ2AdvPick(season,nr,st);
+  return{season,id:c?c.id:null,taken:false};
+}
+function econ2AdvActive(){return (G.contracts||[]).find(c=>c.adv)||null;}
+// Pohled na nabídku: {state:"none"|"offer"|"active"|"done"|"closed", offer, price, advance, blockers[]}. Čistá funkce.
+function econ2AdvanceView(){
+  const e=econ2();
+  if(!e)return null;
+  const a=e.advance, act=econ2AdvActive();
+  if(act)return{state:"active",contract:act,price:act.reward,advance:act.adv.paid,remaining:act.reward-act.adv.paid,blockers:[]};
+  const cur=G.adv;
+  if(!cur||cur.season!==G.season||!cur.id)return{state:"none",blockers:[]};
+  if(cur.taken)return{state:"done",blockers:[]};
+  const c=CONTRACT_POOL.find(x=>x.id===cur.id);
+  if(!c||G.round>a.untilRound||c.due<G.round+a.minLeft)return{state:"closed",blockers:[]};
+  const price=econ2AdvPrice(c), advance=econ2AdvAmount(price), blockers=[];
+  const st=(G.partners&&G.partners.reichel)||{trust:PARTNERS.reichel?PARTNERS.reichel.startTrust:0};
+  if((st.trust||0)<a.minTrust)blockers.push({k:"trust",need:a.minTrust,have:Math.floor(st.trust||0)});
+  if((G.debt||0)>a.maxDebt)blockers.push({k:"debt",need:a.maxDebt,have:G.debt||0});
+  if(!canAcceptContract())blockers.push({k:"slots"});
+  return{state:"offer",contract:c,price,advance,remaining:price-advance,blockers};
+}
+// Přijetí: záloha do kasy hned, zakázka mezi aktivní (pevná cena, bez Easy bonusu a zimní prémie)
+function econ2AdvanceAccept(){
+  const v=econ2AdvanceView();
+  if(!v||v.state!=="offer"||v.blockers.length)return false;
+  const L=G.lang, c=v.contract;
+  G.contracts.push({...c,id:"adv_"+c.id,buyer:"Reichel",reward:v.price,adv:{paid:v.advance,price:v.price,season:G.season,round:G.round}});
+  G.grose+=v.advance;
+  G.adv={...G.adv,taken:true};
+  G.log.push(`__ECO__📜 ${L==="cs"?"Záloha od Reichela: ":"Advance from Reichel: "}+${mny(v.advance)} · ${L==="cs"?c.cs:c.en} (${L==="cs"?"zbytek":"balance"} ${mny(v.remaining)})`);
+  Fx.render();
+  return true;
+}
+// weather.js — W1 počasí nové ekonomiky (Android W1). Druh měsíce je čistá funkce (wSeed, sezóna, měsíc): nic se neukládá, hlavní RNG (Math.random) se nedotýká.
+// Vlastní proud: hash (wSeed, sůl, a, b, c) → mulberry32 → první číslo. Sůl odlišuje počasí od osudových událostí (W2) a jejich hodů.
+// Klasická ekonomika (G._econ!==2): druh vždy "normal"; logMult/crucible přebírá z pevných zimních tabulek (WINTER_LOG_MULT, WINTER_PANEV_BONUS).
+
+const WX_ICON={frost:"❄️",wet:"🌧️",dry:"☀️",storm:"⛈️",normal:"🌤️"};
+const WX_NAME={
+  frost:{cs:"Mráz",en:"Frost"},wet:{cs:"Mokro",en:"Wet spell"},dry:{cs:"Sucho",en:"Drought"},storm:{cs:"Bouře",en:"Storm"},
+  normal:{cs:"Běžný měsíc",en:"Ordinary month"}};
+
+function _wxMix(seed,salt,a,b,c){
+  let h=Math.imul((seed|0)^0x9e3779b9,0x85ebca6b);
+  for(const v of [salt,a,b,c]){
+    h=Math.imul(h^(((v|0)+0x7f4a7c15)|0),0xc2b2ae35);
+    h^=h>>>13;h=Math.imul(h,0x85ebca6b);h^=h>>>16;
+  }
+  return h>>>0;
+}
+// Jedno rovnoměrné číslo [0,1) pro (seed, sůl, a, b, c) — mulberry32 inicializovaný hashem
+function wxU(seed,salt,a,b,c){
+  let t=(_wxMix(seed,salt,a|0,b|0,c|0)+0x6D2B79F5)|0;
+  t=Math.imul(t^(t>>>15),t|1);
+  t^=t+Math.imul(t^(t>>>7),t|61);
+  return((t^(t>>>14))>>>0)/4294967296;
+}
+
+// Druh počasí pro daný seed (čistá funkce, využívají ji i testy)
+function weatherKindFor(seed,season,round){
+  const W=ECON2.weather,u=wxU(seed,1,season,round,0);
+  let acc=0;
+  for(const k of W.order){
+    const d=W.kinds[k];
+    if(round>=d.from&&round<=d.to){acc+=d.p;if(u<acc)return k;}
+  }
+  return"normal";
+}
+// Pravděpodobnosti pro měsíc: [{kind,p}] včetně "normal" (zbytek) — tabulka rizik příštího měsíce
+function weatherRisk(round){
+  if(typeof ECON2==="undefined")return[{kind:"normal",p:1}];
+  const W=ECON2.weather,out=[];let sum=0;
+  for(const k of W.order){const d=W.kinds[k];if(round>=d.from&&round<=d.to){out.push({kind:k,p:d.p});sum+=d.p;}}
+  out.push({kind:"normal",p:Math.max(0,1-sum)});
+  return out;
+}
+function weatherKind(season,round){
+  if(!econ2()||!Number.isFinite(G.wSeed))return"normal";
+  return weatherKindFor(G.wSeed,season===undefined?G.season:season,round===undefined?G.round:round);
+}
+
+// Souhrn vlivů měsíce: počasí + doznívající následky osudových událostí (G.fate.fx = [{k,v,from,to}], from/to jsou absolutní měsíce sezóna*12+kolo, včetně)
+// Klíče: logMult/priceMult/fieldMult (násobí se), fatigue (sčítá se), frostMorale (přepis), marketClosed (stačí jeden).
+function wxAbs(season,round){return season*12+round;}
+function wxFx(season,round){
+  season=season===undefined?G.season:season;round=round===undefined?G.round:round;
+  const out={kind:"normal",logMult:WINTER_LOG_MULT[round]||1,crucible:WINTER_PANEV_BONUS[round]||0,priceMult:1,fieldMult:1,fatigue:0,wood:0,morale:0,marketClosed:false};
+  if(!econ2())return out;
+  const d=ECON2.weather.fx,kind=weatherKind(season,round),f=d[kind]||{};
+  out.kind=kind;
+  out.logMult=f.logMult||1;out.crucible=f.crucible||0;out.priceMult=f.priceMult||1;out.fieldMult=f.fieldMult||1;
+  out.fatigue=f.fatigue||0;out.wood=f.wood||0;out.morale=f.morale||0;
+  const fx=G.fate&&Array.isArray(G.fate.fx)?G.fate.fx:[],at=wxAbs(season,round);
+  for(const e of fx){
+    if(!e||at<e.from||at>e.to)continue;
+    if(e.k==="logMult"||e.k==="priceMult"||e.k==="fieldMult")out[e.k]*=e.v;
+    else if(e.k==="fatigue")out.fatigue+=e.v;
+    else if(e.k==="frostMorale"){if(kind==="frost")out.morale=e.v;}
+    else if(e.k==="marketClosed"&&e.v)out.marketClosed=true;
+  }
+  return out;
+}
+function weatherLabel(kind){const n=WX_NAME[kind]||WX_NAME.normal;return WX_ICON[kind]+" "+(G.lang==="cs"?n.cs:n.en);}
+
+// Řádky vlivů pro UI a log: [{icon,text}] (jen to, co se v měsíci skutečně mění)
+function wxEffectLines(fx){
+  const cs=G.lang==="cs",pc=m=>(m>1?"+":"−")+Math.round(Math.abs(m-1)*100)+" %",out=[];
+  if(fx.kind==="frost")out.push(
+    {icon:"🌲",text:(cs?"kácení ":"logging ")+pc(fx.logMult)},
+    {icon:"🏺",text:cs?"nové pánve +1★ (mráz čistí jíl)":"new crucibles +1★ (frost clears clay)"},
+    {icon:"🌳",text:(cs?"topení: −":"heating: −")+fx.wood+" "+(cs?"dříví":"wood")},
+    {icon:"😟",text:(cs?"nálada −":"morale −")+fx.morale});
+  else{
+    if(fx.logMult!==1&&fx.kind!=="normal")out.push({icon:"🌲",text:(cs?"kácení ":"logging ")+pc(fx.logMult)});
+    if(fx.fieldMult!==1)out.push({icon:"🌾",text:(cs?"políčko ":"field ")+pc(fx.fieldMult)});
+    if(fx.fatigue>0)out.push({icon:"😓",text:(cs?"únava +":"fatigue +")+Math.round(fx.fatigue*100)+" %"});
+    if(fx.priceMult!==1)out.push({icon:"💰",text:(cs?"prodejní ceny ":"sale prices ")+pc(fx.priceMult)});
+  }
+  return out;
+}
+// fate.js — W2: události s volbou (Android W2). Jen nová ekonomika (G._econ===2), od sezóny FATE.firstSeason, jedna za sezónu v kolech FATE.rounds.
+// Stav: G.fate={fx:[{k,v,from,to}], pending:{kind,season,round}|null, done:sezóna poslední události, hist:[{season,round,kind,opt,hit}]}.
+// Měsíc, druh a šance se losují z proudu (wSeed, sezóna, měsíc) — ne z hlavního RNG; načtení savu výsledek nezmění. Jedno hození na událost
+// (stejné u všech voleb), takže nižší riziko nikdy nedopadne hůř než vyšší ve stejném světě. Doznívající efekty čte wxFx (weather.js).
+// Dokud událost čeká (pending), processRound se nespustí (gate na začátku processRound).
+
+function fateInit(){return{fx:[],pending:null,done:0,hist:[]};}
+function fatePending(){return!!(econ2()&&G.fate&&G.fate.pending);}
+function _fL(cs,en){return G.lang==="cs"?cs:en;}
+function fateMult(){return(G.difficulty==="easy"?FATE.easyMult:1)*(1+FATE.growth*Math.max(0,(G.season||1)-FATE.firstSeason));}
+function _fScale(v){return v>0?Math.max(1,Math.round(v*fateMult())):0;}
+function fateCostOf(o){const c=o.cost||{};return{zl:_fScale(c.zl||0)*KR,wood:_fScale(c.wood||0),food:_fScale(c.food||0)};}
+
+// Sklad zboží, které jde prodat na trhu: [{type,q}]
+function fateGoods(){
+  const out=[];
+  for(const type of Object.keys(marketSalePrices())){const a=G[type];if(Array.isArray(a))for(const q of a)out.push({type,q});}
+  return out;
+}
+
+// Měsíc události v sezóně: v weatherShare sezón první měsíc s mrazem / suchem / bouří, jinak měsíc ze zrna (rovnoměrně v FATE.rounds)
+function fateMonth(season){
+  const[a,b]=FATE.rounds;
+  if(wxU(G.wSeed,3,season,0,0)<FATE.weatherShare){
+    for(let r=a;r<=b;r++){const k=weatherKind(season,r);if(k==="frost"||k==="dry"||k==="storm")return r;}
+  }
+  return a+Math.floor(wxU(G.wSeed,3,season,1,0)*(b-a+1));
+}
+// Druh události v daném měsíci: počasí řídí mráz a požár, jinak kalendář (od kola 5 vojsko, přesycení při ≥ glutMin kusech)
+function fateKindFor(season,round){
+  const wk=weatherKind(season,round);
+  if(wk==="frost")return"frost";
+  if(wk==="dry"||wk==="storm")return"fire";
+  const pool=["forest"];
+  if(round>=5)pool.push("army");
+  if(round>=5&&fateGoods().length>=FATE.glutMin)pool.push("glut");
+  return pool[Math.min(pool.length-1,Math.floor(wxU(G.wSeed,5,season,round,0)*pool.length))];
+}
+// Volá se na konci processRound (G.round je už nové kolo): uklidí doznělé efekty a případně založí čekající událost
+function fateOnRound(){
+  if(!econ2())return;
+  if(!G.fate)G.fate=fateInit();
+  const at=wxAbs(G.season,G.round);
+  G.fate.fx=G.fate.fx.filter(e=>e.to>=at);
+  if(G.fate.pending||G.fate.done===G.season||G.season<FATE.firstSeason)return;
+  if(G.round<FATE.rounds[0]||G.round>FATE.rounds[1]||G.round!==fateMonth(G.season))return;
+  const kind=fateKindFor(G.season,G.round);
+  G.fate.pending={kind,season:G.season,round:G.round};G.fate.done=G.season;
+  const k=FATE.kinds[kind];
+  G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+}
+
+function _fRiskP(o){return o.risk?(weatherKind(G.season,G.round)==="storm"&&o.risk.pStorm!==undefined?o.risk.pStorm:o.risk.p):null;}
+// Nejbližší jarmark v rozmezí 1..within měsíců (ve stejné sezóně) → kolo, jinak null
+function _fFairAhead(within){
+  const fr=(ECON2.fair&&ECON2.fair.rounds)||[];
+  for(const f of fr)if(f>G.round&&f-G.round<=within)return f;
+  return null;
+}
+function fateDumpTotal(o){
+  const rate=o.rate*(G.difficulty==="easy"?1.2:1),prices=marketSalePrices();
+  let total=0,n=0;
+  for(const g of fateGoods()){total+=Math.max(KR,Math.round(g.q*inZl(prices[g.type]||350)*rate)*KR);n++;}
+  return{total,n,rate};
+}
+function _fHitParts(h){
+  const out=[];
+  if(h.woodPct)out.push(`−${h.woodPct} % 🌳`);
+  if(h.zl)out.push(`−${_fScale(h.zl)} zl`);
+  if(h.morale)out.push(`😟 ${h.morale}`);
+  return out.join(", ");
+}
+// Pohled jedné volby pro UI: {id,label,desc,cost,costParts,risk:{p,hit},ok,why}
+function fateOptionView(o,pd){
+  const cost=fateCostOf(o),parts=[];
+  if(cost.zl)parts.push({icon:"💰",text:"−"+mny(cost.zl),ok:G.grose>=cost.zl});
+  if(cost.wood)parts.push({icon:"🌳",text:"−"+cost.wood,ok:G.res.wood>=cost.wood});
+  if(cost.food)parts.push({icon:"🍞",text:"−"+cost.food,ok:G.res.food>=cost.food});
+  let ok=parts.every(x=>x.ok),why=ok?null:_fL("nemáš na to zásoby","you lack the supplies");
+  const risk=o.risk?{p:_fRiskP(o),hit:_fHitParts(o.risk.hit||{}),penalty:!!(o.risk.hit)}:null;
+  let extra=null;
+  if(o.special==="dump"){
+    const d=fateDumpTotal(o);extra={text:d.n>0?`+${mny(d.total)} · ${d.n}×`:_fL("není co prodat","nothing to sell")};
+    if(!d.n){ok=false;why=_fL("není co prodat","nothing to sell");}
+    else if(MARKET_CLOSED[G.round]){ok=false;why=_fL("trh je zavřený","the market is closed");}
+  }
+  if(o.special==="hold"){
+    const f=_fFairAhead(o.fairWithin);
+    if(f===null){ok=false;why=_fL("jarmark není do 3 měsíců","no fair within 3 months");}
+    else extra={text:`${_fL("jarmark","fair")}: ${(G.lang==="cs"?MONTHS_CS:MONTHS_EN)[f]}`};
+  }
+  return{id:o.id,label:_fL(o.cs,o.en),desc:_fL(o.dcs,o.den),cost,costParts:parts,risk,extra,ok,why};
+}
+function fatePendingView(){
+  if(!fatePending())return null;
+  const pd=G.fate.pending,k=FATE.kinds[pd.kind];if(!k)return null;
+  return{kind:pd.kind,icon:k.icon,title:_fL(k.cs,k.en),desc:_fL(k.dcs,k.den),options:k.opts.map(o=>fateOptionView(o,pd)),season:pd.season,round:pd.round};
+}
+
+function fateChoose(id){
+  if(!fatePending())return false;
+  const pd=G.fate.pending,k=FATE.kinds[pd.kind],o=k&&k.opts.find(x=>x.id===id);
+  if(!o)return false;
+  const v=fateOptionView(o,pd);if(!v.ok)return false;
+  const at=wxAbs(G.season,G.round),cs=G.lang==="cs",name=_fL(o.cs,o.en),notes=[];
+  // 1. cena
+  G.grose-=v.cost.zl;G.res.wood-=v.cost.wood;G.res.food-=v.cost.food;
+  if(v.cost.zl)notes.push("−"+mny(v.cost.zl));
+  if(v.cost.wood)notes.push("−"+v.cost.wood+" 🌳");
+  if(v.cost.food)notes.push("−"+v.cost.food+" 🍞");
+  // 2. okamžitá nálada, doznívající efekty
+  if(o.morale){G.morale=clamp(G.morale+o.morale,0,100);notes.push(`😟 ${o.morale}`);}
+  for(const[kk,val,months]of(o.fx||[]))G.fate.fx.push({k:kk,v:val,from:at,to:at+months-1});
+  // 3. zvláštní volby přesycení
+  if(o.special==="dump"){
+    const d=fateDumpTotal(o),prices=marketSalePrices();
+    for(const type of Object.keys(prices))if(Array.isArray(G[type]))G[type]=[];
+    G.grose+=d.total;econ2PieceAdd(d.total);G.totalSold=(G.totalSold||0)+d.n;
+    notes.push(`+${mny(d.total)} (${d.n}×, ${Math.round(d.rate*100)} %)`);
+  }
+  if(o.special==="hold"){
+    const f=_fFairAhead(o.fairWithin),goods=fateGoods().map((g,i)=>({...g,i}));
+    const nb=Math.round(goods.length*o.breakPct);
+    goods.sort((a,b)=>a.q-b.q||(a.type<b.type?-1:a.type>b.type?1:a.i-b.i));
+    const drop={};for(const g of goods.slice(0,nb))(drop[g.type]=drop[g.type]||[]).push(g.q);
+    for(const type of Object.keys(drop)){const a=[...G[type]];for(const q of drop[type]){const ix=a.indexOf(q);if(ix>=0)a.splice(ix,1);}G[type]=a;}
+    G.fate.fx.push({k:"priceMult",v:o.priceMult,from:at,to:at+(f-G.round)-1});
+    notes.push(cs?`${nb} ks se rozbilo`:`${nb} pcs broke`);
+  }
+  // 4. riziko: jedno hození na událost, stejné pro všechny volby
+  let hit=null;
+  if(o.risk){
+    const p=_fRiskP(o);hit=p>0&&wxU(G.wSeed,4,pd.season,pd.round,0)<p;
+    if(hit&&o.risk.hit){
+      const h=o.risk.hit,hn=[];
+      if(h.woodPct){const lost=Math.round(G.res.wood*h.woodPct/100);G.res.wood-=lost;hn.push(`−${lost} 🌳`);}
+      if(h.zl){const lost=Math.min(G.grose,_fScale(h.zl)*KR);G.grose-=lost;hn.push("−"+mny(lost));}
+      if(h.morale){G.morale=clamp(G.morale+h.morale,0,100);hn.push(`😟 ${h.morale}`);}
+      notes.push((pd.kind==="fire"?"🔥 ":"⚠️ ")+_fL("stalo se","it happened")+": "+hn.join(", "));
+    }else if(p>0)notes.push(_fL("tentokrát to prošlo","you got away with it"));
+  }
+  G.fate.hist=[...(G.fate.hist||[]),{season:pd.season,round:pd.round,kind:pd.kind,opt:id,hit}].slice(-24);
+  G.fate.pending=null;
+  G.log.push(`__EVT__${k.icon} ${_fL(k.cs,k.en)}: ${name}${notes.length?" ("+notes.join(" · ")+")":""}`);
+  if(typeof autoSave==="function")autoSave();
+  Fx.render();
+  return true;
+}
+
+// Čištění savu: doznívající efekty {k,v,from,to}, čekající událost {kind,season,round}, historie
+function fateSanitize(f){
+  const out=fateInit();
+  if(!f||typeof f!=="object"||Array.isArray(f))return out;
+  const KEYS=["logMult","priceMult","fieldMult","fatigue","frostMorale","marketClosed"];
+  if(Array.isArray(f.fx))out.fx=f.fx.filter(e=>e&&typeof e==="object"&&KEYS.includes(e.k)&&(typeof e.v==="number"&&isFinite(e.v)||e.v===true)&&Number.isSafeInteger(e.from)&&Number.isSafeInteger(e.to)&&e.to>=e.from).slice(0,40).map(e=>({k:e.k,v:e.v,from:e.from,to:e.to}));
+  const p=f.pending;
+  if(p&&typeof p==="object"&&typeof p.kind==="string"&&FATE.kinds[p.kind]&&Number.isSafeInteger(p.season)&&Number.isSafeInteger(p.round))out.pending={kind:p.kind,season:p.season,round:p.round};
+  out.done=Number.isSafeInteger(f.done)&&f.done>0?f.done:0;
+  if(Array.isArray(f.hist))out.hist=f.hist.filter(e=>e&&typeof e==="object"&&typeof e.kind==="string"&&typeof e.opt==="string"&&Number.isSafeInteger(e.season)&&Number.isSafeInteger(e.round)).slice(-24).map(e=>({season:e.season,round:e.round,kind:e.kind,opt:e.opt,hit:e.hit===true?true:e.hit===false?false:null}));
+  return out;
 }
 // Aktivní vazba = oba členové jsou v huti a nesedí na odpočinku (task!=="idle") — stejná podmínka jako u afinity Josef+Kateřina.
 function bondActive(p,a,b){return p.workers.some(w=>w.npcId===a&&w.task!=="idle")&&p.workers.some(w=>w.npcId===b&&w.task!=="idle");}
@@ -4886,9 +5278,11 @@ function forestView(){
 }
 // ── HERNÍ LOGIKA ────────────────────────────────────────────
 function processRound(){
+  if(fatePending())return;   // W2: dokud hráč nerozhodne událost s volbou, měsíc neběží
   Fx.sound('bell', 0.45);
   const p=G, r=p.res, round=p.round, isP=isPrepMonth(round, p.seasonTier||0), isC=isCampaignMonth(round, p.seasonTier||0);
   const L=p.lang, ms=L==="cs"?MONTHS_CS:MONTHS_EN;
+  const WX=wxFx(p.season,round);   // počasí tohoto měsíce (klasika: jen pevná zimní tabulka)
   let mor=p.morale, forest=p.forest, grose=p.grose, debt=p.debt;
   let pR=p.pReady, pA=[...p.pAging], pU=p.pUses, pQ=p.panevQuality;
   let fT=p.fTemp, fA=p.fActive;
@@ -4925,7 +5319,7 @@ function processRound(){
         continue;
       }
       const silakMult=w.traits?.includes("silak")?1.5:1;
-      const winterMult=WINTER_LOG_MULT[round]||1;
+      const winterMult=WX.logMult;
       const availF=forest-forestProtect(forest);   // 1c: výstavky se nekácí
       if(availF<=0){
         const sap=forestRec().y||0;
@@ -4941,7 +5335,7 @@ function processRound(){
       }
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),availF);
       forest-=cut; r.wood+=cut*4;
-      const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
+      const winterNote=winterMult!==1?` ${WX.kind==="normal"?"❄️":WX_ICON[WX.kind]}${winterMult>1?"+":"−"}${Math.round(Math.abs(winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*4} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
       if(Math.random()<0.35){
         r.pitch=(r.pitch||0)+1;
@@ -4971,7 +5365,7 @@ function processRound(){
         const panvarLv=w.prof==="panvar"?w.lv:1;
         const kovakBonus=w.traits?.includes("kovak")?1:0;
         const pedantBonus=w.traits?.includes("pedant")?1:0;
-        const winterBonus=WINTER_PANEV_BONUS[round]||0;
+        const winterBonus=WX.crucible;
         const pNewQ=clamp(panvarLv+kovakBonus+pedantBonus+winterBonus+Math.floor(Math.random()*2),1,5);
         pA.push({cr:round,rdy:round+PANEV_AGE,q:pNewQ});
         const winterNote=winterBonus>0?` ❄️ (${L==="cs"?"mráz čistí jíl":"frost clears clay"} +1)`:"";
@@ -5490,7 +5884,7 @@ function processRound(){
     if(w.task==="field"){
       // Léto nejlepší, zima nic
       const fieldYield=[0,0,0,0,1,1,2,2,2,2,1,0]; // dle měsíce
-      const yld=fieldYield[round]||0;
+      const yld=WX.fieldMult===1?(fieldYield[round]||0):Math.round((fieldYield[round]||0)*WX.fieldMult);
       if(yld>0){r.food+=yld;log.push(`__PROD__🌾 ${w.name}: +${yld} 🍞 ${L==="cs"?"z políčka":"from field"}`);}
       else log.push(`__PROD__🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
     }
@@ -5560,7 +5954,7 @@ function processRound(){
     }
   }
   // 7. Zakázky
-  let contractIncomeTick=0;
+  let contractIncomeTick=0, advFund=0;   // advFund: vyplacená záloha E2a, ze které se při dodání také plní fond
   // Celoroční huť (Tier 3): zimní dodávky (prosinec–únor) mají +25 % prémii k odměně — platí jen za skutečně splněnou zakázku
   const winterDelivery=(p.seasonTier||0)>=3&&(round===1||round===2||round===3);
   const WINTER_PREMIUM=0.25;
@@ -5575,14 +5969,16 @@ function processRound(){
     // Splnění: máme dost kusů A ještě jsme v termínu (round <= due)
     if(contractHave(inv,c)>=c.qty&&round<=c.due){
       contractTake(inv,c);
-      const diffRewardBonus = p.difficulty === "easy" ? Math.round(inZl(c.reward) * 0.25) * KR : 0;
-      const winterBonus = winterDelivery ? Math.round(inZl(c.reward) * WINTER_PREMIUM) * KR : 0;
-      const actualReward = c.reward + diffRewardBonus + winterBonus;
+      const isAdv=!!(E2&&c.adv);   // záloha E2a: pevná cena bez Easy bonusu a zimní prémie, záloha už je vyplacená
+      const diffRewardBonus = !isAdv&&p.difficulty === "easy" ? Math.round(inZl(c.reward) * 0.25) * KR : 0;
+      const winterBonus = !isAdv&&winterDelivery ? Math.round(inZl(c.reward) * WINTER_PREMIUM) * KR : 0;
+      const actualReward = isAdv ? c.reward-c.adv.paid : c.reward + diffRewardBonus + winterBonus;
       grose+=actualReward; done++; contractIncomeTick+=actualReward;
+      if(isAdv){advFund+=c.adv.paid;partnerEvent("reichel","advanceDone",c.reward);}
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       const bonusStr = (diffRewardBonus > 0 ? ` (+${mny(diffRewardBonus)} bonus)` : "") + (winterBonus > 0 ? ` (+${mny(winterBonus)} ${L==="cs"?"zimní prémie":"winter premium"} 👑)` : "");
       log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${mny(actualReward)}${bonusStr}`);
-      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractDone",actualReward);}
+      if(!isAdv){const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractDone",actualReward);}
       // Fama gain při splnění zakázky
       const famaCatDone=BUYER_FAMA[c.buyer];
       if(famaCatDone&&p.fama){
@@ -5592,7 +5988,12 @@ function processRound(){
     } else if(round>c.due){
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       log.push(`__EVT__📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}${buyerStr}`);
-      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractExpired");}
+      if(E2&&c.adv){   // záloha E2a: vrací se z kasy po celých zl, zbytek je běžný dluh u Reichela (hra pokračuje)
+        const back=Math.min(c.adv.paid,Math.floor(Math.max(0,grose)/KR)*KR), rest=c.adv.paid-back;
+        grose-=back;debt+=rest;
+        log.push(`__ECO__📜 ${L==="cs"?"Záloha Reichelovi vrácena":"Advance returned to Reichel"}: -${mny(back)}`+(rest>0?` (${L==="cs"?"dluh":"debt"} +${mny(rest)})`:""));
+        partnerEvent("reichel","advanceMissed",c.adv.paid);
+      }else{const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractExpired");}
       // Fama loss při prpadlé zakázce
       const famaCatExp=BUYER_FAMA[c.buyer];
       if(famaCatExp&&p.fama){
@@ -5697,7 +6098,12 @@ function processRound(){
   // Crack event je nyní řešen per-slot v slot loopu (viz výše)
 
   if(isC&&fA&&mor>65&&(wg.length>p.waldglas.length||cr.length>p.crystal.length)&&Math.random()<.15)evts.push("good");
-  if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
+  if(!econ2()){if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}}
+  else if(WX.kind!=="normal"){
+    // W1: počasí místo náhodné „Krutá zima“ — bez losování
+    if(WX.kind==="frost"){mor-=WX.morale;r.wood=Math.max(0,r.wood-WX.wood);}
+    log.push(`__EVT__${WX_ICON[WX.kind]} ${WX_NAME[WX.kind][L]}: ${wxEffectLines(WX).map(e=>e.text).join(" · ")||(L==="cs"?"bez přímého vlivu":"no direct effect")}`);
+  }
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
   if(forest<=0&&!evts.includes("forestDepleted"))evts.push("forestDepleted");
   // Kupec přijíždí na Vánoce, Tři králové, Velikonoce
@@ -5844,7 +6250,7 @@ function processRound(){
     // Hook pro budoucí rozšíření: WERKSTAT_FATIGUE>0 by přidalo únavu verštatu.
     const WERKSTAT_FATIGUE=0;
     const fatBase=w.traits?.includes("vytrvalec")?0.07:w.traits?.includes("mlady")?0.115:w.traits?.includes("pedant")?0.08:0.1;
-    const newFat=isIdle?Math.max(0,w.fat-0.5):isWerkstat?Math.min(1,w.fat+WERKSTAT_FATIGUE):Math.min(1,w.fat+fatBase);
+    const newFat=isIdle?Math.max(0,w.fat-0.5):isWerkstat?Math.min(1,w.fat+WERKSTAT_FATIGUE):Math.min(1,w.fat+fatBase+WX.fatigue);
     const newTask=autoIdle?"idle":w.task;
     // Zdraví — klesá při dlouhé únavě, roste při odpočinku a jídle
     const hasFood=r.food>0;
@@ -6047,6 +6453,11 @@ function processRound(){
 
   const nr=round+1;
   const isLastRound=nr>=ROUNDS;
+  const advNew=E2?econ2AdvRoll(p.season,nr,p):null;   // E2a: nabídka zálohy od Reichela (bez RNG)
+  if(E2&&!isLastRound){   // jarmark: měsíc předem upozornění, v měsíci jarmarku hlášení
+    if(E2.fair.rounds.includes(nr+1))log.push(`__EVT__🎪 ${L==="cs"?"Příští měsíc bude jarmark — kupci přijedou z celého kraje, ceny skla budou vyšší.":"Next month there is a fair — buyers come from the whole region and glass prices will be higher."}`);
+    if(E2.fair.rounds.includes(nr))log.push(`__EVT__🎪 ${L==="cs"?"Jarmark! Prodejní ceny ×":"Fair! Sale prices ×"}${String(E2.fair.priceMult).replace(".",L==="cs"?",":".")}`);
+  }
 
   // Sestavit toast a kronikový zápis
   const prodLines=[], ecoLines=[], evtLines=[];
@@ -6102,7 +6513,8 @@ function processRound(){
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
-    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
+    ...(advNew?{adv:advNew}:{}),
+    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)+Math.round(advFund*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
       season:p.season, round:nr,
@@ -6116,6 +6528,7 @@ function processRound(){
       ?"game_over"
       :(evts[0]?"event":(isLastRound?"interseasonPhase":"summary"))
   });
+  fateOnRound();   // W2: doznělé efekty pryč, případně nová událost s volbou v tomto měsíci
   checkAchievements();
 
   autoSave();
@@ -6606,7 +7019,7 @@ function marketSaleQuote(type,n){
   const bp=marketSalePrices()[type]||350;
   const isVelmistr=getTomislavRank(G)==="velmistr";
   const easyPriceMult = G.difficulty === "easy" ? 1.20 : 1.0;
-  const mul=(G.mBonus?1.5:1)*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
+  const mul=Math.max(G.mBonus?1.5:1,econ2FairMult())*wxFx().priceMult*(hasObchodnik?1.1:1)*(isVelmistr?1.05:1)*easyPriceMult;
   const total=selling.reduce((s,q)=>s+Math.max(KR, Math.round(q*inZl(bp)*mul)*KR),0);
   return {count:cnt,total,rest,base:bp,multiplier:mul};
 }
@@ -6736,7 +7149,7 @@ function contractInv(item){
 
 function contractIcon(c){
   if(c.cat&&FAMA_ICON[c.cat])return FAMA_ICON[c.cat];
-  return c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
+  return c.buyer==="Reichel"?"🧐":c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒";
 }
 
 // Řádky k dodání: jednoduchá zakázka = 1 řádek, endgame = komponenty
@@ -6775,6 +7188,7 @@ function contractStatus(c){
 }
 
 function contractReward(c,kind){
+  if(c.adv)return c.reward-c.adv.paid;   // záloha E2a: při dodání se vyplatí jen zbytek (pevná cena, bez Easy bonusu)
   if(kind==="market"&&G.difficulty==="easy")return c.reward+Math.round(inZl(c.reward)*0.25)*KR;
   return c.reward;
 }
@@ -6926,7 +7340,15 @@ function validateGameSave(saved){
   if(merged._econ===2&&typeof ECON2!=="undefined"){
     merged.pieceAcc=typeof merged.pieceAcc==="number"&&isFinite(merged.pieceAcc)&&merged.pieceAcc>0?Math.round(merged.pieceAcc):0;
     merged.leaseSeasons=Number.isSafeInteger(merged.leaseSeasons)&&merged.leaseSeasons>0?Math.min(1000,merged.leaseSeasons):0;
-  }else if(merged._econ!==undefined){delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;}
+    // W1: wSeed (uint32); starší savy nové ekonomiky ho nemají → pevná odvozenina ze sezóny (bez RNG)
+    merged.fate=fateSanitize(merged.fate);
+    merged.wSeed=Number.isSafeInteger(merged.wSeed)&&merged.wSeed>=0&&merged.wSeed<4294967296?merged.wSeed:(Math.imul(Number.isSafeInteger(merged.season)?merged.season:1,2654435761)^0x5bd1e995)>>>0;
+    // E2a: nabídka zálohy {season,id,taken}; špatný tvar = žádná nabídka. Aktivní zakázka se zálohou: adv.{paid,price} musí být čísla.
+    const av=merged.adv;
+    merged.adv=(av&&typeof av==="object"&&Number.isSafeInteger(av.season)&&av.season>=0&&(av.id===null||typeof av.id==="string"))?{season:av.season,id:av.id,taken:av.taken===true}:undefined;
+    if(merged.adv===undefined)delete merged.adv;
+    if(Array.isArray(merged.contracts))merged.contracts=merged.contracts.filter(c=>!(c&&c.adv)||(typeof c.adv==="object"&&Number.isFinite(c.adv.paid)&&c.adv.paid>=0&&Number.isFinite(c.reward)&&c.reward>=c.adv.paid));
+  }else{if(merged._econ!==undefined)delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;delete merged.adv;delete merged.wSeed;delete merged.fate;}
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;
@@ -7251,7 +7673,7 @@ function buyEmergencyWood(){
 function quickSellQuote(){
   const basePricesQS={waldglas:350,crystal:900};
   Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{basePricesQS[k]=v.base;});
-  const qsRate=G.difficulty==="easy"?0.90:0.85;
+  const qsRate=(G.difficulty==="easy"?0.90:0.85)*wxFx().priceMult;
   const qsRatePct=Math.round(qsRate*100);
   let qsTotal=0, qsCount=0;
   ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{
@@ -9181,6 +9603,7 @@ if (typeof window !== 'undefined') {
 
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
+      if(fatePending()){goTab("overview");return;}   // W2: nejdřív rozhodnout událost
       processRound();
       FajrumSfx.play('season', 0.6);
     } else if (e.key >= '1' && e.key <= '9') {
@@ -9608,6 +10031,7 @@ function renderContractCard(c,kind){
     famaTxt=" · "+FAMA_ICON[fama.cat]+" "+(cs?"reputace ":"reputation ")+(cs?FAMA_LABEL_CS[fama.cat]:FAMA_LABEL_EN[fama.cat])
       +" +"+fama.gain+" / "+(cs?"při propadnutí ":"if missed ")+fama.loss;
   }
+  if(c.adv)famaTxt=" · 🧐 "+(cs?`záloha ${mny(c.adv.paid)} už vyplacena; při propadnutí se vrací`:`advance ${mny(c.adv.paid)} already paid; repaid if missed`);
   box.append(h("div",{class:"fj-contract-reward",style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},"💰 +"+mny(reward)+famaTxt));
   // Co dělat
   const where=contractWhere(st.lines,L);
@@ -9848,6 +10272,54 @@ function stockPanelEl(){
   });
   sec.append(grid);
   return sec;
+}
+// weather-card.js — W1: karta počasí na Přehledu (jen nová ekonomika). Aktuální měsíc + jeho vlivy + tabulka rizik příštího měsíce (bez předpovědi).
+function weatherRiskText(round){
+  const cs=G.lang==="cs";
+  return weatherRisk(round).filter(x=>x.kind!=="normal"&&x.p>0).map(x=>`${WX_ICON[x.kind]} ${Math.round(x.p*100)} %`).join("  ")||(cs?"žádné výkyvy":"no swings");
+}
+function weatherCardNode(){
+  const fx=wxFx(),cs=G.lang==="cs",extreme=fx.kind!=="normal";
+  const tone=fx.kind==="frost"?"rgba(90,140,190,.12)":fx.kind==="wet"?"rgba(90,120,150,.12)":fx.kind==="dry"?"rgba(201,149,43,.14)":fx.kind==="storm"?"rgba(110,90,150,.14)":"rgba(42,26,10,.04)";
+  const box=h("div",{class:"fj-weather-card","data-wx":fx.kind,style:{margin:"4px 0",padding:"5px 8px",borderRadius:"4px",background:tone,border:"1px solid rgba(139,94,52,.2)",fontSize:"10px",lineHeight:"1.4"}});
+  box.append(h("div",{style:{fontWeight:"700",color:"#3a2a14"}},
+    `${WX_ICON[fx.kind]} ${cs?"Počasí":"Weather"}: ${(WX_NAME[fx.kind]||WX_NAME.normal)[cs?"cs":"en"]}`));
+  if(extreme){
+    const lines=wxEffectLines(fx);
+    if(lines.length)box.append(h("div",{class:"fj-weather-fx",style:{color:"#5a3a1a",marginTop:"2px"}},lines.map(l=>`${l.icon} ${l.text}`).join(" · ")));
+  }
+  const nx=(G.round+1)%12;
+  box.append(h("div",{class:"fj-weather-risk",style:{color:"#8b5e34",marginTop:"2px"}},
+    `${cs?"Příští měsíc, riziko":"Next month, risk"} (${(cs?MONTHS_CS:MONTHS_EN)[nx]}): ${weatherRiskText(nx)}`));
+  return box;
+}
+// fate-card.js — W2: panel události s volbou na Přehledu (jen nová ekonomika). Každá volba ukazuje cenu, doznívající efekt a šanci; zašedlé = nelze (chybí zásoby / podmínka).
+function fateCardNode(){
+  const v=fatePendingView();if(!v)return null;
+  const cs=G.lang==="cs";
+  const box=h("div",{class:"fj-fate-card","data-fate-kind":v.kind,style:{margin:"4px 0 6px",padding:"8px 10px",borderRadius:"4px",background:"rgba(160,48,32,.07)",border:"2px solid rgba(160,48,32,.45)"}});
+  box.append(h("div",{style:{fontWeight:"700",fontSize:"12px",color:"#7a2a18"}},`${v.icon} ${v.title}`),
+    h("div",{style:{fontSize:"10px",color:"#5a3a1a",margin:"2px 0 6px",lineHeight:"1.4"}},v.desc));
+  const wx=wxFx(),wl=wx.kind!=="normal"?wxEffectLines(wx):[];
+  if(wl.length)box.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",marginBottom:"5px"}},`${WX_ICON[wx.kind]} ${wl.map(l=>l.icon+" "+l.text).join(" · ")}`));
+  v.options.forEach(o=>{
+    const row=h("button",{class:"fj-fate-opt btn btn-s","data-fate-opt":o.id,
+      style:{display:"block",width:"100%",textAlign:"left",margin:"0 0 4px",padding:"5px 8px",opacity:o.ok?1:.5,cursor:o.ok?"pointer":"not-allowed"},
+      onClick:()=>{fateChoose(o.id);}});
+    if(!o.ok)row.setAttribute("disabled","");   // h() by atribut zapsal i pro false
+    row.append(h("div",{style:{fontWeight:"700",fontSize:"11px"}},o.label));
+    row.append(h("div",{style:{fontSize:"10px",color:"#5a3a1a",lineHeight:"1.35"}},o.desc));
+    const chips=h("div",{style:{fontSize:"10px",marginTop:"2px",display:"flex",gap:"8px",flexWrap:"wrap"}});
+    o.costParts.forEach(c=>chips.append(h("span",{class:"fj-fate-cost",style:{color:c.ok?"#3a2a14":"#a03020"}},`${c.icon} ${c.text}`)));
+    if(o.risk)chips.append(h("span",{class:"fj-fate-risk",style:{color:o.risk.p>0?"#a03020":"#4a7a3a"}},
+      o.risk.p>0?`🎲 ${Math.round(o.risk.p*100)} %${o.risk.hit?": "+o.risk.hit:""}`:`🎲 0 %`));
+    if(o.extra)chips.append(h("span",{style:{color:"#3a2a14"}},o.extra.text));
+    if(!o.cost.zl&&!o.cost.wood&&!o.cost.food&&!o.risk&&!o.extra)chips.append(h("span",{style:{color:"#4a7a3a"}},cs?"zdarma":"free"));
+    row.append(chips);
+    if(!o.ok&&o.why)row.append(h("div",{class:"fj-fate-why",style:{fontSize:"9px",color:"#a03020"}},"⛔ "+o.why));
+    box.append(row);
+  });
+  return box;
 }
 // subtabs.js — podzáložky uvnitř karet Trh, Huť (accounts), Výroba, Pec a Sklad (stejné členění jako Android SubTabs).
 // Vykreslí se vždy jen JEDNA podzáložka, takže sekce se nikdy nezdvojí. Zvolená záložka je jen stav UI (G._sub, mimo pravidla hry).
@@ -11630,7 +12102,7 @@ function renderResourceBar(ctx){
   const {p,isDesktop,L,isC}=ctx;
   // Resource bar s tooltips
   const md=MONTH_DATA[p.round]||MONTH_DATA[0];
-  const wMult=WINTER_LOG_MULT[p.round]||1;
+  const wMult=wxFx().logMult;
   const resBar=h("div",{class:"res-bar"});
   const sep=()=>h("span",{class:"pill-sep"},"│");
   const grpLabel=(txt)=>h("span",{style:{fontSize:"8px",color:"#8b5e34",textTransform:"uppercase",
@@ -13252,6 +13724,46 @@ function renderTabLog(ctx){
 // market.js — tab "market".
 // Moved verbatim out of renderOriginal() (ui/render-original.js); locals shared with it arrive through `ctx`.
 
+// Karta „Záloha na zakázku“ (ECON2 E2a): nabídka Faktora Reichela — záloha 50 % ceny hned, zbytek při dodání. Jen nové hry.
+function advanceCardNode(){
+  const v=econ2AdvanceView();
+  if(!v||v.state==="none")return null;
+  const L=G.lang, cs=L==="cs", e=ECON2.advance;
+  const box=h("div",{class:"fj-advance-card","data-adv-state":v.state,style:{margin:"6px 0 8px",padding:"8px 10px",borderRadius:"4px",background:"rgba(201,149,43,.08)",border:"1px solid rgba(201,149,43,.3)"}});
+  box.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#8b5e34",marginBottom:"3px"}},"🧐 "+(cs?"Záloha na zakázku":"Advance on a contract")));
+  if(v.state==="active"){
+    const c=v.contract;
+    box.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.4"}},(cs?c.cs:c.en)),
+      h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px"}},
+        cs?`Záloha ${mny(v.advance)} přijata · při dodání zbývá ${mny(v.remaining)} · do ${contractDueText(c.due)||"termínu"}.`
+          :`Advance ${mny(v.advance)} received · ${mny(v.remaining)} due on delivery · by ${contractDueText(c.due)||"deadline"}.`),
+      h("div",{style:{fontSize:"9px",color:"#a03020",marginTop:"3px"}},
+        cs?"Nedodáš-li, záloha se vrací z kasy, zbytek jde do dluhu a Reichelova důvěra klesne o 6."
+          :"If you miss it, the advance is repaid from cash, the rest becomes debt and Reichel's trust drops by 6."));
+    return box;
+  }
+  if(v.state==="done"){box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34"}},cs?"V této sezóně už jsi zálohu využil. Příští nabídka s novou sezónou.":"You already used this season's advance. A new offer comes with the next season."));return box;}
+  if(v.state==="closed"){box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},cs?"Nabídka na tuto sezónu pominula.":"This season's offer has lapsed."));return box;}
+  const c=v.contract, dueTxt=contractDueText(c.due);
+  box.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.4",marginBottom:"3px"}},contractIcon({buyer:"Reichel"})+" "+(cs?c.cs:c.en)),
+    h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},
+      cs?`Cena ${mny(v.price)} (pevná, −${Math.round(e.discount*100)} % oproti běžné) · záloha ${mny(v.advance)} hned, ${mny(v.remaining)} při dodání${dueTxt?" · ⏳ "+dueTxt:""}.`
+        :`Price ${mny(v.price)} (fixed, −${Math.round(e.discount*100)}% vs. usual) · ${mny(v.advance)} advance now, ${mny(v.remaining)} on delivery${dueTxt?" · ⏳ "+dueTxt:""}.`));
+  v.blockers.forEach(b=>{
+    const t=b.k==="trust"?(cs?`Chybí důvěra: ${b.have}/${b.need}`:`Trust needed: ${b.have}/${b.need}`)
+      :b.k==="debt"?(cs?`Nejdřív splať dluh u Reichela (${mny(b.have)})`:`Repay your debt to Reichel first (${mny(b.have)})`)
+      :(cs?"Plný počet aktivních zakázek":"Contract slots are full");
+    box.append(h("div",{class:"fj-advance-blocker",style:{fontSize:"10px",color:"#a03020",marginBottom:"2px"}},"🔒 "+t));
+  });
+  const can=!v.blockers.length;
+  box.append(h("button",{class:"btn btn-s"+(can?" btn-p":""),"data-adv-accept":"1",...(can?{}:{disabled:true}),style:{fontSize:"10px",marginTop:"3px",opacity:can?1:0.45,cursor:can?"pointer":"not-allowed"},
+    onClick:()=>{if(can)econ2AdvanceAccept();}},cs?`Přijmout zálohu ${mny(v.advance)}`:`Take advance ${mny(v.advance)}`));
+  box.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",marginTop:"3px"}},
+    cs?`Nabídka jednou za sezónu (měsíce ${e.fromRound}–${e.untilRound}); podmínka: důvěra u Reichela ≥ ${e.minTrust} a žádný dluh.`
+      :`One offer per season (months ${e.fromRound}–${e.untilRound}); requires Reichel trust ≥ ${e.minTrust} and no debt.`));
+  return box;
+}
+
 function renderTabMarket(ctx){
   const {p,L,content}=ctx;
   {const sb=subTabBar("market",{contracts:(p.avail||[]).length});if(sb)content.append(sb);}
@@ -13268,6 +13780,11 @@ function renderTabMarket(ctx){
   const sSec2=h("div",{class:"sec fj-market-section","data-market-section":"sell",id:"fj-market-sell"});
   sSec2.append(h("div",{class:"sec-title"},"💰 "+(L==="cs"?"Prodej":"Sell")));
   if(p.mBonus)sSec2.append(h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"4px"}},"🗣️ "+( L==="cs"?"Kupec Weiss přijel — ceny ×1.5!":"Merchant Weiss arrived — prices ×1.5!")));
+  {const fi=econ2FairInfo();
+    if(fi&&fi.on)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
+      "🎪 "+(L==="cs"?`Jarmark — prodejní ceny ×${String(fi.mult).replace(".",",")}`+(p.mBonus?" (s Weissem platí vyšší, ceny se neskládají)":"")+"!":`Fair — sale prices ×${fi.mult}`+(p.mBonus?" (Weiss's higher bonus applies, no stacking)":"")+"!")));
+    else if(fi&&fi.soon)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
+      "🎪 "+(L==="cs"?"Příští měsíc jarmark — zvaž, co prodáš hned a co necháš na jarmark.":"Fair next month — consider what to sell now and what to hold for the fair.")));}
   if(closed){
     sSec2.append(h("div",{class:"fj-sale-closed",style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
       L==="cs"?"Cesty jsou nesjízdné. Počkej na otevření trhů.":"Roads impassable. Wait for markets to open."));
@@ -13481,6 +13998,7 @@ function renderTabMarket(ctx){
   const faktorSec=h("div",{class:"sec fj-market-section","data-market-section":"loans",id:"fj-market-loans"});
   faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Reichel — půjčky":"Factor Reichel — loans")));
   faktorSec.append(partnerCard("reichel"));
+  {const av=advanceCardNode();if(av)faktorSec.append(av);}
   // Reputace dlužníka
   faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},
     h("span",{style:{fontSize:"10px",color:"#8b5e34"}},L==="cs"?"Reputace dlužníka:":"Debtor reputation:"),
@@ -13618,6 +14136,8 @@ function renderTabOverview(ctx){
     leftOverview.append(banner);
   }
 
+  if(econ2()){const fc=fateCardNode();if(fc)leftOverview.append(fc);leftOverview.append(weatherCardNode());}   // W1: počasí měsíce + riziko příštího
+
   // Hint-box se stránkováním šipkami
   const hints=hs.filter(Boolean);
   const hintPage=G._hintPage===undefined?(p.round%12):G._hintPage;   // default: hint of the current month
@@ -13670,7 +14190,7 @@ function renderTabOverview(ctx){
           marginBottom:"2px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
           h("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,
             maxWidth:"140px"}},
-            (c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒")+
+            (c.buyer==="Reichel"?"🧐":c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒")+
             " "+(L==="cs"?c.cs:c.en).split(":")[0]),
           h("span",{style:{flexShrink:0,marginLeft:"4px",fontWeight:"700"}},
             have+"/"+c.qty+" ⏳"+roundsLeft)));
@@ -15667,8 +16187,11 @@ function renderLayout(ctx){
   const actionLabel=p.round>=ROUNDS-1
     ?(L==="cs"?"Uzavřít sezónu →":"End Season →")
     :(L==="cs"?`${ms[(p.round+1)%ROUNDS]} — Další měsíc →`:`${ms[(p.round+1)%ROUNDS]} — Next Month →`);
-  const actionBar=h("div",{class:"action-bar"},
-    h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
+  const fv=fatePendingView();   // W2: nevyřešená událost s volbou blokuje další měsíc
+  const actionBar=h("div",{class:"action-bar"},fv
+    ?h("button",{class:"btn btn-p fj-fate-block",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px",background:"#a03020"},
+      onClick:()=>goTab("overview")},`⚠️ ${L==="cs"?"Nejdřív rozhodni":"Decide first"}: ${fv.icon} ${fv.title}`)
+    :h("button",{class:"btn btn-p",style:{width:"100%",padding:"11px",fontSize:"14px",letterSpacing:".5px"},
       onClick:processRound},actionLabel));
 
   // Sestav layout — desktop: tabs vlevo + content vpravo, mobil: stack

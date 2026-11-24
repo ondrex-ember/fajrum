@@ -43,13 +43,15 @@ function setPath(root, path, v) {
 function apply(e, a) {
   const A = e.api, c = (n, ...x) => A.call(n, ...x);
   switch (a.t) {
-    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); if (a.econ !== 2) { const g = A.G; delete g._econ; delete g.pieceAcc; delete g.leaseSeasons; } break; }   // klasika, pokud scénář výslovně nechce econ:2
+    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); if (a.econ !== 2) { const g = A.G; delete g._econ; delete g.pieceAcc; delete g.leaseSeasons; delete g.wSeed; delete g.fate; } else if (a.wSeed !== undefined) A.G.wSeed = a.wSeed; break; }   // klasika, pokud scénář výslovně nechce econ:2
     case 'setTask': c('setWorkerTask', a.id, a.task); break;
     case 'setAlloc': c('setAlloc', a.key, a.val); break;
     case 'allocRecommended': c('setAlloc', 'build', 0); c('setAlloc', 'potash', 40); break;
     case 'craftBlown': c('craftBlown', a.key, a.color); break;
     case 'sell': c('sellItems', a.type, a.n); break;
     case 'acceptContract': c('acceptContract', a.id); break;
+    case 'acceptAdvance': c('econ2AdvanceAccept'); break;
+    case 'fateChoose': c('fateChoose', a.id); break;   // W2   // E2a: záloha od Reichela
     case 'nextRound': A.processRound(); break;
     case 'dismissEvt': A.dismissEvt(); break;
     case 'dismissCrackLoss': c('dismissCrackLoss'); break;
@@ -131,6 +133,17 @@ function botNext(e, r, mode) {
   // playing
   const x = r();
   const wk = G.workers || [];
+  if (G._econ === 2) {   // E2a: bot nabídku zálohy využije (bez spotřeby r(): neposouvá náhodu ostatních akcí); chybějící podmínky jednou za sezónu "dosadí"
+    const v = A.call('econ2AdvanceView');
+    if (v && v.state === 'offer') {
+      if (!v.blockers.length) return { t: 'acceptAdvance' };
+      if (r.advPatched !== G.season && v.blockers.every(b => b.k === 'trust' || b.k === 'debt')) { r.advPatched = G.season; return { t: 'patch', set: { debt: 0, 'partners.reichel.trust': 40 } }; }
+    }
+  }
+  if (G._econ === 2 && A.call('fatePending')) {   // W2: čekající událost s volbou — bez ní měsíc neběží. careful bere volby střídavě (bez r()), chaos náhodně
+    const ok = A.call('fatePendingView').options.filter(o => o.ok);
+    return { t: 'fateChoose', id: (chaos ? pick(r, ok) : ok[(G.season + G.round) % ok.length]).id };
+  }
   if (!chaos) {   // careful play: keep the hut alive so several seasons are covered
     if (G.round === 0 && !r.init) { r.init = 1; return { t: 'allocRecommended' }; }
     if (G.res.wood < 12 && G.grose >= 20 && x < 0.5) return { t: 'buyWood' };
@@ -163,7 +176,7 @@ function playAndRecord(seed, diff, maxActions, maxSeasons, mode, econ) {
   const e = load({ seed }); const r = botRng(seed);
   const actions = [], checkpoints = [];
   const doApply = a => { apply(e, a); actions.push(a); };
-  doApply(econ ? { t: 'newGame', difficulty: diff, huteName: 'test', econ: 2 } : { t: 'newGame', difficulty: diff, huteName: 'test' });
+  doApply(econ ? { t: 'newGame', difficulty: diff, huteName: 'test', econ: 2, wSeed: Math.floor(r() * 4294967296) } : { t: 'newGame', difficulty: diff, huteName: 'test' });
   checkpoints.push(Object.assign({ i: 0 }, snapshot(e)));
   let guard = 0, last = '';
   while (actions.length < maxActions && guard++ < maxActions * 10) {

@@ -31,6 +31,8 @@ function renderTabOverview(ctx){
     leftOverview.append(banner);
   }
 
+  if(econ2()){const fc=fateCardNode();if(fc)leftOverview.append(fc);leftOverview.append(weatherCardNode());}   // W1: počasí měsíce + riziko příštího
+
   // Hint-box se stránkováním šipkami
   const hints=hs.filter(Boolean);
   const hintPage=G._hintPage===undefined?(p.round%12):G._hintPage;   // default: hint of the current month
@@ -83,7 +85,7 @@ function renderTabOverview(ctx){
           marginBottom:"2px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
           h("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,
             maxWidth:"140px"}},
-            (c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒")+
+            (c.buyer==="Reichel"?"🧐":c.buyer==="Opat"?"⛪":c.buyer==="Slechtic"?"🏰":c.buyer==="Hoffmann"?"🏙️":"🛒")+
             " "+(L==="cs"?c.cs:c.en).split(":")[0]),
           h("span",{style:{flexShrink:0,marginLeft:"4px",fontWeight:"700"}},
             have+"/"+c.qty+" ⏳"+roundsLeft)));

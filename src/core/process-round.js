@@ -1,8 +1,10 @@
 // ── HERNÍ LOGIKA ────────────────────────────────────────────
 function processRound(){
+  if(fatePending())return;   // W2: dokud hráč nerozhodne událost s volbou, měsíc neběží
   Fx.sound('bell', 0.45);
   const p=G, r=p.res, round=p.round, isP=isPrepMonth(round, p.seasonTier||0), isC=isCampaignMonth(round, p.seasonTier||0);
   const L=p.lang, ms=L==="cs"?MONTHS_CS:MONTHS_EN;
+  const WX=wxFx(p.season,round);   // počasí tohoto měsíce (klasika: jen pevná zimní tabulka)
   let mor=p.morale, forest=p.forest, grose=p.grose, debt=p.debt;
   let pR=p.pReady, pA=[...p.pAging], pU=p.pUses, pQ=p.panevQuality;
   let fT=p.fTemp, fA=p.fActive;
@@ -39,7 +41,7 @@ function processRound(){
         continue;
       }
       const silakMult=w.traits?.includes("silak")?1.5:1;
-      const winterMult=WINTER_LOG_MULT[round]||1;
+      const winterMult=WX.logMult;
       const availF=forest-forestProtect(forest);   // 1c: výstavky se nekácí
       if(availF<=0){
         const sap=forestRec().y||0;
@@ -55,7 +57,7 @@ function processRound(){
       }
       const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),availF);
       forest-=cut; r.wood+=cut*4;
-      const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
+      const winterNote=winterMult!==1?` ${WX.kind==="normal"?"❄️":WX_ICON[WX.kind]}${winterMult>1?"+":"−"}${Math.round(Math.abs(winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*4} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
       if(Math.random()<0.35){
         r.pitch=(r.pitch||0)+1;
@@ -85,7 +87,7 @@ function processRound(){
         const panvarLv=w.prof==="panvar"?w.lv:1;
         const kovakBonus=w.traits?.includes("kovak")?1:0;
         const pedantBonus=w.traits?.includes("pedant")?1:0;
-        const winterBonus=WINTER_PANEV_BONUS[round]||0;
+        const winterBonus=WX.crucible;
         const pNewQ=clamp(panvarLv+kovakBonus+pedantBonus+winterBonus+Math.floor(Math.random()*2),1,5);
         pA.push({cr:round,rdy:round+PANEV_AGE,q:pNewQ});
         const winterNote=winterBonus>0?` ❄️ (${L==="cs"?"mráz čistí jíl":"frost clears clay"} +1)`:"";
@@ -604,7 +606,7 @@ function processRound(){
     if(w.task==="field"){
       // Léto nejlepší, zima nic
       const fieldYield=[0,0,0,0,1,1,2,2,2,2,1,0]; // dle měsíce
-      const yld=fieldYield[round]||0;
+      const yld=WX.fieldMult===1?(fieldYield[round]||0):Math.round((fieldYield[round]||0)*WX.fieldMult);
       if(yld>0){r.food+=yld;log.push(`__PROD__🌾 ${w.name}: +${yld} 🍞 ${L==="cs"?"z políčka":"from field"}`);}
       else log.push(`__PROD__🌾 ${w.name}: ${L==="cs"?"zima — políčko neplodí":"winter — field yields nothing"}`);
     }
@@ -674,7 +676,7 @@ function processRound(){
     }
   }
   // 7. Zakázky
-  let contractIncomeTick=0;
+  let contractIncomeTick=0, advFund=0;   // advFund: vyplacená záloha E2a, ze které se při dodání také plní fond
   // Celoroční huť (Tier 3): zimní dodávky (prosinec–únor) mají +25 % prémii k odměně — platí jen za skutečně splněnou zakázku
   const winterDelivery=(p.seasonTier||0)>=3&&(round===1||round===2||round===3);
   const WINTER_PREMIUM=0.25;
@@ -689,14 +691,16 @@ function processRound(){
     // Splnění: máme dost kusů A ještě jsme v termínu (round <= due)
     if(contractHave(inv,c)>=c.qty&&round<=c.due){
       contractTake(inv,c);
-      const diffRewardBonus = p.difficulty === "easy" ? Math.round(inZl(c.reward) * 0.25) * KR : 0;
-      const winterBonus = winterDelivery ? Math.round(inZl(c.reward) * WINTER_PREMIUM) * KR : 0;
-      const actualReward = c.reward + diffRewardBonus + winterBonus;
+      const isAdv=!!(E2&&c.adv);   // záloha E2a: pevná cena bez Easy bonusu a zimní prémie, záloha už je vyplacená
+      const diffRewardBonus = !isAdv&&p.difficulty === "easy" ? Math.round(inZl(c.reward) * 0.25) * KR : 0;
+      const winterBonus = !isAdv&&winterDelivery ? Math.round(inZl(c.reward) * WINTER_PREMIUM) * KR : 0;
+      const actualReward = isAdv ? c.reward-c.adv.paid : c.reward + diffRewardBonus + winterBonus;
       grose+=actualReward; done++; contractIncomeTick+=actualReward;
+      if(isAdv){advFund+=c.adv.paid;partnerEvent("reichel","advanceDone",c.reward);}
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       const bonusStr = (diffRewardBonus > 0 ? ` (+${mny(diffRewardBonus)} bonus)` : "") + (winterBonus > 0 ? ` (+${mny(winterBonus)} ${L==="cs"?"zimní prémie":"winter premium"} 👑)` : "");
       log.push(`__ECO__📜 ${L==="cs"?"Zakázka splněna":"Contract done"}${buyerStr}! +${mny(actualReward)}${bonusStr}`);
-      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractDone",actualReward);}
+      if(!isAdv){const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractDone",actualReward);}
       // Fama gain při splnění zakázky
       const famaCatDone=BUYER_FAMA[c.buyer];
       if(famaCatDone&&p.fama){
@@ -706,7 +710,12 @@ function processRound(){
     } else if(round>c.due){
       const buyerStr=c.buyer?" ("+c.buyer+")":"";
       log.push(`__EVT__📜 ${L==="cs"?"Zakázka vypršela":"Contract expired"}${buyerStr}`);
-      {const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractExpired");}
+      if(E2&&c.adv){   // záloha E2a: vrací se z kasy po celých zl, zbytek je běžný dluh u Reichela (hra pokračuje)
+        const back=Math.min(c.adv.paid,Math.floor(Math.max(0,grose)/KR)*KR), rest=c.adv.paid-back;
+        grose-=back;debt+=rest;
+        log.push(`__ECO__📜 ${L==="cs"?"Záloha Reichelovi vrácena":"Advance returned to Reichel"}: -${mny(back)}`+(rest>0?` (${L==="cs"?"dluh":"debt"} +${mny(rest)})`:""));
+        partnerEvent("reichel","advanceMissed",c.adv.paid);
+      }else{const pid=partnerByBuyer(c.buyer);if(pid)partnerEvent(pid,"contractExpired");}
       // Fama loss při prpadlé zakázce
       const famaCatExp=BUYER_FAMA[c.buyer];
       if(famaCatExp&&p.fama){
@@ -811,7 +820,12 @@ function processRound(){
   // Crack event je nyní řešen per-slot v slot loopu (viz výše)
 
   if(isC&&fA&&mor>65&&(wg.length>p.waldglas.length||cr.length>p.crystal.length)&&Math.random()<.15)evts.push("good");
-  if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}
+  if(!econ2()){if(round<=3&&Math.random()<.25){evts.push("winter");mor-=5;r.wood=Math.max(0,r.wood-4);}}
+  else if(WX.kind!=="normal"){
+    // W1: počasí místo náhodné „Krutá zima“ — bez losování
+    if(WX.kind==="frost"){mor-=WX.morale;r.wood=Math.max(0,r.wood-WX.wood);}
+    log.push(`__EVT__${WX_ICON[WX.kind]} ${WX_NAME[WX.kind][L]}: ${wxEffectLines(WX).map(e=>e.text).join(" · ")||(L==="cs"?"bez přímého vlivu":"no direct effect")}`);
+  }
   if(isC&&furnace.shamotWear>=90&&Math.random()<.4){evts.push("shamotCrack");mor-=10;fT=Math.max(0,fT-20);}
   if(forest<=0&&!evts.includes("forestDepleted"))evts.push("forestDepleted");
   // Kupec přijíždí na Vánoce, Tři králové, Velikonoce
@@ -958,7 +972,7 @@ function processRound(){
     // Hook pro budoucí rozšíření: WERKSTAT_FATIGUE>0 by přidalo únavu verštatu.
     const WERKSTAT_FATIGUE=0;
     const fatBase=w.traits?.includes("vytrvalec")?0.07:w.traits?.includes("mlady")?0.115:w.traits?.includes("pedant")?0.08:0.1;
-    const newFat=isIdle?Math.max(0,w.fat-0.5):isWerkstat?Math.min(1,w.fat+WERKSTAT_FATIGUE):Math.min(1,w.fat+fatBase);
+    const newFat=isIdle?Math.max(0,w.fat-0.5):isWerkstat?Math.min(1,w.fat+WERKSTAT_FATIGUE):Math.min(1,w.fat+fatBase+WX.fatigue);
     const newTask=autoIdle?"idle":w.task;
     // Zdraví — klesá při dlouhé únavě, roste při odpočinku a jídle
     const hasFood=r.food>0;
@@ -1161,6 +1175,11 @@ function processRound(){
 
   const nr=round+1;
   const isLastRound=nr>=ROUNDS;
+  const advNew=E2?econ2AdvRoll(p.season,nr,p):null;   // E2a: nabídka zálohy od Reichela (bez RNG)
+  if(E2&&!isLastRound){   // jarmark: měsíc předem upozornění, v měsíci jarmarku hlášení
+    if(E2.fair.rounds.includes(nr+1))log.push(`__EVT__🎪 ${L==="cs"?"Příští měsíc bude jarmark — kupci přijedou z celého kraje, ceny skla budou vyšší.":"Next month there is a fair — buyers come from the whole region and glass prices will be higher."}`);
+    if(E2.fair.rounds.includes(nr))log.push(`__EVT__🎪 ${L==="cs"?"Jarmark! Prodejní ceny ×":"Fair! Sale prices ×"}${String(E2.fair.priceMult).replace(".",L==="cs"?",":".")}`);
+  }
 
   // Sestavit toast a kronikový zápis
   const prodLines=[], ecoLines=[], evtLines=[];
@@ -1216,7 +1235,8 @@ function processRound(){
     totalDone:(G.totalDone||0)+newContractsDone,
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
-    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
+    ...(advNew?{adv:advNew}:{}),
+    ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)+Math.round(advFund*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
       season:p.season, round:nr,
@@ -1230,6 +1250,7 @@ function processRound(){
       ?"game_over"
       :(evts[0]?"event":(isLastRound?"interseasonPhase":"summary"))
   });
+  fateOnRound();   // W2: doznělé efekty pryč, případně nová událost s volbou v tomto měsíci
   checkAchievements();
 
   autoSave();

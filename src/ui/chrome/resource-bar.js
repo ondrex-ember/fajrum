@@ -5,7 +5,7 @@ function renderResourceBar(ctx){
   const {p,isDesktop,L,isC}=ctx;
   // Resource bar s tooltips
   const md=MONTH_DATA[p.round]||MONTH_DATA[0];
-  const wMult=WINTER_LOG_MULT[p.round]||1;
+  const wMult=wxFx().logMult;
   const resBar=h("div",{class:"res-bar"});
   const sep=()=>h("span",{class:"pill-sep"},"│");
   const grpLabel=(txt)=>h("span",{style:{fontSize:"8px",color:"#8b5e34",textTransform:"uppercase",

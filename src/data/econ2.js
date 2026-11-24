@@ -15,5 +15,33 @@ const ECON2={
     graceSeasons:1,                   // v první sezóně hotovostní činže odpadá (kvóta chodí)
     famaQuota:0.25,                   // kvóta × (1 + famaQuota × min(1, součet Famy / famaFull))
     famaFull:60
+  },
+  advance:{                           // E2a: záloha od Faktora Reichela na zakázku (jedna nabídka za sezónu, nejvýš jedna aktivní)
+    share:0.5,                        // záloha = 50 % ceny, vyplácí se při přijetí
+    discount:0.15,                    // cena zakázky = viditelná cena × (1 − discount), pevná (bez Easy bonusu a zimní prémie)
+    minTrust:25,                      // důvěra u Reichela
+    maxDebt:0,                        // dluh u Reichela musí být splacen
+    fromRound:1, untilRound:6,        // nabídka v kolech 1–6
+    minLeft:3,                        // termín nejdřív za 3 kola od nabídky
+    maxDue:10                         // termín nejpozději v kole 10
+  },
+  fair:{                              // jarmark: prodejní ceny ×priceMult; neskládá se s Weissem ×1,5 (platí vyšší)
+    rounds:[8,11],                    // sv. Anna (červenec), sv. Havel (říjen)
+    priceMult:1.3
+  },
+  weather:{                           // W1: počasí měsíce = funkce (wSeed, sezóna, měsíc); neukládá se, hlavní RNG se nedotýká
+    order:["frost","storm","dry","wet"],   // pořadí kumulativního losu (jedno rovnoměrné číslo na měsíc)
+    kinds:{
+      frost:{from:0,to:4,p:0.22},     // listopad–březen
+      wet:{from:4,to:11,p:0.10},      // březen–říjen
+      dry:{from:6,to:10,p:0.12},      // květen–září
+      storm:{from:7,to:9,p:0.10}      // červen–srpen (v sezóně 2+ spouští riziko požáru, W2)
+    },
+    fx:{
+      frost:{wood:4,morale:5,logMult:1.5,crucible:1},
+      wet:{logMult:0.7,priceMult:0.9},
+      dry:{fieldMult:0.6,fatigue:0.05},
+      storm:{}
+    }
   }
 };

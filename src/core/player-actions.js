@@ -238,7 +238,7 @@ function buyEmergencyWood(){
 function quickSellQuote(){
   const basePricesQS={waldglas:350,crystal:900};
   Object.entries(BLOWN_ITEMS).forEach(([k,v])=>{basePricesQS[k]=v.base;});
-  const qsRate=G.difficulty==="easy"?0.90:0.85;
+  const qsRate=(G.difficulty==="easy"?0.90:0.85)*wxFx().priceMult;
   const qsRatePct=Math.round(qsRate*100);
   let qsTotal=0, qsCount=0;
   ["waldglas","crystal",...BLOWN_TYPES].forEach(k=>{

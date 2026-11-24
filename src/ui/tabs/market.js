@@ -1,6 +1,46 @@
 // market.js — tab "market".
 // Moved verbatim out of renderOriginal() (ui/render-original.js); locals shared with it arrive through `ctx`.
 
+// Karta „Záloha na zakázku“ (ECON2 E2a): nabídka Faktora Reichela — záloha 50 % ceny hned, zbytek při dodání. Jen nové hry.
+function advanceCardNode(){
+  const v=econ2AdvanceView();
+  if(!v||v.state==="none")return null;
+  const L=G.lang, cs=L==="cs", e=ECON2.advance;
+  const box=h("div",{class:"fj-advance-card","data-adv-state":v.state,style:{margin:"6px 0 8px",padding:"8px 10px",borderRadius:"4px",background:"rgba(201,149,43,.08)",border:"1px solid rgba(201,149,43,.3)"}});
+  box.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"#8b5e34",marginBottom:"3px"}},"🧐 "+(cs?"Záloha na zakázku":"Advance on a contract")));
+  if(v.state==="active"){
+    const c=v.contract;
+    box.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.4"}},(cs?c.cs:c.en)),
+      h("div",{style:{fontSize:"10px",color:"#8b5e34",marginTop:"2px"}},
+        cs?`Záloha ${mny(v.advance)} přijata · při dodání zbývá ${mny(v.remaining)} · do ${contractDueText(c.due)||"termínu"}.`
+          :`Advance ${mny(v.advance)} received · ${mny(v.remaining)} due on delivery · by ${contractDueText(c.due)||"deadline"}.`),
+      h("div",{style:{fontSize:"9px",color:"#a03020",marginTop:"3px"}},
+        cs?"Nedodáš-li, záloha se vrací z kasy, zbytek jde do dluhu a Reichelova důvěra klesne o 6."
+          :"If you miss it, the advance is repaid from cash, the rest becomes debt and Reichel's trust drops by 6."));
+    return box;
+  }
+  if(v.state==="done"){box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34"}},cs?"V této sezóně už jsi zálohu využil. Příští nabídka s novou sezónou.":"You already used this season's advance. A new offer comes with the next season."));return box;}
+  if(v.state==="closed"){box.append(h("div",{style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic"}},cs?"Nabídka na tuto sezónu pominula.":"This season's offer has lapsed."));return box;}
+  const c=v.contract, dueTxt=contractDueText(c.due);
+  box.append(h("div",{style:{fontSize:"10px",color:"#3a2a14",lineHeight:"1.4",marginBottom:"3px"}},contractIcon({buyer:"Reichel"})+" "+(cs?c.cs:c.en)),
+    h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"3px"}},
+      cs?`Cena ${mny(v.price)} (pevná, −${Math.round(e.discount*100)} % oproti běžné) · záloha ${mny(v.advance)} hned, ${mny(v.remaining)} při dodání${dueTxt?" · ⏳ "+dueTxt:""}.`
+        :`Price ${mny(v.price)} (fixed, −${Math.round(e.discount*100)}% vs. usual) · ${mny(v.advance)} advance now, ${mny(v.remaining)} on delivery${dueTxt?" · ⏳ "+dueTxt:""}.`));
+  v.blockers.forEach(b=>{
+    const t=b.k==="trust"?(cs?`Chybí důvěra: ${b.have}/${b.need}`:`Trust needed: ${b.have}/${b.need}`)
+      :b.k==="debt"?(cs?`Nejdřív splať dluh u Reichela (${mny(b.have)})`:`Repay your debt to Reichel first (${mny(b.have)})`)
+      :(cs?"Plný počet aktivních zakázek":"Contract slots are full");
+    box.append(h("div",{class:"fj-advance-blocker",style:{fontSize:"10px",color:"#a03020",marginBottom:"2px"}},"🔒 "+t));
+  });
+  const can=!v.blockers.length;
+  box.append(h("button",{class:"btn btn-s"+(can?" btn-p":""),"data-adv-accept":"1",...(can?{}:{disabled:true}),style:{fontSize:"10px",marginTop:"3px",opacity:can?1:0.45,cursor:can?"pointer":"not-allowed"},
+    onClick:()=>{if(can)econ2AdvanceAccept();}},cs?`Přijmout zálohu ${mny(v.advance)}`:`Take advance ${mny(v.advance)}`));
+  box.append(h("div",{style:{fontSize:"9px",color:"#8b5e34",fontStyle:"italic",marginTop:"3px"}},
+    cs?`Nabídka jednou za sezónu (měsíce ${e.fromRound}–${e.untilRound}); podmínka: důvěra u Reichela ≥ ${e.minTrust} a žádný dluh.`
+      :`One offer per season (months ${e.fromRound}–${e.untilRound}); requires Reichel trust ≥ ${e.minTrust} and no debt.`));
+  return box;
+}
+
 function renderTabMarket(ctx){
   const {p,L,content}=ctx;
   {const sb=subTabBar("market",{contracts:(p.avail||[]).length});if(sb)content.append(sb);}
@@ -17,6 +57,11 @@ function renderTabMarket(ctx){
   const sSec2=h("div",{class:"sec fj-market-section","data-market-section":"sell",id:"fj-market-sell"});
   sSec2.append(h("div",{class:"sec-title"},"💰 "+(L==="cs"?"Prodej":"Sell")));
   if(p.mBonus)sSec2.append(h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"4px"}},"🗣️ "+( L==="cs"?"Kupec Weiss přijel — ceny ×1.5!":"Merchant Weiss arrived — prices ×1.5!")));
+  {const fi=econ2FairInfo();
+    if(fi&&fi.on)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
+      "🎪 "+(L==="cs"?`Jarmark — prodejní ceny ×${String(fi.mult).replace(".",",")}`+(p.mBonus?" (s Weissem platí vyšší, ceny se neskládají)":"")+"!":`Fair — sale prices ×${fi.mult}`+(p.mBonus?" (Weiss's higher bonus applies, no stacking)":"")+"!")));
+    else if(fi&&fi.soon)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
+      "🎪 "+(L==="cs"?"Příští měsíc jarmark — zvaž, co prodáš hned a co necháš na jarmark.":"Fair next month — consider what to sell now and what to hold for the fair.")));}
   if(closed){
     sSec2.append(h("div",{class:"fj-sale-closed",style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
       L==="cs"?"Cesty jsou nesjízdné. Počkej na otevření trhů.":"Roads impassable. Wait for markets to open."));
@@ -230,6 +275,7 @@ function renderTabMarket(ctx){
   const faktorSec=h("div",{class:"sec fj-market-section","data-market-section":"loans",id:"fj-market-loans"});
   faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Reichel — půjčky":"Factor Reichel — loans")));
   faktorSec.append(partnerCard("reichel"));
+  {const av=advanceCardNode();if(av)faktorSec.append(av);}
   // Reputace dlužníka
   faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},
     h("span",{style:{fontSize:"10px",color:"#8b5e34"}},L==="cs"?"Reputace dlužníka:":"Debtor reputation:"),
