@@ -847,6 +847,39 @@ body{background:linear-gradient(180deg,#1a1408,var(--bg));color:var(--ink);
 /* ── Podzáložky (ui/subtabs.js): řádek chipů nahoře karty; na úzkém displeji se posouvá do strany ── */
 .fj-sub-chips{position:sticky;top:0;z-index:4;display:flex;flex-wrap:nowrap!important;gap:5px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;margin:0 0 8px;padding:6px 8px;background:var(--card2);border-bottom:1px solid rgba(42,26,10,.18);}
 .fj-sub-chips .detail-subtab{flex:0 0 auto;white-space:nowrap;border-radius:4px;cursor:pointer;}
+/* ── Les (forest tab) ── */
+.fj-forest-density{font-size:12px;font-weight:700;margin:0 0 6px;opacity:.85;}
+.fj-forest-density[data-density="scarce"],.fj-forest-density[data-density="depleted"]{color:var(--danger);}
+.fj-forest-stages{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+.fj-forest-stage{display:flex;flex-direction:column;align-items:center;padding:6px 4px;background:rgba(0,0,0,.03);border:1px solid rgba(42,26,10,.1);border-radius:4px;min-width:0;}
+.fj-forest-stage b{font-size:18px;line-height:1.2;}
+.fj-forest-stage-icon{font-size:18px;}
+.fj-forest-stage-name{font-size:10px;color:#8b5e34;text-align:center;overflow-wrap:anywhere;}
+.fj-forest-grid{display:flex;flex-wrap:wrap;gap:2px;max-height:132px;overflow:auto;font-size:13px;line-height:1.1;}
+.fj-forest-cell[data-stage="P"]{opacity:.35;}
+.fj-forest-labour-line{font-size:12px;font-weight:700;margin-bottom:6px;}
+.fj-forest-hands{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;}
+.fj-forest-hand{font-size:18px;opacity:.45;}
+.fj-forest-hand.on{opacity:1;}
+.fj-forest-note{font-size:10px;color:#8b5e34;margin-top:4px;}
+.fj-forest-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-top:8px;}
+.fj-forest-action{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px;}
+.fj-forest-action[disabled]{opacity:.45;cursor:default;}
+.fj-forest-action-title{font-weight:700;font-size:13px;}
+.fj-forest-action-note{font-size:10px;opacity:.75;line-height:1.3;}
+.fj-forest-flow-line{font-size:12px;padding:3px 0;line-height:1.4;}
+.fj-forest-flow-line.tone-good{color:#3a6a2a;}
+.fj-forest-flow-line.tone-bad{color:var(--danger);}
+.fj-forest-flow-line.tone-muted{color:#8b5e34;font-size:11px;}
+.fj-forest-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.fj-forest-choice{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;}
+.fj-forest-choice span{font-size:10px;font-weight:400;opacity:.75;text-align:center;}
+.fj-forest-buy-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;}
+.fj-forest-parcel-info{font-size:10px;color:#8b5e34;margin:8px 0 4px;}
+.fj-forest-buy-btns{display:flex;gap:4px;align-items:center;}
+.fj-forest-hist{display:flex;align-items:flex-end;gap:4px;height:56px;}
+.fj-forest-hist-bar{flex:1;max-width:28px;background:#5a7a4a;border-radius:2px 2px 0 0;}
+
 .fj-sub-badge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;margin-left:3px;padding:0 4px;border-radius:8px;background:var(--gold);color:#2a1a0a;font-size:10px;font-weight:800;}
 /* přehledové rejstříky uvnitř karet jsou s podzáložkami zbytečné (sekce, na které odkazovaly, tu už nejsou všechny) */
 .content:has(.fj-sub-chips) :is(.fj-market-nav,.fj-d4-register-nav,.fj-d3-index){display:none;}
@@ -1532,6 +1565,33 @@ const REGULAR_DELIVERIES={
     {id:"rd_trade2", item:"crystal", qty:2, reward:5000, due:7,
      cs:"Hoffmann: křišťál pro drážďanské faktory", en:"Hoffmann: crystal for Dresden factors"}
   ]
+};
+// forest-rules.js — pravidla správy lesa (Etapa 1c; Android content/FOREST_RULES.json). Všechna čísla pro core/forest.js, žádná logika.
+// Stádia parcel: S těžitelný (G.forest) · Y mlází (forest2.y) · Z sazenice (forest2.z) · P paseka (odvozeno).
+const FOREST_RULES={
+  manualLP:3,
+  handLP:3,
+  handFee:800,
+  handMax:2,
+  plantEasy:3,
+  plantNormal:2,
+  plantBonusEvery:2,
+  thinMax:4,
+  resinMax:3,
+  resinYield:1,
+  reservePct:10,
+  reserveSeed:1,
+  emergWood:2,
+  seedEasy:6,
+  seedNoStanding:2,
+  buyZPrice:400,
+  histMax:8,
+  stages:{
+    S:{icon:"🌲",name_cs:"Těžitelný",name_en:"Mature"},
+    Y:{icon:"🌿",name_cs:"Mlází",name_en:"Saplings"},
+    Z:{icon:"🌱",name_cs:"Sazenice",name_en:"Seedlings"},
+    P:{icon:"▫️",name_cs:"Paseka",name_en:"Clearing"},
+  }
 };
 // crew.js — professions, traits, NPC roster/bonds/bios/assessments, tasks.
 // Verbatim data moved out of core/ (no logic). Classic script: plain top-level consts in the shared global scope; load order is fixed by build.js.
@@ -3511,20 +3571,7 @@ function getLightingMonth(tier=0){
 function merchName(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.cs:i.en):k;}
 function merchDesc(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.d_cs:i.d_en):"";}
 
-// Nákup parcel lesa — max 60, cena roste s počtem
-function buyParcely(n){
-  const cur=G.forest;
-  const max=200;
-  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (200 parcel)":"Forest at maximum (200 parcels)"}`);Fx.render();return;}
-  const buy=Math.min(n,max-cur);
-  const price=buy*800; // 8 zl/parcela
-  if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek peněz":"Not enough money"}`);Fx.render();return;}
-  G.grose-=price;
-  G.forest+=buy;
-  G.forestMax=(G.forestMax||INIT_FOREST)+buy; // koupené parcely navyšují strop
-  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${mny(price)})`);
-  Fx.render();
-}
+// Nákup parcel lesa: viz core/forest.js (buyParcely)
 // Aktivní vazba = oba členové jsou v huti a nesedí na odpočinku (task!=="idle") — stejná podmínka jako u afinity Josef+Kateřina.
 function bondActive(p,a,b){return p.workers.some(w=>w.npcId===a&&w.task!=="idle")&&p.workers.some(w=>w.npcId===b&&w.task!=="idle");}
 function moodEffMult(w){return 1+((w.mood==null?MOOD_NEUTRAL:w.mood)-MOOD_NEUTRAL)/500;}
@@ -3894,7 +3941,7 @@ function initState(){
     grose:6500, debt:4000, morale:65, beer:1,
     _dm:2, _cur:2, exCrewClaims:[], // _dm = verze účetního modelu dluhů (2 = dluh partě odděleně od Reichela); exCrewClaims = pohledávky bývalých zaměstnanců [{id,name,npcId,amount,season,round,reason}]
     debtMoratorium:0, totalDone:0, totalW:0, totalC:0, failureReason:null, failureStats:null,
-    forest:INIT_FOREST, forestMax:INIT_FOREST,
+    forest:INIT_FOREST, forestMax:INIT_FOREST, forest2:forestInitRecord(), // forest2 = stádia lesa a lesní práce (core/forest.js)
     seasonTier:0, noblePrivilege:false,
     res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0,stone:0,dryWood:0,firebrick:0,pitch:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)
@@ -4333,6 +4380,7 @@ function resourceInfoView(key){
   let use=_stkTxt(info,"use");
   // skutečná čísla této hry (palivo závisí na peci a měsíci, jídlo na počtu dělníků)
   if(key==="wood"&&c.need!==null)use+=_stkL("\nPec teď potřebuje "+c.need+" 🪵 za kolo.","\nThe furnace now needs "+c.need+" 🪵 a round.");
+  if(key==="forest"){const f2=forestRec(),y=f2.y||0,z=f2.z||0;if(y+z>0)use+=_stkL("\nV dorůstání: 🌿 "+y+" mlází · 🌱 "+z+" sazenic.","\nGrowing: 🌿 "+y+" saplings · 🌱 "+z+" seedlings.");}
   if(key==="food"&&c.need!==null)use+=_stkL("\nTeď: "+c.need+" za kolo.","\nNow: "+c.need+" a round.");
   const open=(info.open||"storage:raw").split(":");
   const openTab=open[0], openSub=open[1]||"";
@@ -4425,8 +4473,11 @@ function taskBlock(w,t){
       break;
     }
     case"logging":{
-      const forest=G.forest||0;
-      if(forest<=0)return hard(_tbL("Hvozd je vykácený — není co kácet.","The forest is gone — nothing to fell."),_tbL("Znovu poroste po zimním přírůstku.","It regrows in the winter turn."),_tbL("Pošli dělníka na Výsadbu nebo dřevo kup.","Send a worker to Reforest or buy wood."));
+      const forest=G.forest||0, availF=forest-forestProtect(forest);
+      if(availF<=0&&!(fs&&fs.emerg&&fy>0)){
+        if(forest<=0)return hard(_tbL("Hvozd je vykácený — není co kácet.","The forest is gone — nothing to fell."),_tbL("Znovu poroste po zimním přírůstku.","It regrows in the winter turn."),_tbL("Pošli dělníka na Výsadbu nebo dřevo kup.","Send a worker to Reforest or buy wood."));
+        return hard(_tbL("Zbývají jen výstavky — kácet nelze.","Only seed trees are left — nothing to fell."),null,_tbL("Sniž výstavky v záložce Les.","Lower the seed trees in the Forest tab."));
+      }
       break;
     }
     case"reforest":{
@@ -4479,6 +4530,246 @@ function taskActiveWarn(w){
   if(!b)return null;
   return "⚠ "+_tbL("Tento úkol teď nic nevyrobí","This task produces nothing now")+": "+b.reason+(b.whenText?" "+b.whenText:"");
 }
+// forest.js — správa lesa (Etapa 1c; port Android Forest.kt + PresentForest.kt). Bez DOMu, bez RNG.
+// Každá parcela je v právě jednom stádiu:
+//   těžitelný = G.forest        (starý jediný klíč: Průvodce, pills, skóre i těžba ho čtou beze změny; 4 🪵/parcela)
+//   mlází     = G.forest2.y     (příští zima → těžitelný)
+//   sazenice  = G.forest2.z     (příští zima → mlází)
+//   paseka    = forestMax − forest − y − z   (odvozeno)
+// Lesní práce (LP): ruční (`man`, plní se každou sezónu) + nádeníci (`hands`, `pool`). Akce utrácejí LP a účinkují hned.
+// Hráč, který záložku Les neotevře, hraje přesně jako dřív: stádia vznikají jen z toho, co hráč sám zasadí / koupí.
+// Čísla jsou v data/forest-rules.js.
+
+function forestRule(key,def){return typeof FOREST_RULES!=="undefined"&&FOREST_RULES[key]!==undefined?FOREST_RULES[key]:def;}
+function _fL(cs,en){return G.lang==="cs"?cs:en;}
+
+function forestInitRecord(){
+  return{y:0,z:0,man:forestRule("manualLP",3),hands:0,pool:0,plants:0,thins:0,resins:0,reserve:0,emerg:false,hist:[]};
+}
+// Očištění záznamu z uloženého/importovaného savu (validateGameSave): chybějící klíče výchozí, čísla do mezí, hist ≤ histMax čísel.
+function forestSanitize(raw){
+  const d=forestInitRecord();
+  if(!raw||typeof raw!=="object"||Array.isArray(raw))return d;
+  const int=(v,lo,hi,def)=>typeof v==="number"&&isFinite(v)?Math.min(hi,Math.max(lo,Math.floor(v))):def;
+  const handMax=forestRule("handMax",2), handLP=forestRule("handLP",3), manLP=forestRule("manualLP",3);
+  const hands=int(raw.hands,0,handMax,0);
+  const hist=(Array.isArray(raw.hist)?raw.hist:[]).filter(x=>typeof x==="number"&&isFinite(x)).map(x=>Math.min(200,Math.max(0,x)));
+  return{y:int(raw.y,0,200,0),z:int(raw.z,0,200,0),man:int(raw.man,0,manLP,manLP),hands,pool:int(raw.pool,0,hands*handLP,hands*handLP),
+    plants:int(raw.plants,0,100,0),thins:int(raw.thins,0,100,0),resins:int(raw.resins,0,100,0),
+    reserve:int(raw.reserve,0,2,0),emerg:raw.emerg===true,hist:hist.slice(-forestRule("histMax",8))};
+}
+// Záznam lesa; starý save bez klíče se doplní výchozím (validateGameSave to dělá při načtení, tady pojistka)
+function forestRec(){
+  if(!G.forest2||typeof G.forest2!=="object"||Array.isArray(G.forest2))G.forest2=forestInitRecord();
+  return G.forest2;
+}
+function _fn(v){return typeof v==="number"&&isFinite(v)?v:0;}
+function forestMaxParcels(){return G.forestMax||INIT_FOREST;}
+function forestPaseka(){const f=forestRec();return Math.max(0,forestMaxParcels()-G.forest-_fn(f.y)-_fn(f.z));}
+// Kolik parcel zasadí jedna akce (nebo jeden pracovní měsíc nádeníka)
+function forestPlantPer(){return G.difficulty==="easy"?forestRule("plantEasy",3):forestRule("plantNormal",2);}
+// Výstavky: 0/1/2 stupně = 0/10/20 % těžitelného se nekácí
+function forestProtect(standing){
+  const tier=_fn(forestRec().reserve);
+  if(tier<=0||standing<=0)return 0;
+  return Math.min(standing,Math.ceil(standing*forestRule("reservePct",10)/100*tier));
+}
+function forestLP(){const f=forestRec();return _fn(f.man)+_fn(f.pool);}
+function forestAllowed(){return G.phase!=="intro"&&G.phase!=="game_over";}
+
+function forestSpendLP(){
+  const f=forestRec();
+  if(_fn(f.man)>0){f.man=f.man-1;return true;}
+  if(_fn(f.pool)>0){f.pool=f.pool-1;return true;}
+  G.log.push(`__EVT__🪓 ${_fL("Došly lesní práce — počkej na další sezónu nebo najmi nádeníka.","Out of forest labour — wait for the next season or hire a hand.")}`);
+  return false;
+}
+
+// ── akce hráče ───────────────────────────────────────────────
+// 🌱 Sázet: paseka → sazenice (1 LP). Každá [plantBonusEvery]. výsadba sezóny dá o parcelu víc.
+function forestPlant(){
+  if(!forestAllowed())return;
+  const f=forestRec(), pas=forestPaseka();
+  if(pas<=0){G.log.push(`__EVT__▫️ ${_fL("Není kam sázet — v lese není žádná paseka.","Nowhere to plant — the forest has no clearing.")}`);Fx.render();return;}
+  if(!forestSpendLP()){Fx.render();return;}
+  const n=_fn(f.plants)+1, every=forestRule("plantBonusEvery",2);
+  const bonus=every>0&&n%every===0?1:0;
+  const put=Math.min(pas,forestPlantPer()+bonus);
+  f.plants=n;f.z=_fn(f.z)+put;
+  G.log.push(`__PROD__🌱 ${_fL("Výsadba","Planting")}: +${put} ${_fL("sazenic","seedlings")}`);
+  Fx.render();
+}
+// ✂️ Probírka: jedna parcela mlází dorůstá hned (1 LP, omezeno na sezónu)
+function forestThin(){
+  if(!forestAllowed())return;
+  const f=forestRec();
+  if(_fn(f.y)<1){G.log.push(`__EVT__🌿 ${_fL("Žádné mlází k probírce.","No saplings to thin.")}`);Fx.render();return;}
+  if(_fn(f.thins)>=forestRule("thinMax",4)){G.log.push(`__EVT__✂️ ${_fL("Probírka je tuto sezónu vyčerpaná.","Thinning is used up this season.")}`);Fx.render();return;}
+  if(!forestSpendLP()){Fx.render();return;}
+  f.y=f.y-1;f.thins=_fn(f.thins)+1;
+  G.forest=G.forest+1;
+  G.log.push(`__PROD__✂️ ${_fL("Probírka: 1 parcela mlází dorostla hned","Thinning: 1 sapling parcel matured at once")}`);
+  Fx.render();
+}
+// 🫙 Smolaření: smůla ze stojícího lesa, parcely zůstanou (1 LP, omezeno na sezónu)
+function forestResin(){
+  if(!forestAllowed())return;
+  const f=forestRec();
+  if(G.forest<1){G.log.push(`__EVT__🌲 ${_fL("Není z čeho smolařit — les je vykácený.","Nothing to tap — the forest is gone.")}`);Fx.render();return;}
+  if(_fn(f.resins)>=forestRule("resinMax",3)){G.log.push(`__EVT__🫙 ${_fL("Smolaření je tuto sezónu vyčerpané.","Resin tapping is used up this season.")}`);Fx.render();return;}
+  if(!forestSpendLP()){Fx.render();return;}
+  const y=forestRule("resinYield",1);
+  G.res.pitch=(G.res.pitch||0)+y;
+  f.resins=_fn(f.resins)+1;
+  G.log.push(`__PROD__🫙 ${_fL("Smolaření","Resin tapping")}: +${y} 🌲 ${_fL("smůly","pitch")}`);
+  Fx.render();
+}
+// 🧑‍🌾 Lesní nádeník: nájem na sezónu za pevnou mzdu, není členem party
+function forestHire(){
+  if(!forestAllowed())return;
+  const f=forestRec(), fee=forestRule("handFee",800);
+  if(_fn(f.hands)>=forestRule("handMax",2))return;
+  if(G.grose<fee){G.log.push(`__EVT__❌ ${_fL("Nedostatek peněz","Not enough money")}`);Fx.render();return;}
+  G.grose-=fee;
+  f.hands=_fn(f.hands)+1;f.pool=_fn(f.pool)+forestRule("handLP",3);
+  G.log.push(`__ECO__🧑‍🌾 ${_fL("Najat lesní nádeník","Forest hand hired")} (-${mny(fee)})`);
+  Fx.render();
+}
+// Propuštění nádeníka (bez náhrady; nevyužitá práce propadá)
+function forestDismiss(){
+  if(!forestAllowed())return;
+  const f=forestRec();
+  if(_fn(f.hands)<1)return;
+  f.hands=f.hands-1;
+  f.pool=Math.min(_fn(f.pool),f.hands*forestRule("handLP",3));
+  Fx.render();
+}
+function forestSetReserve(tier){forestRec().reserve=clamp(Math.round(tier),0,2);Fx.render();}
+function forestSetEmergency(on){forestRec().emerg=!!on;Fx.render();}
+
+// Nákup parcel (Trh/Les). stage "Z": levnější sazenice, dorostou za 2 zimy; jinak hotové těžitelné parcely.
+function buyParcely(n,stage){
+  const seedlings=stage==="Z";
+  const cur=seedlings?forestMaxParcels():G.forest, max=200;
+  if(cur>=max){G.log.push(`__EVT__🌲 ${_fL("Hvozd je na maximu (200 parcel)","Forest at maximum (200 parcels)")}`);Fx.render();return;}
+  const buy=Math.min(n,max-cur);
+  const price=buy*(seedlings?forestRule("buyZPrice",400):800);
+  if(G.grose<price){G.log.push(`__EVT__❌ ${_fL("Nedostatek peněz","Not enough money")}`);Fx.render();return;}
+  G.grose-=price;
+  if(seedlings){const f=forestRec();f.z=_fn(f.z)+buy;}else G.forest+=buy;
+  G.forestMax=forestMaxParcels()+buy;   // koupené parcely navyšují strop
+  G.log.push(`__ECO__🌲 ${_fL("Zakoupeno","Bought")} ${buy} ${seedlings?_fL("parcel sazenic","seedling parcels"):_fL("parcel lesa","forest parcels")} (-${mny(price)})`);
+  Fx.render();
+}
+
+// ── zimní přírůstek (nahrazuje starý blok regenerace v startInterseason) ──
+// Vrací čísla pro mezisezónní obrazovku. Nelosuje.
+function forestGrow(){
+  const f=forestRec(), isEasy=G.difficulty==="easy", per=forestPlantPer(), maxF=forestMaxParcels(), s0=G.forest;
+  // nádeníci: mzda se platí, kdo se nedá zaplatit, odejde; práce, kterou nevyužili, sází sama
+  const fee=forestRule("handFee",800);
+  let groats=G.grose, fees=0, kept=0;
+  const hired=_fn(f.hands);
+  for(let i=0;i<hired;i++){if(groats>=fee){groats-=fee;fees+=fee;kept++;}}
+  const dropped=hired-kept;
+  G.grose=groats;
+  const autoLP=_fn(f.pool);
+  // dorůstání: mlází → těžitelný, sazenice → mlází
+  const matured=_fn(f.y);
+  let s=s0+matured;
+  const y=_fn(f.z);
+  let z=0;
+  let pas=Math.max(0,maxF-s-y);
+  // automatický přírůstek je přesně ten starý (přirozený osev + parta na Výsadbě, rovnou do těžitelného); výstavky přidávají k osevu
+  const crew=Math.min(Math.min(G.reforestWorkers||0,4)*per,pas);
+  const seedBase=s0>0?(isEasy?forestRule("seedEasy",6):FOREST_REGEN_BASE):forestRule("seedNoStanding",2);
+  const seedPlan=seedBase+(s0>0?_fn(f.reserve)*forestRule("reserveSeed",1):0);
+  const seed=Math.min(seedPlan,pas-crew);
+  s+=crew+seed;pas-=crew+seed;
+  // výsadba hráče (vlastní práce, nádeníci): sazenice, které potřebují dvě zimy
+  const hand=Math.min(autoLP*per,pas);z+=hand;pas-=hand;
+  G.forest=s;
+  f.y=y;f.z=z;
+  f.man=forestRule("manualLP",3);f.hands=kept;f.pool=kept*forestRule("handLP",3);
+  f.plants=0;f.thins=0;f.resins=0;
+  if(!Array.isArray(f.hist))f.hist=[];
+  f.hist.push(s);
+  while(f.hist.length>forestRule("histMax",8))f.hist.shift();
+  if(dropped>0)G.log.push(`__EVT__🧑‍🌾 ${_fL("Lesní nádeník odešel — nebylo mu čím zaplatit.","A forest hand left — there was nothing to pay him with.")}`);
+  G.log.push(`__PROD__🌲 ${_fL("Les dorůstá","The forest grows")}: +${matured+crew+seed} ${_fL("těžitelných","mature")}`+(hand>0?` · +${hand} ${_fL("sazenic","seedlings")}`:""));
+  return{matured:matured+crew+seed,crew,hand,seed,fees,dropped};
+}
+
+// ── pohled na záložku Les (jen zobrazení: nemění stav, nelosuje) ──
+function _fnum(n){return String(Math.round(n*10)/10);}
+function forestView(){
+  const f=forestRec(), L=G.lang;
+  const st=(typeof FOREST_RULES!=="undefined"&&FOREST_RULES.stages)||{};
+  const icon=(k,d)=>st[k]?st[k].icon:d;
+  const name=(k,cs,en)=>st[k]?(L==="cs"?st[k].name_cs:st[k].name_en):(L==="cs"?cs:en);
+  const maxF=forestMaxParcels(), s0=G.forest, y0=_fn(f.y), z0=_fn(f.z);
+  const pas=Math.max(0,maxF-s0-y0-z0), grose=G.grose, per=forestPlantPer(), inGame=forestAllowed();
+  const stages=[
+    {k:"S",icon:icon("S","🌲"),name:name("S","Těžitelný","Mature"),n:s0},
+    {k:"Y",icon:icon("Y","🌿"),name:name("Y","Mlází","Saplings"),n:y0},
+    {k:"Z",icon:icon("Z","🌱"),name:name("Z","Sazenice","Seedlings"),n:z0},
+    {k:"P",icon:icon("P","▫️"),name:name("P","Paseka","Clearing"),n:pas}];
+  const cells=[];
+  for(let i=0;i<s0;i++)cells.push("S");for(let i=0;i<y0;i++)cells.push("Y");for(let i=0;i<z0;i++)cells.push("Z");for(let i=0;i<pas;i++)cells.push("P");
+  // práce
+  const handLP=forestRule("handLP",3), handMax=forestRule("handMax",2), hands=_fn(f.hands), man=_fn(f.man), pool=_fn(f.pool);
+  const lpLeft=man+pool, lpMax=forestRule("manualLP",3)+hands*handLP, fee=forestRule("handFee",800);
+  // akce
+  const plantsDone=_fn(f.plants), every=forestRule("plantBonusEvery",2);
+  const nextBonus=every>0&&(plantsDone+1)%every===0?1:0;
+  const plantPut=Math.min(pas,per+nextBonus), thinMax=forestRule("thinMax",4), resinMax=forestRule("resinMax",3);
+  const actions=[
+    {key:"plant",fn:"forestPlant",icon:"🌱",label:_fL("Sázet","Plant"),
+      note:pas<1?_fL("není paseka","no clearing"):`+${plantPut} ${_fL("sazenic","seedlings")} · ${_fL("dorostou za 2 zimy","grow in 2 winters")}`,
+      enabled:inGame&&lpLeft>0&&pas>=1},
+    {key:"thin",fn:"forestThin",icon:"✂️",label:_fL("Probírka","Thin"),
+      note:y0<1?_fL("není mlází","no saplings"):`${_fL("mlází hned dorostlo","a sapling matures at once")} · ${_fnum(_fn(f.thins))}/${thinMax}`,
+      enabled:inGame&&lpLeft>0&&y0>=1&&_fn(f.thins)<thinMax},
+    {key:"resin",fn:"forestResin",icon:"🫙",label:_fL("Smolařit","Tap resin"),
+      note:s0<1?_fL("není z čeho","nothing to tap"):`+${forestRule("resinYield",1)} 🌲 ${_fL("smůly","pitch")} · ${_fnum(_fn(f.resins))}/${resinMax}`,
+      enabled:inGame&&lpLeft>0&&s0>=1&&_fn(f.resins)<resinMax}];
+  // co přinese příští zima (stejná pravidla jako forestGrow, bez mezd)
+  const isEasy=G.difficulty==="easy", s1=s0+y0, pas1=Math.max(0,maxF-s1-z0);
+  const crew=Math.min(Math.min(G.reforestWorkers||0,4)*per,pas1);
+  const seedBase=s0>0?(isEasy?forestRule("seedEasy",6):FOREST_REGEN_BASE):forestRule("seedNoStanding",2);
+  const seedPlan=seedBase+(s0>0?_fn(f.reserve)*forestRule("reserveSeed",1):0);
+  const seed=Math.min(seedPlan,pas1-crew), hand=Math.min(pool*per,pas1-crew-seed);
+  const flow=[];
+  flow.push({tone:"good",text:`${icon("S","🌲")} ${_fL("těžitelných","mature")}: ${_fnum(s0)} → ${_fnum(s1+crew+seed)}  (+${_fnum(y0)} ${_fL("z mlází","from saplings")}, +${_fnum(seed)} ${_fL("samovýsev","natural seeding")}`+(crew>0?`, +${_fnum(crew)} ${_fL("parta","crew")}`:"")+")"});
+  if(z0>0||y0>0)flow.push({tone:"neutral",text:`${icon("Y","🌿")} ${_fL("mlází","saplings")}: ${_fnum(y0)} → ${_fnum(z0)}`});
+  if(hand>0)flow.push({tone:"neutral",text:`${icon("Z","🌱")} ${_fL("sazenice od nádeníků","seedlings from hands")}: +${_fnum(hand)}`});
+  if(hands>0)flow.push({tone:grose>=fee*hands?"muted":"bad",text:`🧑‍🌾 ${_fL("mzda nádeníků","hands' wages")}: ${mny(fee*hands)}`});
+  flow.push({tone:"muted",text:_fL("Nevyužité ruční práce propadnou, práce nádeníků sází sama.","Unused hand clicks are lost; the hands' labour plants on its own.")});
+  // rozhodnutí
+  const tier=_fn(f.reserve), pct=forestRule("reservePct",10), seedPer=forestRule("reserveSeed",1);
+  const reserve=[
+    {tier:0,label:_fL("Bez výstavků","No seed trees"),note:_fL("káceč bere vše","loggers take everything"),on:tier===0},
+    {tier:1,label:pct+" %",note:`+${_fnum(seedPer)} ${_fL("samovýsev za zimu","seeding per winter")}`,on:tier===1},
+    {tier:2,label:(pct*2)+" %",note:`+${_fnum(seedPer*2)} ${_fL("samovýsev za zimu","seeding per winter")}`,on:tier===2}];
+  const kept2=forestProtect(s0);
+  // nákup
+  const buyPrice=forestRule("buyZPrice",400), room=200-maxF;
+  const hist=(Array.isArray(f.hist)?f.hist:[]).map(_fn);
+  return{
+    scene:{density:s0<=0?"depleted":(s0/maxF<=.25?"scarce":(s0/maxF<.6?"thinned":"dense"))},
+    stages,cells,total:maxF,
+    labour:{left:lpLeft,max:lpMax,line:_fL(`Zbývá ${lpLeft} z ${lpMax} prací tuto sezónu`,`${lpLeft} of ${lpMax} labour left this season`),
+      slots:Array.from({length:handMax},(_,i)=>i<hands),hands,handMax,fee,canHire:inGame&&hands<handMax&&grose>=fee,canDismiss:hands>0,
+      note:_fL(`Nádeník dá ${handLP} prací za sezónu; mzdu platíš v zimě.`,`A hand gives ${handLP} labour per season; wages are paid in winter.`)},
+    actions,flow,
+    reserve:{choices:reserve,note:tier>0?_fL(`Ponecháno ${_fnum(kept2)} parcel — káceč je nepokácí.`,`${_fnum(kept2)} parcels kept — loggers leave them standing.`)
+      :_fL("Část lesa nechat stát, aby se sám osíval.","Leave part of the forest standing so it reseeds itself.")},
+    emerg:{on:!!f.emerg,note:_fL(`Když dojde těžitelný les, káceči pokácejí mlází: ${forestRule("emergWood",2)}🌳 za parcelu a ztracená budoucnost lesa.`,
+      `When the mature forest runs out, loggers cut saplings: ${forestRule("emergWood",2)}🌳 per parcel and the forest's future lost.`)},
+    buy:{price:buyPrice*5,enabled:inGame&&grose>=buyPrice*5&&room>=5,
+      note:_fL("Hvozd se rozšíří; sazenice dorostou za 2 zimy. Hotové parcely koupíš níže.","The forest grows larger; seedlings need 2 winters. Ready parcels are sold below.")},
+    hist,histMax:maxF};
+}
 // ── HERNÍ LOGIKA ────────────────────────────────────────────
 function processRound(){
   Fx.sound('bell', 0.45);
@@ -4515,13 +4806,26 @@ function processRound(){
       continue;
     }
     if(w.task==="logging"){
-      if(forest<=0){
+      if(forest<=0&&!(forestRec().emerg&&(forestRec().y||0)>0)){
         log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"les vyčerpán — přesuňte na výsadbu":"forest depleted — reassign to reforest"}!`);
         continue;
       }
       const silakMult=w.traits?.includes("silak")?1.5:1;
       const winterMult=WINTER_LOG_MULT[round]||1;
-      const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
+      const availF=forest-forestProtect(forest);   // 1c: výstavky se nekácí
+      if(availF<=0){
+        const sap=forestRec().y||0;
+        if(forestRec().emerg&&sap>0){
+          // nouzová seč: mlází za polovinu dřeva (a budoucnost lesa)
+          const cutY=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),sap);
+          forestRec().y=sap-cutY;r.wood+=cutY*forestRule("emergWood",2);
+          log.push(`__EVT__🌿 ${w.name}: ${L==="cs"?"nouzová seč mlází":"emergency felling of saplings"} -${cutY} → +${cutY*forestRule("emergWood",2)} 🌳`);
+        }else{
+          log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"zbývají jen výstavky — kácet nelze":"only seed trees are left — nothing to fell"}`);
+        }
+        continue;
+      }
+      const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),availF);
       forest-=cut; r.wood+=cut*4;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*4} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
@@ -4533,7 +4837,7 @@ function processRound(){
       // Výsadba funguje v přípravě i v kampani; efekt se projeví v mezisezóně (max 4 kola výsadby za sezónu)
       reforestCount++;
       const rfPer=p.difficulty==="easy"?3:2;
-      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?`sází stromy (+${rfPer} parcely v mezisezóně)`:`planting trees (+${rfPer} parcels next interseason)`}`);
+      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?`sází stromy (+${rfPer} sazenice v mezisezóně)`:`planting trees (+${rfPer} seedlings next interseason)`}`);
     }else if(w.task==="quarry"){
       const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2), st=clamp(Math.round(1.5*eff),1,3);
       r.sand+=sa; r.limestone+=li; r.stone=(r.stone||0)+st;
@@ -5729,19 +6033,15 @@ function autoSave(){
 // ── MEZISEZÓNNÍ FÁZE ────────────────────────────────────────
 function startInterseason(){
   const p=G;
-  // Regenerace lesa: základní + bonus za výsadbu
-  const isEasy=p.difficulty==="easy";
-  const reforestBonus=Math.min(p.reforestWorkers||0, 4)*(isEasy?3:2); // Lehká: +3/dělník, Normální: +2
-  const naturalRegen=p.forest>0?(isEasy?6:FOREST_REGEN_BASE):2; // vyčerpaný les roste pomaleji
-  const totalRegen=naturalRegen+reforestBonus;
-  const forestCap=p.forestMax||INIT_FOREST;
-  const newForest=Math.min(forestCap, p.forest+totalRegen);
+  // Zimní přírůstek lesa (1c): mlází → těžitelný, sazenice → mlází, automatický osev + parta na Výsadbě jako dřív, mzdy nádeníků (core/forest.js)
+  const fg=forestGrow();
+  const reforestBonus=fg.crew;
+  const totalRegen=fg.matured;
   // Pec chladne, drží zaběhnutost dle tieru (Tier 1: 75%, Tier 2: 85%, Tier 3: 100%!)
   const runInRatio=p.seasonTier>=3?1.0:(p.seasonTier===2?0.85:(p.seasonTier===1?0.75:0.65));
   const newRunIn=Math.round(p.furnace.runIn*runInRatio);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
 
-  G.forest=newForest;
   G.furnace=furnace;
   G.reforestWorkers=0;
   if((p.seasonTier||0)>=3){
@@ -6108,7 +6408,7 @@ function calcSeasonScore(){
     grose:Math.round(inZl(p.grose)*1.5),
     debt:Math.max(0,(50-inZl(p.debt)-inZl(totalWorkerDebt()))*2),   // skóre počítá oba závazky: Reichel + parta
     morale:Math.round(p.morale*.8),
-    forest:p.forest*3,
+    forest:p.forest*3+((p.forest2&&p.forest2.y)||0),   // těžitelný ×3, mlází ×1
     furnaceRunIn:Math.round(p.furnace.runIn*.5)
   };
 }
@@ -6477,6 +6777,7 @@ function validateGameSave(saved){
   if(!Array.isArray(merged.exCrewClaims))merged.exCrewClaims=[];
   if(!merged.guide||typeof merged.guide!=="object"||Array.isArray(merged.guide))merged.guide={on:false,done:[],snooze:{}};
   else{merged.guide={on:merged.guide.on===true,done:Array.isArray(merged.guide.done)?merged.guide.done.filter(x=>typeof x==="string"):[],snooze:(merged.guide.snooze&&typeof merged.guide.snooze==="object"&&!Array.isArray(merged.guide.snooze))?merged.guide.snooze:{}};}
+  merged.forest2=forestSanitize(merged.forest2);
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;
@@ -9291,7 +9592,7 @@ function guideCard(){
 // Zdroj bez pravidel v RESOURCE_INFO → stockPill se vrátí ke starému pillTip (žádný pád, jen starý tooltip).
 
 // Karty, kam může tlačítko v bublině vést (Les přibude s etapou lesa; do té doby se tlačítko pro „forest“ nenabízí)
-const STOCK_OPEN_TABS=["overview","furnace","production","storage","market","log","accounts","parta","hrac","archiv","settings"];
+const STOCK_OPEN_TABS=["overview","furnace","production","storage","forest","market","log","accounts","parta","hrac","archiv","settings"];
 
 function _stkArt(key,glyph){
   const artKey=key==="crucibles"?"panev":key;
@@ -9417,6 +9718,9 @@ const SUBTABS={
   storage:[
     {id:"glass",e:"🔥",cs:"Sklo a výrobky",en:"Glass & products"},
     {id:"raw",e:"🌲",cs:"Suroviny a pokladna",en:"Raw materials & cash"}],
+  forest:[
+    {id:"work",e:"🌲",cs:"Práce",en:"Work"},
+    {id:"manage",e:"🧰",cs:"Správa",en:"Management"}],
 };
 function subTabsFor(tab){return (SUBTABS[tab]||[]).filter(s=>!s.when||s.when());}
 function subActive(tab){
@@ -9853,6 +10157,8 @@ function renderInterseasonScreen(ctx){
   const regenLine=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",fontSize:"12px"}});
   regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${p.forestMax||INIT_FOREST}`));
   if(is.reforestBonus>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`(🌱 výsadba +${is.reforestBonus})`));
+  {const f2=forestRec(),growing=(f2.y||0)+(f2.z||0);
+   if(growing>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`· 🌿 ${f2.y||0} + 🌱 ${f2.z||0} ${L==="cs"?"v dorůstání":"growing"}`));}
   if(p.forest<(p.forestMax||INIT_FOREST))regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${(p.forestMax||INIT_FOREST)-p.forest} parcel`:`${(p.forestMax||INIT_FOREST)-p.forest} missing`));
   body.append(regenLine);
   if(p.forest===0){
@@ -11446,13 +11752,14 @@ function renderTabsAndContent(ctx){
   const tabBar=h("div",{class:"tabs"});
   const tabLabels={overview:L==="cs"?"Přehled":"Overview",production:L==="cs"?"Výroba":"Smelting",
     storage:L==="cs"?"Sklad":"Storage",
+    forest:L==="cs"?"Les":"Forest",
     furnace:L==="cs"?"Pec":"Furnace",
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
     accounts:L==="cs"?"Huť":"Foundry",
     parta:L==="cs"?"Parta":"Crew",
     hrac:L==="cs"?"Deník":"Journal",
     archiv:L==="cs"?"Archiv":"Archive"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"forest",e:"🌲"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
     // Číslo u Trhu oznamuje pouze NOVÉ nabídky; přijaté kontrakty
     // zůstávají v Trhu jako aktivní, ale už nejsou notifikací.
     const newOffers=k==="market"&&Array.isArray(p.avail)?p.avail.length:0;
@@ -12931,32 +13238,11 @@ function renderTabMarket(ctx){
   content.append(trhStatus);
   if(subOn("market","sell"))content.append(sSec2);
 
-  // Nákup parcel + bulk dřevo
-  const extraSec=h("div",{class:"sec fj-market-section","data-market-section":"forest","data-worksite":"forestry",id:"fj-market-forest"});
-  extraSec.append(h("div",{class:"sec-title"},"🌲 "+(L==="cs"?"Hvozd & Dřevo":"Forest & Wood")));
-  // Bulk dřevo
-  const woodPrice=emergencyWoodPrice();
-  const canWood=p.grose>=woodPrice;
-  extraSec.append(h("div",{class:"fj-forest-wood-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
-    h("span",{style:{fontSize:"11px",color:"#3a2a14"}},`🌳 ${L==="cs"?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${mny(woodPrice)}`),
-    h("button",{class:"btn btn-s"+(canWood?" btn-p":""),...(canWood?{}:{disabled:true}),style:{opacity:canWood?1:.4},
-      onClick:()=>{if(canWood){buyEmergencyWood();}}},
-      L==="cs"?"Koupit":"Buy")));
-  // Parcely
-  const parcelPrice=8;
-  const forestMax=p.forestMax||INIT_FOREST;
-  const canParcel=p.grose>=parcelPrice&&p.forest<200;
-  extraSec.append(
-    h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-      `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${forestMax} ${L==="cs"?"parcel":"parcels"} · ${mny(parcelPrice)}/${L==="cs"?"parcela":"parcel"}`),
-    h("div",{style:{display:"flex",gap:"4px"}},
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(1)},"+ 1"),
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(5)},"+ 5"),
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(10)},"+ 10"),
-      p.forest>=200?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
+  // Hvozd & dřevo (parcely, sazenice, nouzové dřevo) přesunuto do karty Les › Správa; tady jen odkaz.
+  const extraSec=h("div",{class:"sec fj-market-section","data-market-section":"forest",id:"fj-market-forest"});
+  extraSec.append(h("div",{class:"fj-forest-link-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}},
+    h("span",{style:{fontSize:"11px"}},"🌲 "+(L==="cs"?"Parcely, sazenice a nouzové dřevo najdeš v Lese.":"Parcels, seedlings and emergency wood are in the Forest tab.")),
+    h("button",{class:"btn btn-s btn-active","data-goto":"forest",onClick:()=>goTab("forest","manage")},L==="cs"?"Otevřít Les":"Open Forest")));
   if(subOn("market","weiss"))content.append(extraSec);
 
   const bSec=h("div",{class:"sec fj-market-section","data-market-section":"buy",id:"fj-market-buy"});
@@ -15032,6 +15318,122 @@ function renderTabStorage(ctx){
   ecoSec.append(ecoGrid);
   if(subOn("storage","raw"))content.append(ecoSec);
 }
+// forest.js — tab "forest" (Les). Renders forestView() (core/forest.js); all actions go through the core functions.
+// Sub-tabs: work (labour + actions + next-winter flow) / manage (reserve, emergency felling, purchases, history).
+
+function renderTabForest(ctx){
+  const {L,p,content}=ctx;
+  const cs=L==="cs";
+  const v=forestView();
+  {const sb=subTabBar("forest");if(sb)content.append(sb);}
+
+  // ── Práce ──
+  if(subOn("forest","work")){
+    const sec=h("div",{class:"sec fj-forest-sec","data-worksite":"forestry",id:"fj-forest-work"});
+    sec.append(h("div",{class:"sec-title"},"🌲 "+(cs?"Les":"Forest")));
+    const dens={dense:cs?"Hustý hvozd":"Dense forest",thinned:cs?"Prořídlý hvozd":"Thinned forest",
+      scarce:cs?"Řídký les":"Sparse forest",depleted:cs?"Vykácená paseka":"Clear-cut"};
+    sec.append(h("div",{class:"fj-forest-density","data-density":v.scene.density},dens[v.scene.density]));
+
+    // stav parcel
+    const counts=h("div",{class:"fj-forest-stages"});
+    v.stages.forEach(s=>counts.append(h("div",{class:"fj-forest-stage","data-stage":s.k},
+      h("span",{class:"fj-forest-stage-icon"},s.icon),
+      h("b",null,String(Math.round(s.n*10)/10)),
+      h("span",{class:"fj-forest-stage-name"},s.name))));
+    sec.append(counts);
+    const grid=h("div",{class:"fj-forest-grid",role:"img","aria-label":cs?"Parcely lesa":"Forest parcels"});
+    const icons={};v.stages.forEach(s=>{icons[s.k]=s.icon;});
+    v.cells.forEach(k=>grid.append(h("span",{class:"fj-forest-cell","data-stage":k},icons[k])));
+    sec.append(grid);
+    content.append(sec);
+
+    // práce
+    const lab=h("div",{class:"sec fj-forest-sec",id:"fj-forest-labour"});
+    lab.append(h("div",{class:"sec-title"},"🪓 "+(cs?"Práce v lese":"Forest labour")));
+    lab.append(h("div",{class:"fj-forest-labour-line"},v.labour.line));
+    const slots=h("div",{class:"fj-forest-hands"});
+    v.labour.slots.forEach(on=>slots.append(h("span",{class:"fj-forest-hand"+(on?" on":"")},on?"🧑‍🌾":"▫️")));
+    slots.append(
+      h("button",{class:"btn btn-s"+(v.labour.canHire?" btn-active":""),...(v.labour.canHire?{}:{disabled:true}),
+        onClick:()=>forestHire()},"+ "+(cs?"Nádeník":"Hand")+" · "+mny(v.labour.fee)),
+      h("button",{class:"btn btn-s",...(v.labour.canDismiss?{}:{disabled:true}),
+        onClick:()=>forestDismiss()},"− "+(cs?"Propustit":"Dismiss")));
+    lab.append(slots);
+    lab.append(h("div",{class:"fj-forest-note"},v.labour.note));
+    const acts=h("div",{class:"fj-forest-actions"});
+    v.actions.forEach(a=>{
+      acts.append(h("button",{class:"btn fj-forest-action"+(a.enabled?" btn-active":""),"data-action":a.key,
+        ...(a.enabled?{}:{disabled:true}),onClick:()=>{if(a.enabled)window[a.fn]();}},
+        h("span",{class:"fj-forest-action-title"},a.icon+" "+a.label),
+        h("span",{class:"fj-forest-action-note"},a.note)));
+    });
+    lab.append(acts);
+    content.append(lab);
+
+    // příští zima
+    const flow=h("div",{class:"sec fj-forest-sec",id:"fj-forest-flow"});
+    flow.append(h("div",{class:"sec-title"},"❄️ "+(cs?"Příští zima":"Next winter")));
+    v.flow.forEach(f=>flow.append(h("div",{class:"fj-forest-flow-line tone-"+f.tone},f.text)));
+    content.append(flow);
+  }
+
+  // ── Správa ──
+  if(subOn("forest","manage")){
+    const res=h("div",{class:"sec fj-forest-sec",id:"fj-forest-reserve"});
+    res.append(h("div",{class:"sec-title"},"🌳 "+(cs?"Výstavky":"Seed trees")));
+    const row=h("div",{class:"fj-forest-choices"});
+    v.reserve.choices.forEach(c=>row.append(h("button",{class:"btn btn-s fj-forest-choice"+(c.on?" btn-active":""),"data-tier":c.tier,
+      "aria-pressed":String(c.on),onClick:()=>forestSetReserve(c.tier)},
+      h("b",null,c.label),h("span",null,c.note))));
+    res.append(row,h("div",{class:"fj-forest-note"},v.reserve.note));
+    content.append(res);
+
+    const em=h("div",{class:"sec fj-forest-sec",id:"fj-forest-emerg"});
+    em.append(h("div",{class:"sec-title"},"⚠️ "+(cs?"Nouzová těžba mlází":"Emergency felling")));
+    em.append(h("button",{class:"btn btn-s"+(v.emerg.on?" btn-active":""),"aria-pressed":String(v.emerg.on),"data-emerg":v.emerg.on?"on":"off",
+      onClick:()=>{
+        if(!v.emerg.on&&!confirm(cs?"Povolit káceči kácet mlází, až dojde těžitelný les? Budoucnost lesa se tím ztratí.":"Let loggers cut saplings when mature forest runs out? The forest's future is lost."))return;
+        forestSetEmergency(!v.emerg.on);
+      }},v.emerg.on?(cs?"Zapnuto":"On"):(cs?"Vypnuto":"Off")));
+    em.append(h("div",{class:"fj-forest-note"},v.emerg.note));
+    content.append(em);
+
+    const buy=h("div",{class:"sec fj-forest-sec",id:"fj-forest-buy"});
+    buy.append(h("div",{class:"sec-title"},"🛒 "+(cs?"Nákup":"Purchases")));
+    buy.append(h("div",{class:"fj-forest-buy-row"},
+      h("span",null,`🌱 ${cs?"5 parcel sazenic":"5 seedling parcels"} · ${mny(v.buy.price)}`),
+      h("button",{class:"btn btn-s"+(v.buy.enabled?" btn-active":""),"data-buy":"seedlings",...(v.buy.enabled?{}:{disabled:true}),
+        onClick:()=>buyParcely(5,"Z")},cs?"Koupit":"Buy")));
+    buy.append(h("div",{class:"fj-forest-note"},v.buy.note));
+    // hotové parcely (přesunuto od kupce Weisse)
+    const forestMax=p.forestMax||INIT_FOREST, parcelPrice=800;
+    const canParcel=p.grose>=parcelPrice&&p.forest<200;
+    buy.append(h("div",{class:"fj-forest-parcel-info"},
+      `🌲 ${cs?"Hvozd":"Forest"}: ${p.forest}/${forestMax} ${cs?"parcel":"parcels"} · ${mny(parcelPrice)}/${cs?"parcela":"parcel"}`));
+    buy.append(h("div",{class:"fj-forest-buy-btns"},
+      [1,5,10].map(n=>h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
+        onClick:()=>buyParcely(n)},"+ "+n)),
+      p.forest>=200?h("span",{class:"fj-forest-note"},cs?"Maximum dosaženo":"Maximum reached"):null));
+    // nouzové dřevo (přesunuto od kupce Weisse)
+    const woodPrice=emergencyWoodPrice(), canWood=p.grose>=woodPrice;
+    buy.append(h("div",{class:"fj-forest-wood-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:"8px"}},
+      h("span",{style:{fontSize:"11px"}},`🌳 ${cs?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${mny(woodPrice)}`),
+      h("button",{class:"btn btn-s"+(canWood?" btn-p":""),...(canWood?{}:{disabled:true}),style:{opacity:canWood?1:.4},
+        onClick:()=>{if(canWood)buyEmergencyWood();}},cs?"Koupit":"Buy")));
+    content.append(buy);
+
+    if(v.hist.length){
+      const hs=h("div",{class:"sec fj-forest-sec",id:"fj-forest-hist"});
+      hs.append(h("div",{class:"sec-title"},"📈 "+(cs?"Vývoj těžitelného lesa":"Mature forest history")));
+      const bars=h("div",{class:"fj-forest-hist"});
+      const mx=Math.max(1,v.histMax,...v.hist);
+      v.hist.forEach(n=>bars.append(h("span",{class:"fj-forest-hist-bar",title:String(n),style:{height:Math.max(4,Math.round(n/mx*100))+"%"}})));
+      hs.append(bars);
+      content.append(hs);
+    }
+  }
+}
 // layout.js — content container wiring and bottom action bar.
 // Moved verbatim out of renderOriginal() (ui/render-original.js); locals shared with it arrive through `ctx`.
 
@@ -15192,6 +15594,8 @@ function renderOriginal(){
     renderTabProduction(ctx);
   }else if(p.tab==="storage"){
     renderTabStorage(ctx);
+  }else if(p.tab==="forest"){
+    renderTabForest(ctx);
 
   // ── TAB: PEC ──
   }else if(p.tab==="furnace"){

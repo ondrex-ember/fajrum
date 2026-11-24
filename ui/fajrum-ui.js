@@ -24,6 +24,7 @@
     overview: '<path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6M9 8V3h6v5"/>',
     furnace: '<path d="M12 3c2 5-3 6-1 10 2-1 3-3 4-5 4 4 5 8 2 11-4 4-12 1-11-5 0-4 3-6 6-11Z"/>',
     production: '<path d="M9 3h6M10 3v6L5 18c-1 2 0 3 2 3h10c2 0 3-1 2-3l-5-9V3M8 14h8"/>',
+    forest: '<path d="M12 2 6 11h3l-4 6h5v5h4v-5h5l-4-6h3L12 2Z"/>',
     storage: '<path d="m3 7 9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10M7 5l10 4"/>',
     parta: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-4c0-5 12-5 12 0v4M17 4a3 3 0 0 1 0 6M19 13c3 1 3 3 3 8"/>',
     market: '<path d="M3 21h18M12 3v18M5 6h14M5 6l-3 7h6L5 6Zm14 0-3 7h6l-3-7Z"/>',
@@ -53,7 +54,7 @@
     return svg;
   }
   const resourceImages = Object.fromEntries(
-    ['wood','potash','food','panev','sand','limestone','water','clay','stone','dryWood','firebrick','pitch','formy']
+    ['forest','wood','potash','food','panev','sand','limestone','water','clay','stone','dryWood','firebrick','pitch','formy']
       .map(key => [key, 'img/materials/' + key + '.webp'])
   );
   resourceImages.coins = 'img/ui/coins.webp';
@@ -76,7 +77,7 @@
     frame.append(image,fallback);
     return frame;
   }
-  const navigationKeys = ['overview','production','storage','furnace','market','log','accounts','parta','hrac','archiv'];
+  const navigationKeys = ['overview','production','storage','forest','furnace','market','log','accounts','parta','hrac','archiv'];
   const navigationImages = {
     overview:'hut', workshop:'workshop', production:'workshop', furnace:'furnace',
     storage:'storage', parta:'crew', market:'market', more:'more',
@@ -169,8 +170,8 @@
   }
   function navigation({ tabBar, state, select, app }) {
     const labels = cs(state)
-      ? {overview:'Přehled', furnace:'Pec', production:'Výroba', storage:'Sklad', parta:'Parta', market:'Trh', log:'Kronika', accounts:'Huť', hrac:'Deník', archiv:'Archiv', settings:'Nastavení', more:'Více', workshop:'Dílna'}
-      : {overview:'Overview', furnace:'Furnace', production:'Making', storage:'Stock', parta:'Crew', market:'Market', log:'Chronicle', accounts:'Foundry', hrac:'Journal', archiv:'Archive', settings:'Settings', more:'More', workshop:'Workshop'};
+      ? {overview:'Přehled', furnace:'Pec', production:'Výroba', storage:'Sklad', forest:'Les', parta:'Parta', market:'Trh', log:'Kronika', accounts:'Huť', hrac:'Deník', archiv:'Archiv', settings:'Nastavení', more:'Více', workshop:'Dílna'}
+      : {overview:'Overview', furnace:'Furnace', production:'Making', storage:'Stock', forest:'Forest', parta:'Crew', market:'Market', log:'Chronicle', accounts:'Foundry', hrac:'Journal', archiv:'Archive', settings:'Settings', more:'More', workshop:'Workshop'};
     const original = [...tabBar.children];
     const brandCopy = app.querySelector('.fj-brand-copy');
     const references = brandCopy ? [...brandCopy.children].slice(1) : [];
@@ -185,7 +186,7 @@
     });
     // Posuvný pruh všech sekcí (aktuální se po vykreslení dorolovává do středu), „Více“ připnuté vpravo; všechna tlačítka stejného vzhledu.
     // Pořadí jako na Androidu: Přehled, Výroba, Pec, Trh, Sklad, Huť, Parta, Kronika, Deník, Archiv, Nastavení.
-    const stripKeys = ['overview','production','furnace','market','storage','accounts','parta','log','hrac','archiv','settings'];
+    const stripKeys = ['overview','production','furnace','market','storage','forest','accounts','parta','log','hrac','archiv','settings'];
     if (['furnace','production','storage'].includes(state.tab)) { prefs.workshop = state.tab; savePrefs(); }
     const nav = el('nav', 'fj-bottom-nav fj-nav-strip');
     nav.setAttribute('aria-label', cs(state) ? 'Hlavní navigace' : 'Main navigation');

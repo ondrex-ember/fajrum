@@ -163,32 +163,11 @@ function renderTabMarket(ctx){
   content.append(trhStatus);
   if(subOn("market","sell"))content.append(sSec2);
 
-  // Nákup parcel + bulk dřevo
-  const extraSec=h("div",{class:"sec fj-market-section","data-market-section":"forest","data-worksite":"forestry",id:"fj-market-forest"});
-  extraSec.append(h("div",{class:"sec-title"},"🌲 "+(L==="cs"?"Hvozd & Dřevo":"Forest & Wood")));
-  // Bulk dřevo
-  const woodPrice=emergencyWoodPrice();
-  const canWood=p.grose>=woodPrice;
-  extraSec.append(h("div",{class:"fj-forest-wood-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
-    h("span",{style:{fontSize:"11px",color:"#3a2a14"}},`🌳 ${L==="cs"?"Nouzové dřevo (5×)":"Emergency wood (5×)"} · ${mny(woodPrice)}`),
-    h("button",{class:"btn btn-s"+(canWood?" btn-p":""),...(canWood?{}:{disabled:true}),style:{opacity:canWood?1:.4},
-      onClick:()=>{if(canWood){buyEmergencyWood();}}},
-      L==="cs"?"Koupit":"Buy")));
-  // Parcely
-  const parcelPrice=8;
-  const forestMax=p.forestMax||INIT_FOREST;
-  const canParcel=p.grose>=parcelPrice&&p.forest<200;
-  extraSec.append(
-    h("div",{style:{fontSize:"10px",color:"#8b5e34",marginBottom:"4px"}},
-      `🌲 ${L==="cs"?"Hvozd":"Forest"}: ${p.forest}/${forestMax} ${L==="cs"?"parcel":"parcels"} · ${mny(parcelPrice)}/${L==="cs"?"parcela":"parcel"}`),
-    h("div",{style:{display:"flex",gap:"4px"}},
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(1)},"+ 1"),
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(5)},"+ 5"),
-      h("button",{class:"btn btn-s"+(canParcel?" btn-active":""),style:{opacity:canParcel?1:.4},
-        onClick:()=>buyParcely(10)},"+ 10"),
-      p.forest>=200?h("span",{style:{fontSize:"10px",color:"#8b5e34",alignSelf:"center"}},L==="cs"?"Maximum dosaženo":"Maximum reached"):null));
+  // Hvozd & dřevo (parcely, sazenice, nouzové dřevo) přesunuto do karty Les › Správa; tady jen odkaz.
+  const extraSec=h("div",{class:"sec fj-market-section","data-market-section":"forest",id:"fj-market-forest"});
+  extraSec.append(h("div",{class:"fj-forest-link-row",style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}},
+    h("span",{style:{fontSize:"11px"}},"🌲 "+(L==="cs"?"Parcely, sazenice a nouzové dřevo najdeš v Lese.":"Parcels, seedlings and emergency wood are in the Forest tab.")),
+    h("button",{class:"btn btn-s btn-active","data-goto":"forest",onClick:()=>goTab("forest","manage")},L==="cs"?"Otevřít Les":"Open Forest")));
   if(subOn("market","weiss"))content.append(extraSec);
 
   const bSec=h("div",{class:"sec fj-market-section","data-market-section":"buy",id:"fj-market-buy"});

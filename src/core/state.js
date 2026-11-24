@@ -98,7 +98,7 @@ function initState(){
     grose:6500, debt:4000, morale:65, beer:1,
     _dm:2, _cur:2, exCrewClaims:[], // _dm = verze účetního modelu dluhů (2 = dluh partě odděleně od Reichela); exCrewClaims = pohledávky bývalých zaměstnanců [{id,name,npcId,amount,season,round,reason}]
     debtMoratorium:0, totalDone:0, totalW:0, totalC:0, failureReason:null, failureStats:null,
-    forest:INIT_FOREST, forestMax:INIT_FOREST,
+    forest:INIT_FOREST, forestMax:INIT_FOREST, forest2:forestInitRecord(), // forest2 = stádia lesa a lesní práce (core/forest.js)
     seasonTier:0, noblePrivilege:false,
     res:{wood:50,sand:20,limestone:15,potash:8,water:15,clay:10,shamot:10,food:12,charcoal:0,pureSand:0,refinedPotash:0,formy:0,stone:0,dryWood:0,firebrick:0,pitch:0},
     // Přísady pro barevné sklo (historické dle Neriho a Kunckela)

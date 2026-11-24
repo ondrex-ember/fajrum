@@ -25,6 +25,9 @@ const SUBTABS={
   storage:[
     {id:"glass",e:"🔥",cs:"Sklo a výrobky",en:"Glass & products"},
     {id:"raw",e:"🌲",cs:"Suroviny a pokladna",en:"Raw materials & cash"}],
+  forest:[
+    {id:"work",e:"🌲",cs:"Práce",en:"Work"},
+    {id:"manage",e:"🧰",cs:"Správa",en:"Management"}],
 };
 function subTabsFor(tab){return (SUBTABS[tab]||[]).filter(s=>!s.when||s.when());}
 function subActive(tab){

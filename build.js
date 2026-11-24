@@ -30,6 +30,7 @@ const JS_MAIN = [
   'src/data/furnace.js',
   'src/data/market.js',
   'src/data/contracts.js',
+  'src/data/forest-rules.js',
   'src/data/crew.js',
   'src/data/glass.js',
   'src/data/texts.js',
@@ -47,6 +48,7 @@ const JS_MAIN = [
   'src/core/guide.js',
   'src/core/stock.js',
   'src/core/task-block.js',
+  'src/core/forest.js',
   'src/core/process-round.js',
   'src/core/contracts-sign.js',
   'src/core/interseason.js',
@@ -109,6 +111,7 @@ const JS_MAIN = [
   'src/ui/tabs/production.js',
   'src/ui/tabs/settings.js',
   'src/ui/tabs/storage.js',
+  'src/ui/tabs/forest.js',
 
   // UI: layout assembly and the renderOriginal() dispatcher
   'src/ui/layout.js',

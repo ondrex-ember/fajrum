@@ -105,6 +105,7 @@ function resourceInfoView(key){
   let use=_stkTxt(info,"use");
   // skutečná čísla této hry (palivo závisí na peci a měsíci, jídlo na počtu dělníků)
   if(key==="wood"&&c.need!==null)use+=_stkL("\nPec teď potřebuje "+c.need+" 🪵 za kolo.","\nThe furnace now needs "+c.need+" 🪵 a round.");
+  if(key==="forest"){const f2=forestRec(),y=f2.y||0,z=f2.z||0;if(y+z>0)use+=_stkL("\nV dorůstání: 🌿 "+y+" mlází · 🌱 "+z+" sazenic.","\nGrowing: 🌿 "+y+" saplings · 🌱 "+z+" seedlings.");}
   if(key==="food"&&c.need!==null)use+=_stkL("\nTeď: "+c.need+" za kolo.","\nNow: "+c.need+" a round.");
   const open=(info.open||"storage:raw").split(":");
   const openTab=open[0], openSub=open[1]||"";

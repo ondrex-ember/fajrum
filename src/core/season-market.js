@@ -102,7 +102,7 @@ function calcSeasonScore(){
     grose:Math.round(inZl(p.grose)*1.5),
     debt:Math.max(0,(50-inZl(p.debt)-inZl(totalWorkerDebt()))*2),   // skóre počítá oba závazky: Reichel + parta
     morale:Math.round(p.morale*.8),
-    forest:p.forest*3,
+    forest:p.forest*3+((p.forest2&&p.forest2.y)||0),   // těžitelný ×3, mlází ×1
     furnaceRunIn:Math.round(p.furnace.runIn*.5)
   };
 }

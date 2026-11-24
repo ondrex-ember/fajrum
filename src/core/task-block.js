@@ -57,8 +57,11 @@ function taskBlock(w,t){
       break;
     }
     case"logging":{
-      const forest=G.forest||0;
-      if(forest<=0)return hard(_tbL("Hvozd je vykácený — není co kácet.","The forest is gone — nothing to fell."),_tbL("Znovu poroste po zimním přírůstku.","It regrows in the winter turn."),_tbL("Pošli dělníka na Výsadbu nebo dřevo kup.","Send a worker to Reforest or buy wood."));
+      const forest=G.forest||0, availF=forest-forestProtect(forest);
+      if(availF<=0&&!(fs&&fs.emerg&&fy>0)){
+        if(forest<=0)return hard(_tbL("Hvozd je vykácený — není co kácet.","The forest is gone — nothing to fell."),_tbL("Znovu poroste po zimním přírůstku.","It regrows in the winter turn."),_tbL("Pošli dělníka na Výsadbu nebo dřevo kup.","Send a worker to Reforest or buy wood."));
+        return hard(_tbL("Zbývají jen výstavky — kácet nelze.","Only seed trees are left — nothing to fell."),null,_tbL("Sniž výstavky v záložce Les.","Lower the seed trees in the Forest tab."));
+      }
       break;
     }
     case"reforest":{

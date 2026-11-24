@@ -34,13 +34,26 @@ function processRound(){
       continue;
     }
     if(w.task==="logging"){
-      if(forest<=0){
+      if(forest<=0&&!(forestRec().emerg&&(forestRec().y||0)>0)){
         log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"les vyčerpán — přesuňte na výsadbu":"forest depleted — reassign to reforest"}!`);
         continue;
       }
       const silakMult=w.traits?.includes("silak")?1.5:1;
       const winterMult=WINTER_LOG_MULT[round]||1;
-      const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),forest);
+      const availF=forest-forestProtect(forest);   // 1c: výstavky se nekácí
+      if(availF<=0){
+        const sap=forestRec().y||0;
+        if(forestRec().emerg&&sap>0){
+          // nouzová seč: mlází za polovinu dřeva (a budoucnost lesa)
+          const cutY=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),sap);
+          forestRec().y=sap-cutY;r.wood+=cutY*forestRule("emergWood",2);
+          log.push(`__EVT__🌿 ${w.name}: ${L==="cs"?"nouzová seč mlází":"emergency felling of saplings"} -${cutY} → +${cutY*forestRule("emergWood",2)} 🌳`);
+        }else{
+          log.push(`__EVT__🌲 ${w.name}: ${L==="cs"?"zbývají jen výstavky — kácet nelze":"only seed trees are left — nothing to fell"}`);
+        }
+        continue;
+      }
+      const cut=Math.min(clamp(Math.round(2*eff*silakMult*winterMult),1,6),availF);
       forest-=cut; r.wood+=cut*4;
       const winterNote=winterMult>1?` ❄️+${Math.round((winterMult-1)*100)}%`:"";
       log.push(`__PROD__🌲 ${w.name}: -${cut} ${L==="cs"?"parcel":"parcels"} → +${cut*4} 🌳${winterNote} (${forest}/${p.forestMax||INIT_FOREST})`);
@@ -52,7 +65,7 @@ function processRound(){
       // Výsadba funguje v přípravě i v kampani; efekt se projeví v mezisezóně (max 4 kola výsadby za sezónu)
       reforestCount++;
       const rfPer=p.difficulty==="easy"?3:2;
-      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?`sází stromy (+${rfPer} parcely v mezisezóně)`:`planting trees (+${rfPer} parcels next interseason)`}`);
+      log.push(`__PROD__🌱 ${w.name}: ${L==="cs"?`sází stromy (+${rfPer} sazenice v mezisezóně)`:`planting trees (+${rfPer} seedlings next interseason)`}`);
     }else if(w.task==="quarry"){
       const sa=clamp(Math.round(2*eff),1,4), li=clamp(Math.round(eff),1,2), st=clamp(Math.round(1.5*eff),1,3);
       r.sand+=sa; r.limestone+=li; r.stone=(r.stone||0)+st;

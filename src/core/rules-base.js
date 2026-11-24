@@ -40,17 +40,4 @@ function getLightingMonth(tier=0){
 function merchName(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.cs:i.en):k;}
 function merchDesc(k,L){const i=MERCH_INFO[k];return i?(L==="cs"?i.d_cs:i.d_en):"";}
 
-// Nákup parcel lesa — max 60, cena roste s počtem
-function buyParcely(n){
-  const cur=G.forest;
-  const max=200;
-  if(cur>=max){G.log.push(`__EVT__🌲 ${G.lang==="cs"?"Hvozd je na maximu (200 parcel)":"Forest at maximum (200 parcels)"}`);Fx.render();return;}
-  const buy=Math.min(n,max-cur);
-  const price=buy*800; // 8 zl/parcela
-  if(G.grose<price){G.log.push(`__EVT__❌ ${G.lang==="cs"?"Nedostatek peněz":"Not enough money"}`);Fx.render();return;}
-  G.grose-=price;
-  G.forest+=buy;
-  G.forestMax=(G.forestMax||INIT_FOREST)+buy; // koupené parcely navyšují strop
-  G.log.push(`__ECO__🌲 ${G.lang==="cs"?"Zakoupeno":"Bought"} ${buy} ${G.lang==="cs"?"parcel lesa":"forest parcels"} (-${mny(price)})`);
-  Fx.render();
-}
+// Nákup parcel lesa: viz core/forest.js (buyParcely)

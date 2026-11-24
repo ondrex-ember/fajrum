@@ -1,19 +1,15 @@
 // ── MEZISEZÓNNÍ FÁZE ────────────────────────────────────────
 function startInterseason(){
   const p=G;
-  // Regenerace lesa: základní + bonus za výsadbu
-  const isEasy=p.difficulty==="easy";
-  const reforestBonus=Math.min(p.reforestWorkers||0, 4)*(isEasy?3:2); // Lehká: +3/dělník, Normální: +2
-  const naturalRegen=p.forest>0?(isEasy?6:FOREST_REGEN_BASE):2; // vyčerpaný les roste pomaleji
-  const totalRegen=naturalRegen+reforestBonus;
-  const forestCap=p.forestMax||INIT_FOREST;
-  const newForest=Math.min(forestCap, p.forest+totalRegen);
+  // Zimní přírůstek lesa (1c): mlází → těžitelný, sazenice → mlází, automatický osev + parta na Výsadbě jako dřív, mzdy nádeníků (core/forest.js)
+  const fg=forestGrow();
+  const reforestBonus=fg.crew;
+  const totalRegen=fg.matured;
   // Pec chladne, drží zaběhnutost dle tieru (Tier 1: 75%, Tier 2: 85%, Tier 3: 100%!)
   const runInRatio=p.seasonTier>=3?1.0:(p.seasonTier===2?0.85:(p.seasonTier===1?0.75:0.65));
   const newRunIn=Math.round(p.furnace.runIn*runInRatio);
   const furnace={...p.furnace, runIn:newRunIn, age:p.furnace.age+1};
 
-  G.forest=newForest;
   G.furnace=furnace;
   G.reforestWorkers=0;
   if((p.seasonTier||0)>=3){

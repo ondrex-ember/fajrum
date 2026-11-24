@@ -96,6 +96,8 @@ function renderInterseasonScreen(ctx){
   const regenLine=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px",fontSize:"12px"}});
   regenLine.append(h("span",{style:{color:"#4a7a3a"}},`🌲 +${is.forestRegen||FOREST_REGEN_BASE} → ${p.forest}/${p.forestMax||INIT_FOREST}`));
   if(is.reforestBonus>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`(🌱 výsadba +${is.reforestBonus})`));
+  {const f2=forestRec(),growing=(f2.y||0)+(f2.z||0);
+   if(growing>0)regenLine.append(h("span",{style:{color:"#4a7a3a",fontSize:"11px"}},`· 🌿 ${f2.y||0} + 🌱 ${f2.z||0} ${L==="cs"?"v dorůstání":"growing"}`));}
   if(p.forest<(p.forestMax||INIT_FOREST))regenLine.append(h("span",{style:{color:"#8b5e34",fontSize:"11px"}},L==="cs"?`chybí ${(p.forestMax||INIT_FOREST)-p.forest} parcel`:`${(p.forestMax||INIT_FOREST)-p.forest} missing`));
   body.append(regenLine);
   if(p.forest===0){

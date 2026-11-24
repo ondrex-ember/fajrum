@@ -49,7 +49,7 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
   try {
     ev('G.huteName="Test"; startGame("'+(process.env.DIFF||'normal')+'"); '+(process.env.EN?'G.lang="en"; ':'')+'render();');
   } catch (e) { console.log('startGame failed:', e.message); }
-  const tabs = ['overview', 'production', 'furnace', 'storage', 'market', 'parta', 'accounts', 'log', 'archiv', 'hrac'];
+  const tabs = ['overview', 'production', 'furnace', 'storage', 'forest', 'market', 'parta', 'accounts', 'log', 'archiv', 'hrac'];
   const sweep = label => {
     for (const t of tabs) { try { ev(`G.tab=${JSON.stringify(t)}; render();`); scan(label + ':' + t); } catch (e) { found.set(`${label}:${t} threw ${e.message}`, 1); } }
     for (const t of Object.keys(JSON.parse(ev('JSON.stringify(Object.fromEntries(Object.entries(SUBTABS).map(([k,v])=>[k,v.map(s=>s.id)])))')))) {
@@ -133,7 +133,7 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     const mobile = !!process.env.MOBILE;
     if (mobile) {
       chk(q('.fj-nav-strip .fj-nav-scroll'), 'nav strip missing');
-      chk(qa('.fj-nav-scroll .fj-nav-button').length === 11, 'strip buttons: ' + qa('.fj-nav-scroll .fj-nav-button').length);
+      chk(qa('.fj-nav-scroll .fj-nav-button').length === 12, 'strip buttons: ' + qa('.fj-nav-scroll .fj-nav-button').length);
       chk(q('.fj-nav-strip > .fj-nav-more'), 'More not pinned outside the scroller');
       chk(q('.fj-nav-scroll .is-current[data-strip-tab="overview"]'), 'current section not marked');
       qa('.fj-nav-scroll .fj-nav-button').find(n => n.dataset.stripTab === 'market').click();
@@ -181,6 +181,40 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     chk(ev('G.avail.length') >= 1 && ev('G.avail.length') <= 3, 'wave size: ' + ev('G.avail.length'));
     scan('contracts');
     console.log('contract UI checks done');
+  }
+  // Les: záložka, podzáložky, akce přes UI, Weiss už jen odkaz, nákup sazenic, nouzová seč s potvrzením
+  if (process.env.FOREST) {
+    const doc = w.document, chk = (c, m) => { if (!c) found.set('FOREST: ' + m, 1); };
+    if (process.env.MOBILE) { Object.defineProperty(w, 'innerWidth', { value: 400, configurable: true }); }
+    ev('G.huteName="Test"; startGame("'+(process.env.DIFF||'normal')+'"); '+(process.env.EN?'G.lang="en"; ':''));
+    ev('Object.keys(G).filter(k=>/Pending$/.test(k)).forEach(k=>{G[k]=Array.isArray(G[k])?[]:false}); G.phase="playing"; G.round=1; G.curEvt=null; G.forestMax=30; G.forest=20; G.grose=20000; goTab("forest","work"); render();');
+    const qa = s => [...doc.querySelectorAll(s)], q = s => doc.querySelector(s);
+    chk(qa('.fj-nav-scroll [data-strip-tab="forest"]').length === 1, 'strip button Les');
+    chk(ev('G.tab') === 'forest' && qa('.fj-sub-chips .detail-subtab').length === 2, 'forest tab with 2 sub-tabs');
+    chk(qa('.fj-forest-stage').length === 4 && qa('.fj-forest-cell').length === 30, 'stages/cells: ' + qa('.fj-forest-stage').length + '/' + qa('.fj-forest-cell').length);
+    chk(qa('.fj-forest-action').length === 3, 'three action buttons');
+    q('.fj-forest-action[data-action="plant"]').click();
+    chk(ev('G.forest2.z') === 2 && ev('G.forest2.man') === 2, 'plant via UI: z=' + ev('G.forest2.z') + ' man=' + ev('G.forest2.man'));
+    chk(/2/.test(q('.fj-forest-stage[data-stage="Z"] b').textContent), 'UI shows 2 seedlings');
+    const hire = qa('.fj-forest-hands button')[0]; hire.click();
+    chk(ev('G.forest2.hands') === 1 && ev('G.grose') === 20000 - 800, 'hire hand via UI');
+    chk(qa('.fj-forest-flow-line').length >= 2, 'next-winter flow');
+    ev('goTab("forest","manage"); render();');
+    qa('.fj-forest-choice')[2].click();
+    chk(ev('G.forest2.reserve') === 2, 'reserve tier 2 via UI');
+    w.confirm = () => true;
+    q('[data-emerg]').click();
+    chk(ev('G.forest2.emerg') === true, 'emergency felling toggled');
+    q('[data-buy="seedlings"]').click();
+    chk(ev('G.forest2.z') === 7 && ev('G.forestMax') === 35, 'buy 5 seedling parcels: z=' + ev('G.forest2.z') + ' max=' + ev('G.forestMax'));
+    ev('G._sub={market:"weiss"}; G.tab="market"; render();');
+    chk(!qa('.fj-forest-wood-row').length && q('[data-goto="forest"]'), 'Weiss shows only a link to Les');
+    q('[data-goto="forest"]').click();
+    chk(ev('G.tab') === 'forest' && ev('subActive("forest")') === 'manage', 'link opens Les › manage');
+    chk(qa('.fj-forest-wood-row').length === 1, 'emergency wood row now in Les');
+    ev('G.forest2.hist=[10,12,14]; render();'); chk(qa('.fj-forest-hist-bar').length === 3, 'history bars');
+    scan('forest');
+    console.log('forest UI checks done');
   }
   if (process.env.GUIDE) { ev('G.tab="overview"; G.phase="playing"; render();'); const c = w.document.querySelector('.fj-guide-card'); console.log('guide card:', c ? c.textContent.replace(/\s+/g, ' ').slice(0, 300) : 'none'); }
   if (process.env.DUMP) for (const t of process.env.DUMP.split(',')) { ev(`G.phase='playing'; G.tab=${JSON.stringify(t)}; render();`); const bc = w.document.body.cloneNode(true); bc.querySelectorAll('script,style,svg,iframe').forEach(n => n.remove()); console.log('=== ' + t + '\n' + [...bc.querySelectorAll('[data-partner-card]')].map(n => n.textContent.replace(/\s+/g, ' ').slice(0, 900)).join('\n')); }

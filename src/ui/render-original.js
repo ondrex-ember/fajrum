@@ -111,6 +111,8 @@ function renderOriginal(){
     renderTabProduction(ctx);
   }else if(p.tab==="storage"){
     renderTabStorage(ctx);
+  }else if(p.tab==="forest"){
+    renderTabForest(ctx);
 
   // ── TAB: PEC ──
   }else if(p.tab==="furnace"){

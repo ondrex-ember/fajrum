@@ -9,13 +9,14 @@ function renderTabsAndContent(ctx){
   const tabBar=h("div",{class:"tabs"});
   const tabLabels={overview:L==="cs"?"Přehled":"Overview",production:L==="cs"?"Výroba":"Smelting",
     storage:L==="cs"?"Sklad":"Storage",
+    forest:L==="cs"?"Les":"Forest",
     furnace:L==="cs"?"Pec":"Furnace",
     market:L==="cs"?"Trh":"Market",log:L==="cs"?"Kronika":"Chronicle",
     accounts:L==="cs"?"Huť":"Foundry",
     parta:L==="cs"?"Parta":"Crew",
     hrac:L==="cs"?"Deník":"Journal",
     archiv:L==="cs"?"Archiv":"Archive"};
-  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
+  [{k:"overview",e:"📋"},{k:"production",e:"⚗️"},{k:"storage",e:"📦"},{k:"forest",e:"🌲"},{k:"furnace",e:"🔥"},{k:"market",e:"💰"},{k:"log",e:"📜"},{k:"accounts",e:"🏭"},{k:"parta",e:"👥"},{k:"hrac",e:"📓"},{k:"archiv",e:"📖"}].forEach(({k,e})=>{
     // Číslo u Trhu oznamuje pouze NOVÉ nabídky; přijaté kontrakty
     // zůstávají v Trhu jako aktivní, ale už nejsou notifikací.
     const newOffers=k==="market"&&Array.isArray(p.avail)?p.avail.length:0;

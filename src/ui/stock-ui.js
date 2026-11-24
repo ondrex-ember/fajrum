@@ -3,7 +3,7 @@
 // Zdroj bez pravidel v RESOURCE_INFO → stockPill se vrátí ke starému pillTip (žádný pád, jen starý tooltip).
 
 // Karty, kam může tlačítko v bublině vést (Les přibude s etapou lesa; do té doby se tlačítko pro „forest“ nenabízí)
-const STOCK_OPEN_TABS=["overview","furnace","production","storage","market","log","accounts","parta","hrac","archiv","settings"];
+const STOCK_OPEN_TABS=["overview","furnace","production","storage","forest","market","log","accounts","parta","hrac","archiv","settings"];
 
 function _stkArt(key,glyph){
   const artKey=key==="crucibles"?"panev":key;
