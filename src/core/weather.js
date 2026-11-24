@@ -85,3 +85,15 @@ function wxEffectLines(fx){
   }
   return out;
 }
+
+// Trh zavřený: kalendář (MARKET_CLOSED) nebo mor (fx marketClosed z osudové události W3). Platí pro prodej, rychlý výkup i jarmark.
+function marketClosedNow(round){
+  round=round===undefined?G.round:round;
+  return !!MARKET_CLOSED[round]||(!!econ2()&&wxFx(G.season,round).marketClosed);
+}
+function marketPlagueClosed(round){round=round===undefined?G.round:round;return!MARKET_CLOSED[round]&&marketClosedNow(round);}
+function marketClosedText(round){
+  round=round===undefined?G.round:round;
+  if(marketPlagueClosed(round))return G.lang==="cs"?"🦠 Mor v kraji — vrchnost zavřela trhy a zakázala cestování. Prodávat nelze.":"🦠 Plague in the region — the authorities closed the markets and banned travel. No selling.";
+  const md=MONTH_DATA[round]||MONTH_DATA[0];return G.lang==="cs"?md.trh_cs:md.trh_en;
+}

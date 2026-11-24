@@ -252,6 +252,7 @@ function quickSellQuote(){
 function quickSellAll(){
   const L=G.lang;
   if(G.quickSellUsed)return;   // UI gate
+  if(marketPlagueClosed()){G.log.push(`__EVT__⛔ ${marketClosedText()}`);Fx.render();return;}   // W3: za moru Weiss nepřijede (kalendářní zavření výkup nikdy neblokovalo)
   const {rate:qsRate,ratePct:qsRatePct,count:qsCount,basePrices:basePricesQS}=quickSellQuote();
   if(qsCount===0) return;
   let earned=0;

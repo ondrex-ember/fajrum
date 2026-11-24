@@ -244,7 +244,20 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     q('.fj-fate-block').click(); chk(ev('G.tab') === 'overview', 'klik na blokaci vede na Přehled');
     q('.fj-fate-opt[data-fate-opt="fate"]').click();
     chk(ev('G.fate.pending') === null && ev('G.fate.hist.length') === 1 && !q('.fj-fate-card') && !q('.fj-fate-block'), 'volba vyřeší událost a vrátí tlačítko');
-    ev('G.season=' + sv0 + '; G.round=' + r0 + '; G.grose=50000; render();');
+    // W3: mor (zavřený trh, 2 volby) a Labe (Hoffmann)
+    ev('G.season=2; G.round=6; G.res.wood=50; G.grose=50000; G.waldglas=[3,3]; G.mBonus=false; G.fate.pending={kind:"plague",season:2,round:6}; G.tab="overview"; render();');
+    chk(qa('.fj-fate-opt').length === 2 && /🦠/.test(q('.fj-fate-card').textContent), 'mor: panel se 2 volbami');
+    q('.fj-fate-opt[data-fate-opt="wait"]').click();
+    ev('G.tab="market"; G._sub={market:"sell"}; render();');
+    const mo = q('.fj-market-open');
+    chk(mo && mo.dataset.closed === 'true' && /🦠/.test(mo.textContent), 'mor: trh označen jako zavřený (mor)');
+    chk(!qa('.fj-sale-row').length && !qa('[data-market-section="sell"] button.btn-s').some(b => /^1×$/.test(b.textContent)), 'mor: žádná tlačítka prodeje');
+    ev('G._sub={market:"weiss"}; render();'); const bo = q('.fj-market-buyout'); chk(!bo || bo.disabled, 'mor: rychlý výkup zašedlý');
+    ev('G.round=8; render();'); chk(!q('.fj-market-open') || q('.fj-market-open').dataset.closed === 'false', 'po 2 měsících trh otevřen');
+    ev('G.round=6; G.fate.fx=[]; G.contracts=[{id:"h1",item:"crystal",qty:1,reward:10400,due:10,buyer:"Hoffmann",minQ:4,cs:"H",en:"H"}]; G.fate.pending={kind:"elbe",season:2,round:6}; G.tab="overview"; render();');
+    chk(qa('.fj-fate-opt').length === 3 && /🚢/.test(q('.fj-fate-card').textContent), 'Labe: panel se 3 volbami');
+    q('.fj-fate-opt[data-fate-opt="land"]').click(); chk(ev('G.contracts[0].reward') === 8300, 'Labe: Po souši přepíše odměnu (8300)');
+    ev('G.contracts=[]; G.waldglas=[]; G.season=' + sv0 + '; G.round=' + r0 + '; G.grose=50000; G.fate.fx=[]; render();');
     // karta dělníka: blok Mzda s verdiktem a vzorcem
     ev('G.tab="parta"; G._partaDetail=G.workers.find(w=>w.prof==="tavic").id; G._partaSubtab="profil"; render();');
     const blk = q('.fj-wage-block');

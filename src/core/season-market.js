@@ -182,9 +182,8 @@ function chronShow(entry){
 }
 function sellItems(type,n){
   if(!G[type].length)return;
-  const md=MONTH_DATA[G.round];
-  if(MARKET_CLOSED[G.round]){
-    G.log.push(`__EVT__⛔ ${G.lang==="cs"?md.trh_cs:md.trh_en}`);
+  if(marketClosedNow()){
+    G.log.push(`__EVT__⛔ ${marketClosedText()}`);
     Fx.render(); return;
   }
   const {count:cnt,total,rest}=marketSaleQuote(type,n);

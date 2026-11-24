@@ -45,7 +45,7 @@ function renderTabMarket(ctx){
   const {p,L,content}=ctx;
   {const sb=subTabBar("market",{contracts:(p.avail||[]).length});if(sb)content.append(sb);}
   const md2=MONTH_DATA[p.round]||MONTH_DATA[0];
-  const closed=MARKET_CLOSED[p.round];
+  const closed=marketClosedNow(p.round), plagueNow=marketPlagueClosed(p.round);
   // Stav trhu — vždy nahoře
   const trhStatus=h("div",{class:"sec fj-market-status"});
   trhStatus.append(h("div",{class:"fj-market-open","data-closed":String(!!closed),style:{
@@ -53,14 +53,14 @@ function renderTabMarket(ctx){
     background:closed?"rgba(160,48,32,.08)":"rgba(74,122,58,.08)",
     border:`1px solid ${closed?"rgba(160,48,32,.2)":"rgba(74,122,58,.2)"}`,
     fontSize:"12px",color:closed?"#a03020":"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
-    L==="cs"?md2.trh_cs:md2.trh_en));
+    marketClosedText(p.round)));
   const sSec2=h("div",{class:"sec fj-market-section","data-market-section":"sell",id:"fj-market-sell"});
   sSec2.append(h("div",{class:"sec-title"},"💰 "+(L==="cs"?"Prodej":"Sell")));
   if(p.mBonus)sSec2.append(h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"4px"}},"🗣️ "+( L==="cs"?"Kupec Weiss přijel — ceny ×1.5!":"Merchant Weiss arrived — prices ×1.5!")));
   {const fi=econ2FairInfo();
-    if(fi&&fi.on)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
+    if(fi&&fi.on&&!closed)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
       "🎪 "+(L==="cs"?`Jarmark — prodejní ceny ×${String(fi.mult).replace(".",",")}`+(p.mBonus?" (s Weissem platí vyšší, ceny se neskládají)":"")+"!":`Fair — sale prices ×${fi.mult}`+(p.mBonus?" (Weiss's higher bonus applies, no stacking)":"")+"!")));
-    else if(fi&&fi.soon)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
+    else if(fi&&fi.soon&&!closed)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
       "🎪 "+(L==="cs"?"Příští měsíc jarmark — zvaž, co prodáš hned a co necháš na jarmark.":"Fair next month — consider what to sell now and what to hold for the fair.")));}
   if(closed){
     sSec2.append(h("div",{class:"fj-sale-closed",style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
@@ -255,10 +255,10 @@ function renderTabMarket(ctx){
         h("div",{style:{fontSize:"11px",color:"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
           (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+mny(qsTotal)+` (${qsRatePct}%)`),
         h("button",{
-          class:"btn btn-s fj-market-buyout"+(qsCount>0?" btn-active":""),...(qsCount>0?{}:{disabled:true}),
-          style:{opacity:qsCount>0?1:0.4,cursor:qsCount>0?"pointer":"default",width:"100%"},
+          class:"btn btn-s fj-market-buyout"+(qsCount>0&&!plagueNow?" btn-active":""),...(qsCount>0&&!plagueNow?{}:{disabled:true}),
+          style:{opacity:qsCount>0&&!plagueNow?1:0.4,cursor:qsCount>0&&!plagueNow?"pointer":"default",width:"100%"},
           onClick:()=>{
-            if(qsCount===0) return;
+            if(qsCount===0||plagueNow) return;
             quickSellAll();
           }},
           L==="cs"?`🐴 Prodat vše Weissovi (${qsRatePct}%)`:`🐴 Sell all to Weiss (${qsRatePct}%)`)

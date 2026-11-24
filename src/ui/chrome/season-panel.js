@@ -55,8 +55,8 @@ function renderSeasonPanel(ctx){
         h("div",{class:"season-phase"},L==="cs"?md.phase_cs:md.phase_en),
         h("div",{class:"season-priority"},L==="cs"?md.priority_cs:md.priority_en))),
     h("div",{class:"season-tip"},L==="cs"?md.tip_cs:md.tip_en),
-    h("div",{class:"season-trh",style:{color:MARKET_CLOSED[p.round]?"#a03020":"#4a7a3a"}},
-      L==="cs"?md.trh_cs:md.trh_en));
+    h("div",{class:"season-trh",style:{color:marketClosedNow(p.round)?"#a03020":"#4a7a3a"}},
+      marketClosedText(p.round)));
   // SitRep pod season info
   if(sitRep.length>0){
     const srDiv=h("div",{style:{marginTop:"5px",paddingTop:"5px",borderTop:"1px solid rgba(42,26,10,.08)"}});

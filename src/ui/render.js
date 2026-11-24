@@ -9,7 +9,7 @@ function render(){
   if(window.FajrumRecipeUI)FajrumRecipeUI.finish(app,G);
   if(window.FajrumCrew)FajrumCrew.finish(app,G,{taskOptions:workerTaskOptions,assign:setWorkerTask,taskBlock,taskBlockClick,activeWarn:taskActiveWarn,profile:id=>{G._partaDetail=id;G._partaSubtab="profil";G.tab="parta";render();}});
   if(window.FajrumMarket)FajrumMarket.finish(app,G,{quote:marketSaleQuote,prices:marketSalePrices,sell:sellItems,lines:contractLines,status:contractStatus});
-  if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:!!MARKET_CLOSED[G.round],stockKeys:Object.keys(marketSalePrices())});
+  if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:marketClosedNow(),stockKeys:Object.keys(marketSalePrices())});
   if(window.FajrumPortraits)FajrumPortraits.finish(app,G);
   if(window.FajrumWorksites)FajrumWorksites.finish(app,G);
   if(window.FajrumArt?.finish)FajrumArt.finish(app,G);

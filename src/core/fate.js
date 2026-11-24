@@ -4,7 +4,7 @@
 // (stejné u všech voleb), takže nižší riziko nikdy nedopadne hůř než vyšší ve stejném světě. Doznívající efekty čte wxFx (weather.js).
 // Dokud událost čeká (pending), processRound se nespustí (gate na začátku processRound).
 
-function fateInit(){return{fx:[],pending:null,done:0,hist:[]};}
+function fateInit(){return{fx:[],pending:null,done:0,hist:[],plague:null,plagueSeason:0};}
 function fatePending(){return!!(econ2()&&G.fate&&G.fate.pending);}
 function _fL(cs,en){return G.lang==="cs"?cs:en;}
 function fateMult(){return(G.difficulty==="easy"?FATE.easyMult:1)*(1+FATE.growth*Math.max(0,(G.season||1)-FATE.firstSeason));}
@@ -33,21 +33,63 @@ function fateKindFor(season,round){
   if(wk==="dry"||wk==="storm")return"fire";
   const pool=["forest"];
   if(round>=5)pool.push("army");
+  if(round>=FATE.elbeMinRound&&fateElbeContracts().length>0)pool.push("elbe");
   if(round>=5&&fateGoods().length>=FATE.glutMin)pool.push("glut");
   return pool[Math.min(pool.length-1,Math.floor(wxU(G.wSeed,5,season,round,0)*pool.length))];
 }
+// Otevřené zakázky Hoffmanna (jen ty se Labem přepisují); zakázky se zálohou jsou Reichelovy, takže sem nepatří
+function fateElbeContracts(){return(G.contracts||[]).filter(c=>c&&c.buyer===FATE.elbeBuyer&&!c.adv);}
+function fateElbeApply(mult){
+  const list=fateElbeContracts();let lost=0;
+  for(const c of list){const nr=Math.max(KR,Math.round(c.reward*mult/KR)*KR);lost+=Math.max(0,c.reward-nr);c.reward=nr;}
+  return{n:list.length,lost};
+}
+function fateElbePreview(mult){let lost=0;const l=fateElbeContracts();for(const c of l)lost+=Math.max(0,c.reward-Math.max(KR,Math.round(c.reward*mult/KR)*KR));return{n:l.length,lost};}
+
+// Mor (W3): naplánuje se z vojska (po rozhodnutí) nebo z horka; max. jeden za sezónu, nezabírá běžný slot
+function fatePlagueSchedule(round,src){
+  G.fate.plague={season:G.season,round,src};G.fate.plagueSeason=G.season;
+}
+function fateArmyRumour(pd){
+  const P=FATE.plague;
+  if(G.fate.plagueSeason===pd.season||!(wxU(G.wSeed,7,pd.season,pd.round,0)<P.armyP))return;
+  const d=P.armyDelay[0]+Math.floor(wxU(G.wSeed,7,pd.season,pd.round,1)*(P.armyDelay[1]-P.armyDelay[0]+1));
+  fatePlagueSchedule(Math.min(P.lastRound,pd.round+d),"army");
+  G.log.push(`__EVT__📣 ${_fL("Vojáci roznášejí zvěsti o moru v sousedním kraji…","Soldiers spread rumours of plague in the next district…")}`);
+}
+// Z horka: v kolech heat.from..heat.to, v prvním měsíci, kdy se nasbírají ≥ minMonths měsíce sucha/bouře, jeden los
+function fateHeatPlague(){
+  const P=FATE.plague.heat,s=G.season,r=G.round;
+  if(r<P.from||r>P.to||G.fate.plagueSeason===s)return false;
+  const hot=rr=>{const k=weatherKind(s,rr);return k==="dry"||k==="storm";};
+  let cnt=0;for(let q=P.from;q<=r;q++)if(hot(q))cnt++;
+  if(!hot(r)||cnt!==P.minMonths)return false;   // „první takový měsíc“ = měsíc, kdy počet dosáhne minMonths
+  return wxU(G.wSeed,6,s,r,0)<P.p;
+}
+
 // Volá se na konci processRound (G.round je už nové kolo): uklidí doznělé efekty a případně založí čekající událost
 function fateOnRound(){
   if(!econ2())return;
   if(!G.fate)G.fate=fateInit();
-  const at=wxAbs(G.season,G.round);
+  const at=wxAbs(G.season,G.round),S=G.season,r=G.round;
   G.fate.fx=G.fate.fx.filter(e=>e.to>=at);
-  if(G.fate.pending||G.fate.done===G.season||G.season<FATE.firstSeason)return;
-  if(G.round<FATE.rounds[0]||G.round>FATE.rounds[1]||G.round!==fateMonth(G.season))return;
-  const kind=fateKindFor(G.season,G.round);
-  G.fate.pending={kind,season:G.season,round:G.round};G.fate.done=G.season;
-  const k=FATE.kinds[kind];
-  G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+  if(G.fate.plague&&G.fate.plague.season!==S)G.fate.plague=null;   // nespuštěný mor z minulé sezóny propadá
+  if(S<FATE.firstSeason||G.fate.pending)return;
+  if(!G.fate.plague&&fateHeatPlague())fatePlagueSchedule(r,"heat");   // los z horka proběhne vždy (i v měsíci běžné události; mor pak čeká na další měsíc)
+  const reg=G.fate.done!==S&&r>=FATE.rounds[0]&&r<=FATE.rounds[1]&&r===fateMonth(S);
+  if(reg){
+    const kind=fateKindFor(S,r);
+    G.fate.pending={kind,season:S,round:r};G.fate.done=S;
+    const k=FATE.kinds[kind];
+    G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+    return;   // případný mor čeká na další měsíc (druhá událost nikdy ve stejném měsíci)
+  }
+  const pl=G.fate.plague;
+  if(pl&&pl.season===S&&r>=pl.round&&r<=FATE.plague.lastRound){
+    G.fate.pending={kind:"plague",season:S,round:r};G.fate.plague=null;
+    const k=FATE.kinds.plague;
+    G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+  }
 }
 
 function _fRiskP(o){return o.risk?(weatherKind(G.season,G.round)==="storm"&&o.risk.pStorm!==undefined?o.risk.pStorm:o.risk.p):null;}
@@ -58,7 +100,7 @@ function _fFairAhead(within){
   return null;
 }
 function fateDumpTotal(o){
-  const rate=o.rate*(G.difficulty==="easy"?1.2:1),prices=marketSalePrices();
+  const rate=o.rate*(G.difficulty==="easy"&&!o.noEasy?1.2:1),prices=marketSalePrices();
   let total=0,n=0;
   for(const g of fateGoods()){total+=Math.max(KR,Math.round(g.q*inZl(prices[g.type]||350)*rate)*KR);n++;}
   return{total,n,rate};
@@ -68,6 +110,7 @@ function _fHitParts(h){
   if(h.woodPct)out.push(`−${h.woodPct} % 🌳`);
   if(h.zl)out.push(`−${_fScale(h.zl)} zl`);
   if(h.morale)out.push(`😟 ${h.morale}`);
+  if(h.rewardMult)out.push(`🏙️ ${_fL("odměny","rewards")} −${Math.round((1-h.rewardMult)*100)} %`);
   return out.join(", ");
 }
 // Pohled jedné volby pro UI: {id,label,desc,cost,costParts,risk:{p,hit},ok,why}
@@ -82,13 +125,15 @@ function fateOptionView(o,pd){
   if(o.special==="dump"){
     const d=fateDumpTotal(o);extra={text:d.n>0?`+${mny(d.total)} · ${d.n}×`:_fL("není co prodat","nothing to sell")};
     if(!d.n){ok=false;why=_fL("není co prodat","nothing to sell");}
-    else if(MARKET_CLOSED[G.round]){ok=false;why=_fL("trh je zavřený","the market is closed");}
+    else if(marketClosedNow()){ok=false;why=_fL("trh je zavřený","the market is closed");}
   }
   if(o.special==="hold"){
     const f=_fFairAhead(o.fairWithin);
     if(f===null){ok=false;why=_fL("jarmark není do 3 měsíců","no fair within 3 months");}
     else extra={text:`${_fL("jarmark","fair")}: ${(G.lang==="cs"?MONTHS_CS:MONTHS_EN)[f]}`};
   }
+  const rm=o.rewardMult||(o.risk&&o.risk.hit&&o.risk.hit.rewardMult);
+  if(rm){const pv=fateElbePreview(rm);extra=extra||{text:`🏙️ ${pv.n}× · −${mny(pv.lost)}`};}
   return{id:o.id,label:_fL(o.cs,o.en),desc:_fL(o.dcs,o.den),cost,costParts:parts,risk,extra,ok,why};
 }
 function fatePendingView(){
@@ -111,6 +156,7 @@ function fateChoose(id){
   // 2. okamžitá nálada, doznívající efekty
   if(o.morale){G.morale=clamp(G.morale+o.morale,0,100);notes.push(`😟 ${o.morale}`);}
   for(const[kk,val,months]of(o.fx||[]))G.fate.fx.push({k:kk,v:val,from:at,to:at+months-1});
+  if(o.rewardMult){const e=fateElbeApply(o.rewardMult);notes.push(`🏙️ ${e.n}× −${mny(e.lost)}`);}
   // 3. zvláštní volby přesycení
   if(o.special==="dump"){
     const d=fateDumpTotal(o),prices=marketSalePrices();
@@ -136,12 +182,14 @@ function fateChoose(id){
       if(h.woodPct){const lost=Math.round(G.res.wood*h.woodPct/100);G.res.wood-=lost;hn.push(`−${lost} 🌳`);}
       if(h.zl){const lost=Math.min(G.grose,_fScale(h.zl)*KR);G.grose-=lost;hn.push("−"+mny(lost));}
       if(h.morale){G.morale=clamp(G.morale+h.morale,0,100);hn.push(`😟 ${h.morale}`);}
+      if(h.rewardMult){const e=fateElbeApply(h.rewardMult);hn.push(`🏙️ ${e.n}× −${mny(e.lost)}`);}
       notes.push((pd.kind==="fire"?"🔥 ":"⚠️ ")+_fL("stalo se","it happened")+": "+hn.join(", "));
     }else if(p>0)notes.push(_fL("tentokrát to prošlo","you got away with it"));
   }
   G.fate.hist=[...(G.fate.hist||[]),{season:pd.season,round:pd.round,kind:pd.kind,opt:id,hit}].slice(-24);
   G.fate.pending=null;
   G.log.push(`__EVT__${k.icon} ${_fL(k.cs,k.en)}: ${name}${notes.length?" ("+notes.join(" · ")+")":""}`);
+  if(pd.kind==="army")fateArmyRumour(pd);
   if(typeof autoSave==="function")autoSave();
   Fx.render();
   return true;
@@ -156,6 +204,9 @@ function fateSanitize(f){
   const p=f.pending;
   if(p&&typeof p==="object"&&typeof p.kind==="string"&&FATE.kinds[p.kind]&&Number.isSafeInteger(p.season)&&Number.isSafeInteger(p.round))out.pending={kind:p.kind,season:p.season,round:p.round};
   out.done=Number.isSafeInteger(f.done)&&f.done>0?f.done:0;
+  out.plagueSeason=Number.isSafeInteger(f.plagueSeason)&&f.plagueSeason>0?f.plagueSeason:0;
+  const pl=f.plague;
+  if(pl&&typeof pl==="object"&&Number.isSafeInteger(pl.season)&&Number.isSafeInteger(pl.round)&&pl.round>=0&&pl.round<=11)out.plague={season:pl.season,round:pl.round,src:pl.src==="heat"?"heat":"army"};
   if(Array.isArray(f.hist))out.hist=f.hist.filter(e=>e&&typeof e==="object"&&typeof e.kind==="string"&&typeof e.opt==="string"&&Number.isSafeInteger(e.season)&&Number.isSafeInteger(e.round)).slice(-24).map(e=>({season:e.season,round:e.round,kind:e.kind,opt:e.opt,hit:e.hit===true?true:e.hit===false?false:null}));
   return out;
 }

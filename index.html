@@ -1645,6 +1645,10 @@ const ECON2={
 // Volba: cost {zl,wood,food} · morale (okamžitě) · fx [[klíč,hodnota,měsíců]] (doznívá v G.fate.fx; „měsíců“ počítá i tento) · risk {p,pStorm,hit{woodPct,zl,morale}} — jedno hození na událost.
 const FATE={
   firstSeason:2, rounds:[2,9], weatherShare:0.65, growth:0.15, easyMult:0.7, glutMin:12,
+  // W3: mor je druhá, řetězená událost (nezabírá běžný slot; max. 1 za sezónu). Z vojska: šance armyP, za armyDelay[0..1] měsíců, nejpozději lastRound;
+  // z horka: od kola heat.from do heat.to, jakmile jsou ≥ heat.minMonths měsíce sucha/bouře, v prvním takovém měsíci šance heat.p. Zavřený trh = měsíc události + další (closeMonths).
+  plague:{armyP:0.40,armyDelay:[1,3],lastRound:11,heat:{from:6,to:10,minMonths:2,p:0.30},closeMonths:2},
+  elbeMinRound:5, elbeBuyer:"Hoffmann",
   kinds:{
     frost:{icon:"❄️",cs:"Mrazy",en:"Hard frost",
       dcs:"Tuhý mráz leží na hvozdu i v chatrčích. Čím se zahřejete?",den:"A hard frost lies over the forest and the huts. How do you keep warm?",
@@ -1675,7 +1679,18 @@ const FATE={
       opts:[
         {id:"dump",cs:"Prodat celý sklad",en:"Sell the whole stock",dcs:"Za 70 % ceny hned (Easy ×1,2).",den:"At 70 % of price now (Easy ×1.2).",special:"dump",rate:0.70},
         {id:"wait",cs:"Počkat",en:"Wait it out",dcs:"Ceny −8 % na 2 měsíce.",den:"Prices −8 % for 2 months.",cost:{},fx:[["priceMult",0.92,2]]},
-        {id:"hold",cs:"Držet do jarmarku",en:"Hold for the fair",dcs:"−15 % kusů se rozbije, do jarmarku ceny −25 %.",den:"−15 % of pieces break, prices −25 % until the fair.",cost:{},special:"hold",breakPct:0.15,priceMult:0.75,fairWithin:3}]}
+        {id:"hold",cs:"Držet do jarmarku",en:"Hold for the fair",dcs:"−15 % kusů se rozbije, do jarmarku ceny −25 %.",den:"−15 % of pieces break, prices −25 % until the fair.",cost:{},special:"hold",breakPct:0.15,priceMult:0.75,fairWithin:3}]},
+    elbe:{icon:"🚢",cs:"Zákaz plavby po Labi",en:"Elbe shipping ban",
+      dcs:"Vrchnost zakázala plavbu po Labi. Hoffmannův křišťál musí jinou cestou.",den:"The authorities banned shipping on the Elbe. Hoffmann's crystal needs another route.",
+      opts:[
+        {id:"permit",cs:"Povolení",en:"Buy a permit",dcs:"Zakázky Hoffmanna beze změny.",den:"Hoffmann's contracts unchanged.",cost:{zl:16}},
+        {id:"land",cs:"Po souši",en:"Overland",dcs:"Odměny otevřených zakázek Hoffmanna −20 %.",den:"Rewards of open Hoffmann contracts −20 %.",cost:{},rewardMult:0.8},
+        {id:"smuggle",cs:"Propašovat",en:"Smuggle it",dcs:"Při chycení −22 zl a odměny Hoffmanna −20 %.",den:"If caught −22 zl and Hoffmann rewards −20 %.",cost:{},risk:{p:0.35,hit:{zl:22,rewardMult:0.8}}}]},
+    plague:{icon:"🦠",cs:"Mor v kraji",en:"Plague in the region",
+      dcs:"Vrchnost zavřela hranice a trhy. Nikdo nepřijede a nikdo nesmí cestovat; huť to ale nepostihla.",den:"The authorities closed the borders and markets. Nobody arrives and nobody may travel; the hut itself is spared.",
+      opts:[
+        {id:"sell",cs:"Prodat zásoby",en:"Sell the stock",dcs:"Sklad za 80 % ceny hned, nálada −3. Trh pak 2 měsíce zavřený.",den:"The stock at 80 % of price now, morale −3. Then the market is closed for 2 months.",special:"dump",rate:0.80,noEasy:true,morale:-3,fx:[["marketClosed",true,2]]},
+        {id:"wait",cs:"Počkat",en:"Wait it out",dcs:"Nálada −3. Trh 2 měsíce zavřený.",den:"Morale −3. The market is closed for 2 months.",cost:{},morale:-3,fx:[["marketClosed",true,2]]}]}
   }
 };
 // crew.js — professions, traits, NPC roster/bonds/bios/assessments, tasks.
@@ -3917,13 +3932,25 @@ function wxEffectLines(fx){
   }
   return out;
 }
+
+// Trh zavřený: kalendář (MARKET_CLOSED) nebo mor (fx marketClosed z osudové události W3). Platí pro prodej, rychlý výkup i jarmark.
+function marketClosedNow(round){
+  round=round===undefined?G.round:round;
+  return !!MARKET_CLOSED[round]||(!!econ2()&&wxFx(G.season,round).marketClosed);
+}
+function marketPlagueClosed(round){round=round===undefined?G.round:round;return!MARKET_CLOSED[round]&&marketClosedNow(round);}
+function marketClosedText(round){
+  round=round===undefined?G.round:round;
+  if(marketPlagueClosed(round))return G.lang==="cs"?"🦠 Mor v kraji — vrchnost zavřela trhy a zakázala cestování. Prodávat nelze.":"🦠 Plague in the region — the authorities closed the markets and banned travel. No selling.";
+  const md=MONTH_DATA[round]||MONTH_DATA[0];return G.lang==="cs"?md.trh_cs:md.trh_en;
+}
 // fate.js — W2: události s volbou (Android W2). Jen nová ekonomika (G._econ===2), od sezóny FATE.firstSeason, jedna za sezónu v kolech FATE.rounds.
 // Stav: G.fate={fx:[{k,v,from,to}], pending:{kind,season,round}|null, done:sezóna poslední události, hist:[{season,round,kind,opt,hit}]}.
 // Měsíc, druh a šance se losují z proudu (wSeed, sezóna, měsíc) — ne z hlavního RNG; načtení savu výsledek nezmění. Jedno hození na událost
 // (stejné u všech voleb), takže nižší riziko nikdy nedopadne hůř než vyšší ve stejném světě. Doznívající efekty čte wxFx (weather.js).
 // Dokud událost čeká (pending), processRound se nespustí (gate na začátku processRound).
 
-function fateInit(){return{fx:[],pending:null,done:0,hist:[]};}
+function fateInit(){return{fx:[],pending:null,done:0,hist:[],plague:null,plagueSeason:0};}
 function fatePending(){return!!(econ2()&&G.fate&&G.fate.pending);}
 function _fL(cs,en){return G.lang==="cs"?cs:en;}
 function fateMult(){return(G.difficulty==="easy"?FATE.easyMult:1)*(1+FATE.growth*Math.max(0,(G.season||1)-FATE.firstSeason));}
@@ -3952,21 +3979,63 @@ function fateKindFor(season,round){
   if(wk==="dry"||wk==="storm")return"fire";
   const pool=["forest"];
   if(round>=5)pool.push("army");
+  if(round>=FATE.elbeMinRound&&fateElbeContracts().length>0)pool.push("elbe");
   if(round>=5&&fateGoods().length>=FATE.glutMin)pool.push("glut");
   return pool[Math.min(pool.length-1,Math.floor(wxU(G.wSeed,5,season,round,0)*pool.length))];
 }
+// Otevřené zakázky Hoffmanna (jen ty se Labem přepisují); zakázky se zálohou jsou Reichelovy, takže sem nepatří
+function fateElbeContracts(){return(G.contracts||[]).filter(c=>c&&c.buyer===FATE.elbeBuyer&&!c.adv);}
+function fateElbeApply(mult){
+  const list=fateElbeContracts();let lost=0;
+  for(const c of list){const nr=Math.max(KR,Math.round(c.reward*mult/KR)*KR);lost+=Math.max(0,c.reward-nr);c.reward=nr;}
+  return{n:list.length,lost};
+}
+function fateElbePreview(mult){let lost=0;const l=fateElbeContracts();for(const c of l)lost+=Math.max(0,c.reward-Math.max(KR,Math.round(c.reward*mult/KR)*KR));return{n:l.length,lost};}
+
+// Mor (W3): naplánuje se z vojska (po rozhodnutí) nebo z horka; max. jeden za sezónu, nezabírá běžný slot
+function fatePlagueSchedule(round,src){
+  G.fate.plague={season:G.season,round,src};G.fate.plagueSeason=G.season;
+}
+function fateArmyRumour(pd){
+  const P=FATE.plague;
+  if(G.fate.plagueSeason===pd.season||!(wxU(G.wSeed,7,pd.season,pd.round,0)<P.armyP))return;
+  const d=P.armyDelay[0]+Math.floor(wxU(G.wSeed,7,pd.season,pd.round,1)*(P.armyDelay[1]-P.armyDelay[0]+1));
+  fatePlagueSchedule(Math.min(P.lastRound,pd.round+d),"army");
+  G.log.push(`__EVT__📣 ${_fL("Vojáci roznášejí zvěsti o moru v sousedním kraji…","Soldiers spread rumours of plague in the next district…")}`);
+}
+// Z horka: v kolech heat.from..heat.to, v prvním měsíci, kdy se nasbírají ≥ minMonths měsíce sucha/bouře, jeden los
+function fateHeatPlague(){
+  const P=FATE.plague.heat,s=G.season,r=G.round;
+  if(r<P.from||r>P.to||G.fate.plagueSeason===s)return false;
+  const hot=rr=>{const k=weatherKind(s,rr);return k==="dry"||k==="storm";};
+  let cnt=0;for(let q=P.from;q<=r;q++)if(hot(q))cnt++;
+  if(!hot(r)||cnt!==P.minMonths)return false;   // „první takový měsíc“ = měsíc, kdy počet dosáhne minMonths
+  return wxU(G.wSeed,6,s,r,0)<P.p;
+}
+
 // Volá se na konci processRound (G.round je už nové kolo): uklidí doznělé efekty a případně založí čekající událost
 function fateOnRound(){
   if(!econ2())return;
   if(!G.fate)G.fate=fateInit();
-  const at=wxAbs(G.season,G.round);
+  const at=wxAbs(G.season,G.round),S=G.season,r=G.round;
   G.fate.fx=G.fate.fx.filter(e=>e.to>=at);
-  if(G.fate.pending||G.fate.done===G.season||G.season<FATE.firstSeason)return;
-  if(G.round<FATE.rounds[0]||G.round>FATE.rounds[1]||G.round!==fateMonth(G.season))return;
-  const kind=fateKindFor(G.season,G.round);
-  G.fate.pending={kind,season:G.season,round:G.round};G.fate.done=G.season;
-  const k=FATE.kinds[kind];
-  G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+  if(G.fate.plague&&G.fate.plague.season!==S)G.fate.plague=null;   // nespuštěný mor z minulé sezóny propadá
+  if(S<FATE.firstSeason||G.fate.pending)return;
+  if(!G.fate.plague&&fateHeatPlague())fatePlagueSchedule(r,"heat");   // los z horka proběhne vždy (i v měsíci běžné události; mor pak čeká na další měsíc)
+  const reg=G.fate.done!==S&&r>=FATE.rounds[0]&&r<=FATE.rounds[1]&&r===fateMonth(S);
+  if(reg){
+    const kind=fateKindFor(S,r);
+    G.fate.pending={kind,season:S,round:r};G.fate.done=S;
+    const k=FATE.kinds[kind];
+    G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+    return;   // případný mor čeká na další měsíc (druhá událost nikdy ve stejném měsíci)
+  }
+  const pl=G.fate.plague;
+  if(pl&&pl.season===S&&r>=pl.round&&r<=FATE.plague.lastRound){
+    G.fate.pending={kind:"plague",season:S,round:r};G.fate.plague=null;
+    const k=FATE.kinds.plague;
+    G.log.push(`__EVT__⚠️ ${k.icon} ${_fL(k.cs,k.en)} — ${_fL("rozhodni na Přehledu","decide on the Overview")}`);
+  }
 }
 
 function _fRiskP(o){return o.risk?(weatherKind(G.season,G.round)==="storm"&&o.risk.pStorm!==undefined?o.risk.pStorm:o.risk.p):null;}
@@ -3977,7 +4046,7 @@ function _fFairAhead(within){
   return null;
 }
 function fateDumpTotal(o){
-  const rate=o.rate*(G.difficulty==="easy"?1.2:1),prices=marketSalePrices();
+  const rate=o.rate*(G.difficulty==="easy"&&!o.noEasy?1.2:1),prices=marketSalePrices();
   let total=0,n=0;
   for(const g of fateGoods()){total+=Math.max(KR,Math.round(g.q*inZl(prices[g.type]||350)*rate)*KR);n++;}
   return{total,n,rate};
@@ -3987,6 +4056,7 @@ function _fHitParts(h){
   if(h.woodPct)out.push(`−${h.woodPct} % 🌳`);
   if(h.zl)out.push(`−${_fScale(h.zl)} zl`);
   if(h.morale)out.push(`😟 ${h.morale}`);
+  if(h.rewardMult)out.push(`🏙️ ${_fL("odměny","rewards")} −${Math.round((1-h.rewardMult)*100)} %`);
   return out.join(", ");
 }
 // Pohled jedné volby pro UI: {id,label,desc,cost,costParts,risk:{p,hit},ok,why}
@@ -4001,13 +4071,15 @@ function fateOptionView(o,pd){
   if(o.special==="dump"){
     const d=fateDumpTotal(o);extra={text:d.n>0?`+${mny(d.total)} · ${d.n}×`:_fL("není co prodat","nothing to sell")};
     if(!d.n){ok=false;why=_fL("není co prodat","nothing to sell");}
-    else if(MARKET_CLOSED[G.round]){ok=false;why=_fL("trh je zavřený","the market is closed");}
+    else if(marketClosedNow()){ok=false;why=_fL("trh je zavřený","the market is closed");}
   }
   if(o.special==="hold"){
     const f=_fFairAhead(o.fairWithin);
     if(f===null){ok=false;why=_fL("jarmark není do 3 měsíců","no fair within 3 months");}
     else extra={text:`${_fL("jarmark","fair")}: ${(G.lang==="cs"?MONTHS_CS:MONTHS_EN)[f]}`};
   }
+  const rm=o.rewardMult||(o.risk&&o.risk.hit&&o.risk.hit.rewardMult);
+  if(rm){const pv=fateElbePreview(rm);extra=extra||{text:`🏙️ ${pv.n}× · −${mny(pv.lost)}`};}
   return{id:o.id,label:_fL(o.cs,o.en),desc:_fL(o.dcs,o.den),cost,costParts:parts,risk,extra,ok,why};
 }
 function fatePendingView(){
@@ -4030,6 +4102,7 @@ function fateChoose(id){
   // 2. okamžitá nálada, doznívající efekty
   if(o.morale){G.morale=clamp(G.morale+o.morale,0,100);notes.push(`😟 ${o.morale}`);}
   for(const[kk,val,months]of(o.fx||[]))G.fate.fx.push({k:kk,v:val,from:at,to:at+months-1});
+  if(o.rewardMult){const e=fateElbeApply(o.rewardMult);notes.push(`🏙️ ${e.n}× −${mny(e.lost)}`);}
   // 3. zvláštní volby přesycení
   if(o.special==="dump"){
     const d=fateDumpTotal(o),prices=marketSalePrices();
@@ -4055,12 +4128,14 @@ function fateChoose(id){
       if(h.woodPct){const lost=Math.round(G.res.wood*h.woodPct/100);G.res.wood-=lost;hn.push(`−${lost} 🌳`);}
       if(h.zl){const lost=Math.min(G.grose,_fScale(h.zl)*KR);G.grose-=lost;hn.push("−"+mny(lost));}
       if(h.morale){G.morale=clamp(G.morale+h.morale,0,100);hn.push(`😟 ${h.morale}`);}
+      if(h.rewardMult){const e=fateElbeApply(h.rewardMult);hn.push(`🏙️ ${e.n}× −${mny(e.lost)}`);}
       notes.push((pd.kind==="fire"?"🔥 ":"⚠️ ")+_fL("stalo se","it happened")+": "+hn.join(", "));
     }else if(p>0)notes.push(_fL("tentokrát to prošlo","you got away with it"));
   }
   G.fate.hist=[...(G.fate.hist||[]),{season:pd.season,round:pd.round,kind:pd.kind,opt:id,hit}].slice(-24);
   G.fate.pending=null;
   G.log.push(`__EVT__${k.icon} ${_fL(k.cs,k.en)}: ${name}${notes.length?" ("+notes.join(" · ")+")":""}`);
+  if(pd.kind==="army")fateArmyRumour(pd);
   if(typeof autoSave==="function")autoSave();
   Fx.render();
   return true;
@@ -4075,6 +4150,9 @@ function fateSanitize(f){
   const p=f.pending;
   if(p&&typeof p==="object"&&typeof p.kind==="string"&&FATE.kinds[p.kind]&&Number.isSafeInteger(p.season)&&Number.isSafeInteger(p.round))out.pending={kind:p.kind,season:p.season,round:p.round};
   out.done=Number.isSafeInteger(f.done)&&f.done>0?f.done:0;
+  out.plagueSeason=Number.isSafeInteger(f.plagueSeason)&&f.plagueSeason>0?f.plagueSeason:0;
+  const pl=f.plague;
+  if(pl&&typeof pl==="object"&&Number.isSafeInteger(pl.season)&&Number.isSafeInteger(pl.round)&&pl.round>=0&&pl.round<=11)out.plague={season:pl.season,round:pl.round,src:pl.src==="heat"?"heat":"army"};
   if(Array.isArray(f.hist))out.hist=f.hist.filter(e=>e&&typeof e==="object"&&typeof e.kind==="string"&&typeof e.opt==="string"&&Number.isSafeInteger(e.season)&&Number.isSafeInteger(e.round)).slice(-24).map(e=>({season:e.season,round:e.round,kind:e.kind,opt:e.opt,hit:e.hit===true?true:e.hit===false?false:null}));
   return out;
 }
@@ -7045,9 +7123,8 @@ function chronShow(entry){
 }
 function sellItems(type,n){
   if(!G[type].length)return;
-  const md=MONTH_DATA[G.round];
-  if(MARKET_CLOSED[G.round]){
-    G.log.push(`__EVT__⛔ ${G.lang==="cs"?md.trh_cs:md.trh_en}`);
+  if(marketClosedNow()){
+    G.log.push(`__EVT__⛔ ${marketClosedText()}`);
     Fx.render(); return;
   }
   const {count:cnt,total,rest}=marketSaleQuote(type,n);
@@ -7687,6 +7764,7 @@ function quickSellQuote(){
 function quickSellAll(){
   const L=G.lang;
   if(G.quickSellUsed)return;   // UI gate
+  if(marketPlagueClosed()){G.log.push(`__EVT__⛔ ${marketClosedText()}`);Fx.render();return;}   // W3: za moru Weiss nepřijede (kalendářní zavření výkup nikdy neblokovalo)
   const {rate:qsRate,ratePct:qsRatePct,count:qsCount,basePrices:basePricesQS}=quickSellQuote();
   if(qsCount===0) return;
   let earned=0;
@@ -10428,7 +10506,7 @@ function render(){
   if(window.FajrumRecipeUI)FajrumRecipeUI.finish(app,G);
   if(window.FajrumCrew)FajrumCrew.finish(app,G,{taskOptions:workerTaskOptions,assign:setWorkerTask,taskBlock,taskBlockClick,activeWarn:taskActiveWarn,profile:id=>{G._partaDetail=id;G._partaSubtab="profil";G.tab="parta";render();}});
   if(window.FajrumMarket)FajrumMarket.finish(app,G,{quote:marketSaleQuote,prices:marketSalePrices,sell:sellItems,lines:contractLines,status:contractStatus});
-  if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:!!MARKET_CLOSED[G.round],stockKeys:Object.keys(marketSalePrices())});
+  if(window.FajrumVisuals)FajrumVisuals.finish(app,G,{prep:isPrepMonth(G.round,G.seasonTier||0),marketClosed:marketClosedNow(),stockKeys:Object.keys(marketSalePrices())});
   if(window.FajrumPortraits)FajrumPortraits.finish(app,G);
   if(window.FajrumWorksites)FajrumWorksites.finish(app,G);
   if(window.FajrumArt?.finish)FajrumArt.finish(app,G);
@@ -12281,8 +12359,8 @@ function renderSeasonPanel(ctx){
         h("div",{class:"season-phase"},L==="cs"?md.phase_cs:md.phase_en),
         h("div",{class:"season-priority"},L==="cs"?md.priority_cs:md.priority_en))),
     h("div",{class:"season-tip"},L==="cs"?md.tip_cs:md.tip_en),
-    h("div",{class:"season-trh",style:{color:MARKET_CLOSED[p.round]?"#a03020":"#4a7a3a"}},
-      L==="cs"?md.trh_cs:md.trh_en));
+    h("div",{class:"season-trh",style:{color:marketClosedNow(p.round)?"#a03020":"#4a7a3a"}},
+      marketClosedText(p.round)));
   // SitRep pod season info
   if(sitRep.length>0){
     const srDiv=h("div",{style:{marginTop:"5px",paddingTop:"5px",borderTop:"1px solid rgba(42,26,10,.08)"}});
@@ -13768,7 +13846,7 @@ function renderTabMarket(ctx){
   const {p,L,content}=ctx;
   {const sb=subTabBar("market",{contracts:(p.avail||[]).length});if(sb)content.append(sb);}
   const md2=MONTH_DATA[p.round]||MONTH_DATA[0];
-  const closed=MARKET_CLOSED[p.round];
+  const closed=marketClosedNow(p.round), plagueNow=marketPlagueClosed(p.round);
   // Stav trhu — vždy nahoře
   const trhStatus=h("div",{class:"sec fj-market-status"});
   trhStatus.append(h("div",{class:"fj-market-open","data-closed":String(!!closed),style:{
@@ -13776,14 +13854,14 @@ function renderTabMarket(ctx){
     background:closed?"rgba(160,48,32,.08)":"rgba(74,122,58,.08)",
     border:`1px solid ${closed?"rgba(160,48,32,.2)":"rgba(74,122,58,.2)"}`,
     fontSize:"12px",color:closed?"#a03020":"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
-    L==="cs"?md2.trh_cs:md2.trh_en));
+    marketClosedText(p.round)));
   const sSec2=h("div",{class:"sec fj-market-section","data-market-section":"sell",id:"fj-market-sell"});
   sSec2.append(h("div",{class:"sec-title"},"💰 "+(L==="cs"?"Prodej":"Sell")));
   if(p.mBonus)sSec2.append(h("div",{style:{fontSize:"11px",color:"#c9952b",marginBottom:"4px"}},"🗣️ "+( L==="cs"?"Kupec Weiss přijel — ceny ×1.5!":"Merchant Weiss arrived — prices ×1.5!")));
   {const fi=econ2FairInfo();
-    if(fi&&fi.on)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
+    if(fi&&fi.on&&!closed)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"on",style:{fontSize:"11px",color:"#c9952b",fontWeight:"600",marginBottom:"4px"}},
       "🎪 "+(L==="cs"?`Jarmark — prodejní ceny ×${String(fi.mult).replace(".",",")}`+(p.mBonus?" (s Weissem platí vyšší, ceny se neskládají)":"")+"!":`Fair — sale prices ×${fi.mult}`+(p.mBonus?" (Weiss's higher bonus applies, no stacking)":"")+"!")));
-    else if(fi&&fi.soon)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
+    else if(fi&&fi.soon&&!closed)sSec2.append(h("div",{class:"fj-fair-banner","data-fair":"soon",style:{fontSize:"10px",color:"#8b5e34",fontStyle:"italic",marginBottom:"4px"}},
       "🎪 "+(L==="cs"?"Příští měsíc jarmark — zvaž, co prodáš hned a co necháš na jarmark.":"Fair next month — consider what to sell now and what to hold for the fair.")));}
   if(closed){
     sSec2.append(h("div",{class:"fj-sale-closed",style:{fontSize:"11px",color:"#a03020",fontStyle:"italic"}},
@@ -13978,10 +14056,10 @@ function renderTabMarket(ctx){
         h("div",{style:{fontSize:"11px",color:"#4a7a3a",marginBottom:"6px",fontWeight:"600"}},
           (L==="cs"?"Na skladě: ":"In stock: ")+qsCount+(L==="cs"?" kusů → ":"  pcs → ")+mny(qsTotal)+` (${qsRatePct}%)`),
         h("button",{
-          class:"btn btn-s fj-market-buyout"+(qsCount>0?" btn-active":""),...(qsCount>0?{}:{disabled:true}),
-          style:{opacity:qsCount>0?1:0.4,cursor:qsCount>0?"pointer":"default",width:"100%"},
+          class:"btn btn-s fj-market-buyout"+(qsCount>0&&!plagueNow?" btn-active":""),...(qsCount>0&&!plagueNow?{}:{disabled:true}),
+          style:{opacity:qsCount>0&&!plagueNow?1:0.4,cursor:qsCount>0&&!plagueNow?"pointer":"default",width:"100%"},
           onClick:()=>{
-            if(qsCount===0) return;
+            if(qsCount===0||plagueNow) return;
             quickSellAll();
           }},
           L==="cs"?`🐴 Prodat vše Weissovi (${qsRatePct}%)`:`🐴 Sell all to Weiss (${qsRatePct}%)`)
