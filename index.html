@@ -4781,8 +4781,14 @@ function _gSurplus(w){
 }
 // dělník, kterého lze přeřadit na [task], aniž by trpěl úkol, který je jediný svého druhu:
 // nejdřív odpočívající, pak zbytečná nebo přebytečná práce, pak sázeč, pak zdvojený úkol
+// Chráněný dělník: odebráním by vznikl krok „forest_low“, který by mu hned vzal zpět jiného (field ↔ forest_low); sázeče CTA jiného kroku nebere.
+//  chráněn je jen sázeč: „forest_low“ se ukazuje při lese ≤ 30 % a nikom na výsadbě. (Chránit i políčko zhoršilo měření průvodce na Normalu — viz DEVELOPING.)
+function _gGuarded(x,task){
+  if(x.task==="reforest"&&task!=="reforest"&&_gForestMax()>0&&G.forest<=_gForestMax()*0.3&&_gOnTask("reforest")<=1)return true;
+  return false;
+}
 function _gFreeWorkerFor(task){
-  const w=_gWs().filter(x=>x.task!==task);
+  const w=_gWs().filter(x=>x.task!==task&&!_gGuarded(x,task));
   const groups=new Map();w.forEach(x=>{if(!groups.has(x.task))groups.set(x.task,[]);groups.get(x.task).push(x);});
   const dup=[...groups.values()].find(g=>g.length>1);
   return w.find(x=>x.task==="idle")||w.find(_gWasted)||w.find(_gSurplus)||w.find(x=>x.task==="reforest")||(dup?dup[dup.length-1]:null)||null;

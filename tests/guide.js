@@ -38,7 +38,58 @@ function run(diff, seed, withGuide) {
   const G = A.G;
   return { season: G.season, phase: G.phase, tier: G.seasonTier || 0, grose: G.grose, loans, used, pureErr };
 }
-let bad = 0;
+// ── no ping-pong: "field" (food low) and "forest_low" (forest ≤ 30 %) must not keep taking each other's worker ──
+// State: 5 workers on distinct useful tasks, one on field, one on reforest, food 0, forest 20 %, round with field yield. Following the card
+// without advancing the month must reach a state where no enabled CTA remains (or the same CTA never returns to a state seen before).
+function pingPong(forestLow) {
+  const e = load({ seed: 3 }); const A = e.api;
+  apply(e, { t: 'newGame', difficulty: 'easy', huteName: 't' });
+  const G = A.G; G.phase = 'playing'; G.curEvt = null; G.season = 1; G.round = 5; G.seasonTier = 0; G.grose = 50000;
+  G.guide.on = true; G.guide.snooze = {}; G.guide.done = Object.keys(A.get('GUIDE_STEPS')).filter(id => id !== 'field' && id !== 'forest_low');
+  const tasks = ['field', 'reforest', 'logging', 'quarry', 'water'];
+  G.workers.forEach((w, i) => { w.task = tasks[i % tasks.length]; });
+  G.res.food = 0; G.res.wood = 60; G.res.sand = 40; G.res.limestone = 20; G.res.water = 30;
+  G.forestMax = 40; G.forest = forestLow ? 8 : 40;
+  const seen = new Set(), trail = []; let cycle = false, n = 0;
+  for (; n < 30; n++) {
+    const g = A.call('guideView'); if (!g || !g.ctaEnabled) break;
+    const key = g.id + '|' + G.workers.map(w => w.task).join(',');
+    if (seen.has(key)) { cycle = true; break; } seen.add(key); trail.push(g.id);
+    apply(e, { t: 'guideDo', id: g.id });
+  }
+  return { cycle, n, trail, tasks: G.workers.map(w => w.task), forestLow, reforest: G.workers.filter(w => w.task === 'reforest').length, field: G.workers.filter(w => w.task === 'field').length };
+}
+let pp = 0;
+for (const fl of [true, false]) {
+  const r = pingPong(fl);
+  const okPP = !r.cycle && r.n < 30 && (!fl || r.reforest >= 1);   // low forest: the reforest worker stays; the field step must not take him
+  console.log(`ping-pong (forest ${fl ? 'low' : 'ok'}): ${okPP ? 'OK' : 'FAIL'} steps=${r.n} trail=${r.trail.join('>')} field=${r.field} reforest=${r.reforest}`);
+  if (!okPP) pp++;
+}
+// fuzz: random task layouts, forest and food levels — following the card never revisits a state
+{
+  let seed = 12345; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  let cyc = 0, runs = 0;
+  for (let i = 0; i < 300; i++) {
+    const e = load({ seed: 3 }); const A = e.api; apply(e, { t: 'newGame', difficulty: 'easy', huteName: 't' });
+    const G = A.G; G.phase = 'playing'; G.curEvt = null; G.season = 1; G.round = 4 + Math.floor(rnd() * 6); G.grose = 50000;
+    G.guide.on = true; G.guide.snooze = {}; G.guide.done = Object.keys(A.get('GUIDE_STEPS')).filter(id => id !== 'field' && id !== 'forest_low');
+    const T = ['field', 'reforest', 'logging', 'quarry', 'water', 'potash', 'idle', 'clay'];
+    G.workers.forEach(w => { w.task = T[Math.floor(rnd() * T.length)]; });
+    G.res.food = Math.floor(rnd() * 6); G.res.wood = 20 + Math.floor(rnd() * 100); G.res.sand = 20 + Math.floor(rnd() * 60); G.res.limestone = 10 + Math.floor(rnd() * 30); G.res.water = 10 + Math.floor(rnd() * 50);
+    G.forestMax = 40; G.forest = Math.floor(rnd() * 41);
+    const seen = new Set(); runs++;
+    for (let n = 0; n < 30; n++) {
+      const g = A.call('guideView'); if (!g || !g.ctaEnabled) break;
+      const key = g.id + '|' + G.workers.map(w => w.task).join(',');
+      if (seen.has(key)) { cyc++; break; } seen.add(key);
+      apply(e, { t: 'guideDo', id: g.id });
+    }
+  }
+  console.log(`ping-pong fuzz: ${cyc ? 'FAIL' : 'OK'} ${cyc} cycles in ${runs} random states`);
+  if (cyc) pp++;
+}
+let bad = pp;
 for (const diff of ['easy', 'normal']) {
   let survived = 0, tier1 = 0, pure = 0, gSum = 0; const usedAll = {};
   for (let s = 1; s <= seeds; s++) {

@@ -14,7 +14,7 @@
 // Update: nový SW čeká na zprávu SKIP_WAITING (toast v index.html), žádný
 // skipWaiting při instalaci a žádný automatický reload.
 
-const CORE = 'sklarska-hut-woodland-v1.35-modulation';
+const CORE = 'sklarska-hut-woodland-v1.36-econ2-etapa9';
 const MEDIA = 'sklarska-hut-woodland-v1';
 const PREFIX = 'sklarska-hut-';
 
@@ -195,6 +195,7 @@ const MEDIA_ASSETS = [
   '/img/materials/wood.webp',
   '/img/materials/potash.webp',
   '/img/materials/sand.webp',
+  '/img/materials/forest.webp',
   '/img/products/historical-catalogue.webp',
   '/img/products/hodiny.webp',
   '/img/products/glass-atlas-alpha.webp',
