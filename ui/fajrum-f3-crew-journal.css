@@ -1,0 +1,57 @@
+/* FAJRUM F3 — desktop: kompaktní Parta a dvousloupcový Deník. Jen CSS, DOM se nemění. Mobil a <960 px beze změny. */
+@media (min-width: 960px) and (min-height: 500px) {
+
+  /* ===== Parta ===== */
+  /* nadpis a souhrnné štítky v jednom pruhu */
+  #app.desktop .content .sec.fj-c3-roster { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: start; }
+  #app.desktop .fj-c3-roster > * { grid-column: 1 / -1; min-width: 0; }
+  #app.desktop .fj-c3-roster > .fj-c3-masthead {
+    grid-area: 1 / 1 / 2 / 3; padding: 9px 18px !important; grid-template-columns: 40px minmax(0, 1fr) !important; gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  #app.desktop .fj-c3-masthead-emblem { width: 40px !important; height: 40px !important; }
+  #app.desktop .fj-c3-masthead-emblem img { width: 32px !important; height: 32px !important; }
+  #app.desktop .fj-c3-masthead h2 { font-size: 21px !important; margin: 1px 0 0 !important; }
+  #app.desktop .fj-c3-masthead p { display: none; }
+  #app.desktop .fj-c3-roster > .fj-c3-summary {
+    grid-area: 1 / 2 / 2 / 3; display: flex !important; gap: 8px; margin: 0 !important; padding-right: 16px;
+    align-self: center; position: relative; top: -13px; z-index: 3;
+  }
+  #app.desktop .fj-c3-summary .parta-sum-pill {
+    padding: 4px 11px !important; font-size: 12px !important; white-space: nowrap; color: #f4e6c9 !important;
+    background: #0004 !important; border: 1px solid #b8935a88 !important; border-radius: 999px !important;
+  }
+  #app.desktop .fj-c3-roster > .fj-crew-bonds-disclosure { margin-bottom: 6px; }
+  #app.desktop .fj-c3-roster > .fj-crew-summary { padding: 4px 0 8px; font-size: 13px; }
+
+  /* karty: portrét vlevo, údaje vpravo, tlačítka dole; ~200 px místo ~375 px */
+  #app.desktop .fj-c3-roster .parta-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important; gap: 10px !important; align-items: start; }
+  #app.desktop .fj-c3-roster .parta-card.fj-c3-worker {
+    display: grid !important; grid-template-columns: 74px minmax(0, 1fr); grid-template-rows: auto auto; gap: 8px 12px; padding: 10px !important;
+  }
+  #app.desktop .fj-c3-roster .parta-portrait { width: 74px !important; height: 98px !important; grid-column: 1; grid-row: 1; }
+  #app.desktop .fj-c3-roster .parta-info { grid-column: 2; grid-row: 1; position: relative; }
+  #app.desktop .fj-c3-roster .parta-name { font-size: 15px !important; margin: 0 0 3px !important; padding-right: 22px; }
+  #app.desktop .fj-c3-roster .parta-info > div:not([class]) { position: absolute; top: 0; right: 0; line-height: 1; }
+  #app.desktop .fj-c3-roster .fj-c3-trade-level { margin-top: 2px !important; }
+  #app.desktop .fj-c3-roster .parta-bar-row { margin-top: 4px; }
+  #app.desktop .fj-c3-roster .fj-crew-current-task { margin-top: 6px; font-size: 13px; padding: 4px 8px; }
+  #app.desktop .fj-c3-roster .fj-crew-actions { grid-column: 1 / -1; grid-row: 2; gap: 8px; }
+  #app.desktop .fj-c3-roster .fj-crew-actions button { min-height: 34px; font-size: 14px; padding: 4px 10px; }
+
+  /* ===== Deník ===== */
+  #app.desktop .content .sec.fj-d5-journal {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 14px; row-gap: 12px; align-items: start; max-width: none;
+    grid-template-rows: auto auto auto auto 1fr auto;
+  }
+  #app.desktop .fj-d5-journal > * { grid-column: 1 / -1; min-width: 0; margin-top: 0 !important; margin-bottom: 0 !important; }
+  #app.desktop .fj-d5-journal > .fj-d5-title { grid-column: 1 / -1; }
+  #app.desktop .fj-d5-journal > .fj-d5-subtitle { grid-column: 1; align-self: center; }
+  #app.desktop .fj-d5-journal > .fj-d5-journal-folio { grid-column: 2; justify-self: end; align-self: center; }
+  #app.desktop .fj-d5-journal > .fj-d5-identity { grid-column: 1; grid-row: 3; }
+  #app.desktop .fj-d5-journal > .fj-d5-abilities { grid-column: 1; grid-row: 4; }
+  #app.desktop .fj-d5-journal > .fj-d5-progress { grid-column: 1; grid-row: 5; align-self: stretch; }
+  #app.desktop .fj-d5-journal > .fj-d5-timeline { grid-column: 2; grid-row: 3 / span 3; }
+  #app.desktop .fj-d5-journal > .fj-d5-stats { grid-column: 1 / -1; grid-row: 6; }
+  #app.desktop .fj-d5-journal .fj-d5-rank-row > div { min-width: 0; }
+}

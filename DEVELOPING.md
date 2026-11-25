@@ -208,7 +208,6 @@ node tests/golden.js gen out.json <seed> <easy|normal> <maxAkcí> [sezón] [care
 - **Les:** hero se syntetizuje (`img/worksites/forestry.webp`), protože záložka Les žádný nemá; KPI z `G.forest/forestMax/forest2`.
 - **Specifita:** starší pravidla (`fajrum-e1c-dialogs.css` pro production/log/archiv) mají `!important` a `:is([data-art-tab])`; F1 je přebíjí trojitou třídou `.fj-f1-head`. Odsazení hero se dorovnává proměnnými `--f1-padx/--f1-pady` (různé záložky mají `.content` padding 0/10/12 px).
 - **Test:** `F1=1 NODE_PATH=/tmp/jsd/node_modules node tests/uismoke.js` — pro všech 9 záložek: boční panel, nadpis, počet KPI, bez NaN/undefined, právě jedno záhlaví, podzáložky uvnitř hero a žádné mimo.
-- **Zatím neřešeno (další etapa):** C = Parta a Deník.
 
 ### Desktop rozvržení — F2: sbalitelný stavový pruh (jen `#app.desktop`)
 - **Co:** `.season-panel` (text měsíce, rada k palivu, pec, nálada, reputace) má tlačítko „▴ Sbalit stav / ▾ Rozbalit stav“. Sbalený stav = jeden řádek `.fj-f2-bar`: fáze měsíce, priorita (ořezaná), čipy pec / nálada / les / dluh, počet rad (💡). Na 1440×900 to uvolní ~115 px pro obsah.
@@ -217,3 +216,9 @@ node tests/golden.js gen out.json <seed> <easy|normal> <maxAkcí> [sezón] [care
 - **Úzká okna (960–1260 px):** v souhrnu se skryjí čipy eff / les / dluh, zůstane pec, nálada a rady.
 - **Hero obrázek (F1 oprava):** `<img>` v hero je `position:absolute; inset:0; object-fit:cover`, takže vyplní celý sloupec i když boční panel v úzkém okně naroste do výšky.
 - **Test:** `F1=1 … tests/uismoke.js` — přítomnost tlačítka a souhrnu, sbalení, uložení, přežití překreslení, původní blok zůstává v DOM.
+
+### Desktop rozvržení — F3: Parta a Deník (jen CSS, `ui/fajrum-f3-crew-journal.css`, jen `#app.desktop`)
+- **Parta:** masthead zmenšen na ~60 px, subtitle skryt, tři souhrnné štítky (počet, nálada, splaceno) jsou ve stejném řádku vpravo v masthead (společná buňka mřížky `grid-area:1/1/2/3`, štítky `position:relative; top:-13px` kvůli záporným okrajům masthead z `fajrum-c3-crew.css`). Karty dělníků: portrét 74×98 vlevo, údaje vpravo, tlačítka dole (~230 px místo ~375 px); mřížka `repeat(auto-fill,minmax(360px,1fr))`. Značka vazby (bezejmenný `div` s 🟢/🔴) je přesunuta do pravého horního rohu karty.
+- **Příčina původního „stohování“:** `fajrum-mobile.css:219` (`#app.desktop .parta-card{display:block}`) přebíjelo grid z `fajrum-c3-crew.css`; F3 ho přebíjí vyšší specifitou (`.parta-card.fj-c3-worker`).
+- **Deník:** `.fj-d5-journal` je dvousloupcový grid: vlevo identita, schopnosti, postup k dalšímu ranku (řádek `1fr` roztahuje postup), vpravo celá „Cesta“ (`grid-row:3 / span 3`), dole statistiky přes celou šířku. Výška klesla z ~1230 px na ~750 px.
+- **Test:** `F1=1 … tests/uismoke.js` ověřuje jen DOM struktury, na které se CSS váže (přímé děti `.fj-c3-roster`, 6 bloků `.fj-d5-journal`, karta na dělníka se 2 tlačítky); rozložení samotné se ověřuje screenshotem.

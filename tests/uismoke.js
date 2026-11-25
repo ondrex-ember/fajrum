@@ -372,6 +372,12 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
       chk(/Nálada|Morale/.test(q('.fj-f2-bar').textContent) && !/NaN|undefined/.test(q('.fj-f2-bar').textContent), 'F2: souhrn obsahuje náladu a nemá NaN');
       chk(qa('.season-panel .fj-desktop-status').length === 1, 'F2: původní blok zůstal v DOM');
       q('.fj-f2-toggle').click(); chk(!sp().classList.contains('fj-f2-folded') && ev('localStorage.getItem("fajrum_f2_fold")') === '0', 'F2: klik rozbalí a uloží');
+      // F3: Parta a Deník — DOM, na který se váže desktopové CSS, musí existovat
+      ev('G.tab="parta"; render();');
+      chk(!!q('.sec.fj-c3-roster > .fj-c3-masthead') && !!q('.sec.fj-c3-roster > .fj-c3-summary') && !!q('.fj-c3-roster > .parta-grid'), 'F3: Parta má masthead, souhrn a mřížku jako přímé děti');
+      chk(qa('.parta-card.fj-c3-worker').length === ev('G.workers.length') && qa('.parta-card.fj-c3-worker .fj-crew-actions button').length === 2 * ev('G.workers.length'), 'F3: karta na každého dělníka se 2 tlačítky');
+      ev('G.tab="hrac"; render();');
+      chk(['.fj-d5-title', '.fj-d5-identity', '.fj-d5-abilities', '.fj-d5-progress', '.fj-d5-timeline', '.fj-d5-stats'].every(s => !!q('.sec.fj-d5-journal > ' + s)), 'F3: Deník má všech 6 bloků jako přímé děti');
     }
     console.log('F1 tabs checked:', desk ? Object.keys({overview:1,furnace:1,production:1,storage:1,market:1,accounts:1,log:1,archiv:1,forest:1}).length : 0, 'KPI market:', desk ? ev('document.querySelectorAll(".fj-f1-kpi").length') : '-');
     scan('f1');
