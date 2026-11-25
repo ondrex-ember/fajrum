@@ -1,0 +1,74 @@
+/* FAJRUM F1 — jednotné záhlaví záložek (desktop). JS: ui/fajrum-f1-tabhead.js.
+   Hero obrázek zůstává ve své velikosti vlevo, vpravo je název, KPI dlaždice a podzáložky. Mobil se nemění. */
+@media (min-width: 960px) and (min-height: 500px) {
+  #app.desktop .fj-f1-merged { display: none !important; }
+
+  /* jedna společná kostra pro všechna záhlaví (zvýšená specifita kvůli starším per-tab pravidlům) */
+  #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head {
+    display: grid !important;
+    grid-template-columns: clamp(240px, 24vw, 360px) minmax(0, 1fr) !important;
+    grid-template-rows: minmax(240px, auto) !important;
+    box-sizing: border-box;
+    align-items: stretch;
+    margin: calc(10px - var(--f1-pady, 0px)) calc(10px - var(--f1-padx, 0px)) 12px !important;
+    border: 1px solid var(--fj-edge);
+    background: var(--card);
+    box-shadow: 0 5px 16px #0003, inset 0 0 0 1px #bd985333;
+    overflow: hidden;
+  }
+  #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head > :is(.fj-art-figure, .fj-section-art-figure) {
+    grid-column: 1; grid-row: 1;
+    height: auto !important; min-height: 0 !important; aspect-ratio: auto !important;
+    border: 0 !important; border-right: 1px solid var(--fj-edge) !important;
+  }
+  #app.desktop .content > .fj-f1-head.fj-f1-head > :is(.fj-art-figure, .fj-section-art-figure)::before { display: none !important; }
+  #app.desktop .content > .fj-f1-head.fj-f1-head > .fj-section-art-detail { display: none !important; }
+  #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head > .fj-f1-side { grid-column: 2; grid-row: 1; }
+
+  #app.desktop .fj-f1-side {
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 0; padding: 14px 18px 12px;
+    border-left: 1px solid var(--fj-edge);
+    background: linear-gradient(130deg, color-mix(in srgb, var(--gold) 8%, var(--card)) 0%, var(--fj-surface) 70%);
+    color: var(--ink);
+  }
+  #app.desktop .fj-f1-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  #app.desktop .fj-f1-copy { min-width: 0; }
+  #app.desktop .fj-f1-kicker {
+    display: block; font: 600 10px/1.3 Georgia, 'Palatino Linotype', serif; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--fj-muted);
+  }
+  #app.desktop .fj-f1-title { margin: 2px 0 0; font: 700 21px/1.2 Georgia, 'Palatino Linotype', serif; color: var(--ink); }
+  #app.desktop .fj-f1-sub { margin: 3px 0 0; font: italic 13px/1.35 Georgia, 'Palatino Linotype', serif; color: var(--fj-muted); }
+  #app.desktop .fj-f1-chip {
+    flex: 0 0 auto; max-width: 46%; padding: 4px 10px; border: 1px solid var(--fj-edge); border-radius: 999px;
+    background: var(--card); color: var(--ink); font-size: 12px; font-weight: 600; line-height: 1.3; text-align: center;
+  }
+  #app.desktop .fj-f1-chip[data-state="closed"] { border-color: var(--danger); color: var(--danger); }
+
+  /* KPI dlaždice */
+  #app.desktop .fj-f1-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+  #app.desktop .fj-f1-kpi {
+    min-width: 0; padding: 7px 10px 8px; border: 1px solid var(--fj-edge); border-radius: 3px;
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+  }
+  #app.desktop .fj-f1-kpi-label { display: block; font-size: 11px; line-height: 1.3; color: var(--fj-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #app.desktop .fj-f1-kpi-icon { font-style: normal; margin-right: 5px; }
+  #app.desktop .fj-f1-kpi strong { display: block; font: 700 19px/1.25 Georgia, 'Palatino Linotype', serif; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #app.desktop .fj-f1-kpi small { display: block; font-size: 11px; line-height: 1.3; color: var(--fj-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #app.desktop .fj-f1-kpi[data-tone="warn"] { border-color: var(--danger); }
+  #app.desktop .fj-f1-kpi[data-tone="warn"] strong { color: var(--danger); }
+
+  #app.desktop .fj-f1-note { margin: 0; font: italic 12px/1.4 Georgia, serif; color: var(--fj-muted); }
+  #app.desktop .fj-f1-note[data-status="short"], #app.desktop .fj-f1-note[data-status="lack"] { color: var(--danger); }
+  #app.desktop .fj-f1-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #app.desktop .fj-f1-actions .fj-art-status { font-size: 12px; }
+  #app.desktop .fj-f1-actions .fj-art-link { margin-left: auto; }
+
+  /* podzáložky vždy uvnitř záhlaví, dole */
+  #app.desktop .fj-f1-subs { margin-top: auto; }
+  #app.desktop .fj-f1-subs > :is(.detail-subtabs, .fj-sub-chips, .fj-d6-tabs) {
+    position: static !important; margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important;
+    overflow-x: auto; flex-wrap: wrap !important;
+  }
+}

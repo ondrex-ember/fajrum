@@ -333,6 +333,37 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     scan('econ2b');
     console.log('econ2b UI checks done');
   }
+  if (process.env.F1) {
+    // F1: sjednocené záhlaví záložek (desktop) — KPI dlaždice, podzáložky v hero, sloučené bloky skryté
+    const doc = w.document, chk = (c, m) => { if (!c) found.set('F1: ' + m, 1); };
+    ev('G.huteName="Test"; startGame("'+(process.env.DIFF||'normal')+'"); '+(process.env.EN?'G.lang="en"; ':''));
+    ev('Object.keys(G).filter(k=>/Pending$/.test(k)).forEach(k=>{G[k]=Array.isArray(G[k])?[]:false}); G.phase="playing"; G.curEvt=null; G.events=[]; render();');
+    const q = s => doc.querySelector(s), qa = s => [...doc.querySelectorAll(s)];
+    const desk = ev('document.getElementById("app").classList.contains("desktop")');
+    if (!desk) { console.log('F1: jsdom není v desktop režimu — přeskočeno'); }
+    else {
+      const tabs = { overview: 3, furnace: 3, production: 2, storage: 2, market: 4, accounts: 3, log: 2, archiv: 2, forest: 3 };
+      for (const t of Object.keys(tabs)) {
+        ev(`G.tab=${JSON.stringify(t)}; G._sub=G._sub||{}; render();`);
+        const h = q('.content > .fj-f1-head'), sd = h && h.querySelector('.fj-f1-side');
+        chk(!!h && !!sd, t + ': hero má boční panel');
+        if (!sd) continue;
+        chk(sd.querySelector('.fj-f1-title') && sd.querySelector('.fj-f1-title').textContent.trim().length > 1, t + ': nadpis');
+        chk(sd.querySelectorAll('.fj-f1-kpi').length >= tabs[t], t + ': KPI dlaždic ≥ ' + tabs[t] + ' (je ' + sd.querySelectorAll('.fj-f1-kpi').length + ')');
+        chk(!/NaN|undefined|Infinity|null/.test(sd.textContent), t + ': bez NaN/undefined');
+        chk(qa('.content > .fj-f1-head').length === 1, t + ': právě jedno záhlaví');
+        if (t !== 'overview' && t !== 'log') chk(!!sd.querySelector('.fj-f1-subs .detail-subtabs, .fj-f1-subs .fj-sub-chips, .fj-f1-subs .fj-d6-tabs'), t + ': podzáložky uvnitř hero');
+        chk(!q('.content > .detail-subtabs') && !q('.content > .fj-sub-chips'), t + ': žádné podzáložky mimo hero');
+      }
+      ev('G.tab="market"; G._sub={market:"sell"}; render();');
+      chk(/Tržní kniha|Market ledger/i.test(q('.fj-f1-title').textContent), 'market: název záhlaví');
+      ev('G.grose=123456; G.tab="storage"; render();');
+      chk(/1[\s\u00a0]?234|zl|fl/.test(q('.fj-f1-side').textContent), 'storage: pokladna v KPI');
+    }
+    console.log('F1 tabs checked:', desk ? Object.keys({overview:1,furnace:1,production:1,storage:1,market:1,accounts:1,log:1,archiv:1,forest:1}).length : 0, 'KPI market:', desk ? ev('document.querySelectorAll(".fj-f1-kpi").length') : '-');
+    scan('f1');
+    console.log('F1 UI checks done');
+  }
   if (process.env.GUIDE) { ev('G.tab="overview"; G.phase="playing"; render();'); const c = w.document.querySelector('.fj-guide-card'); console.log('guide card:', c ? c.textContent.replace(/\s+/g, ' ').slice(0, 300) : 'none'); }
   if (process.env.DUMP) for (const t of process.env.DUMP.split(',')) { ev(`G.phase='playing'; G.tab=${JSON.stringify(t)}; render();`); const bc = w.document.body.cloneNode(true); bc.querySelectorAll('script,style,svg,iframe').forEach(n => n.remove()); console.log('=== ' + t + '\n' + [...bc.querySelectorAll('[data-partner-card]')].map(n => n.textContent.replace(/\s+/g, ' ').slice(0, 900)).join('\n')); }
   console.log('rounds processed:', rounds, 'phase:', ev('G.phase'), 'season:', ev('G.season'));
