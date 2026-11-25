@@ -22,6 +22,11 @@
     border: 0 !important; border-right: 1px solid var(--fj-edge) !important;
   }
   #app.desktop .content > .fj-f1-head.fj-f1-head > :is(.fj-art-figure, .fj-section-art-figure)::before { display: none !important; }
+  /* obrázek vyplní celý sloupec, i když boční panel v užším okně naroste do výšky */
+  #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head > :is(.fj-art-figure, .fj-section-art-figure) { position: relative; min-height: 240px !important; }
+  #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head > :is(.fj-art-figure, .fj-section-art-figure) > img {
+    position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center !important;
+  }
   #app.desktop .content > .fj-f1-head.fj-f1-head > .fj-section-art-detail { display: none !important; }
   #app.desktop .content > .fj-f1-head.fj-f1-head.fj-f1-head > .fj-f1-side { grid-column: 2; grid-row: 1; }
 

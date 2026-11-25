@@ -29,6 +29,7 @@ function render(){
   if(window.FajrumD7)FajrumD7.finish(app,G);
   if(window.FajrumE1c)FajrumE1c.finish(app,G);
   if(window.FajrumF1)FajrumF1.finish(app,G,{inPrep:isPrepMonth(G.round,G.seasonTier||0),tempering:isTemperingMonth(G.round,G.seasonTier||0)});   // F1: jednotné záhlaví záložek (desktop)
+  if(window.FajrumF2)FajrumF2.finish(app);   // F2: sbalitelný stavový pruh (desktop)
   if(visualScroll>0){const view=app.querySelector('.content');if(view)view.scrollTop=visualScroll;}
   return result;
 }

@@ -208,4 +208,12 @@ node tests/golden.js gen out.json <seed> <easy|normal> <maxAkcí> [sezón] [care
 - **Les:** hero se syntetizuje (`img/worksites/forestry.webp`), protože záložka Les žádný nemá; KPI z `G.forest/forestMax/forest2`.
 - **Specifita:** starší pravidla (`fajrum-e1c-dialogs.css` pro production/log/archiv) mají `!important` a `:is([data-art-tab])`; F1 je přebíjí trojitou třídou `.fj-f1-head`. Odsazení hero se dorovnává proměnnými `--f1-padx/--f1-pady` (různé záložky mají `.content` padding 0/10/12 px).
 - **Test:** `F1=1 NODE_PATH=/tmp/jsd/node_modules node tests/uismoke.js` — pro všech 9 záložek: boční panel, nadpis, počet KPI, bez NaN/undefined, právě jedno záhlaví, podzáložky uvnitř hero a žádné mimo.
-- **Zatím neřešeno (další etapy):** B = sbalitelný horní blok (měsíční text, rada k palivu, pec), C = Parta a Deník.
+- **Zatím neřešeno (další etapa):** C = Parta a Deník.
+
+### Desktop rozvržení — F2: sbalitelný stavový pruh (jen `#app.desktop`)
+- **Co:** `.season-panel` (text měsíce, rada k palivu, pec, nálada, reputace) má tlačítko „▴ Sbalit stav / ▾ Rozbalit stav“. Sbalený stav = jeden řádek `.fj-f2-bar`: fáze měsíce, priorita (ořezaná), čipy pec / nálada / les / dluh, počet rad (💡). Na 1440×900 to uvolní ~115 px pro obsah.
+- **Kód:** `ui/fajrum-f2-statusfold.js` (`FajrumF2.finish(app)`, volá se v `src/ui/render.js` hned za F1) + `ui/fajrum-f2-statusfold.css`; oba v `sw.js` `CORE_ASSETS` a `src/template.html`. Původní DOM se nemění, jen se skryje (`.fj-f2-folded > .fj-desktop-status{display:none}`); souhrn se čte z už vykresleného panelu.
+- **Stav:** `localStorage['fajrum_f2_fold']` (`'1'` sbaleno / `'0'` rozbaleno). Bez uložené volby je sbaleno jen v oknech nižších než 800 px, jinak rozbaleno (nový hráč uvidí rady k měsíci). Překreslení (nový měsíc, přepnutí záložky) volbu drží.
+- **Úzká okna (960–1260 px):** v souhrnu se skryjí čipy eff / les / dluh, zůstane pec, nálada a rady.
+- **Hero obrázek (F1 oprava):** `<img>` v hero je `position:absolute; inset:0; object-fit:cover`, takže vyplní celý sloupec i když boční panel v úzkém okně naroste do výšky.
+- **Test:** `F1=1 … tests/uismoke.js` — přítomnost tlačítka a souhrnu, sbalení, uložení, přežití překreslení, původní blok zůstává v DOM.
