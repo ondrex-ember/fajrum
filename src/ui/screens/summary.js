@@ -162,6 +162,7 @@ function renderSummaryScreen(ctx){
       L==="cs"?`⚠️ Huť dluží partě na mzdách ${mny(sd.wagesDeficit)}! Roste dluh partě a klesá loajalita dělníků. Prodej sklo a vyplať mzdy (záložka Parta).`
               :`⚠️ Foundry owes the crew ${mny(sd.wagesDeficit)} in wages! Crew debt grows and loyalty drops. Sell glass and pay the wages (Crew tab).`));
   }
+  {const lr=ladderReminderNode();if(lr)debtStatusCard.append(lr);}
   ecoBox.append(debtStatusCard);
   body.append(ecoBox);
 

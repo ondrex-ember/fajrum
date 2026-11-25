@@ -1638,6 +1638,12 @@ const ECON2={
       dry:{fieldMult:0.6,fatigue:0.05},
       storm:{}
     }
+  },
+  ladder:{                            // E3: Cesta z dluhů a „Proč jsem padl“ (jen texty a váhy; žádná nová mechanika)
+    foreclose:{soft:16000,hard:18000},   // zrcadlí podmínky exekuce v processRound (dluh v kr)
+    weights:{debt:1/4000,wages:1,rent:3,hunger:1,wood:1,plague:0.5},   // pořadí příčin: „měsíc-ekvivalenty“ (dluh: 1 za každých 40 zl)
+    debtMin:6000,                     // dluh pod 60 zl (start hry má 40 zl) nepočítáme mezi příčiny pádu
+    top:3
   }
 };
 // fate.js — W2: události s volbou (Android FATE.json, jen hodnoty). Platí jen v nové ekonomice (G._econ===2) od sezóny firstSeason.
@@ -3696,7 +3702,7 @@ function _e2Round50(x){return Math.max(0,Math.round(x/_E2_HALF)*_E2_HALF);}
 // Nová hra: zapne novou ekonomiku (jen když je tabulka k dispozici)
 function econ2Init(){
   if(typeof ECON2==="undefined")return;
-  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;G.fate=fateInit();
+  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;G.fate=fateInit();G.fall=fallInit();
   // W1: osud světa (počasí, osudové události). Záměrně BEZ Math.random — pořadí RNG zůstává (klasické goldeny sdílí Android); zdrojem je čas startu.
   G.wSeed=(_wxMix(Date.now()%4294967296,7,(typeof performance!=="undefined"&&performance.now?Math.floor(performance.now()*1000):0),0,0));
 }
@@ -4155,6 +4161,62 @@ function fateSanitize(f){
   if(pl&&typeof pl==="object"&&Number.isSafeInteger(pl.season)&&Number.isSafeInteger(pl.round)&&pl.round>=0&&pl.round<=11)out.plague={season:pl.season,round:pl.round,src:pl.src==="heat"?"heat":"army"};
   if(Array.isArray(f.hist))out.hist=f.hist.filter(e=>e&&typeof e==="object"&&typeof e.kind==="string"&&typeof e.opt==="string"&&Number.isSafeInteger(e.season)&&Number.isSafeInteger(e.round)).slice(-24).map(e=>({season:e.season,round:e.round,kind:e.kind,opt:e.opt,hit:e.hit===true?true:e.hit===false?false:null}));
   return out;
+}
+// ladder.js — E3 (Android E3): „Cesta z dluhů“ a „Proč jsem padl“. Jen nová ekonomika (G._econ===2). Žádná nová mechanika — jen počítadla příčin a seřazení stávajících nástrojů.
+// G.fall = počítadla za celou hru: hunger (měsíce bez dost jídla), wageMonths/wageSum (měsíce a součet nevyplacených mezd, kr), rentTerms/rentSum (termíny činže bez hotovosti, kr),
+// noWood (měsíce s prázdným skladem dříví), closedMonths (měsíce zavřeného trhu kvůli moru), lastOut (mzdy + pivo minulého měsíce, kr). Nic nelosuje.
+
+function fallInit(){return{hunger:0,wageMonths:0,wageSum:0,rentTerms:0,rentSum:0,noWood:0,closedMonths:0,lastOut:0};}
+function fallSanitize(f){
+  const out=fallInit();
+  if(!f||typeof f!=="object"||Array.isArray(f))return out;
+  for(const k of Object.keys(out)){const v=f[k];out[k]=Number.isSafeInteger(v)&&v>0?Math.min(k.endsWith("Sum")||k==="lastOut"?1e9:9999,v):0;}
+  return out;
+}
+// Součet za měsíc (volá processRound): vstup = hodnoty právě zpracovaného měsíce
+function fallStep(prev,m){
+  const f=fallSanitize(prev);
+  return{hunger:f.hunger+(m.hungry?1:0),wageMonths:f.wageMonths+(m.wageDeficit>0?1:0),wageSum:f.wageSum+Math.max(0,m.wageDeficit),
+    rentTerms:f.rentTerms+(m.rentDebt>0?1:0),rentSum:f.rentSum+Math.max(0,m.rentDebt),noWood:f.noWood+(m.noWood?1:0),
+    closedMonths:f.closedMonths+(m.closed?1:0),lastOut:Math.max(0,m.out)};
+}
+
+// Potíže = dluží se mzdy dělníkům, nebo hotovost nestačí na mzdy a pivo minulého měsíce. Jinak null (karta se neukazuje).
+function ladderTrouble(){
+  if(!econ2()||!G.fall)return null;
+  const owed=(G.workers||[]).reduce((s,w)=>s+(w.unpaidDebt||0),0),need=G.fall.lastOut||0;
+  const short=need>0&&G.grose<need;
+  if(owed<=0&&!short)return null;
+  return{owed,short,need,cash:G.grose};
+}
+// Stav třech kroků pro UI: {mora:{state,cost,left}, buyout:{state,count,total,pct}, loan:{pct}, foreclose:{soft,hard,debt}}
+function ladderView(){
+  const t=ladderTrouble();if(!t)return null;
+  const E=ECON2.ladder,q=quickSellQuote();
+  const mora=G.debtMoratorium>0?{state:"active",left:G.debtMoratorium}:G.debt>0?{state:"offer",cost:moratoriumCost()}:{state:"nodebt"};
+  const buyout=G.quickSellUsed?{state:"used"}:marketPlagueClosed()?{state:"closed"}:q.count>0?{state:"offer",count:q.count,total:q.total,pct:q.ratePct}:{state:"empty"};
+  return{trouble:t,mora,buyout,loan:{pct:Math.round(loanRateMarket()*100)},foreclose:{soft:E.foreclose.soft,hard:E.foreclose.hard,debt:G.debt}};
+}
+
+// „Proč jsem padl“: až E.top největších příčin s číslem a radou, seřazeno podle váhy; bez zaznamenaných příčin [] (obrazovka pak ukáže pevné rady)
+function fallCauses(){
+  if(!econ2()||!G.fall)return[];
+  const f=fallSanitize(G.fall),E=ECON2.ladder,W=E.weights,cs=G.lang==="cs",out=[];
+  const add=(id,icon,score,title,num,advice)=>{if(score>0)out.push({id,icon,score,title:cs?title[0]:title[1],num,advice:cs?advice[0]:advice[1]});};
+  add("debt","⚖️",G.debt>=E.debtMin?G.debt*W.debt:0,["Dluh u Reichela","Debt to Reichel"],mny(G.debt),
+    ["Dluh přerostl únosnou mez. Splácej při každé příležitosti, nepůjčuj si na provoz a využij odklad splátek, než dluh naroste.","The debt outgrew what the hut could carry. Repay whenever you can, do not borrow for running costs and use the moratorium before the debt snowballs."]);
+  add("wages","💸",f.wageMonths*W.wages,["Nezaplacené mzdy","Unpaid wages"],cs?`${f.wageMonths} měs. · ${mny(f.wageSum)}`:`${f.wageMonths} mo. · ${mny(f.wageSum)}`,
+    ["Před výplatou měj v kase mzdy a pivo na měsíc dopředu. V nouzi: odklad splátek, výkup u Weisse, půjčka (Trh › Faktor › Cesta z dluhů).","Keep a month of wages and beer in cash before payday. In a pinch: moratorium, Weiss buyout, a loan (Market › Factor › Way out of debt)."]);
+  add("rent","🏰",f.rentTerms*W.rent,["Činže bez hotovosti","Rent without cash"],cs?`${f.rentTerms}× · ${mny(f.rentSum)}`:`${f.rentTerms}× · ${mny(f.rentSum)}`,
+    ["Před sv. Jiřím a sv. Havlem odlož hotovost na činži (po první sezóně se platí i penězi). Neplacená činže roste do dluhu.","Set cash aside before St George and St Gall (after the first season rent is paid in coin too). Unpaid rent rolls into debt."]);
+  add("hunger","🍞",f.hunger*W.hunger,["Hlad v huti","Hunger in the hut"],cs?`${f.hunger} měs.`:`${f.hunger} mo.`,
+    ["Nenechávej zásobu jídla na nule; drž aspoň dva měsíce dopředu a před zimou doplň zásoby (políčko, nákup).","Never let food run to zero; keep two months ahead and restock before winter (field, purchase)."]);
+  add("wood","🌲",f.noWood*W.wood,["Prázdný sklad dříví","Empty wood store"],cs?`${f.noWood} měs.`:`${f.noWood} mo.`,
+    ["Plánuj kácení a nákup dříví dopředu, hlavně před zimou. Bez dříví pec stojí a nic se neprodá.","Plan felling and wood purchases ahead, especially before winter. Without wood the furnace idles and nothing sells."]);
+  add("plague","🦠",f.closedMonths*W.plague,["Zavřený trh (mor)","Closed market (plague)"],cs?`${f.closedMonths} měs.`:`${f.closedMonths} mo.`,
+    ["Za moru se neprodává. Když se šíří zvěsti o moru nebo je dlouhé horko, drž hotovost na dva měsíce a prodej zásoby včas.","Nothing sells during plague. When rumours spread or a long heat hits, keep two months of cash and sell stock early."]);
+  out.sort((a,b)=>b.score-a.score);
+  return out.slice(0,E.top);
 }
 // Aktivní vazba = oba členové jsou v huti a nesedí na odpočinku (task!=="idle") — stejná podmínka jako u afinity Josef+Kateřina.
 function bondActive(p,a,b){return p.workers.some(w=>w.npcId===a&&w.task!=="idle")&&p.workers.some(w=>w.npcId===b&&w.task!=="idle");}
@@ -5927,6 +5989,7 @@ function processRound(){
 
   // 4b. Jídlo — dělníci jedí každé kolo
   const foodNeed=Math.ceil(p.workers.length*0.5); // ~půl jednotky na dělníka
+  const hungryNow=r.food<foodNeed;   // E3: počítadlo hladu
   if(r.food>=foodNeed){
     r.food-=foodNeed;
     if(r.food<=2)log.push(`__EVT__🍞 ${L==="cs"?"Zásoby jídla docházejí!":"Food supplies running low!"}`);
@@ -6559,6 +6622,7 @@ function processRound(){
   const roundReadyLine=roundProdLines.find(l=>l.includes("pánev dozrálo")||l.includes("crucible ready"));
   const roundNewPanve=roundReadyLine?(parseInt((roundReadyLine.match(/(\d+)×/)||[])[1],10)||0):0;
 
+  const fallNext=econ2()?fallStep(p.fall,{hungry:hungryNow,wageDeficit:wagesDeficit,rentDebt:rentInfo?rentInfo.debt:0,noWood:r.wood<=0,closed:marketPlagueClosed(round),out:wages+bCost}):null;
   Object.assign(G,{
     round:nr, res:r, log:[...log,...logAdditions], morale:mor, forest, grose, debt,
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
@@ -6592,6 +6656,7 @@ function processRound(){
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
     ...(advNew?{adv:advNew}:{}),
+    ...(fallNext?{fall:fallNext}:{}),
     ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)+Math.round(advFund*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{
@@ -7418,14 +7483,14 @@ function validateGameSave(saved){
     merged.pieceAcc=typeof merged.pieceAcc==="number"&&isFinite(merged.pieceAcc)&&merged.pieceAcc>0?Math.round(merged.pieceAcc):0;
     merged.leaseSeasons=Number.isSafeInteger(merged.leaseSeasons)&&merged.leaseSeasons>0?Math.min(1000,merged.leaseSeasons):0;
     // W1: wSeed (uint32); starší savy nové ekonomiky ho nemají → pevná odvozenina ze sezóny (bez RNG)
-    merged.fate=fateSanitize(merged.fate);
+    merged.fate=fateSanitize(merged.fate);merged.fall=fallSanitize(merged.fall);
     merged.wSeed=Number.isSafeInteger(merged.wSeed)&&merged.wSeed>=0&&merged.wSeed<4294967296?merged.wSeed:(Math.imul(Number.isSafeInteger(merged.season)?merged.season:1,2654435761)^0x5bd1e995)>>>0;
     // E2a: nabídka zálohy {season,id,taken}; špatný tvar = žádná nabídka. Aktivní zakázka se zálohou: adv.{paid,price} musí být čísla.
     const av=merged.adv;
     merged.adv=(av&&typeof av==="object"&&Number.isSafeInteger(av.season)&&av.season>=0&&(av.id===null||typeof av.id==="string"))?{season:av.season,id:av.id,taken:av.taken===true}:undefined;
     if(merged.adv===undefined)delete merged.adv;
     if(Array.isArray(merged.contracts))merged.contracts=merged.contracts.filter(c=>!(c&&c.adv)||(typeof c.adv==="object"&&Number.isFinite(c.adv.paid)&&c.adv.paid>=0&&Number.isFinite(c.reward)&&c.reward>=c.adv.paid));
-  }else{if(merged._econ!==undefined)delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;delete merged.adv;delete merged.wSeed;delete merged.fate;}
+  }else{if(merged._econ!==undefined)delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;delete merged.adv;delete merged.wSeed;delete merged.fate;delete merged.fall;}
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;
@@ -10399,6 +10464,51 @@ function fateCardNode(){
   });
   return box;
 }
+// ladder-card.js — E3: karta „Cesta z dluhů“ (Trh › Faktor) a připomínka v měsíčním souhrnu. Jen nová ekonomika; ukáže se jen v potížích (dluh partě / chybí hotovost na mzdy+pivo).
+function ladderCardNode(){
+  const v=ladderView();if(!v)return null;
+  const cs=G.lang==="cs",t=v.trouble;
+  const box=h("div",{class:"fj-ladder-card","data-ladder":"1",style:{margin:"4px 0 8px",padding:"8px 10px",borderRadius:"4px",background:"rgba(160,48,32,.07)",border:"2px solid rgba(160,48,32,.4)"}});
+  box.append(h("div",{style:{fontWeight:"700",fontSize:"12px",color:"#7a2a18"}},"🪜 "+(cs?"Cesta z dluhů":"Way out of debt")));
+  const why=[];
+  if(t.owed>0)why.push(cs?`dluh partě na mzdách ${mny(t.owed)}`:`unpaid crew wages ${mny(t.owed)}`);
+  if(t.short)why.push(cs?`v kase ${mny(t.cash)}, minulý měsíc šlo na mzdy a pivo ${mny(t.need)}`:`cash ${mny(t.cash)}, last month's wages and beer ${mny(t.need)}`);
+  box.append(h("div",{style:{fontSize:"10px",color:"#5a3a1a",margin:"2px 0 6px",lineHeight:"1.4"}},
+    (cs?"Pokladna je v tísni: ":"The purse is under pressure: ")+why.join(" · ")+(cs?". Zkus tyto kroky v tomto pořadí.":". Try these steps in this order.")));
+  const step=(n,icon,title,txt,btn)=>{
+    const row=h("div",{class:"fj-ladder-step","data-ladder-step":n,style:{padding:"4px 6px",marginBottom:"4px",background:"rgba(255,255,255,.35)",borderRadius:"3px"}});
+    row.append(h("div",{style:{fontWeight:"700",fontSize:"11px"}},`${n}. ${icon} ${title}`),h("div",{style:{fontSize:"10px",color:"#5a3a1a",lineHeight:"1.35"}},txt));
+    if(btn)row.append(btn);
+    box.append(row);
+  };
+  // 1) odklad splátek
+  const m=v.mora;
+  if(m.state==="active")step(1,"⏳",cs?"Odklad splátek":"Debt moratorium",cs?`Aktivní, zbývá ${m.left} kol bez automatických srážek.`:`Active, ${m.left} rounds left without auto-deductions.`);
+  else if(m.state==="offer"){
+    const b=h("button",{class:"btn btn-s fj-ladder-mora",style:{marginTop:"3px",fontSize:"10px"},onClick:()=>{negotiateMoratorium();}},"⏳ "+(cs?`Odložit splátky na 2 kola (${m.cost>0?mny(m.cost):"zdarma"})`:`Defer for 2 rounds (${m.cost>0?mny(m.cost):"free"})`));
+    step(1,"⏳",cs?"Odklad splátek":"Debt moratorium",cs?"Reichel na dva měsíce nesráží splátky; uvolníš hotovost na mzdy.":"Reichel skips repayments for two months; frees cash for wages.",b);
+  }else step(1,"⏳",cs?"Odklad splátek":"Debt moratorium",cs?"Nemáš u Reichela dluh, není co odkládat.":"No debt to Reichel, nothing to defer.");
+  // 2) výkup u Weisse
+  const bo=v.buyout;
+  if(bo.state==="offer"){
+    const b=h("button",{class:"btn btn-s fj-ladder-buyout",style:{marginTop:"3px",fontSize:"10px"},onClick:()=>{quickSellAll();}},"🐴 "+(cs?`Prodat vše Weissovi (${bo.pct} %)`:`Sell all to Weiss (${bo.pct} %)`));
+    step(2,"🐴",cs?"Výkup u Weisse":"Weiss buyout",cs?`Na skladě ${bo.count} ks → ${mny(bo.total)} hned. Jednou za sezónu.`:`${bo.count} pcs in stock → ${mny(bo.total)} now. Once per season.`,b);
+  }else step(2,"🐴",cs?"Výkup u Weisse":"Weiss buyout",
+    bo.state==="used"?(cs?"Tuto sezónu už použit.":"Already used this season."):bo.state==="closed"?(cs?"Za moru se neobchoduje.":"No trade during plague."):(cs?"Nemáš co prodat.":"Nothing to sell."));
+  // 3) půjčka u Reichela (jen text; tlačítka jsou níže)
+  step(3,"🪙",cs?"Půjčka u Reichela":"Reichel loan",cs?`Poslední možnost — úrok teď ${v.loan.pct} %, dluh roste. Tlačítka jsou níže.`:`Last resort — rate now ${v.loan.pct} %, debt grows. Buttons below.`);
+  box.append(h("div",{class:"fj-ladder-fall",style:{fontSize:"9px",color:"#a03020",marginTop:"2px"}},
+    "⚠️ "+(cs?`Dluh ${mny(v.foreclose.debt)}. Při dluhu ${mny(v.foreclose.soft)}–${mny(v.foreclose.hard)} (podle hotovosti, zásob a dělníků) přijde exekuce a huť padne.`
+            :`Debt ${mny(v.foreclose.debt)}. At ${mny(v.foreclose.soft)}–${mny(v.foreclose.hard)} (by stock and crew) foreclosure ends the hut.`)));
+  return box;
+}
+// Řádek do měsíčního souhrnu
+function ladderReminderNode(){
+  const t=ladderTrouble();if(!t)return null;
+  const cs=G.lang==="cs";
+  return h("div",{class:"fj-ladder-reminder",style:{fontSize:"10px",color:"#a03020",marginTop:"4px",fontWeight:"700",background:"rgba(160,48,32,.08)",padding:"3px 5px",borderRadius:"3px"}},
+    "🪜 "+(cs?"Cesta z dluhů: odklad splátek → výkup u Weisse → půjčka (Trh › Faktor).":"Way out of debt: moratorium → Weiss buyout → loan (Market › Factor)."));
+}
 // subtabs.js — podzáložky uvnitř karet Trh, Huť (accounts), Výroba, Pec a Sklad (stejné členění jako Android SubTabs).
 // Vykreslí se vždy jen JEDNA podzáložka, takže sekce se nikdy nezdvojí. Zvolená záložka je jen stav UI (G._sub, mimo pravidla hry).
 // Karta zavolá subTabBar(tab) na začátku a každou sekci přidá jen když subOn(tab,id). Přehled, Kronika, Deník, Nastavení záložky nemají.
@@ -10749,6 +10859,17 @@ function renderGameOverScreen(ctx){
     L==="cs"?"🏺 Pánve potřebují 2 kola: Káninský musí šlapat jíl dříve, než stará pánev doslouží a praskne."
            :"🏺 Crucibles take time: Have Káninský prepare crucibles well before the working one fractures."
   ];
+  const causes = fallCauses();
+  if(causes.length){
+    tipsBox.firstChild.textContent = "🔎 "+(L==="cs"?"PROČ JSEM PADL — "+(causes.length>1?causes.length+" NEJVĚTŠÍ PŘÍČINY":"NEJVĚTŠÍ PŘÍČINA"):"WHY I FELL — TOP "+causes.length+(causes.length>1?" CAUSES":" CAUSE"));
+    tipsBox.setAttribute("data-fall-causes",String(causes.length));
+    causes.forEach((c,i) => {
+      const row = h("div", {class:"fj-fall-cause","data-cause":c.id, style:{marginBottom:"7px",lineHeight:"1.4"}});
+      row.append(h("div",{style:{fontSize:"12px",fontWeight:"700",color:"#7a2a18"}},`${i+1}. ${c.icon} ${c.title} — ${c.num}`),
+        h("div",{style:{fontSize:"11px",color:"#3a2a14"}},c.advice));
+      tipsBox.append(row);
+    });
+  } else
   tipsList.forEach(tip => tipsBox.append(h("div", {style: {fontSize: "11px", color: "#3a2a14", marginBottom: "5px", lineHeight: "1.4"}}, tip)));
   body.append(tipsBox);
 
@@ -11397,6 +11518,7 @@ function renderSummaryScreen(ctx){
       L==="cs"?`⚠️ Huť dluží partě na mzdách ${mny(sd.wagesDeficit)}! Roste dluh partě a klesá loajalita dělníků. Prodej sklo a vyplať mzdy (záložka Parta).`
               :`⚠️ Foundry owes the crew ${mny(sd.wagesDeficit)} in wages! Crew debt grows and loyalty drops. Sell glass and pay the wages (Crew tab).`));
   }
+  {const lr=ladderReminderNode();if(lr)debtStatusCard.append(lr);}
   ecoBox.append(debtStatusCard);
   body.append(ecoBox);
 
@@ -14076,6 +14198,7 @@ function renderTabMarket(ctx){
   const faktorSec=h("div",{class:"sec fj-market-section","data-market-section":"loans",id:"fj-market-loans"});
   faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Reichel — půjčky":"Factor Reichel — loans")));
   faktorSec.append(partnerCard("reichel"));
+  {const lc=ladderCardNode();if(lc)faktorSec.append(lc);}
   {const av=advanceCardNode();if(av)faktorSec.append(av);}
   // Reputace dlužníka
   faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},

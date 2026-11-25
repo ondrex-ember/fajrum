@@ -93,6 +93,17 @@ function renderGameOverScreen(ctx){
     L==="cs"?"🏺 Pánve potřebují 2 kola: Káninský musí šlapat jíl dříve, než stará pánev doslouží a praskne."
            :"🏺 Crucibles take time: Have Káninský prepare crucibles well before the working one fractures."
   ];
+  const causes = fallCauses();
+  if(causes.length){
+    tipsBox.firstChild.textContent = "🔎 "+(L==="cs"?"PROČ JSEM PADL — "+(causes.length>1?causes.length+" NEJVĚTŠÍ PŘÍČINY":"NEJVĚTŠÍ PŘÍČINA"):"WHY I FELL — TOP "+causes.length+(causes.length>1?" CAUSES":" CAUSE"));
+    tipsBox.setAttribute("data-fall-causes",String(causes.length));
+    causes.forEach((c,i) => {
+      const row = h("div", {class:"fj-fall-cause","data-cause":c.id, style:{marginBottom:"7px",lineHeight:"1.4"}});
+      row.append(h("div",{style:{fontSize:"12px",fontWeight:"700",color:"#7a2a18"}},`${i+1}. ${c.icon} ${c.title} — ${c.num}`),
+        h("div",{style:{fontSize:"11px",color:"#3a2a14"}},c.advice));
+      tipsBox.append(row);
+    });
+  } else
   tipsList.forEach(tip => tipsBox.append(h("div", {style: {fontSize: "11px", color: "#3a2a14", marginBottom: "5px", lineHeight: "1.4"}}, tip)));
   body.append(tipsBox);
 

@@ -98,14 +98,14 @@ function validateGameSave(saved){
     merged.pieceAcc=typeof merged.pieceAcc==="number"&&isFinite(merged.pieceAcc)&&merged.pieceAcc>0?Math.round(merged.pieceAcc):0;
     merged.leaseSeasons=Number.isSafeInteger(merged.leaseSeasons)&&merged.leaseSeasons>0?Math.min(1000,merged.leaseSeasons):0;
     // W1: wSeed (uint32); starší savy nové ekonomiky ho nemají → pevná odvozenina ze sezóny (bez RNG)
-    merged.fate=fateSanitize(merged.fate);
+    merged.fate=fateSanitize(merged.fate);merged.fall=fallSanitize(merged.fall);
     merged.wSeed=Number.isSafeInteger(merged.wSeed)&&merged.wSeed>=0&&merged.wSeed<4294967296?merged.wSeed:(Math.imul(Number.isSafeInteger(merged.season)?merged.season:1,2654435761)^0x5bd1e995)>>>0;
     // E2a: nabídka zálohy {season,id,taken}; špatný tvar = žádná nabídka. Aktivní zakázka se zálohou: adv.{paid,price} musí být čísla.
     const av=merged.adv;
     merged.adv=(av&&typeof av==="object"&&Number.isSafeInteger(av.season)&&av.season>=0&&(av.id===null||typeof av.id==="string"))?{season:av.season,id:av.id,taken:av.taken===true}:undefined;
     if(merged.adv===undefined)delete merged.adv;
     if(Array.isArray(merged.contracts))merged.contracts=merged.contracts.filter(c=>!(c&&c.adv)||(typeof c.adv==="object"&&Number.isFinite(c.adv.paid)&&c.adv.paid>=0&&Number.isFinite(c.reward)&&c.reward>=c.adv.paid));
-  }else{if(merged._econ!==undefined)delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;delete merged.adv;delete merged.wSeed;delete merged.fate;}
+  }else{if(merged._econ!==undefined)delete merged._econ;delete merged.pieceAcc;delete merged.leaseSeasons;delete merged.adv;delete merged.wSeed;delete merged.fate;delete merged.fall;}
   if(!merged.partners||typeof merged.partners!=="object"||Array.isArray(merged.partners))merged.partners=partnersInit();
   migrateDebtModel(merged,src._dm);
   return merged;

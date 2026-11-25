@@ -12,7 +12,7 @@ function _e2Round50(x){return Math.max(0,Math.round(x/_E2_HALF)*_E2_HALF);}
 // Nová hra: zapne novou ekonomiku (jen když je tabulka k dispozici)
 function econ2Init(){
   if(typeof ECON2==="undefined")return;
-  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;G.fate=fateInit();
+  G._econ=2;G.pieceAcc=0;G.leaseSeasons=0;G.fate=fateInit();G.fall=fallInit();
   // W1: osud světa (počasí, osudové události). Záměrně BEZ Math.random — pořadí RNG zůstává (klasické goldeny sdílí Android); zdrojem je čas startu.
   G.wSeed=(_wxMix(Date.now()%4294967296,7,(typeof performance!=="undefined"&&performance.now?Math.floor(performance.now()*1000):0),0,0));
 }

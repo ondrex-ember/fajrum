@@ -571,6 +571,7 @@ function processRound(){
 
   // 4b. Jídlo — dělníci jedí každé kolo
   const foodNeed=Math.ceil(p.workers.length*0.5); // ~půl jednotky na dělníka
+  const hungryNow=r.food<foodNeed;   // E3: počítadlo hladu
   if(r.food>=foodNeed){
     r.food-=foodNeed;
     if(r.food<=2)log.push(`__EVT__🍞 ${L==="cs"?"Zásoby jídla docházejí!":"Food supplies running low!"}`);
@@ -1203,6 +1204,7 @@ function processRound(){
   const roundReadyLine=roundProdLines.find(l=>l.includes("pánev dozrálo")||l.includes("crucible ready"));
   const roundNewPanve=roundReadyLine?(parseInt((roundReadyLine.match(/(\d+)×/)||[])[1],10)||0):0;
 
+  const fallNext=econ2()?fallStep(p.fall,{hungry:hungryNow,wageDeficit:wagesDeficit,rentDebt:rentInfo?rentInfo.debt:0,noWood:r.wood<=0,closed:marketPlagueClosed(round),out:wages+bCost}):null;
   Object.assign(G,{
     round:nr, res:r, log:[...log,...logAdditions], morale:mor, forest, grose, debt,
     pReady:pR, pAging:pA, pUses:pU>0?pU:(pR>0?PANEV_DUR:0), panevQuality:pQ,
@@ -1236,6 +1238,7 @@ function processRound(){
     totalW:(G.totalW||0)+prodW, totalC:(G.totalC||0)+prodC,   // celoherní součty (tW/tC/tQS/tQN/done jsou jen sezónní)
     totalBatches:(G.totalBatches||0)+(prodW+prodC>0?1:0),
     ...(advNew?{adv:advNew}:{}),
+    ...(fallNext?{fall:fallNext}:{}),
     ...(E2?{pieceAcc:Math.max(0,(_e2n(p.pieceAcc)-e2plan.used))+Math.round(contractIncomeTick*E2.piece.share)+Math.round(advFund*E2.piece.share)}:{}),   // fond: vyplacený díl pryč, nový příjem ze zakázek přibude
     failureReason:wk.length===0?"abandoned":((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0)?"foreclosure":(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800?"ruined":null)),
     failureStats:(wk.length===0||((debt>=16000&&grose<=0&&wk.length<=1&&wg.length===0&&cr.length===0)||(debt>=18000&&grose<=0))||(furnace.shamotWear>=100&&pR===0&&pA.length===0&&r.clay<4&&grose<800))?{

@@ -43,7 +43,7 @@ function setPath(root, path, v) {
 function apply(e, a) {
   const A = e.api, c = (n, ...x) => A.call(n, ...x);
   switch (a.t) {
-    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); if (a.econ !== 2) { const g = A.G; delete g._econ; delete g.pieceAcc; delete g.leaseSeasons; delete g.wSeed; delete g.fate; } else if (a.wSeed !== undefined) A.G.wSeed = a.wSeed; break; }   // klasika, pokud scénář výslovně nechce econ:2
+    case 'newGame': { const G0 = A.initState(); G0.huteName = a.huteName || 'Hutmistr'; A.G = G0; A.startGame(a.difficulty); if (a.econ !== 2) { const g = A.G; delete g._econ; delete g.pieceAcc; delete g.leaseSeasons; delete g.wSeed; delete g.fate; delete g.fall; } else if (a.wSeed !== undefined) A.G.wSeed = a.wSeed; break; }   // klasika, pokud scénář výslovně nechce econ:2
     case 'setTask': c('setWorkerTask', a.id, a.task); break;
     case 'setAlloc': c('setAlloc', a.key, a.val); break;
     case 'allocRecommended': c('setAlloc', 'build', 0); c('setAlloc', 'potash', 40); break;

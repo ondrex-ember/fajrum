@@ -275,6 +275,7 @@ function renderTabMarket(ctx){
   const faktorSec=h("div",{class:"sec fj-market-section","data-market-section":"loans",id:"fj-market-loans"});
   faktorSec.append(h("div",{class:"sec-title"},"🪙 "+(L==="cs"?"Faktor Reichel — půjčky":"Factor Reichel — loans")));
   faktorSec.append(partnerCard("reichel"));
+  {const lc=ladderCardNode();if(lc)faktorSec.append(lc);}
   {const av=advanceCardNode();if(av)faktorSec.append(av);}
   // Reputace dlužníka
   faktorSec.append(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px",padding:"5px 7px",background:"rgba(0,0,0,.04)",borderRadius:"3px"}},

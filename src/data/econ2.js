@@ -43,5 +43,11 @@ const ECON2={
       dry:{fieldMult:0.6,fatigue:0.05},
       storm:{}
     }
+  },
+  ladder:{                            // E3: Cesta z dluhů a „Proč jsem padl“ (jen texty a váhy; žádná nová mechanika)
+    foreclose:{soft:16000,hard:18000},   // zrcadlí podmínky exekuce v processRound (dluh v kr)
+    weights:{debt:1/4000,wages:1,rent:3,hunger:1,wood:1,plague:0.5},   // pořadí příčin: „měsíc-ekvivalenty“ (dluh: 1 za každých 40 zl)
+    debtMin:6000,                     // dluh pod 60 zl (start hry má 40 zl) nepočítáme mezi příčiny pádu
+    top:3
   }
 };

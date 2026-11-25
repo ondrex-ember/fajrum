@@ -258,6 +258,26 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     chk(qa('.fj-fate-opt').length === 3 && /🚢/.test(q('.fj-fate-card').textContent), 'Labe: panel se 3 volbami');
     q('.fj-fate-opt[data-fate-opt="land"]').click(); chk(ev('G.contracts[0].reward') === 8300, 'Labe: Po souši přepíše odměnu (8300)');
     ev('G.contracts=[]; G.waldglas=[]; G.season=' + sv0 + '; G.round=' + r0 + '; G.grose=50000; G.fate.fx=[]; render();');
+    // E3: Cesta z dluhů (jen v potížích), připomínka v souhrnu, „Proč jsem padl“
+    ev('G.tab="market"; G._sub={market:"reichel"}; G.grose=50000; G.debt=3000; G.debtMoratorium=0; G.quickSellUsed=false; G.waldglas=[3,3]; G.workers.forEach(w=>{w.unpaidDebt=0}); G.fall.lastOut=0; G.fate.fx=[]; render();');
+    chk(!q('.fj-ladder-card'), 'E3: bez potíží se karta Cesta z dluhů neukáže');
+    ev('G.workers[0].unpaidDebt=400; render();');
+    const lc = q('.fj-ladder-card');
+    chk(!!lc && qa('.fj-ladder-step').length === 3 && ['1', '2', '3'].join() === qa('.fj-ladder-step').map(x => x.dataset.ladderStep).join(), 'E3: karta se 3 kroky v pořadí');
+    chk(!!q('.fj-ladder-mora') && !!q('.fj-ladder-buyout') && /(160|180)/.test(lc ? lc.textContent : ''), 'E3: tlačítko odkladu, výkupu a řádek o exekuci');
+    chk(lc && !/NaN|undefined|Infinity/.test(lc.textContent), 'E3: karta bez NaN/undefined');
+    q('.fj-ladder-mora').click(); chk(ev('G.debtMoratorium') > 0 && /(Aktivní|Active)/.test(q(".fj-ladder-card").textContent), 'E3: odklad přes kartu zapnut a karta ukáže aktivní');
+    const gb = ev('G.grose'); q('.fj-ladder-buyout').click(); chk(ev('G.grose') > gb && ev('G.quickSellUsed') === true && /(použit|Already)/.test(q('.fj-ladder-card').textContent), 'E3: výkup přes kartu prodá a ukáže „použit“');
+    ev('G.workers[0].unpaidDebt=0; G.fall.lastOut=900000; G.grose=100; render();'); chk(!!q('.fj-ladder-card'), 'E3: karta i při nedostatku hotovosti na mzdy+pivo');
+    ev('G.fall.lastOut=0; G.workers[0].unpaidDebt=0; render();'); chk(!q('.fj-ladder-card'), 'E3: po vyřešení karta zmizí');
+    ev('G.workers[0].unpaidDebt=400; delete G._econ; render();'); chk(!q('.fj-ladder-card'), 'E3: klasika bez karty'); ev('G._econ=2; G.workers[0].unpaidDebt=0; G.grose=50000; G.debt=0; render();');
+    ev('G.phase="game_over"; G.failureReason="foreclosure"; G.debt=30000; G.fall={hunger:1,wageMonths:3,wageSum:9000,rentTerms:2,rentSum:4000,noWood:0,closedMonths:0,lastOut:0}; render();');
+    chk(qa('.fj-fall-cause').length === 3 && !!q('[data-fall-causes="3"]') && /(PROČ JSEM PADL|WHY I FELL)/.test(q('[data-fall-causes]').textContent), 'E3: game over ukáže 3 největší příčiny');
+    const fixedTip = () => qa('div').some(d => !d.children.length && /(Pánve potřebují 2 kola|Crucibles take time)/.test(d.textContent));
+    chk(!/NaN|undefined|Infinity/.test(q('[data-fall-causes]').textContent) && !fixedTip(), 'E3: bez pevných rad a bez NaN');
+    ev('G.fall={hunger:0,wageMonths:0,wageSum:0,rentTerms:0,rentSum:0,noWood:0,closedMonths:0,lastOut:0}; G.debt=0; render();');
+    chk(!qa('.fj-fall-cause').length && !q('[data-fall-causes]') && fixedTip(), 'E3: bez zaznamenaných příčin zůstanou pevné rady');
+    ev('G.phase="playing"; G.failureReason=null; G.round=' + r0 + '; G.season=' + sv0 + '; G.grose=50000; G.debt=0; G.tab="overview"; render();');
     // karta dělníka: blok Mzda s verdiktem a vzorcem
     ev('G.tab="parta"; G._partaDetail=G.workers.find(w=>w.prof==="tavic").id; G._partaSubtab="profil"; render();');
     const blk = q('.fj-wage-block');
@@ -279,6 +299,9 @@ const BAD = [/NaN/, /undefined/, /\[object/, /(^|[\s(~+\-–])\d+([.,]\d+)?\s?g(
     ev('G.round=5; G.leaseSeasons=1; G.grose=50000; processRound(); G.phase="summary"; G.tab="overview"; render();');
     chk(ev('G.summary&&G.summary.rent&&G.summary.rent.cash') === 2500 || ev('G.summary&&G.summary.rent&&G.summary.rent.cash') === 2000, 'summary.rent v duben (S2)');
     chk(/🏰/.test(doc.body.textContent), 'souhrn: karta činže');
+    ev('G.workers[0].unpaidDebt=0; G.fall.lastOut=0; render();'); chk(!q('.fj-ladder-reminder'), 'E3: souhrn bez potíží nemá připomínku');
+    ev('G.workers[0].unpaidDebt=400; render();'); chk(!!q('.fj-ladder-reminder') && /(Cesta z dluhů|Way out of debt)/.test(q('.fj-ladder-reminder').textContent), 'E3: souhrn s dluhem partě má připomínku');
+    ev('G.workers[0].unpaidDebt=0; render();');
     scan('econ2');
     console.log('econ2 UI checks done');
   }
